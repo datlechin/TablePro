@@ -10,12 +10,17 @@ import UniformTypeIdentifiers
 
 /// Form for creating or editing a database connection
 struct ConnectionFormView: View {
-    @Environment(\.dismiss) private var dismiss
-
-    @Binding var connection: DatabaseConnection
-    let isNew: Bool
-    var onSave: (DatabaseConnection) -> Void
-    var onDelete: (() -> Void)?
+    @Environment(\.dismissWindow) private var dismissWindow
+    @Environment(\.openWindow) private var openWindow
+    
+    // Connection ID: nil = new connection, UUID = edit existing
+    let connectionId: UUID?
+    
+    private let storage = ConnectionStorage.shared
+    @StateObject private var dbManager = DatabaseManager.shared
+    
+    // Computed property for isNew
+    private var isNew: Bool { connectionId == nil }
 
     @State private var name: String = ""
     @State private var host: String = ""
@@ -33,12 +38,15 @@ struct ConnectionFormView: View {
     @State private var sshPassword: String = ""
     @State private var sshAuthMethod: SSHAuthMethod = .password
     @State private var sshPrivateKeyPath: String = ""
-    @State private var keyPassphrase: String = ""  // Passphrase for encrypted private key
+    @State private var keyPassphrase: String = ""
     @State private var sshConfigEntries: [SSHConfigEntry] = []
     @State private var selectedSSHConfigHost: String = ""
 
     @State private var isTesting: Bool = false
     @State private var testResult: TestResult?
+    
+    // Store original connection for editing
+    @State private var originalConnection: DatabaseConnection?
 
     enum TestResult {
         case success
@@ -48,10 +56,15 @@ struct ConnectionFormView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Header
-            header
-
-            Divider()
-
+            HStack {
+                Spacer()
+                Text(isNew ? "New Connection" : "Edit Connection")
+                    .font(.headline)
+                Spacer()
+            }
+            .padding(.top, 14)
+            .padding(.bottom, 16)
+            
             // Form content
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
@@ -62,7 +75,9 @@ struct ConnectionFormView: View {
                         sshSection
                     }
                 }
-                .padding(20)
+                .padding(.horizontal, 20)
+                .padding(.top, 4)
+                .padding(.bottom, 20)
             }
 
             Divider()
@@ -70,42 +85,15 @@ struct ConnectionFormView: View {
             // Footer
             footer
         }
-        .frame(width: 520, height: 680)
+        .frame(width: 520)
+        .ignoresSafeArea()
         .onAppear {
-            loadConnection()
+            loadConnectionData()
             loadSSHConfig()
         }
         .onChange(of: type) { _, newType in
-            // Auto-update port when type changes
             port = String(newType.defaultPort)
         }
-    }
-
-    // MARK: - Header
-
-    private var header: some View {
-        HStack {
-            Image(systemName: iconForType(type))
-                .font(.title2)
-                .foregroundStyle(colorForType(type))
-                .frame(width: 32, height: 32)
-                .background(colorForType(type).opacity(0.15))
-                .clipShape(RoundedRectangle(cornerRadius: 6))
-
-            Text(isNew ? "New Connection" : "Edit Connection")
-                .font(.headline)
-
-            Spacer()
-
-            Button(action: { dismiss() }) {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.title2)
-                    .foregroundStyle(.secondary)
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(16)
-        .background(Color(nsColor: .windowBackgroundColor))
     }
 
     // MARK: - General Section
@@ -361,16 +349,15 @@ struct ConnectionFormView: View {
                 Spacer()
 
                 // Delete button (edit mode only)
-                if !isNew, let onDelete = onDelete {
+                if !isNew {
                     Button("Delete", role: .destructive) {
-                        onDelete()
-                        dismiss()
+                        deleteConnection()
                     }
                 }
 
                 // Cancel
                 Button("Cancel") {
-                    dismiss()
+                    dismissWindow(id: "connection-form")
                 }
                 .keyboardShortcut(.escape)
 
@@ -424,35 +411,36 @@ struct ConnectionFormView: View {
         }
     }
 
-    private func loadConnection() {
-        name = connection.name
-        host = connection.host
-        port = connection.port > 0 ? String(connection.port) : ""
-        database = connection.database
-        username = connection.username
-        type = connection.type
+    private func loadConnectionData() {
+        // If editing, load from storage
+        if let id = connectionId,
+           let existing = storage.loadConnections().first(where: { $0.id == id }) {
+            originalConnection = existing
+            name = existing.name
+            host = existing.host
+            port = existing.port > 0 ? String(existing.port) : ""
+            database = existing.database
+            username = existing.username
+            type = existing.type
 
-        // Load SSH configuration
-        sshEnabled = connection.sshConfig.enabled
-        sshHost = connection.sshConfig.host
-        sshPort = String(connection.sshConfig.port)
-        sshUsername = connection.sshConfig.username
-        sshAuthMethod = connection.sshConfig.authMethod
-        sshPrivateKeyPath = connection.sshConfig.privateKeyPath
+            // Load SSH configuration
+            sshEnabled = existing.sshConfig.enabled
+            sshHost = existing.sshConfig.host
+            sshPort = String(existing.sshConfig.port)
+            sshUsername = existing.sshConfig.username
+            sshAuthMethod = existing.sshConfig.authMethod
+            sshPrivateKeyPath = existing.sshConfig.privateKeyPath
 
-        // Load SSH password from Keychain
-        if let savedSSHPassword = ConnectionStorage.shared.loadSSHPassword(for: connection.id) {
-            sshPassword = savedSSHPassword
-        }
-        
-        // Load key passphrase from Keychain
-        if let savedPassphrase = ConnectionStorage.shared.loadKeyPassphrase(for: connection.id) {
-            keyPassphrase = savedPassphrase
-        }
-
-        // Load DB password from Keychain
-        if let savedPassword = ConnectionStorage.shared.loadPassword(for: connection.id) {
-            password = savedPassword
+            // Load passwords from Keychain
+            if let savedSSHPassword = storage.loadSSHPassword(for: existing.id) {
+                sshPassword = savedSSHPassword
+            }
+            if let savedPassphrase = storage.loadKeyPassphrase(for: existing.id) {
+                keyPassphrase = savedPassphrase
+            }
+            if let savedPassword = storage.loadPassword(for: existing.id) {
+                password = savedPassword
+            }
         }
     }
 
@@ -467,8 +455,8 @@ struct ConnectionFormView: View {
             useSSHConfig: !selectedSSHConfigHost.isEmpty
         )
 
-        let updated = DatabaseConnection(
-            id: connection.id,
+        let connectionToSave = DatabaseConnection(
+            id: connectionId ?? UUID(),
             name: name,
             host: host,
             port: Int(port) ?? 0,
@@ -480,17 +468,53 @@ struct ConnectionFormView: View {
 
         // Save passwords to Keychain
         if !password.isEmpty {
-            ConnectionStorage.shared.savePassword(password, for: updated.id)
+            storage.savePassword(password, for: connectionToSave.id)
         }
         if sshEnabled && sshAuthMethod == .password && !sshPassword.isEmpty {
-            ConnectionStorage.shared.saveSSHPassword(sshPassword, for: updated.id)
+            storage.saveSSHPassword(sshPassword, for: connectionToSave.id)
         }
         if sshEnabled && sshAuthMethod == .privateKey && !keyPassphrase.isEmpty {
-            ConnectionStorage.shared.saveKeyPassphrase(keyPassphrase, for: updated.id)
+            storage.saveKeyPassphrase(keyPassphrase, for: connectionToSave.id)
         }
 
-        onSave(updated)
-        dismiss()
+        // Save to storage
+        var savedConnections = storage.loadConnections()
+        if isNew {
+            savedConnections.append(connectionToSave)
+            storage.saveConnections(savedConnections)
+            // Close and connect to database
+            dismissWindow(id: "connection-form")
+            connectToDatabase(connectionToSave)
+        } else {
+            if let index = savedConnections.firstIndex(where: { $0.id == connectionToSave.id }) {
+                savedConnections[index] = connectionToSave
+                storage.saveConnections(savedConnections)
+            }
+            dismissWindow(id: "connection-form")
+            NotificationCenter.default.post(name: .connectionUpdated, object: nil)
+        }
+    }
+    
+    private func deleteConnection() {
+        guard let id = connectionId else { return }
+        var savedConnections = storage.loadConnections()
+        savedConnections.removeAll { $0.id == id }
+        storage.saveConnections(savedConnections)
+        dismissWindow(id: "connection-form")
+        NotificationCenter.default.post(name: .connectionUpdated, object: nil)
+    }
+    
+    private func connectToDatabase(_ connection: DatabaseConnection) {
+        openWindow(id: "main")
+        dismissWindow(id: "welcome")
+        
+        Task {
+            do {
+                try await dbManager.connectToSession(connection)
+            } catch {
+                print("Failed to connect: \(error)")
+            }
+        }
     }
 
     private func testConnection() {
@@ -624,19 +648,16 @@ struct FormField<Content: View>: View {
     }
 }
 
+// MARK: - Notification Names
+
+extension Notification.Name {
+    static let connectionUpdated = Notification.Name("connectionUpdated")
+}
+
 #Preview("New Connection") {
-    ConnectionFormView(
-        connection: .constant(DatabaseConnection(name: "")),
-        isNew: true,
-        onSave: { _ in }
-    )
+    ConnectionFormView(connectionId: nil)
 }
 
 #Preview("Edit Connection") {
-    ConnectionFormView(
-        connection: .constant(DatabaseConnection.sampleConnections[0]),
-        isNew: false,
-        onSave: { _ in },
-        onDelete: {}
-    )
+    ConnectionFormView(connectionId: DatabaseConnection.sampleConnections[0].id)
 }

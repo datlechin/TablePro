@@ -222,21 +222,24 @@ struct SidebarView: View {
 
     @ViewBuilder
     private func tableContextMenu(for table: TableInfo) -> some View {
-        Button("Copy name") {
+        Button("Copy Name") {
             let names = selectedTables.isEmpty ? [table.name] : selectedTables.map { $0.name }.sorted()
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(names.joined(separator: ","), forType: .string)
         }
+        .keyboardShortcut("c", modifiers: .command)
 
         Divider()
 
         Button("Truncate") {
             batchToggleTruncate()
         }
+        .keyboardShortcut(.delete, modifiers: .option)
 
         Button("Delete", role: .destructive) {
             batchToggleDelete()
         }
+        .keyboardShortcut(.delete, modifiers: .command)
     }
     
     /// Batch toggle truncate for all selected tables

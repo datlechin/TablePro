@@ -119,10 +119,18 @@ final class DatabaseManager: ObservableObject {
                 }
             }
             
-            // Update session with error
-            session.status = .error(error.localizedDescription)
-            session.lastError = error.localizedDescription
-            activeSessions[connection.id] = session
+            // Remove failed session completely so UI returns to Welcome window
+            activeSessions.removeValue(forKey: connection.id)
+            
+            // Clear current session if this was it
+            if currentSessionId == connection.id {
+                // Switch to another session if available, otherwise clear
+                if let nextSessionId = activeSessions.keys.first {
+                    currentSessionId = nextSessionId
+                } else {
+                    currentSessionId = nil
+                }
+            }
             
             throw error
         }

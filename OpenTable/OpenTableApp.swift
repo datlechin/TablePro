@@ -22,12 +22,33 @@ final class AppState: ObservableObject {
 
 @main
 struct OpenTableApp: App {
+    // Connect AppKit delegate for proper window configuration
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    
     @StateObject private var appState = AppState.shared
+    @StateObject private var dbManager = DatabaseManager.shared
 
     var body: some Scene {
-        WindowGroup {
+        // Welcome Window - opens on launch
+        Window("Welcome to OpenTable", id: "welcome") {
+            WelcomeWindowView()
+        }
+        .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentSize)
+        .defaultSize(width: 700, height: 450)
+        
+        // Connection Form Window - opens when creating/editing a connection
+        WindowGroup("Connection", id: "connection-form", for: UUID?.self) { $connectionId in
+            ConnectionFormView(connectionId: connectionId ?? nil)
+        }
+        .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentSize)
+        
+        // Main Window - opens when connecting to database
+        WindowGroup(id: "main") {
             ContentView()
                 .environmentObject(appState)
+                .background(OpenWindowHandler())
         }
         .windowStyle(.automatic)
         .defaultSize(width: 1200, height: 800)
@@ -56,7 +77,16 @@ struct OpenTableApp: App {
                 .disabled(!appState.isConnected)
 
                 Button("Close Tab") {
-                    NotificationCenter.default.post(name: .closeCurrentTab, object: nil)
+                    // Check if key window is the main window
+                    let keyWindow = NSApp.keyWindow
+                    let isMainWindowKey = keyWindow?.identifier?.rawValue.contains("main") == true
+
+                    if appState.isConnected && isMainWindowKey {
+                        NotificationCenter.default.post(name: .closeCurrentTab, object: nil)
+                    } else {
+                        // Close the focused window (connection form, welcome, etc.)
+                        keyWindow?.close()
+                    }
                 }
                 .keyboardShortcut("w", modifiers: .command)
 
@@ -170,4 +200,20 @@ extension Notification.Name {
     static let truncateTables = Notification.Name("truncateTables")
     static let copySelectedRows = Notification.Name("copySelectedRows")
     static let clearSelection = Notification.Name("clearSelection")
+    static let openWelcomeWindow = Notification.Name("openWelcomeWindow")
+}
+
+// MARK: - Open Window Handler
+
+/// Helper view that listens for openWelcomeWindow notification
+private struct OpenWindowHandler: View {
+    @Environment(\.openWindow) private var openWindow
+    
+    var body: some View {
+        Color.clear
+            .frame(width: 0, height: 0)
+            .onReceive(NotificationCenter.default.publisher(for: .openWelcomeWindow)) { _ in
+                openWindow(id: "welcome")
+            }
+    }
 }

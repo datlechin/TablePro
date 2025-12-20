@@ -20,6 +20,9 @@ struct ContentView: View {
     @State private var pendingCloseSessionId: UUID?
     @State private var hasLoaded = false
     @State private var escapeKeyMonitor: Any?
+    
+    @Environment(\.openWindow) private var openWindow
+    @Environment(\.dismissWindow) private var dismissWindow
 
     private let storage = ConnectionStorage.shared
     
@@ -36,12 +39,6 @@ struct ContentView: View {
     var body: some View {
         mainContent
             .frame(minWidth: 900, minHeight: 600)
-            .sheet(isPresented: $showNewConnectionSheet) {
-                newConnectionSheet
-            }
-            .sheet(isPresented: $showEditConnectionSheet) {
-                editConnectionSheet
-            }
             .confirmationDialog(
                 "Delete Connection",
                 isPresented: $showDeleteConfirmation,
@@ -80,9 +77,7 @@ struct ContentView: View {
                 removeEscapeKeyMonitor()
             }
             .onReceive(NotificationCenter.default.publisher(for: .newConnection)) { _ in
-                Task { @MainActor in
-                    showNewConnectionSheet = true
-                }
+                openWindow(id: "connection-form", value: nil as UUID?)
             }
             .onReceive(NotificationCenter.default.publisher(for: .deselectConnection)) { _ in
                 if let sessionId = dbManager.currentSessionId {
@@ -105,6 +100,12 @@ struct ContentView: View {
                         columnVisibility = newSessionId == nil ? .detailOnly : .all
                     }
                     AppState.shared.isConnected = newSessionId != nil
+                    
+                    // When all sessions are closed, return to Welcome window
+                    if newSessionId == nil {
+                        openWindow(id: "welcome")
+                        dismissWindow(id: "main")
+                    }
                 }
             }
     }
@@ -133,9 +134,7 @@ struct ContentView: View {
                                 }
                             },
                             onNewConnection: {
-                                Task { @MainActor in
-                                    showNewConnectionSheet = true
-                                }
+                                openWindow(id: "connection-form", value: nil as UUID?)
                             }
                         )
                     }
@@ -160,60 +159,22 @@ struct ContentView: View {
                 .id(currentSession!.id)
             }
         } else {
-            WelcomeView(
-                connections: connections,
-                onSelectConnection: { connection in
-                    connectToDatabase(connection)
-                },
-                onEditConnection: { connection in
-                    connectionToEdit = connection
-                    showEditConnectionSheet = true
-                },
-                onDeleteConnection: { connection in
-                    connectionToDelete = connection
-                    showDeleteConfirmation = true
-                },
-                onAddConnection: {
-                    showNewConnectionSheet = true
-                }
-            )
+            // No active session yet - show loading while connecting
+            VStack(spacing: 16) {
+                ProgressView()
+                    .scaleEffect(1.5)
+                
+                Text("Connecting...")
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .toolbar(.hidden)
         }
     }
     
-    @ViewBuilder
-    private var newConnectionSheet: some View {
-        ConnectionFormView(
-            connection: .constant(DatabaseConnection(name: "")),
-            isNew: true,
-            onSave: { connection in
-                connections.append(connection)
-                storage.saveConnections(connections)
-                connectToDatabase(connection)
-            }
-        )
-    }
-    
-    @ViewBuilder
-    private var editConnectionSheet: some View {
-        if let connection = connectionToEdit {
-            ConnectionFormView(
-                connection: .constant(connection),
-                isNew: false,
-                onSave: { updated in
-                    if let index = connections.firstIndex(where: { $0.id == connection.id }) {
-                        connections[index] = updated
-                        storage.saveConnections(connections)
-                    }
-                },
-                onDelete: {
-                    connectionToDelete = connection
-                    showDeleteConfirmation = true
-                    showEditConnectionSheet = false
-                }
-            )
-        }
-    }
+    // Removed: newConnectionSheet and editConnectionSheet helpers
+    // Connection forms are now handled by the separate connection-form window
 
     // MARK: - Session State Bindings
     

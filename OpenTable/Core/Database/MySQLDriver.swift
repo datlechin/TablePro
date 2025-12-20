@@ -73,6 +73,11 @@ final class MySQLDriver: DatabaseDriver {
     // MARK: - Query Execution
 
     func execute(query: String) async throws -> QueryResult {
+        return try await executeWithReconnect(query: query, isRetry: false)
+    }
+    
+    /// Execute query with automatic reconnection on connection-lost errors
+    private func executeWithReconnect(query: String, isRetry: Bool) async throws -> QueryResult {
         let startTime = Date()
 
         guard let conn = mariadbConnection else {
@@ -103,9 +108,34 @@ final class MySQLDriver: DatabaseDriver {
                 executionTime: Date().timeIntervalSince(startTime),
                 error: nil
             )
+        } catch let error as MariaDBError where !isRetry && isConnectionLostError(error) {
+            // Connection lost - attempt reconnect and retry once
+            try await reconnect()
+            return try await executeWithReconnect(query: query, isRetry: true)
         } catch let error as MariaDBError {
             throw DatabaseError.queryFailed(error.localizedDescription)
         }
+    }
+    
+    // MARK: - Auto-Reconnect
+    
+    /// Check if error indicates a lost connection that can be recovered
+    private func isConnectionLostError(_ error: MariaDBError) -> Bool {
+        // 2006 = Server has gone away
+        // 2013 = Lost connection to MySQL server during query
+        // 2055 = Lost connection to MySQL server at reading initial packet
+        return [2006, 2013, 2055].contains(Int(error.code))
+    }
+    
+    /// Reconnect to the database
+    private func reconnect() async throws {
+        // Close existing connection
+        mariadbConnection?.disconnect()
+        mariadbConnection = nil
+        status = .connecting
+        
+        // Reconnect using stored connection info
+        try await connect()
     }
 
     // MARK: - Schema

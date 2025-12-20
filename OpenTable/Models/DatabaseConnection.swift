@@ -135,3 +135,7 @@ struct DatabaseConnection: Identifiable, Hashable {
 extension DatabaseConnection {
     static let sampleConnections: [DatabaseConnection] = []
 }
+
+// MARK: - Codable Conformance
+
+extension DatabaseConnection: Codable {}
