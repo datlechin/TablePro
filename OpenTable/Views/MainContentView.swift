@@ -327,8 +327,8 @@ struct MainContentView: View {
                     onCellEdit: { rowIndex, colIndex, newValue in
                         updateCellInTab(rowIndex: rowIndex, columnIndex: colIndex, value: newValue)
                     },
-                    onSort: { columnIndex in
-                        handleSort(columnIndex: columnIndex)
+                    onSort: { columnIndex, ascending in
+                        handleSort(columnIndex: columnIndex, ascending: ascending)
                     },
                     selectedRowIndices: $selectedRowIndices,
                     sortState: sortStateBinding
@@ -766,7 +766,8 @@ struct MainContentView: View {
     /// Handle column header click for sorting
     /// - Query tabs: Update sortState only (in-memory sorting via sortedRows)
     /// - Table tabs: Update sortState + modify SQL with ORDER BY
-    private func handleSort(columnIndex: Int) {
+    /// - ascending: Sort direction determined by native NSTableView
+    private func handleSort(columnIndex: Int, ascending: Bool) {
         guard let tabIndex = tabManager.selectedTabIndex else { return }
 
         // Capture all values early to prevent deallocation issues
@@ -775,23 +776,16 @@ struct MainContentView: View {
 
         // CRITICAL: Validate column index for large tables
         guard columnIndex >= 0 && columnIndex < tab.resultColumns.count else {
-            print(
-                "ERROR: Invalid column index \(columnIndex), table has \(tab.resultColumns.count) columns"
-            )
             return
         }
 
         // Capture column name to avoid string retention issues
         let columnName = String(tab.resultColumns[columnIndex])
-        var currentSort = tab.sortState
-
-        // Toggle direction if same column, otherwise start ascending
-        if currentSort.columnIndex == columnIndex {
-            currentSort.direction.toggle()
-        } else {
-            currentSort.columnIndex = columnIndex
-            currentSort.direction = .ascending
-        }
+        
+        // Use direction directly from AppKit (no guessing/toggling)
+        var currentSort = SortState()
+        currentSort.columnIndex = columnIndex
+        currentSort.direction = ascending ? .ascending : .descending
 
         // Verify tab still exists before updating
         guard tabIndex < tabManager.tabs.count else { return }

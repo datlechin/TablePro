@@ -18,7 +18,7 @@ struct DataGridView: NSViewRepresentable {
     var onRefresh: (() -> Void)?
     var onCellEdit: ((Int, Int, String?) -> Void)?  // (rowIndex, columnIndex, newValue)
     var onDeleteRows: ((Set<Int>) -> Void)?  // Called when Delete key pressed
-    var onSort: ((Int) -> Void)?  // Called when column header clicked (columnIndex)
+    var onSort: ((Int, Bool) -> Void)?  // Called when column header clicked (columnIndex, ascending)
 
     @Binding var selectedRowIndices: Set<Int>
     @Binding var sortState: SortState
@@ -72,22 +72,20 @@ struct DataGridView: NSViewRepresentable {
             // Don't set maxWidth - let column stay at calculated width
             column.resizingMask = .userResizingMask
             column.isEditable = isEditable
-            
-            // Use NSTableColumn's built-in sort descriptor for native sort indicators
-            // This is safer than custom header cells which crash on deallocation
-            let sortDescriptor = NSSortDescriptor(key: columnName, ascending: true)
-            column.sortDescriptorPrototype = sortDescriptor
+            // Use stable key for native sort descriptors (not column title which may change)
+            // AppKit will automatically show native sort indicators when user clicks header
+            column.sortDescriptorPrototype = NSSortDescriptor(key: "col_\(index)", ascending: true)
 
             tableView.addTableColumn(column)
         }
         
-        // Configure header with custom view
-        let customHeader = ClickableTableHeaderView()
-        let coordinator = context.coordinator
-        customHeader.onSort = { [weak coordinator] columnIndex in
-            coordinator?.handleColumnSort(columnIndex: columnIndex)
+        // Use default NSTableHeaderView - 100% native sorting behavior
+        // Set up context menu using NSMenuDelegate (no subclassing needed)
+        if let headerView = tableView.headerView {
+            let headerMenu = NSMenu()
+            headerMenu.delegate = context.coordinator
+            headerView.menu = headerMenu
         }
-        tableView.headerView = customHeader
 
         scrollView.documentView = tableView
         context.coordinator.tableView = tableView
@@ -163,13 +161,6 @@ struct DataGridView: NSViewRepresentable {
         coordinator.onCellEdit = onCellEdit
         coordinator.onSort = onSort
 
-        // Ensure header view's onSort callback is up to date
-        if let headerView = tableView.headerView as? ClickableTableHeaderView {
-            headerView.onSort = { [weak coordinator] columnIndex in
-                coordinator?.handleColumnSort(columnIndex: columnIndex)
-            }
-        }
-
         // Check if columns changed - compare actual column names, not just count
         let currentDataColumns = tableView.tableColumns.dropFirst() // Skip row number column
         let currentColumnNames = currentDataColumns.map { $0.title }
@@ -198,40 +189,38 @@ struct DataGridView: NSViewRepresentable {
                 column.resizingMask = .userResizingMask
                 column.isEditable = isEditable
 
-                // Use built-in sort descriptor for native sort indicators
-                let sortDescriptor = NSSortDescriptor(key: columnName, ascending: true)
-                column.sortDescriptorPrototype = sortDescriptor
+                // Use stable key for native sort descriptors
+                column.sortDescriptorPrototype = NSSortDescriptor(key: "col_\(index)", ascending: true)
 
                 tableView.addTableColumn(column)
             }
             
-            // Recreate header to ensure proper rendering with new columns changes
-            // NSTableHeaderView may hold references to old column cells that are now deallocated
-            // Creating a fresh header view prevents crashes when rendering large tables (25+ columns)
-            let newHeader = ClickableTableHeaderView()
-            newHeader.onSort = { [weak coordinator] columnIndex in
-                coordinator?.handleColumnSort(columnIndex: columnIndex)
-            }
-            tableView.headerView = newHeader
-            
             // Force header to recalculate layout after column changes
-            // Without this, the header view may render phantom columns from previous state
-            tableView.headerView?.needsLayout = true
-            tableView.headerView?.layout()
+            // Default NSTableHeaderView handles native sort indicators automatically
             tableView.sizeToFit()
-            tableView.headerView?.setNeedsDisplay(tableView.headerView?.bounds ?? .zero)
         }
 
-        // Update sort indicators in custom header view
-        if let headerView = tableView.headerView as? ClickableTableHeaderView {
-            if let sortedColumnIndex = sortState.columnIndex {
-                // Account for row number column (add 1 to get actual column index)
-                headerView.sortedColumnIndex = sortedColumnIndex + 1
-                headerView.sortAscending = (sortState.direction == .ascending)
-            } else {
-                headerView.sortedColumnIndex = nil
+        // Sync SwiftUI sort state → NSTableView (one-way)
+        // AppKit handles drawing native sort indicators automatically
+        // Use flag to prevent delegate from triggering infinite loop
+        coordinator.isSyncingSortDescriptors = true
+        defer { coordinator.isSyncingSortDescriptors = false }
+        
+        if !sortState.isSorting {
+            // No sort active - clear sort descriptors
+            if !tableView.sortDescriptors.isEmpty {
+                tableView.sortDescriptors = []
             }
-            headerView.setNeedsDisplay(headerView.bounds)
+        } else if let columnIndex = sortState.columnIndex,
+                  columnIndex >= 0 && columnIndex < rowProvider.columns.count {
+            let key = "col_\(columnIndex)"
+            let ascending = sortState.direction == .ascending
+            
+            // Only update if different to avoid unnecessary updates
+            let currentDescriptor = tableView.sortDescriptors.first
+            if currentDescriptor?.key != key || currentDescriptor?.ascending != ascending {
+                tableView.sortDescriptors = [NSSortDescriptor(key: key, ascending: ascending)]
+            }
         }
 
         // Only reload if data actually changed
@@ -275,7 +264,7 @@ struct DataGridView: NSViewRepresentable {
 
 /// Coordinator handling NSTableView delegate and data source
 final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource,
-    NSControlTextEditingDelegate, NSTextFieldDelegate
+    NSControlTextEditingDelegate, NSTextFieldDelegate, NSMenuDelegate
 {
     var rowProvider: InMemoryRowProvider
     var changeManager: DataChangeManager
@@ -294,6 +283,10 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
     // Cache column count and row count to avoid accessing potentially invalid provider
     private(set) var cachedRowCount: Int = 0
     private(set) var cachedColumnCount: Int = 0
+    
+    // Guard flag to prevent infinite loop when syncing sort descriptors
+    // Set to true when programmatically setting sortDescriptors from updateNSView
+    var isSyncingSortDescriptors: Bool = false
 
     // Cell reuse identifiers
     private let cellIdentifier = NSUserInterfaceItemIdentifier("DataCell")
@@ -325,24 +318,84 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
         cachedColumnCount = rowProvider.columns.count
     }
 
-    /// Callback when column header clicked for sorting
-    var onSort: ((Int) -> Void)?
-
-    /// Handle column sort from header click
-    func handleColumnSort(columnIndex: Int) {
-        // Validate column index before sorting (critical for large tables)
-        guard columnIndex >= 0 && columnIndex < rowProvider.columns.count else {
-            print("ERROR: Sort requested for invalid column index \(columnIndex), table has \(rowProvider.columns.count) columns")
-            return
-        }
-        onSort?(columnIndex)
-    }
+    /// Callback when column header clicked for sorting: (columnIndex, ascending)
+    var onSort: ((Int, Bool) -> Void)?
 
     // MARK: - NSTableViewDataSource
 
     func numberOfRows(in tableView: NSTableView) -> Int {
         // Use cached count for safety - updated when provider changes
         return cachedRowCount
+    }
+    
+    // MARK: - Native Sorting via NSTableViewDelegate
+    
+    /// Called by AppKit when user clicks column header to sort
+    /// This is the native NSTableView sorting mechanism
+    func tableView(_ tableView: NSTableView, sortDescriptorsDidChange oldDescriptors: [NSSortDescriptor]) {
+        // CRITICAL: Ignore if we're programmatically syncing from SwiftUI
+        // This prevents infinite loop: updateNSView → sortDescriptorsDidChange → onSort → updateNSView
+        guard !isSyncingSortDescriptors else { return }
+        
+        // Get the new primary sort descriptor
+        guard let sortDescriptor = tableView.sortDescriptors.first,
+              let key = sortDescriptor.key,
+              key.hasPrefix("col_"),
+              let columnIndex = Int(key.dropFirst(4)) else {
+            return
+        }
+        
+        // Validate column index
+        guard columnIndex >= 0 && columnIndex < rowProvider.columns.count else {
+            return
+        }
+        
+        // Call parent's sort handler with column index AND direction from AppKit
+        // This ensures parent uses the exact direction AppKit determined
+        onSort?(columnIndex, sortDescriptor.ascending)
+    }
+    
+    // MARK: - NSMenuDelegate (Header Context Menu)
+    
+    /// Dynamically populate header context menu based on clicked column
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        menu.removeAllItems()
+        
+        guard let tableView = tableView,
+              let headerView = tableView.headerView,
+              let window = tableView.window else {
+            return
+        }
+        
+        // Get mouse location in header coordinates
+        let mouseLocation = window.mouseLocationOutsideOfEventStream
+        let pointInHeader = headerView.convert(mouseLocation, from: nil)
+        let columnIndex = headerView.column(at: pointInHeader)
+        
+        guard columnIndex >= 0 && columnIndex < tableView.tableColumns.count else {
+            return
+        }
+        
+        let column = tableView.tableColumns[columnIndex]
+        
+        // Skip row number column
+        if column.identifier.rawValue == "__rowNumber__" {
+            return
+        }
+        
+        let copyItem = NSMenuItem(
+            title: "Copy Column Name",
+            action: #selector(copyColumnName(_:)),
+            keyEquivalent: "")
+        copyItem.representedObject = column.title
+        copyItem.target = self
+        menu.addItem(copyItem)
+    }
+    
+    @objc private func copyColumnName(_ sender: NSMenuItem) {
+        guard let columnName = sender.representedObject as? String else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(columnName, forType: .string)
     }
 
     // MARK: - NSTableViewDelegate
@@ -864,136 +917,6 @@ final class TableRowViewWithMenu: NSTableRowView {
     // Column resize tracking removed - too complex for current implementation
 }
 
-// MARK: - Clickable Table Header View
-
-final class ClickableTableHeaderView: NSTableHeaderView {
-
-    /// Callback when a column header is clicked for sorting
-    var onSort: ((Int) -> Void)?
-    
-    /// Store sort state for drawing indicators
-    var sortedColumnIndex: Int? = nil
-    var sortAscending: Bool = true
-    
-    override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
-        
-        // Draw sort indicators for sorted column
-        guard let sortedIdx = sortedColumnIndex,
-              let tableView = tableView,
-              sortedIdx >= 0 && sortedIdx < tableView.tableColumns.count else {
-            return
-        }
-        
-        _ = tableView.tableColumns[sortedIdx]
-        let headerRect = headerRect(ofColumn: sortedIdx)
-        
-        // Draw SF Symbol chevron indicator
-        let symbolName = sortAscending ? "chevron.up" : "chevron.down"
-        if let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil) {
-            let config = NSImage.SymbolConfiguration(pointSize: 9, weight: .medium)
-            let symbolImage = image.withSymbolConfiguration(config) ?? image
-            
-            let imageSize = CGSize(width: 10, height: 10)
-            let imageRect = NSRect(
-                x: headerRect.maxX - imageSize.width - 8,
-                y: headerRect.midY - imageSize.height / 2,
-                width: imageSize.width,
-                height: imageSize.height
-            )
-            
-            symbolImage.draw(in: imageRect, from: .zero, operation: .sourceOver, fraction: 0.7)
-        }
-    }
-
-    override func mouseDown(with event: NSEvent) {
-        // CRITICAL: During rapid table navigation, this view can be deallocated
-        // while events are still queued. Be extremely defensive.
-        guard let tableView = tableView,
-              tableView.window != nil,
-              !tableView.tableColumns.isEmpty else {
-            // Table is being torn down, ignore the event
-            return
-        }
-        
-        let point = convert(event.locationInWindow, from: nil)
-        let columnIndex = column(at: point)
-
-        guard columnIndex >= 0,
-              columnIndex < tableView.tableColumns.count else {
-            super.mouseDown(with: event)
-            return
-        }
-        
-        // Check if click is near a resize divider (within 3 pixels)
-        let headerRect = headerRect(ofColumn: columnIndex)
-        let distanceFromRightEdge = headerRect.maxX - point.x
-        let distanceFromLeftEdge = point.x - headerRect.minX
-        
-        if distanceFromRightEdge <= 3 || distanceFromLeftEdge <= 3 {
-            // User is clicking on column divider for resizing
-            super.mouseDown(with: event)
-            return
-        }
-
-        let column = tableView.tableColumns[columnIndex]
-
-        // Skip row number column - just pass through
-        if column.identifier.rawValue == "__rowNumber__" {
-            super.mouseDown(with: event)
-            return
-        }
-
-        // Convert to data column index (subtract 1 for row number column)
-        let dataColumnIndex = columnIndex - 1
-        if dataColumnIndex >= 0 {
-            onSort?(dataColumnIndex)
-            // Don't call super.mouseDown - we've handled the click for sorting
-            // Calling super during rapid navigation can crash when table is torn down
-            return
-        }
-
-        // Only call super if we didn't handle the sort (shouldn't reach here normally)
-        super.mouseDown(with: event)
-    }
-
-    override func menu(for event: NSEvent) -> NSMenu? {
-        let point = convert(event.locationInWindow, from: nil)
-        let columnIndex = column(at: point)
-
-        guard columnIndex >= 0,
-            let tableView = tableView,
-            columnIndex < tableView.tableColumns.count
-        else {
-            return nil
-        }
-
-        let column = tableView.tableColumns[columnIndex]
-        let columnName = column.title
-
-        // Skip row number column
-        if column.identifier.rawValue == "__rowNumber__" {
-            return nil
-        }
-
-        let menu = NSMenu()
-
-        let copyItem = NSMenuItem(
-            title: "Copy Column Name", action: #selector(copyColumnName(_:)), keyEquivalent: "")
-        copyItem.representedObject = columnName
-        copyItem.target = self
-        menu.addItem(copyItem)
-
-        return menu
-    }
-
-    @objc private func copyColumnName(_ sender: NSMenuItem) {
-        guard let columnName = sender.representedObject as? String else { return }
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(columnName, forType: .string)
-    }
-}
-
 // MARK: - NSFont Extension
 
 extension NSFont {
@@ -1026,8 +949,43 @@ extension NSFont {
 // MARK: - Custom TableView with Key Handling
 
 /// NSTableView subclass that handles Delete key to mark rows for deletion
+/// Also implements TablePlus-style cell focus on click
 final class KeyHandlingTableView: NSTableView {
     weak var coordinator: TableViewCoordinator?
+
+    // MARK: - TablePlus-Style Cell Focus
+    
+    override func mouseDown(with event: NSEvent) {
+        // Capture clicked location before super changes selection
+        let point = convert(event.locationInWindow, from: nil)
+        let clickedRow = row(at: point)
+        let clickedColumn = column(at: point)
+        
+        // Let super handle row selection
+        super.mouseDown(with: event)
+        
+        // After selection, focus the specific cell (TablePlus behavior)
+        // This makes Enter key edit that cell, not column 0
+        guard clickedRow >= 0,
+              clickedColumn >= 0,
+              clickedColumn < numberOfColumns,
+              selectedRowIndexes.contains(clickedRow) else {
+            return
+        }
+        
+        // Skip row number column (not editable)
+        let column = tableColumns[clickedColumn]
+        if column.identifier.rawValue == "__rowNumber__" {
+            return
+        }
+        
+        // Focus the cell without opening editor (select: false)
+        // This is the native AppKit way to set cell focus
+        // When user presses Enter, this cell will be edited
+        editColumn(clickedColumn, row: clickedRow, with: nil, select: false)
+    }
+    
+    // MARK: - Delete Key Handling
 
     override func keyDown(with event: NSEvent) {
         // Delete or Backspace key
@@ -1046,7 +1004,6 @@ final class KeyHandlingTableView: NSTableView {
     }
 
     override func menu(for event: NSEvent) -> NSMenu? {
-        // Get clicked location
         let point = convert(event.locationInWindow, from: nil)
         let clickedRow = row(at: point)
 
