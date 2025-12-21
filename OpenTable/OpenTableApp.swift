@@ -217,6 +217,7 @@ extension Notification.Name {
     static let refreshData = Notification.Name("refreshData")
     static let refreshAll = Notification.Name("refreshAll")
     static let toggleTableBrowser = Notification.Name("toggleTableBrowser")
+    static let showAllTables = Notification.Name("showAllTables")
     static let toggleRightSidebar = Notification.Name("toggleRightSidebar")
     static let executeQuery = Notification.Name("executeQuery")
     static let formatQuery = Notification.Name("formatQuery")

@@ -359,6 +359,12 @@ struct MainContentView: View {
                     }
                 }
             }
+            .onReceive(NotificationCenter.default.publisher(for: .showAllTables)) { _ in
+                // Show all tables metadata when user clicks "Tables" heading in sidebar
+                Task { @MainActor in
+                    showAllTablesMetadata()
+                }
+            }
             .onReceive(NotificationCenter.default.publisher(for: .addNewRow)) { _ in
                 // Add row menu item (Cmd+I)
                 Task { @MainActor in
@@ -1788,6 +1794,90 @@ struct MainContentView: View {
             selectedRowIndices = []
             runQuery()
         }
+    }
+    
+    /// Show all tables with metadata when user clicks "Tables" heading in sidebar
+    private func showAllTablesMetadata() {
+        // Generate SQL query based on database type
+        let sql: String
+        switch connection.type {
+        case .postgresql:
+            sql = """
+            SELECT 
+                schemaname as schema,
+                tablename as name,
+                'TABLE' as kind,
+                n_live_tup as estimated_rows,
+                pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as total_size,
+                pg_size_pretty(pg_relation_size(schemaname||'.'||tablename)) as data_size,
+                pg_size_pretty(pg_indexes_size(schemaname||'.'||tablename)) as index_size,
+                obj_description((schemaname||'.'||tablename)::regclass) as comment
+            FROM pg_stat_user_tables
+            WHERE schemaname = 'public'
+            ORDER BY tablename
+            """
+        case .mysql, .mariadb:
+            sql = """
+            SELECT 
+                TABLE_SCHEMA as `schema`,
+                TABLE_NAME as name,
+                TABLE_TYPE as kind,
+                IFNULL(CCSA.CHARACTER_SET_NAME, '') as charset,
+                TABLE_COLLATION as collation,
+                TABLE_ROWS as estimated_rows,
+                CONCAT(ROUND((DATA_LENGTH + INDEX_LENGTH) / 1024 / 1024, 2), ' MB') as total_size,
+                CONCAT(ROUND(DATA_LENGTH / 1024 / 1024, 2), ' MB') as data_size,
+                CONCAT(ROUND(INDEX_LENGTH / 1024 / 1024, 2), ' MB') as index_size,
+                TABLE_COMMENT as comment
+            FROM information_schema.TABLES
+            LEFT JOIN information_schema.COLLATION_CHARACTER_SET_APPLICABILITY CCSA
+                ON TABLE_COLLATION = CCSA.COLLATION_NAME
+            WHERE TABLE_SCHEMA = DATABASE()
+            ORDER BY TABLE_NAME
+            """
+        case .sqlite:
+            sql = """
+            SELECT 
+                '' as schema,
+                name,
+                type as kind,
+                '' as charset,
+                '' as collation,
+                '' as estimated_rows,
+                '' as total_size,
+                '' as data_size,
+                '' as index_size,
+                '' as comment
+            FROM sqlite_master 
+            WHERE type IN ('table', 'view')
+            AND name NOT LIKE 'sqlite_%'
+            ORDER BY name
+            """
+        }
+        
+        // Check if a "Tables" tab already exists and reuse it
+        if let existingTab = tabManager.tabs.first(where: { $0.title == "Tables" }) {
+            // Update the query in case the database type changed
+            if let index = tabManager.tabs.firstIndex(where: { $0.id == existingTab.id }) {
+                tabManager.tabs[index].query = sql
+            }
+            tabManager.selectedTabId = existingTab.id
+            runQuery()
+            return
+        }
+        
+        // Create a new table tab (no SQL editor shown)
+        let newTab = QueryTab(
+            title: "Tables",
+            query: sql,
+            tabType: .table,
+            tableName: nil  // Special case - not an actual table
+        )
+        tabManager.tabs.append(newTab)
+        tabManager.selectedTabId = newTab.id
+        
+        // Execute the query
+        runQuery()
     }
 }
 

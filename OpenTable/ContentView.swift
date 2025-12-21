@@ -144,6 +144,9 @@ struct ContentView: View {
                         selectedTables: sessionSelectedTablesBinding,
                         activeTableName: currentSession?.selectedTables.first?.name,
                         onOpenTable: { _ in },
+                        onShowAllTables: {
+                            showAllTablesMetadata()
+                        },
                         pendingTruncates: sessionPendingTruncatesBinding,
                         pendingDeletes: sessionPendingDeletesBinding
                     )
@@ -295,6 +298,11 @@ struct ContentView: View {
             }
             return event
         }
+    }
+    
+    private func showAllTablesMetadata() {
+        // Post notification for MainContentView to handle
+        NotificationCenter.default.post(name: .showAllTables, object: nil)
     }
     
     private func removeEscapeKeyMonitor() {

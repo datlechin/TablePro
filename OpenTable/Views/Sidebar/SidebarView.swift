@@ -15,6 +15,7 @@ struct SidebarView: View {
     @Binding var selectedTables: Set<TableInfo>
     var activeTableName: String?
     var onOpenTable: ((String) -> Void)?
+    var onShowAllTables: (() -> Void)?
 
     // Pending table operations
     @Binding var pendingTruncates: Set<String>
@@ -26,6 +27,9 @@ struct SidebarView: View {
 
     /// Prevents selection callback during programmatic updates (e.g., refresh)
     @State private var isRestoringSelection = false
+
+    /// Whether the tables section is expanded
+    @State private var isTablesExpanded = true
 
     /// Filtered tables based on search text
     private var filteredTables: [TableInfo] {
@@ -196,7 +200,7 @@ struct SidebarView: View {
 
     private var tableList: some View {
         List(selection: $selectedTables) {
-            Section("Tables") {
+            Section(isExpanded: $isTablesExpanded) {
                 ForEach(filteredTables) { table in
                     TableRow(
                         table: table,
@@ -209,6 +213,15 @@ struct SidebarView: View {
                         tableContextMenu(for: table)
                     }
                 }
+            } header: {
+                Button(action: {
+                    onShowAllTables?()
+                }) {
+                    Text("Tables")
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help("Click to show all tables with metadata")
             }
         }
         .listStyle(.sidebar)
