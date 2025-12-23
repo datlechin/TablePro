@@ -934,12 +934,11 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
                 newSelection.insert(index - 1)
             }
             
-            // Update selection
-            DispatchQueue.main.async {
-                self.selectedRowIndices = newSelection
-            }
+            // Update selection synchronously to prevent flash
+            self.selectedRowIndices = newSelection
         }
         
+        // Reload row data after selection has been updated
         tableView?.reloadData(
             forRowIndexes: IndexSet(integer: index),
             columnIndexes: IndexSet(integersIn: 0..<(tableView?.numberOfColumns ?? 0)))

@@ -42,6 +42,9 @@ struct MainContentView: View {
     // Error alert state
     @State private var showErrorAlert = false
     @State private var errorAlertMessage = ""
+    
+    // Global app state for history panel
+    @EnvironmentObject private var appState: AppState
 
     // MARK: - Toolbar State
 
@@ -104,7 +107,16 @@ struct MainContentView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            
+            // Global History Panel - appears at bottom
+            if appState.isHistoryPanelVisible {
+                Divider()
+                HistoryPanelView()
+                    .frame(height: 300)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
+        .animation(.easeInOut(duration: 0.2), value: appState.isHistoryPanelVisible)
     }
 
     // MARK: - View with Toolbar
@@ -228,6 +240,10 @@ struct MainContentView: View {
                     filterStateManager.toggle()
                 }
             }
+            .onReceive(NotificationCenter.default.publisher(for: .toggleHistoryPanel)) { _ in
+                // Toggle history panel globally (Cmd+Shift+H)
+                appState.isHistoryPanelVisible.toggle()
+            }
             .onReceive(NotificationCenter.default.publisher(for: .applyAllFilters)) { _ in
                 // Apply all selected filters (Cmd+Return)
                 if filterStateManager.hasSelectedFilters {
@@ -289,9 +305,23 @@ struct MainContentView: View {
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: .newTab)) { _ in
-                // Cmd+T to create new query tab
+                // Cmd+T to create new query  tab
                 Task { @MainActor in
                     tabManager.addTab()
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("loadQueryIntoEditor"))) { notification in
+                // Load query from history/bookmark panel into current tab
+                Task { @MainActor in
+                    guard let query = notification.userInfo?["query"] as? String else { return }
+                    print("[MainContentView] Received loadQueryIntoEditor with query: \(query.prefix(50))...")
+                    
+                    // Load into the current tab (which was just created by .newTab)
+                    if let tabIndex = tabManager.selectedTabIndex,
+                       tabIndex < tabManager.tabs.count {
+                        tabManager.tabs[tabIndex].query = query
+                        tabManager.tabs[tabIndex].hasUserInteraction = true
+                    }
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: .closeCurrentTab)) { _ in
@@ -376,7 +406,7 @@ struct MainContentView: View {
     // MARK: - Query Tab Content
 
     private func queryTabContent(tab: QueryTab) -> some View {
-        VSplitView {
+        return VSplitView {
             // Query Editor (top)
             VStack(spacing: 0) {
                 QueryEditorView(
@@ -397,6 +427,7 @@ struct MainContentView: View {
 
             // Results Table (bottom)
             resultsSection(tab: tab)
+                .frame(minHeight: 150)
         }
     }
 
@@ -807,6 +838,17 @@ struct MainContentView: View {
                         // Task completion causes EXC_BAD_ACCESS crashes during rapid navigation.
                         // The onChange(selectedTabId) handler updates changeManager synchronously
                         // when this tab becomes selected, which is safe and reliable.
+                        
+                        // Record query to history
+                        QueryHistoryManager.shared.recordQuery(
+                            query: sql,
+                            connectionId: conn.id,
+                            databaseName: conn.database ?? "",
+                            executionTime: safeExecutionTime,
+                            rowCount: safeRows.count,
+                            wasSuccessful: true,
+                            errorMessage: nil
+                        )
                     }
                 }
 
@@ -821,6 +863,17 @@ struct MainContentView: View {
                         tabManager.tabs[idx].isExecuting = false
                     }
                     toolbarState.isExecuting = false
+                    
+                    // Record failed query to history
+                    QueryHistoryManager.shared.recordQuery(
+                        query: sql,
+                        connectionId: conn.id,
+                        databaseName: conn.database ?? "",
+                        executionTime: 0,
+                        rowCount: 0,
+                        wasSuccessful: false,
+                        errorMessage: error.localizedDescription
+                    )
                 }
             }
         }
@@ -936,6 +989,10 @@ struct MainContentView: View {
 
         // Collect rows to delete for batch undo (sorted descending to handle removals correctly)
         var rowsToDelete: [(rowIndex: Int, originalRow: [String?])] = []
+        
+        // Find the lowest selected row index for selection movement
+        let minSelectedRow = selectedRowIndices.min() ?? 0
+        let maxSelectedRow = selectedRowIndices.max() ?? 0
 
         // Delete each selected row (sorted descending to handle removals correctly)
         for rowIndex in selectedRowIndices.sorted(by: >) {
@@ -956,8 +1013,26 @@ struct MainContentView: View {
             changeManager.recordBatchRowDeletion(rows: rowsToDelete)
         }
 
-        // Clear selection after marking for deletion
-        selectedRowIndices.removeAll()
+        // Move selection to next available row after deletion
+        let totalRows = tabManager.tabs[index].resultRows.count
+        let nextRow: Int
+        
+        if maxSelectedRow + 1 < totalRows {
+            // Select row after the deleted range
+            nextRow = maxSelectedRow + 1
+        } else if minSelectedRow > 0 {
+            // Deleted rows at end, select previous row
+            nextRow = minSelectedRow - 1
+        } else {
+            // All rows deleted or only first row deleted
+            nextRow = -1
+        }
+        
+        if nextRow >= 0 {
+            selectedRowIndices = [nextRow]
+        } else {
+            selectedRowIndices.removeAll()
+        }
 
         // Mark tab as having user interaction (prevents auto-replacement)
         tabManager.tabs[index].hasUserInteraction = true

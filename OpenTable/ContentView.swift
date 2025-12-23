@@ -23,6 +23,7 @@ struct ContentView: View {
     
     @Environment(\.openWindow) private var openWindow
     @Environment(\.dismissWindow) private var dismissWindow
+    @EnvironmentObject private var appState: AppState
 
     private let storage = ConnectionStorage.shared
     
