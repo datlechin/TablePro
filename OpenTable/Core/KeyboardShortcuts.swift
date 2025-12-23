@@ -130,9 +130,9 @@ enum KeyboardShortcuts {
     /// Standard shortcut for executing/running in many IDEs
     static let executeQuery = KeyboardShortcut(.return, modifiers: .command)
     
-    /// Clear Query (⌘⌫)
-    /// Clear the editor content
-    static let clearQuery = KeyboardShortcut(.delete, modifiers: .command)
+    /// Format Query (⌘⇧L)
+    /// Format/beautify the SQL query
+    static let formatQuery = KeyboardShortcut("l", modifiers: [.command, .shift])
     
     /// Trigger Autocomplete (⌃Space)
     /// Standard IDE autocomplete trigger
@@ -200,6 +200,7 @@ struct ShortcutDocumentation {
         
         // Query
         ShortcutInfo(keys: "⌘↩", description: "Execute Query", category: "Query"),
+        ShortcutInfo(keys: "⌘⇧L", description: "Format Query", category: "Query"),
         ShortcutInfo(keys: "⌃Space", description: "Trigger Autocomplete", category: "Query"),
         
         // Navigation

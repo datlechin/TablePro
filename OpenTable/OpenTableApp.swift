@@ -240,7 +240,7 @@ struct OpenTableApp: App {
                 Button("Format Query") {
                     NotificationCenter.default.post(name: .formatQuery, object: nil)
                 }
-                .keyboardShortcut("l", modifiers: [.command, .shift])
+                .keyboardShortcut(KeyboardShortcuts.formatQuery)
                 .disabled(!appState.isConnected)
                 
                 Divider()
