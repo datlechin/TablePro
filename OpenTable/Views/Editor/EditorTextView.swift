@@ -194,14 +194,14 @@ final class EditorTextView: NSTextView {
             return
         }
         
-        // Cmd+Enter to execute query
-        if event.modifierFlags.contains(.command) && event.keyCode == 36 {
+        // Cmd+Enter to execute query (⌘↩)
+        if event.modifierFlags.contains(.command) && event.keyCode == KeyCodes.returnKey {
             onExecute?()
             return
         }
         
-        // Ctrl+Space to trigger manual completion
-        if event.modifierFlags.contains(.control) && event.keyCode == 49 {
+        // Ctrl+Space to trigger manual completion (⌃Space)
+        if event.modifierFlags.contains(.control) && event.keyCode == KeyCodes.space {
             onManualCompletion?()
             return
         }
@@ -234,7 +234,7 @@ final class EditorTextView: NSTextView {
         }
         
         // Handle backspace to delete matching pairs
-        if event.keyCode == 51 { // Backspace
+        if event.keyCode == KeyCodes.delete {
             if shouldDeletePair() {
                 deletePair()
                 return

@@ -240,19 +240,19 @@ struct SidebarView: View {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(names.joined(separator: ","), forType: .string)
         }
-        .keyboardShortcut("c", modifiers: .command)
+        .keyboardShortcut(KeyboardShortcuts.copy)
 
         Divider()
 
         Button("Truncate") {
             batchToggleTruncate()
         }
-        .keyboardShortcut(.delete, modifiers: .option)
+        .keyboardShortcut(KeyboardShortcuts.truncateTable)
 
         Button("Delete", role: .destructive) {
             batchToggleDelete()
         }
-        .keyboardShortcut(.delete, modifiers: .command)
+        .keyboardShortcut(KeyboardShortcuts.delete)
     }
     
     /// Batch toggle truncate for all selected tables

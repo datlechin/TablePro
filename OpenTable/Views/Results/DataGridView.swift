@@ -1441,8 +1441,8 @@ final class KeyHandlingTableView: NSTableView, NSMenuItemValidation {
     
     /// Override to catch Delete/Backspace before menu items can intercept
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
-        // Delete (keyCode 51) or Forward Delete (keyCode 117)
-        if event.keyCode == 51 || event.keyCode == 117 {
+        // Delete (Backspace) or Forward Delete
+        if event.keyCode == KeyCodes.delete || event.keyCode == KeyCodes.forwardDelete {
             let selectedIndices = Set(selectedRowIndexes.map { $0 })
             if !selectedIndices.isEmpty && coordinator?.isEditable == true {
                 // Mark rows for deletion
@@ -1457,21 +1457,21 @@ final class KeyHandlingTableView: NSTableView, NSMenuItemValidation {
 
     override func keyDown(with event: NSEvent) {
         // Note: Cmd+N is captured by app menu (New Connection)
-        // Use File > Add Row (Cmd+I) for adding rows
+        // Use Edit > Add Row (Cmd+I) for adding rows
 
         let row = selectedRow
         let isShiftHeld = event.modifierFlags.contains(.shift)
 
         switch event.keyCode {
-        case 126: // Up arrow - move to previous row (Shift extends selection)
+        case KeyCodes.upArrow: // Up arrow - move to previous row (Shift extends selection)
             handleUpArrow(currentRow: row, isShiftHeld: isShiftHeld)
             return
 
-        case 125: // Down arrow - move to next row (Shift extends selection)
+        case KeyCodes.downArrow: // Down arrow - move to next row (Shift extends selection)
             handleDownArrow(currentRow: row, isShiftHeld: isShiftHeld)
             return
 
-        case 123: // Left arrow - move to previous column
+        case KeyCodes.leftArrow: // Left arrow - move to previous column
             if focusedColumn > 1 { // Skip row number column (index 0)
                 focusedColumn -= 1
                 if row >= 0 {
@@ -1486,7 +1486,7 @@ final class KeyHandlingTableView: NSTableView, NSMenuItemValidation {
             }
             return
 
-        case 124: // Right arrow - move to next column
+        case KeyCodes.rightArrow: // Right arrow - move to next column
             if focusedColumn >= 1 && focusedColumn < numberOfColumns - 1 {
                 focusedColumn += 1
                 if row >= 0 {
@@ -1501,19 +1501,19 @@ final class KeyHandlingTableView: NSTableView, NSMenuItemValidation {
             }
             return
 
-        case 36: // Enter/Return - edit focused cell
+        case KeyCodes.returnKey: // Enter/Return - edit focused cell
             if row >= 0 && focusedColumn >= 1 && coordinator?.isEditable == true {
                 editColumn(focusedColumn, row: row, with: nil, select: true)
             }
             return
 
-        case 53: // Escape - clear focus and selection
+        case KeyCodes.escape: // Escape - clear focus and selection
             focusedRow = -1
             focusedColumn = -1
             NotificationCenter.default.post(name: .clearSelection, object: nil)
             return
 
-        case 51, 117: // Delete or Backspace key
+        case KeyCodes.delete, KeyCodes.forwardDelete: // Delete or Backspace key
             // Post notification to trigger batched deletion in MainContentView
             // This enables undoing all deletions at once
             if !selectedRowIndexes.isEmpty {
@@ -1521,7 +1521,7 @@ final class KeyHandlingTableView: NSTableView, NSMenuItemValidation {
                 return
             }
 
-        case 48: // Tab - move to next cell
+        case KeyCodes.tab: // Tab - move to next cell
             if row >= 0 && focusedColumn >= 1 {
                 var nextColumn = focusedColumn + 1
                 var nextRow = row

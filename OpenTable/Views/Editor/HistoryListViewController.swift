@@ -1238,7 +1238,7 @@ private class HistoryTableView: NSTableView, NSMenuItemValidation {
         let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
         
         // Return/Enter key - open in new tab
-        if (event.keyCode == 36 || event.keyCode == 76) && modifiers.isEmpty {
+        if (event.keyCode == KeyCodes.returnKey || event.keyCode == KeyCodes.keypadEnter) && modifiers.isEmpty {
             if selectedRow >= 0 {
                 keyboardDelegate?.handleReturnKey()
                 return
@@ -1246,7 +1246,7 @@ private class HistoryTableView: NSTableView, NSMenuItemValidation {
         }
         
         // Space key - toggle preview
-        if event.keyCode == 49 && modifiers.isEmpty {
+        if event.keyCode == KeyCodes.space && modifiers.isEmpty {
             if selectedRow >= 0 {
                 keyboardDelegate?.handleSpaceKey()
                 return
@@ -1254,19 +1254,19 @@ private class HistoryTableView: NSTableView, NSMenuItemValidation {
         }
         
         // Cmd+E - edit bookmark
-        if event.keyCode == 14 && modifiers == .command {
+        if event.keyCode == KeyCodes.e && modifiers == .command {
             keyboardDelegate?.handleEditBookmark()
             return
         }
         
         // Escape key - clear search or selection
-        if event.keyCode == 53 && modifiers.isEmpty {
+        if event.keyCode == KeyCodes.escape && modifiers.isEmpty {
             keyboardDelegate?.handleEscapeKey()
             return
         }
         
         // Delete key (bare, not Cmd+Delete which goes through menu)
-        if event.keyCode == 51 && modifiers.isEmpty {
+        if event.keyCode == KeyCodes.delete && modifiers.isEmpty {
             if selectedRow >= 0 {
                 keyboardDelegate?.handleDeleteKey()
                 return

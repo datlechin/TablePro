@@ -168,23 +168,23 @@ final class SQLCompletionWindowController: NSObject {
         guard isVisible else { return false }
         
         switch event.keyCode {
-        case 125: // Down arrow
+        case KeyCodes.downArrow: // Down arrow
             selectNext()
             return true
             
-        case 126: // Up arrow
+        case KeyCodes.upArrow: // Up arrow
             selectPrevious()
             return true
             
-        case 36: // Return
+        case KeyCodes.returnKey: // Return
             confirmSelection()
             return true
             
-        case 53: // Escape
+        case KeyCodes.escape: // Escape
             dismiss()
             return true
             
-        case 48: // Tab
+        case KeyCodes.tab: // Tab
             confirmSelection()
             return true
             

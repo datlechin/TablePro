@@ -179,12 +179,31 @@ No custom diffing engines unless unavoidable.
 
 ## Keyboard Shortcuts
 
-Implemented using **native command handling**:
+All keyboard shortcuts are centralized in `Core/KeyboardShortcuts.swift` following macOS Human Interface Guidelines.
 
-* `Cmd + Enter` → Execute query
-* `Cmd + S` → Commit changes
-* `Cmd + R` → Refresh data
-* `Ctrl + Space` → Trigger autocomplete
+### Key Files
+* `Core/KeyboardShortcuts.swift` - Centralized shortcut definitions and key codes
+* `OpenTableApp.swift` - Menu command handlers using KeyboardShortcuts enum
+
+### Standard macOS Shortcuts (following HIG):
+* `⌘N` → New connection
+* `⌘T` → New tab  
+* `⌘W` → Close tab
+* `⌘S` → Save changes
+* `⌘R` → Refresh data
+* `⌘Z` / `⌘⇧Z` → Undo / Redo
+* `⌘X` / `⌘C` / `⌘V` → Cut / Copy / Paste
+* `⌘A` → Select All
+* `⌘F` → Toggle filters
+* `Escape` → Clear selection
+
+### Application-Specific:
+* `⌘↩` → Execute query
+* `⌘I` → Add row
+* `⌘D` → Duplicate row
+* `⌘B` → Toggle table browser
+* `⌘⇧H` → Toggle history
+* `⌃Space` → Trigger autocomplete
 
 ## Summary Rule
 

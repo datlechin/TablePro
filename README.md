@@ -66,16 +66,55 @@ A native macOS database client built with SwiftUI. A fast, lightweight alternati
 
 ## Keyboard Shortcuts
 
+All keyboard shortcuts follow macOS Human Interface Guidelines for consistency with native apps.
+
+### File Menu
 | Shortcut | Action |
 |----------|--------|
-| `Cmd+Enter` | Execute query |
-| `Cmd+S` | Save/commit changes |
-| `Cmd+R` | Refresh data |
-| `Cmd+W` | Close tab |
-| `Cmd+N` | New connection |
-| `Cmd+E` | Export to CSV |
-| `Cmd+Shift+E` | Export to JSON |
-| `Ctrl+Space` | Trigger autocomplete |
+| `⌘N` | New connection |
+| `⌘T` | New tab |
+| `⌘W` | Close tab |
+| `⌘S` | Save/commit changes |
+| `⌘R` | Refresh data |
+
+### Edit Menu
+| Shortcut | Action |
+|----------|--------|
+| `⌘Z` | Undo |
+| `⌘⇧Z` | Redo |
+| `⌘X` | Cut |
+| `⌘C` | Copy |
+| `⌘V` | Paste |
+| `⌘A` | Select All |
+| `⌘⌫` | Delete |
+| `⌘I` | Add row |
+| `⌘D` | Duplicate row |
+| `⌥⌫` | Truncate table |
+| `Escape` | Clear selection |
+
+### View Menu
+| Shortcut | Action |
+|----------|--------|
+| `⌘B` | Toggle table browser |
+| `⌘⌥B` | Toggle inspector |
+| `⌘F` | Toggle filters |
+| `⌘⇧H` | Toggle history |
+
+### Query Menu
+| Shortcut | Action |
+|----------|--------|
+| `⌘↩` | Execute query |
+| `⌘⇧L` | Format query |
+| `⌃Space` | Trigger autocomplete |
+
+### Data Grid Navigation
+| Shortcut | Action |
+|----------|--------|
+| `↩` | Edit cell |
+| `Tab` | Next cell |
+| `⇧Tab` | Previous cell |
+| `↑↓←→` | Navigate cells |
+| `⇧↑↓` | Extend selection |
 
 ## Requirements
 

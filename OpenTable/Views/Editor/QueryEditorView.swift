@@ -45,15 +45,14 @@ struct QueryEditorView: View {
                 Image(systemName: "trash")
             }
             .buttonStyle(.borderless)
-            .help("Clear Query (⌘+Delete)")
-            .keyboardShortcut(.delete, modifiers: .command)
+            .help("Clear Query")
             
             // Format button
             Button(action: formatQuery) {
                 Image(systemName: "text.alignleft")
             }
             .buttonStyle(.borderless)
-            .help("Format Query")
+            .help("Format Query (⌘⇧L)")
             
             Divider()
                 .frame(height: 16)
@@ -67,7 +66,7 @@ struct QueryEditorView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.small)
-            .keyboardShortcut(.return, modifiers: .command)
+            .keyboardShortcut(KeyboardShortcuts.executeQuery)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)

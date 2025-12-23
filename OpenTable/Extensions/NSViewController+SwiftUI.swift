@@ -30,8 +30,8 @@ private class KeyboardHandlingHostingController<Content: View>: NSHostingControl
         // Check for Command modifier
         let commandPressed = event.modifierFlags.contains(.command)
         
-        // Handle Cmd+Return (Save)
-        if commandPressed && (event.keyCode == 36 || event.keyCode == 76) {
+        // Handle Cmd+Return (Save) - standard macOS convention
+        if commandPressed && (event.keyCode == KeyCodes.returnKey || event.keyCode == KeyCodes.keypadEnter) {
             onSave?()
             return true
         }
@@ -41,13 +41,13 @@ private class KeyboardHandlingHostingController<Content: View>: NSHostingControl
     }
     
     override func cancelOperation(_ sender: Any?) {
-        // Handle Escape key
+        // Handle Escape key - standard macOS cancel convention
         onCancel?()
     }
     
     override func keyDown(with event: NSEvent) {
         // Check for Escape key without modifiers
-        if event.keyCode == 53 && event.modifierFlags.intersection(.deviceIndependentFlagsMask).isEmpty {
+        if event.keyCode == KeyCodes.escape && event.modifierFlags.intersection(.deviceIndependentFlagsMask).isEmpty {
             onCancel?()
             return
         }

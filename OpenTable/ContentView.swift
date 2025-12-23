@@ -291,8 +291,8 @@ struct ContentView: View {
     
     private func setupEscapeKeyMonitor() {
         escapeKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            // Escape key code is 53
-            if event.keyCode == 53 {
+            // Escape key - standard macOS cancel/clear shortcut
+            if event.keyCode == KeyCodes.escape {
                 NotificationCenter.default.post(name: .clearSelection, object: nil)
                 // Return nil to consume the event, or return event to let it propagate
                 return nil

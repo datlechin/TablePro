@@ -2,6 +2,10 @@
 //  OpenTableApp.swift
 //  OpenTable
 //
+//  Main application entry point with menu commands.
+//  Keyboard shortcuts follow macOS Human Interface Guidelines.
+//  See KeyboardShortcuts.swift for centralized shortcut definitions.
+//
 //  Created by Ngo Quoc Dat on 16/12/25.
 //
 
@@ -17,6 +21,7 @@ final class AppState: ObservableObject {
     @Published var hasRowSelection: Bool = false  // True when rows are selected in data grid
     @Published var hasTableSelection: Bool = false  // True when tables are selected in sidebar
     @Published var isHistoryPanelVisible: Bool = false  // Global history panel visibility
+    @Published var isQueryTabActive: Bool = false  // True when current tab is a query tab
 }
 
 // MARK: - App
@@ -54,19 +59,19 @@ struct OpenTableApp: App {
         .windowStyle(.automatic)
         .defaultSize(width: 1200, height: 800)
         .commands {
-            // File menu
+            // MARK: - File Menu
             CommandGroup(replacing: .newItem) {
                 Button("New Connection...") {
                     NotificationCenter.default.post(name: .newConnection, object: nil)
                 }
-                .keyboardShortcut("n", modifiers: .command)
+                .keyboardShortcut(KeyboardShortcuts.newConnection)
             }
 
             CommandGroup(after: .newItem) {
                 Button("New Tab") {
                     NotificationCenter.default.post(name: .newTab, object: nil)
                 }
-                .keyboardShortcut("t", modifiers: .command)
+                .keyboardShortcut(KeyboardShortcuts.newTab)
                 .disabled(!appState.isConnected)
 
                 Divider()
@@ -74,7 +79,7 @@ struct OpenTableApp: App {
                 Button("Save Changes") {
                     NotificationCenter.default.post(name: .saveChanges, object: nil)
                 }
-                .keyboardShortcut("s", modifiers: .command)
+                .keyboardShortcut(KeyboardShortcuts.saveChanges)
                 .disabled(!appState.isConnected)
 
                 Button("Close Tab") {
@@ -89,36 +94,36 @@ struct OpenTableApp: App {
                         keyWindow?.close()
                     }
                 }
-                .keyboardShortcut("w", modifiers: .command)
+                .keyboardShortcut(KeyboardShortcuts.closeTab)
 
                 Divider()
 
                 Button("Refresh") {
                     NotificationCenter.default.post(name: .refreshData, object: nil)
                 }
-                .keyboardShortcut("r", modifiers: .command)
+                .keyboardShortcut(KeyboardShortcuts.refresh)
                 .disabled(!appState.isConnected)
             }
             
-            // Edit menu - Undo/Redo (replace the standard undo/redo)
+            // MARK: - Edit Menu - Undo/Redo
             CommandGroup(replacing: .undoRedo) {
                 Button("Undo") {
                     NotificationCenter.default.post(name: .undoChange, object: nil)
                 }
-                .keyboardShortcut("z", modifiers: .command)
+                .keyboardShortcut(KeyboardShortcuts.undo)
                 
                 Button("Redo") {
                     NotificationCenter.default.post(name: .redoChange, object: nil)
                 }
-                .keyboardShortcut("z", modifiers: [.command, .shift])
+                .keyboardShortcut(KeyboardShortcuts.redo)
             }
             
-            // Edit menu - replace pasteboard to add our Delete with shortcut
+            // MARK: - Edit Menu - Pasteboard
             CommandGroup(replacing: .pasteboard) {
                 Button("Cut") {
                     NSApp.sendAction(#selector(NSText.cut(_:)), to: nil, from: nil)
                 }
-                .keyboardShortcut("x", modifiers: .command)
+                .keyboardShortcut(KeyboardShortcuts.cut)
                 
                 Button("Copy") {
                     if appState.hasRowSelection {
@@ -129,12 +134,12 @@ struct OpenTableApp: App {
                         NSApp.sendAction(#selector(NSText.copy(_:)), to: nil, from: nil)
                     }
                 }
-                .keyboardShortcut("c", modifiers: .command)
+                .keyboardShortcut(KeyboardShortcuts.copy)
                 
                 Button("Paste") {
                     NSApp.sendAction(#selector(NSText.paste(_:)), to: nil, from: nil)
                 }
-                .keyboardShortcut("v", modifiers: .command)
+                .keyboardShortcut(KeyboardShortcuts.paste)
                 
                 Button("Delete") {
                     // Check if first responder is the history panel's table view
@@ -153,7 +158,7 @@ struct OpenTableApp: App {
                     // For data grid and other views, use notification for batched undo
                     NotificationCenter.default.post(name: .deleteSelectedRows, object: nil)
                 }
-                .keyboardShortcut(.delete, modifiers: .command)
+                .keyboardShortcut(KeyboardShortcuts.delete)
                 .disabled(!appState.isCurrentTabEditable && !appState.hasTableSelection)
                 
                 Divider()
@@ -161,28 +166,28 @@ struct OpenTableApp: App {
                 Button("Select All") {
                     NSApp.sendAction(#selector(NSText.selectAll(_:)), to: nil, from: nil)
                 }
-                .keyboardShortcut("a", modifiers: .command)
+                .keyboardShortcut(KeyboardShortcuts.selectAll)
                 
                 Button("Clear Selection") {
                     NotificationCenter.default.post(name: .clearSelection, object: nil)
                 }
-                .keyboardShortcut(.escape, modifiers: [])
+                .keyboardShortcut(KeyboardShortcuts.clearSelection)
             }
             
-            // Edit menu - row operations (after pasteboard)
+            // MARK: - Edit Menu - Row Operations
             CommandGroup(after: .pasteboard) {
                 Divider()
                 
                 Button("Add Row") {
                     NotificationCenter.default.post(name: .addNewRow, object: nil)
                 }
-                .keyboardShortcut("i", modifiers: .command)
+                .keyboardShortcut(KeyboardShortcuts.addRow)
                 .disabled(!appState.isCurrentTabEditable)
 
                 Button("Duplicate Row") {
                     NotificationCenter.default.post(name: .duplicateRow, object: nil)
                 }
-                .keyboardShortcut("d", modifiers: .command)
+                .keyboardShortcut(KeyboardShortcuts.duplicateRow)
                 .disabled(!appState.isCurrentTabEditable)
 
                 Divider()
@@ -191,22 +196,22 @@ struct OpenTableApp: App {
                 Button("Truncate Table") {
                     NotificationCenter.default.post(name: .truncateTables, object: nil)
                 }
-                .keyboardShortcut(.delete, modifiers: .option)
+                .keyboardShortcut(KeyboardShortcuts.truncateTable)
                 .disabled(!appState.hasTableSelection)
             }
 
-            // View menu
+            // MARK: - View Menu
             CommandGroup(after: .sidebar) {
                 Button("Toggle Table Browser") {
                     NotificationCenter.default.post(name: .toggleTableBrowser, object: nil)
                 }
-                .keyboardShortcut("b", modifiers: .command)
+                .keyboardShortcut(KeyboardShortcuts.toggleSidebar)
                 .disabled(!appState.isConnected)
 
                 Button("Toggle Inspector") {
                     NotificationCenter.default.post(name: .toggleRightSidebar, object: nil)
                 }
-                .keyboardShortcut("b", modifiers: [.command, .option])
+                .keyboardShortcut(KeyboardShortcuts.toggleInspector)
                 .disabled(!appState.isConnected)
 
                 Divider()
@@ -214,13 +219,35 @@ struct OpenTableApp: App {
                 Button("Toggle Filters") {
                     NotificationCenter.default.post(name: .toggleFilterPanel, object: nil)
                 }
-                .keyboardShortcut("f", modifiers: .command)
+                .keyboardShortcut(KeyboardShortcuts.toggleFilters)
                 .disabled(!appState.isConnected)
                 
                 Button("Toggle History") {
                     NotificationCenter.default.post(name: .toggleHistoryPanel, object: nil)
                 }
-                .keyboardShortcut("h", modifiers: [.command, .shift])
+                .keyboardShortcut(KeyboardShortcuts.toggleHistory)
+                .disabled(!appState.isConnected)
+            }
+            
+            // MARK: - Query Menu (Custom)
+            CommandMenu("Query") {
+                Button("Execute Query") {
+                    NotificationCenter.default.post(name: .executeQuery, object: nil)
+                }
+                .keyboardShortcut(KeyboardShortcuts.executeQuery)
+                .disabled(!appState.isConnected)
+                
+                Button("Format Query") {
+                    NotificationCenter.default.post(name: .formatQuery, object: nil)
+                }
+                .keyboardShortcut("l", modifiers: [.command, .shift])
+                .disabled(!appState.isConnected)
+                
+                Divider()
+                
+                Button("Clear Query") {
+                    NotificationCenter.default.post(name: .clearQuery, object: nil)
+                }
                 .disabled(!appState.isConnected)
             }
         }

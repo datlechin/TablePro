@@ -41,8 +41,8 @@ struct QueryTabBar: View {
                     .frame(width: 28, height: 28)
             }
             .buttonStyle(.borderless)
-            .help("New Query Tab (⌘+T)")
-            .keyboardShortcut("t", modifiers: .command)
+            .help("New Query Tab (⌘T)")
+            .keyboardShortcut(KeyboardShortcuts.newTab)
             .padding(.trailing, 8)
         }
         .frame(height: 32)
