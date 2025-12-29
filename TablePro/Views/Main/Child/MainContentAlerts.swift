@@ -20,6 +20,8 @@ struct MainContentAlerts: ViewModifier {
 
     @Binding var pendingTruncates: Set<String>
     @Binding var pendingDeletes: Set<String>
+    let tables: [TableInfo]
+    let selectedTables: Set<TableInfo>
 
     // MARK: - Environment
 
@@ -55,6 +57,17 @@ struct MainContentAlerts: ViewModifier {
             .onChange(of: coordinator.showDatabaseSwitcher) { _, isPresented in
                 appState.isSheetPresented = isPresented
             }
+
+            .sheet(isPresented: $coordinator.showExportDialog) {
+                ExportDialog(
+                    isPresented: $coordinator.showExportDialog,
+                    connection: connection,
+                    preselectedTables: Set(selectedTables.map { $0.name })
+                )
+            }
+            .onChange(of: coordinator.showExportDialog) { _, isPresented in
+                appState.isSheetPresented = isPresented
+            }
     }
 
     // MARK: - Computed Properties
@@ -85,13 +98,17 @@ extension View {
         coordinator: MainContentCoordinator,
         connection: DatabaseConnection,
         pendingTruncates: Binding<Set<String>>,
-        pendingDeletes: Binding<Set<String>>
+        pendingDeletes: Binding<Set<String>>,
+        tables: [TableInfo],
+        selectedTables: Set<TableInfo>
     ) -> some View {
         modifier(MainContentAlerts(
             coordinator: coordinator,
             connection: connection,
             pendingTruncates: pendingTruncates,
-            pendingDeletes: pendingDeletes
+            pendingDeletes: pendingDeletes,
+            tables: tables,
+            selectedTables: selectedTables
         ))
     }
 }

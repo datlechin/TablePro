@@ -92,7 +92,9 @@ struct MainContentView: View {
                 coordinator: coordinator,
                 connection: connection,
                 pendingTruncates: $pendingTruncates,
-                pendingDeletes: $pendingDeletes
+                pendingDeletes: $pendingDeletes,
+                tables: tables,
+                selectedTables: selectedTables
             )
             .task { await initializeAndRestoreTabs() }
             .onChange(of: tabManager.selectedTabId) { oldTabId, newTabId in

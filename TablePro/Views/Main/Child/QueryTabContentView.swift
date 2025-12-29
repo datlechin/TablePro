@@ -42,7 +42,8 @@ struct QueryTabContentView: View {
     let onLimitChange: (Int) -> Void
     let onOffsetChange: (Int) -> Void
     let onPaginationGo: () -> Void
-    
+    let onDismissError: () -> Void
+
     @Binding var sortState: SortState
     @Binding var showStructure: Bool
     
@@ -85,6 +86,7 @@ struct QueryTabContentView: View {
                 onLimitChange: onLimitChange,
                 onOffsetChange: onOffsetChange,
                 onPaginationGo: onPaginationGo,
+                onDismissError: onDismissError,
                 sortState: $sortState,
                 showStructure: $showStructure
             )

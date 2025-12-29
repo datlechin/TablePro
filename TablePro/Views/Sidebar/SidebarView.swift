@@ -244,7 +244,7 @@ struct SidebarView: View {
                     )
                     .tag(table)
                     .contextMenu {
-                        tableContextMenu(for: table)
+                        tableContextMenu(clickedTable: table)
                     }
                 }
             } header: {
@@ -260,7 +260,7 @@ struct SidebarView: View {
         }
         .listStyle(.sidebar)
         .contextMenu {
-            sidebarContextMenu()
+            tableContextMenu()
         }
         .onDeleteCommand {
             batchToggleDelete()
@@ -270,64 +270,55 @@ struct SidebarView: View {
         }
     }
 
+    /// Unified context menu for sidebar - used for both table rows and empty space
+    /// - Parameter clickedTable: The table that was right-clicked, nil if clicking empty space
     @ViewBuilder
-    private func tableContextMenu(for table: TableInfo) -> some View {
+    private func tableContextMenu(clickedTable: TableInfo? = nil) -> some View {
+        let hasSelection = !selectedTables.isEmpty || clickedTable != nil
+
         Button("Create New Table...") {
             NotificationCenter.default.post(name: .createTable, object: nil)
         }
-        .keyboardShortcut("n", modifiers: [.command, .shift])
-        
+
         Divider()
-        
+
         Button("Copy Name") {
-            let names = selectedTables.isEmpty ? [table.name] : selectedTables.map { $0.name }.sorted()
+            let names: [String]
+            if selectedTables.isEmpty, let table = clickedTable {
+                names = [table.name]
+            } else {
+                names = selectedTables.map { $0.name }.sorted()
+            }
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(names.joined(separator: ","), forType: .string)
         }
-        .keyboardShortcut("c", modifiers: .command)
+        .disabled(!hasSelection)
+
+        Button("Export...") {
+            if selectedTables.isEmpty, let table = clickedTable {
+                selectedTables.insert(table)
+            }
+            NotificationCenter.default.post(name: .exportTables, object: nil)
+        }
+        .disabled(!hasSelection)
 
         Divider()
 
         Button("Truncate") {
+            if selectedTables.isEmpty, let table = clickedTable {
+                selectedTables.insert(table)
+            }
             batchToggleTruncate()
         }
-        .keyboardShortcut(.delete, modifiers: .option)
+        .disabled(!hasSelection)
 
         Button("Delete", role: .destructive) {
+            if selectedTables.isEmpty, let table = clickedTable {
+                selectedTables.insert(table)
+            }
             batchToggleDelete()
         }
-        .keyboardShortcut(.delete, modifiers: .command)
-    }
-    
-    @ViewBuilder
-    private func sidebarContextMenu() -> some View {
-        Button("Create New Table...") {
-            NotificationCenter.default.post(name: .createTable, object: nil)
-        }
-        .keyboardShortcut("n", modifiers: [.command, .shift])
-        
-        if !selectedTables.isEmpty {
-            Divider()
-            
-            Button("Copy Name") {
-                let names = selectedTables.map { $0.name }.sorted()
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(names.joined(separator: ","), forType: .string)
-            }
-            .keyboardShortcut("c", modifiers: .command)
-
-            Divider()
-
-            Button("Truncate") {
-                batchToggleTruncate()
-            }
-            .keyboardShortcut(.delete, modifiers: .option)
-
-            Button("Delete", role: .destructive) {
-                batchToggleDelete()
-            }
-            .keyboardShortcut(.delete, modifiers: .command)
-        }
+        .disabled(!hasSelection)
     }
     
     /// Batch toggle truncate for all selected tables

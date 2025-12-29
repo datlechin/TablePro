@@ -45,6 +45,7 @@ final class MainContentCoordinator: ObservableObject {
     @Published var pendingDiscardAction: DiscardAction?
     // Removed: showErrorAlert and errorAlertMessage - errors now display inline
     @Published var showDatabaseSwitcher = false
+    @Published var showExportDialog = false
     @Published var needsLazyLoad = false
 
     // MARK: - Internal State

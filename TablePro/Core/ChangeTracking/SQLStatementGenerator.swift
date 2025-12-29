@@ -397,14 +397,8 @@ struct SQLStatementGenerator {
     }
 
     /// Escape characters that can break SQL strings
+    /// Delegates to shared SQLEscaping utility for consistent escaping across the codebase
     private func escapeSQLString(_ str: String) -> String {
-        var result = str
-        result = result.replacingOccurrences(of: "\\", with: "\\\\")  // Backslash first
-        result = result.replacingOccurrences(of: "'", with: "''")    // Single quote
-        result = result.replacingOccurrences(of: "\n", with: "\\n")  // Newline
-        result = result.replacingOccurrences(of: "\r", with: "\\r")  // Carriage return
-        result = result.replacingOccurrences(of: "\t", with: "\\t")  // Tab
-        result = result.replacingOccurrences(of: "\0", with: "\\0")  // Null byte
-        return result
+        SQLEscaping.escapeStringLiteral(str)
     }
 }

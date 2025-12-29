@@ -185,6 +185,14 @@ struct TableProApp: App {
                 }
                 .keyboardShortcut("r", modifiers: .command)
                 .disabled(!appState.isConnected)
+
+                Divider()
+
+                Button("Export...") {
+                    NotificationCenter.default.post(name: .exportTables, object: nil)
+                }
+                .keyboardShortcut("e", modifiers: [.command, .shift])
+                .disabled(!appState.isConnected)
             }
             
             // Edit menu - Undo/Redo (smart handling for both text editor and data grid)
@@ -318,6 +326,9 @@ extension Notification.Name {
     
     // Table creation notifications
     static let createTable = Notification.Name("createTable")
+
+    // Export notifications
+    static let exportTables = Notification.Name("exportTables")
 
     // Window lifecycle notifications
     static let mainWindowWillClose = Notification.Name("mainWindowWillClose")

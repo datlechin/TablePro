@@ -314,6 +314,13 @@ final class MainContentNotificationHandler: ObservableObject {
                 self?.handleSaveChanges()
             }
             .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: .exportTables)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.handleExportTables()
+            }
+            .store(in: &cancellables)
     }
 
     private func handleRefreshData() {
@@ -342,6 +349,10 @@ final class MainContentNotificationHandler: ObservableObject {
         pendingTruncates.wrappedValue = truncates
         pendingDeletes.wrappedValue = deletes
         tableOperationOptions.wrappedValue = options
+    }
+
+    private func handleExportTables() {
+        coordinator?.showExportDialog = true
     }
 
     // MARK: - UI Operations
