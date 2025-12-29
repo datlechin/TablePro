@@ -278,7 +278,7 @@ struct ExportDialog: View {
             }
             .buttonStyle(.borderedProminent)
             .keyboardShortcut(.return, modifiers: [])
-            .disabled(selectedCount == 0 || isExporting)
+            .disabled(selectedCount == 0 || isExporting || !isFileNameValid)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -299,6 +299,21 @@ struct ExportDialog: View {
             return "sql.gz"
         }
         return config.format.fileExtension
+    }
+
+    /// Validates that the filename is not empty and contains no invalid filesystem characters
+    private var isFileNameValid: Bool {
+        let name = config.fileName.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty else { return false }
+
+        // Invalid filesystem characters (covers macOS, Windows, and Linux)
+        let invalidChars = CharacterSet(charactersIn: "/\\:*?\"<>|")
+        guard name.rangeOfCharacter(from: invalidChars) == nil else { return false }
+
+        // Prevent path traversal attempts
+        guard !name.contains("..") else { return false }
+
+        return true
     }
 
     // MARK: - Actions
@@ -421,8 +436,8 @@ struct ExportDialog: View {
     }
 
     private func fetchTablesForSchema(_ schema: String, driver: DatabaseDriver) async throws -> [TableInfo] {
-        // Escape single quotes to prevent SQL injection
-        let escapedSchema = schema.replacingOccurrences(of: "'", with: "''")
+        // Use proper SQL escaping to prevent injection (handles backslashes, quotes, etc.)
+        let escapedSchema = SQLEscaping.escapeStringLiteral(schema)
         let query = """
             SELECT table_name, table_type
             FROM information_schema.tables
@@ -439,8 +454,8 @@ struct ExportDialog: View {
     }
 
     private func fetchTablesForDatabase(_ database: String, driver: DatabaseDriver) async throws -> [TableInfo] {
-        // Escape single quotes to prevent SQL injection
-        let escapedDatabase = database.replacingOccurrences(of: "'", with: "''")
+        // Use proper SQL escaping to prevent injection (handles backslashes, quotes, etc.)
+        let escapedDatabase = SQLEscaping.escapeStringLiteral(database)
         // MySQL/MariaDB: query information_schema for tables in specific database
         let query = """
             SELECT TABLE_NAME, TABLE_TYPE

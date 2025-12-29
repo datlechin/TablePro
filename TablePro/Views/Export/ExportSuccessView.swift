@@ -14,12 +14,11 @@ struct ExportSuccessView: View {
     let onClose: () -> Void
 
     @AppStorage("hideExportSuccessDialog") private var dontShowAgain = false
-    @State private var localDontShowAgain: Bool
+    @State private var localDontShowAgain = false
 
     init(onOpenFolder: @escaping () -> Void, onClose: @escaping () -> Void) {
         self.onOpenFolder = onOpenFolder
         self.onClose = onClose
-        _localDontShowAgain = State(initialValue: dontShowAgain)
     }
     var body: some View {
         VStack(spacing: 20) {

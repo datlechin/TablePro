@@ -343,22 +343,34 @@ final class ExportService: ObservableObject {
     }
 
     private func escapeCSVField(_ field: String, options: CSVExportOptions) -> String {
+        var processed = field
+
+        // Sanitize formula-like prefixes to prevent CSV formula injection
+        // Values starting with these characters can be executed as formulas in Excel/LibreOffice
+        if options.sanitizeFormulas {
+            let dangerousPrefixes: [Character] = ["=", "+", "-", "@", "\t", "\r"]
+            if let first = processed.first, dangerousPrefixes.contains(first) {
+                // Prefix with single quote - Excel/LibreOffice treats this as text
+                processed = "'" + processed
+            }
+        }
+
         switch options.quoteHandling {
         case .always:
-            let escaped = field.replacingOccurrences(of: "\"", with: "\"\"")
+            let escaped = processed.replacingOccurrences(of: "\"", with: "\"\"")
             return "\"\(escaped)\""
         case .never:
-            return field
+            return processed
         case .asNeeded:
-            let needsQuotes = field.contains(options.delimiter.actualValue) ||
-                              field.contains("\"") ||
-                              field.contains("\n") ||
-                              field.contains("\r")
+            let needsQuotes = processed.contains(options.delimiter.actualValue) ||
+                              processed.contains("\"") ||
+                              processed.contains("\n") ||
+                              processed.contains("\r")
             if needsQuotes {
-                let escaped = field.replacingOccurrences(of: "\"", with: "\"\"")
+                let escaped = processed.replacingOccurrences(of: "\"", with: "\"\"")
                 return "\"\(escaped)\""
             }
-            return field
+            return processed
         }
     }
 
@@ -416,7 +428,7 @@ final class ExportService: ObservableObject {
                             isFirstField = false
 
                             let escapedKey = escapeJSONString(column)
-                            let jsonValue = formatJSONValue(value)
+                            let jsonValue = formatJSONValue(value, preserveAsString: config.jsonOptions.preserveAllAsStrings)
                             try fileHandle.write(contentsOf: "\"\(escapedKey)\": \(jsonValue)".toUTF8Data())
                         }
                     }
@@ -462,8 +474,17 @@ final class ExportService: ObservableObject {
     }
 
     /// Format a value for JSON output
-    private func formatJSONValue(_ value: String?) -> String {
+    /// - Parameters:
+    ///   - value: The value to format
+    ///   - preserveAsString: If true, always output as string without type detection
+    ///                       (preserves leading zeros in ZIP codes, phone numbers, etc.)
+    private func formatJSONValue(_ value: String?, preserveAsString: Bool) -> String {
         guard let val = value else { return "null" }
+
+        // If preserving all as strings, skip type detection
+        if preserveAsString {
+            return "\"\(escapeJSONString(val))\""
+        }
 
         // Try to detect numbers and booleans
         if let intVal = Int(val) {
@@ -614,8 +635,8 @@ final class ExportService: ObservableObject {
 
             let values = row.map { value -> String in
                 guard let val = value else { return "NULL" }
-                // Escape single quotes by doubling them
-                let escaped = val.replacingOccurrences(of: "'", with: "''")
+                // Use proper SQL escaping to prevent injection (handles backslashes, quotes, etc.)
+                let escaped = SQLEscaping.escapeStringLiteral(val)
                 return "'\(escaped)'"
             }.joined(separator: ", ")
 
@@ -646,8 +667,6 @@ final class ExportService: ObservableObject {
             process.arguments = ["-c", source.path]
 
             let outputFile = try FileHandle(forWritingTo: destination)
-            defer {
-                try? outputFile.close()
             defer {
                 try? outputFile.close()
             }

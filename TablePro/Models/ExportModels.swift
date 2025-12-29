@@ -100,6 +100,10 @@ struct CSVExportOptions: Equatable {
     var quoteHandling: CSVQuoteHandling = .asNeeded
     var lineBreak: CSVLineBreak = .lf
     var decimalFormat: CSVDecimalFormat = .period
+    /// Sanitize formula-like values to prevent CSV formula injection attacks.
+    /// When enabled, values starting with =, +, -, @, tab, or carriage return
+    /// are prefixed with a single quote to prevent execution in spreadsheet applications.
+    var sanitizeFormulas: Bool = true
 }
 
 // MARK: - JSON Options
@@ -108,6 +112,9 @@ struct CSVExportOptions: Equatable {
 struct JSONExportOptions: Equatable {
     var prettyPrint: Bool = true
     var includeNullValues: Bool = true
+    /// When enabled, all values are exported as strings without type detection.
+    /// This preserves leading zeros in ZIP codes, phone numbers, and similar data.
+    var preserveAllAsStrings: Bool = false
 }
 
 // MARK: - SQL Options

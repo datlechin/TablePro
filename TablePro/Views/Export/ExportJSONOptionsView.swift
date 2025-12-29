@@ -19,6 +19,10 @@ struct ExportJSONOptionsView: View {
 
             Toggle("Include NULL values", isOn: $options.includeNullValues)
                 .toggleStyle(.checkbox)
+
+            Toggle("Preserve all values as strings", isOn: $options.preserveAllAsStrings)
+                .toggleStyle(.checkbox)
+                .help("Keep leading zeros in ZIP codes, phone numbers, and IDs by outputting all values as strings")
         }
         .font(.system(size: DesignConstants.FontSize.body))
     }

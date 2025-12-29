@@ -24,6 +24,10 @@ struct ExportCSVOptionsView: View {
 
                 Toggle("Put field names in the first row", isOn: $options.includeFieldNames)
                     .toggleStyle(.checkbox)
+
+                Toggle("Sanitize formula-like values", isOn: $options.sanitizeFormulas)
+                    .toggleStyle(.checkbox)
+                    .help("Prevent CSV formula injection by prefixing values starting with =, +, -, @ with a single quote")
             }
 
             Divider()
