@@ -367,10 +367,16 @@ final class MainContentNotificationHandler: ObservableObject {
     private func handleImportTables() {
         // Open file picker first, then show dialog with selected file
         let panel = NSOpenPanel()
-        panel.allowedContentTypes = [
-            UTType(filenameExtension: "sql")!,
-            UTType(filenameExtension: "gz")!
-        ]
+        var contentTypes: [UTType] = []
+        if let sqlType = UTType(filenameExtension: "sql") {
+            contentTypes.append(sqlType)
+        }
+        if let gzType = UTType(filenameExtension: "gz") {
+            contentTypes.append(gzType)
+        }
+        if !contentTypes.isEmpty {
+            panel.allowedContentTypes = contentTypes
+        }
         panel.allowsMultipleSelection = false
         panel.message = "Select SQL file to import"
 
