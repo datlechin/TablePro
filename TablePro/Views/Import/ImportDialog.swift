@@ -245,10 +245,14 @@ struct ImportDialog: View {
 
     private func selectFile() {
         let panel = NSOpenPanel()
-        panel.allowedContentTypes = [
-            UTType(filenameExtension: "sql")!,
-            UTType(filenameExtension: "gz")!
-        ]
+
+        let allowedTypes = ["sql", "gz"].compactMap { UTType(filenameExtension: $0) }
+        if !allowedTypes.isEmpty {
+            panel.allowedContentTypes = allowedTypes
+        } else {
+            // Fallback: restrict by file extensions if UTType lookup fails
+            panel.allowedFileTypes = ["sql", "gz"]
+        }
         panel.allowsMultipleSelection = false
         panel.message = "Select SQL file to import"
 
