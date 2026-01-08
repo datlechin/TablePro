@@ -12,7 +12,6 @@ import Foundation
 /// Service for managing tab state persistence
 @MainActor
 final class TabPersistenceService: ObservableObject {
-
     // MARK: - Constants
 
     private static let saveDebounceDelay: UInt64 = 500_000_000  // 500ms in nanoseconds

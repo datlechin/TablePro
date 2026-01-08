@@ -17,10 +17,10 @@ struct QueryTabContentView: View {
     @Binding var cursorPosition: Int
     @Binding var selectedRowIndices: Set<Int>
     @Binding var editingCell: CellPosition?
-    
+
     let schemaProvider: SQLSchemaProvider
     let onExecute: () -> Void
-    
+
     // Callbacks
     let onCommit: (String) -> Void
     let onRefresh: () -> Void
@@ -33,7 +33,7 @@ struct QueryTabContentView: View {
     let onClearFilters: () -> Void
     let onQuickSearch: (String) -> Void
     let sortedRows: [QueryResultRow]
-    
+
     // Pagination callbacks
     let onFirstPage: () -> Void
     let onPreviousPage: () -> Void
@@ -46,7 +46,7 @@ struct QueryTabContentView: View {
 
     @Binding var sortState: SortState
     @Binding var showStructure: Bool
-    
+
     var body: some View {
         VSplitView {
             // Query Editor (top)
@@ -59,7 +59,7 @@ struct QueryTabContentView: View {
                 )
             }
             .frame(minHeight: 100, idealHeight: 200)
-            
+
             // Results Table (bottom)
             TableTabContentView(
                 tab: tab,

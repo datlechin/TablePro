@@ -12,13 +12,13 @@ import UniformTypeIdentifiers
 struct ConnectionFormView: View {
     @Environment(\.dismissWindow) private var dismissWindow
     @Environment(\.openWindow) private var openWindow
-    
+
     // Connection ID: nil = new connection, UUID = edit existing
     let connectionId: UUID?
-    
+
     private let storage = ConnectionStorage.shared
     @StateObject private var dbManager = DatabaseManager.shared
-    
+
     // Computed property for isNew
     private var isNew: Bool { connectionId == nil }
 
@@ -44,11 +44,11 @@ struct ConnectionFormView: View {
 
     // Color and Tag
     @State private var connectionColor: ConnectionColor = .none
-    @State private var selectedTagId: UUID? = nil
+    @State private var selectedTagId: UUID?
 
     @State private var isTesting: Bool = false
     @State private var testResult: TestResult?
-    
+
     // Store original connection for editing
     @State private var originalConnection: DatabaseConnection?
 
@@ -68,7 +68,7 @@ struct ConnectionFormView: View {
             }
             .padding(.top, DesignConstants.Spacing.md)
             .padding(.bottom, 16)
-            
+
             // Form content
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
@@ -327,7 +327,7 @@ struct ConnectionFormView: View {
                                 .controlSize(.small)
                             }
                         }
-                        
+
                         FormField(label: "Passphrase", icon: "key") {
                             SecureField("(optional)", text: $keyPassphrase)
                                 .textFieldStyle(.plain)
@@ -529,7 +529,7 @@ struct ConnectionFormView: View {
             NotificationCenter.default.post(name: .connectionUpdated, object: nil)
         }
     }
-    
+
     private func deleteConnection() {
         guard let id = connectionId else { return }
         var savedConnections = storage.loadConnections()
@@ -538,11 +538,11 @@ struct ConnectionFormView: View {
         dismissWindow(id: "connection-form")
         NotificationCenter.default.post(name: .connectionUpdated, object: nil)
     }
-    
+
     private func connectToDatabase(_ connection: DatabaseConnection) {
         openWindow(id: "main")
         dismissWindow(id: "welcome")
-        
+
         Task {
             do {
                 try await dbManager.connectToSession(connection)
@@ -552,7 +552,7 @@ struct ConnectionFormView: View {
         }
     }
 
-    private func testConnection() {
+    func testConnection() {
         isTesting = true
         testResult = nil
 

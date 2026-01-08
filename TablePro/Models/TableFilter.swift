@@ -123,7 +123,7 @@ struct TableFilter: Identifiable, Equatable, Codable {
     var isRawSQL: Bool {
         columnName == Self.rawSQLColumn
     }
-    
+
     /// Validation error message (nil if valid)
     var validationError: String? {
         if columnName == Self.rawSQLColumn {
@@ -132,11 +132,11 @@ struct TableFilter: Identifiable, Equatable, Codable {
             }
             return nil
         }
-        
+
         if columnName.isEmpty {
             return "Please select a column"
         }
-        
+
         if filterOperator.requiresValue {
             if value.isEmpty {
                 return "Value is required"
@@ -145,7 +145,7 @@ struct TableFilter: Identifiable, Equatable, Codable {
                 return "Second value is required for BETWEEN"
             }
         }
-        
+
         return nil
     }
 }

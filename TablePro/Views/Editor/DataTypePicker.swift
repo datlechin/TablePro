@@ -11,7 +11,7 @@ import SwiftUI
 struct DataTypePicker: View {
     @Binding var selectedType: String
     let databaseType: DatabaseType
-    
+
     var body: some View {
         Picker("", selection: $selectedType) {
             ForEach(DataTypeCategory.allCases, id: \.self) { category in

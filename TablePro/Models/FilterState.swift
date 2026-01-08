@@ -13,7 +13,7 @@ import SwiftUI
 enum FilterLogicMode: String, Codable {
     case and = "AND"
     case or = "OR"
-    
+
     var displayName: String {
         rawValue
     }
@@ -28,7 +28,7 @@ final class FilterStateManager: ObservableObject {
     @Published var focusedFilterId: UUID?
     @Published var quickSearchText: String = ""
     @Published var filterLogicMode: FilterLogicMode = .and  // AND or OR logic
-    
+
     /// Settings storage reference
     private let settingsStorage = FilterSettingsStorage.shared
     private let presetStorage = FilterPresetStorage.shared
@@ -70,19 +70,19 @@ final class FilterStateManager: ObservableObject {
     func addFilterForColumn(_ columnName: String) {
         let settings = settingsStorage.loadSettings()
         var newFilter = TableFilter()
-        
+
         // Set the specified column
         newFilter.columnName = columnName
-        
+
         // Apply default operator setting
         newFilter.filterOperator = settings.defaultOperator.toFilterOperator()
-        
+
         // New filters should be selected by default for "Apply All"
         newFilter.isSelected = true
-        
+
         filters.append(newFilter)
         focusedFilterId = newFilter.id
-        
+
         // Show panel if hidden
         if !isVisible {
             show()
@@ -135,7 +135,7 @@ final class FilterStateManager: ObservableObject {
     func binding(for filter: TableFilter) -> Binding<TableFilter> {
         Binding(
             get: { [weak self] in
-                self?.filters.first(where: { $0.id == filter.id }) ?? filter
+                self?.filters.first { $0.id == filter.id } ?? filter
             },
             set: { [weak self] newValue in
                 self?.updateFilter(newValue)
@@ -219,7 +219,7 @@ final class FilterStateManager: ObservableObject {
     var hasAppliedFilters: Bool {
         !appliedFilters.isEmpty
     }
-    
+
     /// Check if quick search is active
     var hasActiveQuickSearch: Bool {
         !quickSearchText.trimmingCharacters(in: .whitespaces).isEmpty
@@ -302,47 +302,47 @@ final class FilterStateManager: ObservableObject {
         guard let id = focusedFilterId else { return nil }
         return filters.first { $0.id == id }
     }
-    
+
     // MARK: - Filter Presets
-    
+
     /// Save current filters as a named preset
     func saveAsPreset(name: String) {
         let preset = FilterPreset(name: name, filters: filters)
         presetStorage.savePreset(preset)
     }
-    
+
     /// Load filters from a preset
     func loadPreset(_ preset: FilterPreset) {
         filters = preset.filters
         // Auto-focus first filter if available
         focusedFilterId = filters.first?.id
     }
-    
+
     /// Get all saved presets
     func loadAllPresets() -> [FilterPreset] {
         presetStorage.loadAllPresets()
     }
-    
+
     /// Delete a preset
     func deletePreset(_ preset: FilterPreset) {
         presetStorage.deletePreset(preset)
     }
-    
+
     // MARK: - Quick Search
-    
+
     /// Clear quick search text
     func clearQuickSearch() {
         quickSearchText = ""
     }
-    
+
     // MARK: - SQL Generation
-    
+
     /// Generate preview SQL for the "SQL" button
     /// Uses selected filters if any are selected, otherwise uses all valid filters
     func generatePreviewSQL(databaseType: DatabaseType) -> String {
         let generator = FilterSQLGenerator(databaseType: databaseType)
         let filtersToPreview = getFiltersForPreview()
-        
+
         // If no valid filters but filters exist, show helpful message
         if filtersToPreview.isEmpty && !filters.isEmpty {
             let invalidCount = filters.filter { !$0.isValid }.count
@@ -350,17 +350,17 @@ final class FilterStateManager: ObservableObject {
                 return "-- No valid filters to preview\n-- Complete \(invalidCount) filter(s) by:\n--   • Selecting a column\n--   • Entering a value (if required)\n--   • Filling in second value for BETWEEN"
             }
         }
-        
+
         return generator.generateWhereClause(from: filtersToPreview, logicMode: filterLogicMode)
     }
-    
+
     /// Get filters to use for preview/application
     /// If some (but not all) filters are selected, use only those
     /// Otherwise use all valid filters
     private func getFiltersForPreview() -> [TableFilter] {
         let validFilters = filters.filter { $0.isValid }
         let selectedValidFilters = filters.filter { $0.isSelected && $0.isValid }
-        
+
         // If all valid filters are selected, or no filters are selected,
         // treat it as "show all valid filters"
         // Only use selective mode when SOME (but not all) are selected

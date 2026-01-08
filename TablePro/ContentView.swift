@@ -5,9 +5,12 @@
 //  Created by Ngo Quoc Dat on 16/12/25.
 //
 
+import os
 import SwiftUI
 
 struct ContentView: View {
+    private static let logger = Logger(subsystem: "com.tablepro", category: "ContentView")
+
     @StateObject private var dbManager = DatabaseManager.shared
     @State private var connections: [DatabaseConnection] = []
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
@@ -21,18 +24,20 @@ struct ContentView: View {
     @State private var hasLoaded = false
     @State private var escapeKeyMonitor: Any?
     @State private var isInspectorPresented = false  // Right sidebar (inspector) visibility
-    
-    @Environment(\.openWindow) private var openWindow
-    @Environment(\.dismissWindow) private var dismissWindow
+
+    @Environment(\.openWindow)
+    private var openWindow
+    @Environment(\.dismissWindow)
+    private var dismissWindow
     @EnvironmentObject private var appState: AppState
 
     private let storage = ConnectionStorage.shared
-    
+
     // Get current session from database manager
     private var currentSession: ConnectionSession? {
         dbManager.currentSession
     }
-    
+
     // Get all sessions as array
     private var sessions: [ConnectionSession] {
         Array(dbManager.activeSessions.values)
@@ -108,7 +113,7 @@ struct ContentView: View {
                         columnVisibility = newSessionId == nil ? .detailOnly : .all
                     }
                     AppState.shared.isConnected = newSessionId != nil
-                    
+
                     // When all sessions are closed, return to Welcome window
                     if newSessionId == nil {
                         openWindow(id: "welcome")
@@ -117,12 +122,12 @@ struct ContentView: View {
                 }
             }
     }
-    
+
     // MARK: - View Components
-    
+
     @ViewBuilder
     private var mainContent: some View {
-        if currentSession != nil {
+        if let currentSession = currentSession {
             NavigationSplitView(columnVisibility: $columnVisibility) {
                 // MARK: - Sidebar (Left) - Table Browser
                 VStack(spacing: 0) {
@@ -147,11 +152,11 @@ struct ContentView: View {
                             }
                         )
                     }
-                    
+
                     SidebarView(
                         tables: sessionTablesBinding,
                         selectedTables: sessionSelectedTablesBinding,
-                        activeTableName: currentSession?.selectedTables.first?.name,
+                        activeTableName: currentSession.selectedTables.first?.name,
                         onTablePro: { _ in },
                         onShowAllTables: {
                             showAllTablesMetadata()
@@ -159,14 +164,14 @@ struct ContentView: View {
                         pendingTruncates: sessionPendingTruncatesBinding,
                         pendingDeletes: sessionPendingDeletesBinding,
                         tableOperationOptions: sessionTableOperationOptionsBinding,
-                        databaseType: currentSession?.connection.type ?? .sqlite
+                        databaseType: currentSession.connection.type
                     )
                 }
                 .navigationSplitViewColumnWidth(min: 200, ideal: 250, max: 350)
             } detail: {
                 // MARK: - Detail (Main workspace with optional right sidebar)
                 MainContentView(
-                    connection: currentSession!.connection,
+                    connection: currentSession.connection,
                     tables: sessionTablesBinding,
                     selectedTables: sessionSelectedTablesBinding,
                     pendingTruncates: sessionPendingTruncatesBinding,
@@ -174,14 +179,14 @@ struct ContentView: View {
                     tableOperationOptions: sessionTableOperationOptionsBinding,
                     isInspectorPresented: $isInspectorPresented
                 )
-                .id(currentSession!.id)
+                .id(currentSession.id)
             }
         } else {
             // No active session yet - show loading while connecting
             VStack(spacing: 16) {
                 ProgressView()
                     .scaleEffect(1.5)
-                
+
                 Text("Connecting...")
                     .font(.headline)
                     .foregroundStyle(.secondary)
@@ -190,12 +195,12 @@ struct ContentView: View {
             .toolbar(.hidden)
         }
     }
-    
+
     // Removed: newConnectionSheet and editConnectionSheet helpers
     // Connection forms are now handled by the separate connection-form window
 
     // MARK: - Session State Bindings
-    
+
     /// Generic helper to create bindings that update session state
     private func createSessionBinding<T>(
         get: @escaping (ConnectionSession) -> T,
@@ -219,7 +224,7 @@ struct ContentView: View {
             }
         )
     }
-    
+
     private var sessionTablesBinding: Binding<[TableInfo]> {
         createSessionBinding(
             get: { $0.tables },
@@ -227,7 +232,7 @@ struct ContentView: View {
             defaultValue: []
         )
     }
-    
+
     private var sessionSelectedTablesBinding: Binding<Set<TableInfo>> {
         createSessionBinding(
             get: { $0.selectedTables },
@@ -235,7 +240,7 @@ struct ContentView: View {
             defaultValue: []
         )
     }
-    
+
     private var sessionPendingTruncatesBinding: Binding<Set<String>> {
         createSessionBinding(
             get: { $0.pendingTruncates },
@@ -243,7 +248,7 @@ struct ContentView: View {
             defaultValue: []
         )
     }
-    
+
     private var sessionPendingDeletesBinding: Binding<Set<String>> {
         createSessionBinding(
             get: { $0.pendingDeletes },
@@ -267,17 +272,17 @@ struct ContentView: View {
             do {
                 try await dbManager.connectToSession(connection)
             } catch {
-                print("Failed to connect: \(error)")
+                Self.logger.error("Failed to connect: \(error.localizedDescription)")
             }
         }
     }
-    
+
     private func handleCloseSession(_ sessionId: UUID) {
         Task {
             await dbManager.disconnectSession(sessionId)
         }
     }
-    
+
     private func saveCurrentSessionState() {
         // State is automatically saved through bindings
     }
@@ -308,9 +313,9 @@ struct ContentView: View {
         storage.deleteConnection(connection)
         storage.saveConnections(connections)
     }
-    
+
     // MARK: - Escape Key Monitor
-    
+
     private func setupEscapeKeyMonitor() {
         escapeKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             // Escape key code is 53
@@ -335,12 +340,12 @@ struct ContentView: View {
             return event
         }
     }
-    
+
     private func showAllTablesMetadata() {
         // Post notification for MainContentView to handle
         NotificationCenter.default.post(name: .showAllTables, object: nil)
     }
-    
+
     private func removeEscapeKeyMonitor() {
         if let monitor = escapeKeyMonitor {
             NSEvent.removeMonitor(monitor)

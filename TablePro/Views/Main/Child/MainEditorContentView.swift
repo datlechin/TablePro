@@ -10,7 +10,6 @@ import SwiftUI
 
 /// Main editor content with tab bar and content switching
 struct MainEditorContentView: View {
-
     // MARK: - Dependencies
 
     @ObservedObject var tabManager: QueryTabManager
@@ -36,7 +35,7 @@ struct MainEditorContentView: View {
     let onQuickSearch: (String) -> Void
     let onCommit: (String) -> Void
     let onRefresh: () -> Void
-    
+
     // Pagination callbacks
     let onFirstPage: () -> Void
     let onPreviousPage: () -> Void
@@ -140,9 +139,9 @@ struct MainEditorContentView: View {
     private func tableTabContent(tab: QueryTab) -> some View {
         resultsSection(tab: tab)
     }
-    
+
     // MARK: - Create Table Tab Content
-    
+
     @ViewBuilder
     private func createTableTabContent(tab: QueryTab) -> some View {
         if let options = tab.tableCreationOptions {
@@ -164,14 +163,14 @@ struct MainEditorContentView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
-    
+
     private func createTableOptionsBinding(for tab: QueryTab) -> Binding<TableCreationOptions> {
         Binding(
             get: { tab.tableCreationOptions ?? TableCreationOptions() },
             set: { newValue in
                 guard let index = tabManager.selectedTabIndex,
                       index < tabManager.tabs.count else { return }
-                
+
                 tabManager.tabs[index].tableCreationOptions = newValue
             }
         )
@@ -299,7 +298,7 @@ struct MainEditorContentView: View {
             onLimitChange: onLimitChange,
             onOffsetChange: onOffsetChange,
             onPaginationGo: onPaginationGo,
-        )
+            )
     }
 
     private func showStructureBinding(for tab: QueryTab) -> Binding<Bool> {

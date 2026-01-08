@@ -78,13 +78,13 @@ struct TableProToolbar: ViewModifier {
                         }
                         .help("Open Database (⌘K)")
                         .disabled(state.connectionState != .connected || state.databaseType == .sqlite)
-                        
+
                         // SQL query tab button
                         Button("SQL") {
                             NotificationCenter.default.post(name: .newTab, object: nil)
                         }
                         .help("New Query Tab (⌘T)")
-                        
+
                         // Refresh button
                         Button {
                             NotificationCenter.default.post(name: .refreshData, object: nil)

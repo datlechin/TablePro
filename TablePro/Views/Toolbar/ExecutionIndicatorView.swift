@@ -43,7 +43,7 @@ struct ExecutionIndicatorView: View {
         if duration < 0.001 {
             return "<1ms"
         } else if duration < 1.0 {
-            return String(format: "%.0fms", duration * 1000)
+            return String(format: "%.0fms", duration * 1_000)
         } else if duration < 60.0 {
             return String(format: "%.2fs", duration)
         } else {

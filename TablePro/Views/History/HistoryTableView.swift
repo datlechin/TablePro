@@ -25,7 +25,7 @@ final class HistoryTableView: NSTableView, NSMenuItemValidation {
     weak var keyboardDelegate: HistoryTableViewKeyboardDelegate?
 
     override var acceptsFirstResponder: Bool {
-        return true
+        true
     }
 
     override func mouseDown(with event: NSEvent) {

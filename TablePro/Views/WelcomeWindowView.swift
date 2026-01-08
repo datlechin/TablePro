@@ -13,7 +13,7 @@ import SwiftUI
 struct WelcomeWindowView: View {
     private let storage = ConnectionStorage.shared
     @StateObject private var dbManager = DatabaseManager.shared
-    
+
     @State private var connections: [DatabaseConnection] = []
     @State private var searchText = ""
     @State private var showNewConnectionSheet = false
@@ -25,28 +25,28 @@ struct WelcomeWindowView: View {
     @State private var selectedConnectionId: UUID?  // For keyboard navigation
     @State private var connectionError: String?  // For showing connection errors
     @State private var showConnectionError = false
-    
+
     @Environment(\.openWindow) private var openWindow
     @Environment(\.dismissWindow) private var dismissWindow
-    
+
     private var filteredConnections: [DatabaseConnection] {
         if searchText.isEmpty {
             return connections
         }
         return connections.filter { connection in
             connection.name.localizedCaseInsensitiveContains(searchText) ||
-            connection.host.localizedCaseInsensitiveContains(searchText) ||
-            connection.database.localizedCaseInsensitiveContains(searchText)
+                connection.host.localizedCaseInsensitiveContains(searchText) ||
+                connection.database.localizedCaseInsensitiveContains(searchText)
         }
     }
-    
+
     var body: some View {
         HStack(spacing: 0) {
             // Left panel - Branding
             leftPanel
-            
+
             Divider()
-            
+
             // Right panel - Connections
             rightPanel
         }
@@ -79,13 +79,13 @@ struct WelcomeWindowView: View {
             Text(connectionError ?? "Unknown error")
         }
     }
-    
+
     // MARK: - Left Panel
-    
+
     private var leftPanel: some View {
         VStack(spacing: 0) {
             Spacer()
-            
+
             // App branding
             VStack(spacing: 16) {
                 // Logo with glow
@@ -94,12 +94,12 @@ struct WelcomeWindowView: View {
                         .fill(Color.orange.opacity(0.30))
                         .frame(width: 100, height: 100)
                         .blur(radius: 25)
-                    
+
                     Image(nsImage: NSApp.applicationIconImage)
                         .resizable()
                         .frame(width: 80, height: 80)
                 }
-                
+
                 VStack(spacing: 6) {
                     Text("TablePro")
                         .font(.system(size: DesignConstants.IconSize.extraLarge, weight: .semibold, design: .rounded))
@@ -109,10 +109,10 @@ struct WelcomeWindowView: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            
+
             Spacer()
                 .frame(height: 48)
-            
+
             // Action button
             VStack(spacing: 12) {
                 Button(action: { openWindow(id: "connection-form") }) {
@@ -122,9 +122,9 @@ struct WelcomeWindowView: View {
                 .buttonStyle(WelcomeButtonStyle())
             }
             .padding(.horizontal, 32)
-            
+
             Spacer()
-            
+
             // Footer hints
             HStack(spacing: 16) {
                 KeyboardHint(keys: "⌘N", label: "New")
@@ -136,9 +136,9 @@ struct WelcomeWindowView: View {
         }
         .frame(width: 260)
     }
-    
+
     // MARK: - Right Panel
-    
+
     private var rightPanel: some View {
         VStack(spacing: 0) {
             // Search bar
@@ -174,9 +174,9 @@ struct WelcomeWindowView: View {
             }
             .padding(.horizontal, DesignConstants.Spacing.md)
             .padding(.vertical, DesignConstants.Spacing.sm)
-            
+
             Divider()
-            
+
             // Connection list
             if filteredConnections.isEmpty {
                 emptyState
@@ -186,9 +186,9 @@ struct WelcomeWindowView: View {
         }
         .frame(minWidth: 350)
     }
-    
+
     // MARK: - Connection List
-    
+
     /// Connection list that behaves like native NSTableView:
     /// - Single click: selects row (handled by List's selection binding)
     /// - Double click: connects to database (via simultaneousGesture in ConnectionRow)
@@ -236,13 +236,13 @@ struct WelcomeWindowView: View {
             return .handled
         }
     }
-    
+
     // MARK: - Empty State
-    
+
     private var emptyState: some View {
         VStack(spacing: 12) {
             Spacer()
-            
+
             Image(systemName: "cylinder.split.1x2")
                 .font(.system(size: DesignConstants.IconSize.huge))
                 .foregroundStyle(.quaternary)
@@ -260,14 +260,14 @@ struct WelcomeWindowView: View {
                     .font(.system(size: DesignConstants.FontSize.title3, weight: .medium))
                     .foregroundStyle(.secondary)
             }
-            
+
             Spacer()
         }
         .frame(maxWidth: .infinity)
     }
-    
+
     // MARK: - Actions
-    
+
     private func loadConnections() {
         let saved = storage.loadConnections()
         if saved.isEmpty {
@@ -277,12 +277,12 @@ struct WelcomeWindowView: View {
             connections = saved
         }
     }
-    
+
     private func connectToDatabase(_ connection: DatabaseConnection) {
         // Open main window immediately - no delay
         openWindow(id: "main")
         dismissWindow(id: "welcome")
-        
+
         // Connect in background - main window shows loading state
         Task {
             do {
@@ -298,7 +298,7 @@ struct WelcomeWindowView: View {
             }
         }
     }
-    
+
     private func deleteConnection(_ connection: DatabaseConnection) {
         connections.removeAll { $0.id == connection.id }
         storage.deleteConnection(connection)
@@ -323,7 +323,7 @@ struct WelcomeWindowView: View {
         func attemptFocus(remainingAttempts: Int = 10) {
             for window in NSApp.windows {
                 if window.identifier?.rawValue.contains("connection-form") == true ||
-                   window.title == "Connection" {
+                    window.title == "Connection" {
                     window.makeKeyAndOrderFront(nil)
                     return
                 }
@@ -340,7 +340,6 @@ struct WelcomeWindowView: View {
             attemptFocus()
         }
     }
-
 }
 
 // MARK: - ConnectionRow
@@ -395,7 +394,7 @@ private struct ConnectionRow: View {
         .padding(.vertical, DesignConstants.Spacing.xxs)
         .contentShape(Rectangle())
         .overlay(
-            DoubleClickView(onDoubleClick: { onConnect?() })
+            DoubleClickView { onConnect?() }
         )
         .contextMenu {
             if let onConnect = onConnect {
@@ -425,7 +424,7 @@ private struct ConnectionRow: View {
             }
         }
     }
-    
+
     private var connectionSubtitle: String {
         if connection.sshConfig.enabled {
             return "SSH : \(connection.sshConfig.username)@\(connection.sshConfig.host)"
@@ -441,7 +440,7 @@ private struct ConnectionRow: View {
 
 private struct EnvironmentBadge: View {
     let connection: DatabaseConnection
-    
+
     private var environment: ConnectionEnvironment {
         if connection.sshConfig.enabled {
             return .ssh
@@ -454,7 +453,7 @@ private struct EnvironmentBadge: View {
         }
         return .local
     }
-    
+
     var body: some View {
         Text("(\(environment.rawValue.lowercased()))")
             .font(.system(size: DesignConstants.FontSize.small))
@@ -484,7 +483,7 @@ private struct WelcomeButtonStyle: ButtonStyle {
 private struct KeyboardHint: View {
     let keys: String
     let label: String
-    
+
     var body: some View {
         HStack(spacing: 4) {
             Text(keys)
@@ -548,10 +547,6 @@ private class PassThroughDoubleClickView: NSView {
         }
         // Always forward to next responder for List selection
         super.mouseDown(with: event)
-    }
-
-    override func mouseUp(with event: NSEvent) {
-        super.mouseUp(with: event)
     }
 }
 

@@ -5,12 +5,12 @@
 //  Model for SQL autocomplete suggestions
 //
 
-import Foundation
 import AppKit
+import Foundation
 
 /// Category of completion item
 @MainActor
-enum SQLCompletionKind: String, CaseIterable, Sendable {
+enum SQLCompletionKind: String, CaseIterable {
     case keyword    // SELECT, FROM, WHERE, etc.
     case table      // Database tables
     case view       // Database views
@@ -19,7 +19,7 @@ enum SQLCompletionKind: String, CaseIterable, Sendable {
     case schema     // Database/schema names
     case alias      // Table aliases
     case `operator` // Operators (=, <>, LIKE, etc.)
-    
+
     /// SF Symbol for display
     var iconName: String {
         switch self {
@@ -33,7 +33,7 @@ enum SQLCompletionKind: String, CaseIterable, Sendable {
         case .operator: return "equal.circle.fill"
         }
     }
-    
+
     /// Color for the icon
     var iconColor: NSColor {
         switch self {
@@ -47,7 +47,7 @@ enum SQLCompletionKind: String, CaseIterable, Sendable {
         case .operator: return .systemIndigo
         }
     }
-    
+
     /// Base sort priority (lower = higher priority in same context)
     var basePriority: Int {
         switch self {
@@ -74,7 +74,7 @@ struct SQLCompletionItem: Identifiable, Hashable {
     let documentation: String?  // Tooltip/description
     var sortPriority: Int       // For ranking (lower = higher priority)
     let filterText: String      // Text used for matching
-    
+
     init(
         label: String,
         kind: SQLCompletionKind,
@@ -93,14 +93,14 @@ struct SQLCompletionItem: Identifiable, Hashable {
         self.sortPriority = sortPriority ?? kind.basePriority
         self.filterText = filterText ?? label.lowercased()
     }
-    
+
     // MARK: - Hashable
-    
+
     func hash(into hasher: inout Hasher) {
         hasher.combine(label)
         hasher.combine(kind)
     }
-    
+
     static func == (lhs: SQLCompletionItem, rhs: SQLCompletionItem) -> Bool {
         lhs.label == rhs.label && lhs.kind == rhs.kind
     }
@@ -118,7 +118,7 @@ extension SQLCompletionItem {
             documentation: documentation
         )
     }
-    
+
     /// Create a table completion item
     static func table(_ name: String, isView: Bool = false) -> SQLCompletionItem {
         SQLCompletionItem(
@@ -128,7 +128,7 @@ extension SQLCompletionItem {
             detail: isView ? "View" : "Table"
         )
     }
-    
+
     /// Create a column completion item
     static func column(_ name: String, dataType: String?, tableName: String? = nil) -> SQLCompletionItem {
         SQLCompletionItem(
@@ -139,7 +139,7 @@ extension SQLCompletionItem {
             documentation: tableName.map { "Column from \($0)" }
         )
     }
-    
+
     /// Create a function completion item
     static func function(_ name: String, signature: String? = nil, documentation: String? = nil) -> SQLCompletionItem {
         let insertText = signature != nil ? "\(name)(" : name
@@ -151,7 +151,7 @@ extension SQLCompletionItem {
             documentation: documentation
         )
     }
-    
+
     /// Create an operator completion item
     static func `operator`(_ op: String, documentation: String? = nil) -> SQLCompletionItem {
         SQLCompletionItem(

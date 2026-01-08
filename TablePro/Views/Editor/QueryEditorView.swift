@@ -13,15 +13,15 @@ struct QueryEditorView: View {
     @Binding var cursorPosition: Int  // Track cursor for query-at-cursor execution
     var onExecute: () -> Void
     var schemaProvider: SQLSchemaProvider?  // Optional for autocomplete
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Editor header with toolbar (above editor, higher z-index)
             editorToolbar
                 .zIndex(1)
-            
+
             Divider()
-            
+
             // SQL Editor (AppKit-based with syntax highlighting and built-in line numbers)
             SQLEditorView(text: $queryText, cursorPosition: $cursorPosition, onExecute: onExecute, schemaProvider: schemaProvider)
                 .frame(minHeight: 100)
@@ -29,17 +29,17 @@ struct QueryEditorView: View {
         }
         .background(Color(nsColor: .textBackgroundColor))
     }
-    
+
     // MARK: - Toolbar
-    
+
     private var editorToolbar: some View {
         HStack {
             Text("Query")
                 .font(.headline)
                 .foregroundStyle(.secondary)
-            
+
             Spacer()
-            
+
             // Clear button
             Button(action: { queryText = "" }) {
                 Image(systemName: "trash")
@@ -47,17 +47,17 @@ struct QueryEditorView: View {
             .buttonStyle(.borderless)
             .help("Clear Query (⌘+Delete)")
             .keyboardShortcut(.delete, modifiers: .command)
-            
+
             // Format button
             Button(action: formatQuery) {
                 Image(systemName: "text.alignleft")
             }
             .buttonStyle(.borderless)
             .help("Format Query")
-            
+
             Divider()
                 .frame(height: 16)
-            
+
             // Execute button
             Button(action: onExecute) {
                 HStack(spacing: 4) {
@@ -73,18 +73,18 @@ struct QueryEditorView: View {
         .padding(.vertical, 8)
         .background(Color(nsColor: .windowBackgroundColor))
     }
-    
+
     // MARK: - Helpers
-    
+
     private func formatQuery() {
         // Basic formatting: uppercase keywords
-        let keywords = ["SELECT", "FROM", "WHERE", "ORDER BY", "GROUP BY", "HAVING", 
-                       "INSERT", "UPDATE", "DELETE", "CREATE", "DROP", "ALTER",
-                       "JOIN", "LEFT", "RIGHT", "INNER", "OUTER", "ON",
-                       "AND", "OR", "NOT", "IN", "LIKE", "BETWEEN", "AS",
-                       "LIMIT", "OFFSET", "DISTINCT", "COUNT", "SUM", "AVG", "MAX", "MIN",
-                       "NULL", "IS", "ASC", "DESC", "SET", "VALUES", "INTO", "TABLE"]
-        
+        let keywords = ["SELECT", "FROM", "WHERE", "ORDER BY", "GROUP BY", "HAVING",
+                        "INSERT", "UPDATE", "DELETE", "CREATE", "DROP", "ALTER",
+                        "JOIN", "LEFT", "RIGHT", "INNER", "OUTER", "ON",
+                        "AND", "OR", "NOT", "IN", "LIKE", "BETWEEN", "AS",
+                        "LIMIT", "OFFSET", "DISTINCT", "COUNT", "SUM", "AVG", "MAX", "MIN",
+                        "NULL", "IS", "ASC", "DESC", "SET", "VALUES", "INTO", "TABLE"]
+
         var formatted = queryText
         for keyword in keywords {
             // Match word boundaries
@@ -101,8 +101,7 @@ struct QueryEditorView: View {
 #Preview {
     QueryEditorView(
         queryText: .constant("SELECT * FROM users\nWHERE active = true\nORDER BY created_at DESC;"),
-        cursorPosition: .constant(0),
-        onExecute: {}
-    )
+        cursorPosition: .constant(0)
+    )        {}
     .frame(width: 600, height: 200)
 }

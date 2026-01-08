@@ -30,7 +30,7 @@ struct TableStructureView: View {
     @State private var showCopyConfirmation = false
     @State private var isLoading = true
     @State private var errorMessage: String?
-    
+
     // Lazy loading state - track which tabs have been loaded
     @State private var loadedTabs: Set<StructureTab> = []
 
@@ -107,14 +107,14 @@ struct TableStructureView: View {
                     .font(.system(.body, design: .monospaced))
             }
             .width(min: 100, ideal: 120)
-            
+
             TableColumn("Charset") { column in
                 Text(column.charset ?? "-")
                     .foregroundColor(.secondary)
                     .font(.system(.body, design: .monospaced))
             }
             .width(min: 70, ideal: 90)
-            
+
             TableColumn("Collation") { column in
                 Text(column.collation ?? "-")
                     .foregroundColor(.secondary)
@@ -140,7 +140,7 @@ struct TableStructureView: View {
                     .foregroundColor(.secondary)
             }
             .width(min: 80, ideal: 100)
-            
+
             TableColumn("Comment") { column in
                 Text(column.comment ?? "-")
                     .foregroundColor(.secondary)
@@ -247,7 +247,7 @@ struct TableStructureView: View {
     }
 
     // MARK: - DDL Tab
-    
+
     private var ddlView: some View {
         VStack(spacing: 0) {
             // Enhanced toolbar with font controls
@@ -259,12 +259,12 @@ struct TableStructureView: View {
                     }
                     .buttonStyle(.borderless)
                     .help("Decrease font size")
-                    
+
                     Text("\(Int(ddlFontSize))")
                         .font(.system(size: DesignConstants.FontSize.small, weight: .medium))
                         .foregroundColor(.secondary)
                         .frame(width: 24)
-                    
+
                     Button(action: { ddlFontSize = min(24, ddlFontSize + 1) }) {
                         Image(systemName: "textformat.size.larger")
                     }
@@ -275,9 +275,9 @@ struct TableStructureView: View {
                 .padding(.vertical, 4)
                 .background(Color.secondary.opacity(0.1))
                 .cornerRadius(6)
-                
+
                 Spacer()
-                
+
                 // Copy confirmation overlay
                 if showCopyConfirmation {
                     HStack(spacing: 6) {
@@ -288,7 +288,7 @@ struct TableStructureView: View {
                     }
                     .transition(.scale.combined(with: .opacity))
                 }
-                
+
                 // Action buttons
                 HStack(spacing: 8) {
                     Button(action: copyDDL) {
@@ -296,7 +296,7 @@ struct TableStructureView: View {
                     }
                     .buttonStyle(.bordered)
                     .help("Copy DDL to clipboard")
-                    
+
                     Button(action: exportDDL) {
                         Label("Export", systemImage: "square.and.arrow.down")
                     }
@@ -307,9 +307,9 @@ struct TableStructureView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, DesignConstants.Spacing.sm)
             .background(Color(nsColor: .controlBackgroundColor))
-            
+
             Divider()
-            
+
             // DDL text view
             if ddlStatement.isEmpty {
                 emptyState("No DDL available")
@@ -318,19 +318,19 @@ struct TableStructureView: View {
             }
         }
     }
-    
+
     // MARK: - DDL Actions
-    
+
     private func copyDDL() {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(ddlStatement, forType: .string)
-        
+
         // Show confirmation feedback
         withAnimation(.spring(duration: 0.3)) {
             showCopyConfirmation = true
         }
-        
+
         // Hide after 2 seconds
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             withAnimation(.spring(duration: 0.3)) {
@@ -338,16 +338,16 @@ struct TableStructureView: View {
             }
         }
     }
-    
+
     private func exportDDL() {
         let savePanel = NSSavePanel()
         savePanel.allowedContentTypes = [.init(filenameExtension: "sql")!]
         savePanel.nameFieldStringValue = "\(tableName).sql"
         savePanel.message = "Export DDL Statement"
-        
+
         savePanel.begin { response in
             guard response == .OK, let url = savePanel.url else { return }
-            
+
             do {
                 try ddlStatement.write(to: url, atomically: true, encoding: .utf8)
             } catch {
@@ -370,35 +370,35 @@ struct TableStructureView: View {
     }
 
     // MARK: - Load Data (Lazy Loading)
-    
+
     /// Load only columns on initial view (default tab)
     private func loadColumns() async {
         isLoading = true
         errorMessage = nil
-        
+
         guard let driver = DatabaseManager.shared.activeDriver else {
             errorMessage = "Not connected"
             isLoading = false
             return
         }
-        
+
         do {
             columns = try await driver.fetchColumns(table: tableName)
             loadedTabs.insert(.columns)
         } catch {
             errorMessage = error.localizedDescription
         }
-        
+
         isLoading = false
     }
-    
+
     /// Load data for tab only when selected (lazy loading)
     private func loadTabDataIfNeeded(_ tab: StructureTab) async {
         // Skip if already loaded
         guard !loadedTabs.contains(tab) else { return }
-        
+
         guard let driver = DatabaseManager.shared.activeDriver else { return }
-        
+
         do {
             switch tab {
             case .columns:
@@ -426,7 +426,7 @@ struct TableStructureView: View {
         connection: DatabaseConnection(
             name: "Test",
             host: "localhost",
-            port: 3306,
+            port: 3_306,
             database: "test",
             username: "root",
             type: .mysql

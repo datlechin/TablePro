@@ -171,7 +171,7 @@ final class FilterSettingsStorage {
     /// Sanitize table name for use as UserDefaults key
     private func sanitizeTableName(_ tableName: String) -> String {
         // Replace special characters that might cause issues in keys
-        return tableName
+        tableName
             .replacingOccurrences(of: ".", with: "_")
             .replacingOccurrences(of: "/", with: "_")
             .replacingOccurrences(of: "\\", with: "_")

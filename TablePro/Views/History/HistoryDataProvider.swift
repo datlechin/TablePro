@@ -10,7 +10,6 @@ import Foundation
 
 /// Data provider for history and bookmark entries
 final class HistoryDataProvider {
-
     // MARK: - Properties
 
     private(set) var historyEntries: [QueryHistoryEntry] = []
@@ -38,7 +37,7 @@ final class HistoryDataProvider {
     }
 
     var isEmpty: Bool {
-        count == 0
+        isEmpty
     }
 
     // MARK: - Data Loading

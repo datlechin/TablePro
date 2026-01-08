@@ -10,10 +10,9 @@ import AppKit
 
 /// NSTextField subclass that shows row context menu instead of text editing menu
 final class CellTextField: NSTextField {
-    
     /// The original (non-truncated) value for editing
     var originalValue: String?
-    
+
     /// The truncated display value
     private var truncatedValue: String?
 
@@ -21,14 +20,14 @@ final class CellTextField: NSTextField {
         get { CellTextFieldCell.self }
         set { }
     }
-    
+
     override var stringValue: String {
         didSet {
             // Store the truncated value when set externally
             truncatedValue = stringValue
         }
     }
-    
+
     override func becomeFirstResponder() -> Bool {
         let result = super.becomeFirstResponder()
         if result, let original = originalValue {
@@ -37,7 +36,7 @@ final class CellTextField: NSTextField {
         }
         return result
     }
-    
+
     /// Call this when editing ends to restore truncated display
     func restoreTruncatedDisplay() {
         if let truncated = truncatedValue {
@@ -78,9 +77,7 @@ final class CellTextField: NSTextField {
 
 /// Custom text field cell that provides a field editor with custom context menu behavior
 final class CellTextFieldCell: NSTextFieldCell {
-
     private class CellFieldEditor: NSTextView {
-
         override func rightMouseDown(with event: NSEvent) {
             window?.makeFirstResponder(nil)
 
@@ -95,7 +92,7 @@ final class CellTextFieldCell: NSTextFieldCell {
         }
 
         override func menu(for event: NSEvent) -> NSMenu? {
-            return nil
+            nil
         }
     }
 

@@ -14,8 +14,8 @@ final class DataGridCellFactory {
     private let rowNumberCellIdentifier = NSUserInterfaceItemIdentifier("RowNumberCell")
 
     /// Large dataset threshold - above this, disable expensive visual features
-    private let largeDatasetThreshold = 5000
-    
+    private let largeDatasetThreshold = 5_000
+
     /// Maximum characters to render in a cell (for performance with very large text)
     private let maxCellTextLength = 500
 
@@ -164,16 +164,16 @@ final class DataGridCellFactory {
                 let truncateIndex = displayValue.index(displayValue.startIndex, offsetBy: maxCellTextLength)
                 displayValue = String(displayValue[..<truncateIndex]) + "..."
             }
-            
+
             // Sanitize: replace newlines with spaces for single-line display
             displayValue = displayValue
                 .replacingOccurrences(of: "\n", with: " ")
                 .replacingOccurrences(of: "\r", with: " ")
-            
+
             cell.stringValue = displayValue
             cell.textColor = .labelColor
             if cell.font?.fontDescriptor.symbolicTraits.contains(.italic) == true ||
-               cell.font?.fontDescriptor.symbolicTraits.contains(.bold) == true {
+                cell.font?.fontDescriptor.symbolicTraits.contains(.bold) == true {
                 cell.font = .monospacedSystemFont(ofSize: DesignConstants.FontSize.body, weight: .regular)
             }
         }

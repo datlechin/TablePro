@@ -10,7 +10,6 @@ import SwiftUI
 
 /// ViewModifier handling all alerts and sheets for MainContentView
 struct MainContentAlerts: ViewModifier {
-
     // MARK: - Dependencies
 
     @ObservedObject var coordinator: MainContentCoordinator
@@ -47,11 +46,10 @@ struct MainContentAlerts: ViewModifier {
                 DatabaseSwitcherSheet(
                     isPresented: $coordinator.showDatabaseSwitcher,
                     currentDatabase: connection.database.isEmpty ? nil : connection.database,
-                    databaseType: connection.type,
-                    onSelect: { database in
-                        coordinator.switchToDatabase(database)
-                    }
-                )
+                    databaseType: connection.type
+                )                    { database in
+                    coordinator.switchToDatabase(database)
+                }
             }
             .focusedValue(\.isDatabaseSwitcherOpen, coordinator.showDatabaseSwitcher)
             .onChange(of: coordinator.showDatabaseSwitcher) { _, isPresented in

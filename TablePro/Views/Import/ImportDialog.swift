@@ -90,31 +90,28 @@ struct ImportDialog: View {
                 currentStatement: importServiceState.currentStatement,
                 statementIndex: importServiceState.currentStatementIndex,
                 totalStatements: importServiceState.totalStatements,
-                statusMessage: importServiceState.statusMessage,
-                onStop: {
-                    importServiceState.service?.cancelImport()
-                }
-            )
+                statusMessage: importServiceState.statusMessage
+            )                {
+                importServiceState.service?.cancelImport()
+            }
             .interactiveDismissDisabled()
         }
         .sheet(isPresented: $showSuccessDialog) {
             ImportSuccessView(
-                result: importResult,
-                onClose: {
-                    showSuccessDialog = false
-                    isPresented = false
-                    // Refresh schema
-                    NotificationCenter.default.post(name: .refreshData, object: nil)
-                }
-            )
+                result: importResult
+            )                {
+                showSuccessDialog = false
+                isPresented = false
+                // Refresh schema
+                NotificationCenter.default.post(name: .refreshData, object: nil)
+            }
         }
         .sheet(isPresented: $showErrorDialog) {
             ImportErrorView(
-                error: importError,
-                onClose: {
-                    showErrorDialog = false
-                }
-            )
+                error: importError
+            )                {
+                showErrorDialog = false
+            }
         }
     }
 
@@ -330,7 +327,7 @@ struct ImportDialog: View {
             }
 
             // Load up to 5MB for preview (enough for most SQL files)
-            let maxPreviewSize = 5 * 1024 * 1024 // 5 MB
+            let maxPreviewSize = 5 * 1_024 * 1_024 // 5 MB
             let previewData = handle.readData(ofLength: maxPreviewSize)
 
             if let preview = String(data: previewData, encoding: config.encoding) {
@@ -386,7 +383,6 @@ struct ImportDialog: View {
                     importResult = result
                     showSuccessDialog = true
                 }
-
             } catch let error as ImportError {
                 await MainActor.run {
                     showProgressDialog = false
@@ -434,9 +430,8 @@ struct ImportDialog: View {
 
     /// Decompress .gz file if needed, returns URL to read
     private func decompressIfNeeded(_ url: URL) async throws -> URL {
-        return try await FileDecompressor.decompressIfNeeded(url, fileSystemPath: fileSystemPath)
+        try await FileDecompressor.decompressIfNeeded(url, fileSystemPath: fileSystemPath)
     }
-
 }
 
 // MARK: - Import Service State

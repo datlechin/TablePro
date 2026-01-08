@@ -14,14 +14,14 @@ struct ConnectionSidebarHeader: View {
     let onSelectSession: (UUID) -> Void
     let onOpenConnection: (DatabaseConnection) -> Void
     let onNewConnection: () -> Void
-    
+
     @State private var showConnectionMenu = false
-    
+
     private var currentSession: ConnectionSession? {
         guard let id = currentSessionId else { return nil }
         return sessions.first { $0.id == id }
     }
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // Connection selector button
@@ -37,14 +37,14 @@ struct ConnectionSidebarHeader: View {
                                     Image(session.connection.type.iconName)
                                         .renderingMode(.template)
                                         .foregroundStyle(session.connection.displayColor)
-                                    
+
                                     Text(session.connection.database)
-                                    
+
                                     Spacer()
-                                    
+
                                     // Status indicator
                                     statusIndicator(for: session)
-                                    
+
                                     // Checkmark for active
                                     if session.id == currentSessionId {
                                         Image(systemName: "checkmark")
@@ -54,13 +54,13 @@ struct ConnectionSidebarHeader: View {
                         }
                     }
                 }
-                
+
                 // Saved connections
                 if !savedConnections.isEmpty {
                     if !sessions.isEmpty {
                         Divider()
                     }
-                    
+
                     Section("Saved Connections") {
                         ForEach(savedConnections) { connection in
                             Button(action: {
@@ -77,11 +77,11 @@ struct ConnectionSidebarHeader: View {
                         }
                     }
                 }
-                
+
                 if !sessions.isEmpty || !savedConnections.isEmpty {
                     Divider()
                 }
-                
+
                 // New connection
                 Button(action: onNewConnection) {
                     Label("New Connection", systemImage: "plus.circle")
@@ -125,17 +125,17 @@ struct ConnectionSidebarHeader: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            
+
             Divider()
         }
     }
-    
+
     // MARK: - Helpers
-    
+
     private var sortedSessions: [ConnectionSession] {
         sessions.sorted { $0.lastActiveAt > $1.lastActiveAt }
     }
-    
+
     @ViewBuilder
     private func statusIndicator(for session: ConnectionSession) -> some View {
         HStack(spacing: 4) {
@@ -150,7 +150,7 @@ struct ConnectionSidebarHeader: View {
             }
         }
     }
-    
+
     private func statusColor(for session: ConnectionSession) -> Color {
         switch session.status {
         case .connected:
@@ -174,7 +174,7 @@ struct ConnectionSidebarHeader: View {
             type: .mysql
         )
     )
-    
+
     var session2 = ConnectionSession(
         connection: DatabaseConnection(
             name: "PostgreSQL Production",
@@ -182,12 +182,12 @@ struct ConnectionSidebarHeader: View {
         )
     )
     session2.status = .connected
-    
+
     let savedConnections = [
         DatabaseConnection(name: "Development DB", type: .mysql),
         DatabaseConnection(name: "Staging DB", type: .postgresql)
     ]
-    
+
     return VStack(spacing: 0) {
         ConnectionSidebarHeader(
             sessions: [session1, session2],
@@ -197,7 +197,7 @@ struct ConnectionSidebarHeader: View {
             onOpenConnection: { _ in },
             onNewConnection: {}
         )
-        
+
         Rectangle()
             .fill(Color(nsColor: .textBackgroundColor))
     }

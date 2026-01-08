@@ -82,9 +82,8 @@ struct ExportProgressView: View {
         tableName: "users",
         tableIndex: 1,
         totalTables: 3,
-        processedRows: 95500,
-        totalRows: 175787,
-        statusMessage: "",
-        onStop: {}
-    )
+        processedRows: 95_500,
+        totalRows: 175_787,
+        statusMessage: ""
+    )        {}
 }

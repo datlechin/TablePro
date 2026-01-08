@@ -509,20 +509,20 @@ final class DataChangeManager: ObservableObject {
             deletedRowIndices: deletedRowIndices,
             insertedRowIndices: insertedRowIndices
         )
-        
+
         // Count expected UPDATE statements (DELETEs can work without PK using full row match)
         let expectedUpdates = changes.filter { $0.type == .update }.count
         let actualUpdates = statements.filter { $0.hasPrefix("UPDATE") }.count
-        
+
         // Check if any UPDATE statements were skipped due to missing primary key
         // Note: DELETEs are allowed without PK (they match all columns)
         if expectedUpdates > 0 && actualUpdates < expectedUpdates {
             throw DatabaseError.queryFailed(
                 "Cannot save UPDATE changes to table '\(tableName)' without a primary key. " +
-                "Please add a primary key to this table or use raw SQL queries instead."
+                    "Please add a primary key to this table or use raw SQL queries instead."
             )
         }
-        
+
         return statements
     }
 

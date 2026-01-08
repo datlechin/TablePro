@@ -10,7 +10,6 @@ import SwiftUI
 
 /// Confirmation dialog for table delete/truncate operations
 struct TableOperationDialog: View {
-
     // MARK: - Properties
 
     @Binding var isPresented: Bool
@@ -190,11 +189,10 @@ struct TableOperationDialog: View {
         isPresented: .constant(true),
         tableName: "users",
         operationType: .drop,
-        databaseType: .mysql,
-        onConfirm: { options in
-            print("Options: \(options)")
-        }
-    )
+        databaseType: .mysql
+    )        { options in
+        print("Options: \(options)")
+    }
 }
 
 #Preview("Truncate Table - PostgreSQL") {
@@ -202,11 +200,10 @@ struct TableOperationDialog: View {
         isPresented: .constant(true),
         tableName: "orders",
         operationType: .truncate,
-        databaseType: .postgresql,
-        onConfirm: { options in
-            print("Options: \(options)")
-        }
-    )
+        databaseType: .postgresql
+    )        { options in
+        print("Options: \(options)")
+    }
 }
 
 #Preview("Drop Table - SQLite") {
@@ -214,9 +211,8 @@ struct TableOperationDialog: View {
         isPresented: .constant(true),
         tableName: "products",
         operationType: .drop,
-        databaseType: .sqlite,
-        onConfirm: { options in
-            print("Options: \(options)")
-        }
-    )
+        databaseType: .sqlite
+    )        { options in
+        print("Options: \(options)")
+    }
 }

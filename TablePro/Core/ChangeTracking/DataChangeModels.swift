@@ -65,12 +65,12 @@ struct RowChange: Identifiable, Equatable {
 /// Represents an action that can be undone
 enum UndoAction {
     case cellEdit(
-        rowIndex: Int,
-        columnIndex: Int,
-        columnName: String,
-        previousValue: String?,
-        newValue: String?
-    )
+            rowIndex: Int,
+            columnIndex: Int,
+            columnName: String,
+            previousValue: String?,
+            newValue: String?
+         )
     case rowInsertion(rowIndex: Int)
     case rowDeletion(rowIndex: Int, originalRow: [String?])
     /// Batch deletion of multiple rows (for undo as a single action)

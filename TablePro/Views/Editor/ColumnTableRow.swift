@@ -18,32 +18,32 @@ struct ColumnTableRow: View {
     let onMoveUp: () -> Void
     let onMoveDown: () -> Void
     let onEdit: () -> Void
-    
+
     @State private var isHovered = false
-    @State private var editingCell: EditingCell? = nil
-    
+    @State private var editingCell: EditingCell?
+
     enum EditingCell {
         case name
         case defaultValue
     }
-    
+
     var body: some View {
         HStack(spacing: 0) {
             // Drag handle (visible on hover)
             dragHandleCell
-            
+
             // Name cell
             nameCell
-            
+
             // Type cell
             typeCell
-            
+
             // Attributes cell
             attributesCell
-            
+
             // Default cell
             defaultCell
-            
+
             // Actions cell (visible on hover/selected)
             actionsCell
         }
@@ -66,9 +66,9 @@ struct ColumnTableRow: View {
             isHovered = hovering
         }
     }
-    
+
     // MARK: - Cells
-    
+
     private var dragHandleCell: some View {
         Image(systemName: "line.3.horizontal")
             .font(.system(size: 10))
@@ -76,7 +76,7 @@ struct ColumnTableRow: View {
             .frame(width: DesignConstants.ColumnWidth.dragHandle)
             .opacity(isHovered ? 0.6 : 0)
     }
-    
+
     private var nameCell: some View {
         HStack(spacing: 4) {
             // Primary key icon
@@ -85,7 +85,7 @@ struct ColumnTableRow: View {
                     .font(.system(size: DesignConstants.FontSize.caption))
                     .foregroundStyle(.blue)
             }
-            
+
             // Name text or text field
             if editingCell == .name {
                 TextField("Column name", text: $column.name)
@@ -106,13 +106,13 @@ struct ColumnTableRow: View {
         .frame(minWidth: DesignConstants.ColumnWidth.nameMin, maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, DesignConstants.Spacing.xs)
     }
-    
+
     private var typeCell: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(column.dataType)
                 .font(.system(size: DesignConstants.FontSize.body, design: .monospaced))
                 .foregroundStyle(DesignConstants.Colors.secondaryText)
-            
+
             // Length/precision info
             if let length = column.length, length > 0 {
                 Text("(\(length)\(column.precision != nil && column.precision! > 0 ? ", \(column.precision!)" : ""))")
@@ -123,19 +123,19 @@ struct ColumnTableRow: View {
         .frame(minWidth: DesignConstants.ColumnWidth.typeMin, maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, DesignConstants.Spacing.xs)
     }
-    
+
     private var attributesCell: some View {
         HStack(spacing: 4) {
             // Auto-increment badge
             if column.autoIncrement {
                 AttributeBadge(text: "AUTO", color: .purple)
             }
-            
+
             // NULL badge
             if !column.notNull {
                 AttributeBadge(text: "NULL", color: .secondary)
             }
-            
+
             // Unsigned badge (MySQL only)
             if column.unsigned {
                 AttributeBadge(text: "UNSIGNED", color: .orange)
@@ -144,7 +144,7 @@ struct ColumnTableRow: View {
         .frame(minWidth: DesignConstants.ColumnWidth.attributesMin, maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, DesignConstants.Spacing.xs)
     }
-    
+
     private var defaultCell: some View {
         Group {
             if editingCell == .defaultValue {
@@ -170,7 +170,7 @@ struct ColumnTableRow: View {
         .frame(minWidth: DesignConstants.ColumnWidth.defaultMin, maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, DesignConstants.Spacing.xs)
     }
-    
+
     private var actionsCell: some View {
         HStack(spacing: 2) {
             Button(action: onEdit) {
@@ -180,7 +180,7 @@ struct ColumnTableRow: View {
             }
             .buttonStyle(.borderless)
             .help("Edit Details (Double-click)")
-            
+
             Button(action: onMoveUp) {
                 Image(systemName: "chevron.up")
                     .font(.system(size: DesignConstants.FontSize.caption))
@@ -188,7 +188,7 @@ struct ColumnTableRow: View {
             }
             .buttonStyle(.borderless)
             .help("Move Up (⌘↑)")
-            
+
             Button(action: onMoveDown) {
                 Image(systemName: "chevron.down")
                     .font(.system(size: DesignConstants.FontSize.caption))
@@ -196,7 +196,7 @@ struct ColumnTableRow: View {
             }
             .buttonStyle(.borderless)
             .help("Move Down (⌘↓)")
-            
+
             Button(action: onDelete) {
                 Image(systemName: "trash")
                     .font(.system(size: DesignConstants.FontSize.caption))
@@ -208,9 +208,9 @@ struct ColumnTableRow: View {
         .frame(width: DesignConstants.ColumnWidth.actions)
         .opacity(isHovered || isSelected ? 1 : 0)
     }
-    
+
     // MARK: - Styling
-    
+
     private var rowBackground: some View {
         Group {
             if isSelected {
@@ -222,7 +222,7 @@ struct ColumnTableRow: View {
             }
         }
     }
-    
+
     private var selectedBorderOverlay: some View {
         Group {
             if isSelected {
@@ -239,7 +239,7 @@ struct ColumnTableRow: View {
 private struct AttributeBadge: View {
     let text: String
     let color: Color
-    
+
     var body: some View {
         Text(text)
             .font(.system(size: DesignConstants.FontSize.tiny, weight: .medium))

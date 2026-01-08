@@ -15,7 +15,7 @@ final class MySQLDriver: DatabaseDriver {
 
     /// The underlying MariaDB connection
     private var mariadbConnection: MariaDBConnection?
-    
+
     /// Static date formatter for parsing MySQL dates (performance optimization)
     private static let mysqlDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -80,9 +80,9 @@ final class MySQLDriver: DatabaseDriver {
     // MARK: - Query Execution
 
     func execute(query: String) async throws -> QueryResult {
-        return try await executeWithReconnect(query: query, isRetry: false)
+        try await executeWithReconnect(query: query, isRetry: false)
     }
-    
+
     /// Execute query with automatic reconnection on connection-lost errors
     private func executeWithReconnect(query: String, isRetry: Bool) async throws -> QueryResult {
         let startTime = Date()
@@ -123,24 +123,24 @@ final class MySQLDriver: DatabaseDriver {
             throw DatabaseError.queryFailed(error.localizedDescription)
         }
     }
-    
+
     // MARK: - Auto-Reconnect
-    
+
     /// Check if error indicates a lost connection that can be recovered
     private func isConnectionLostError(_ error: MariaDBError) -> Bool {
         // 2006 = Server has gone away
         // 2013 = Lost connection to MySQL server during query
         // 2055 = Lost connection to MySQL server at reading initial packet
-        return [2006, 2013, 2055].contains(Int(error.code))
+        [2_006, 2_013, 2_055].contains(Int(error.code))
     }
-    
+
     /// Reconnect to the database
     private func reconnect() async throws {
         // Close existing connection
         mariadbConnection?.disconnect()
         mariadbConnection = nil
         status = .connecting
-        
+
         // Reconnect using stored connection info
         try await connect()
     }
@@ -168,8 +168,8 @@ final class MySQLDriver: DatabaseDriver {
             // SHOW FULL COLUMNS returns:
             // 0: Field, 1: Type, 2: Collation, 3: Null, 4: Key, 5: Default, 6: Extra, 7: Privileges, 8: Comment
             guard row.count >= 7,
-                let name = row[0],
-                let dataType = row[1]
+                  let name = row[0],
+                  let dataType = row[1]
             else {
                 return nil
             }
@@ -180,7 +180,7 @@ final class MySQLDriver: DatabaseDriver {
             let defaultValue = row[5]
             let extra = row[6]
             let comment = row.count > 8 ? row[8] : nil
-            
+
             // Extract charset from collation (e.g., "utf8mb4_general_ci" -> "utf8mb4")
             let charset: String? = {
                 guard let coll = collation, coll != "NULL" else { return nil }
@@ -210,8 +210,8 @@ final class MySQLDriver: DatabaseDriver {
 
         for row in result.rows {
             guard row.count >= 11,
-                let indexName = row[2],  // Key_name
-                let columnName = row[4]  // Column_name
+                  let indexName = row[2],  // Key_name
+                  let columnName = row[4]  // Column_name
             else {
                 continue
             }
@@ -231,15 +231,17 @@ final class MySQLDriver: DatabaseDriver {
             }
         }
 
-        return indexMap.map { name, info in
-            IndexInfo(
-                name: name,
-                columns: info.columns,
-                isUnique: info.isUnique,
-                isPrimary: name == "PRIMARY",
-                type: info.type
-            )
-        }.sorted { $0.isPrimary && !$1.isPrimary }  // PRIMARY key first
+        return indexMap
+            .map { name, info in
+                IndexInfo(
+                    name: name,
+                    columns: info.columns,
+                    isUnique: info.isUnique,
+                    isPrimary: name == "PRIMARY",
+                    type: info.type
+                )
+            }
+            .sorted { $0.isPrimary && !$1.isPrimary }  // PRIMARY key first
     }
 
     func fetchForeignKeys(table: String) async throws -> [ForeignKeyInfo] {
@@ -268,10 +270,10 @@ final class MySQLDriver: DatabaseDriver {
 
         return result.rows.compactMap { row in
             guard row.count >= 6,
-                let name = row[0],
-                let column = row[1],
-                let refTable = row[2],
-                let refColumn = row[3]
+                  let name = row[0],
+                  let column = row[1],
+                  let refTable = row[2],
+                  let refColumn = row[3]
             else {
                 return nil
             }
@@ -299,7 +301,7 @@ final class MySQLDriver: DatabaseDriver {
         // identifier when needed.
         let query = "SHOW CREATE TABLE \(table)"
         let result = try await execute(query: query)
-        
+
         // SHOW CREATE TABLE returns 2 columns: Table name and Create Table statement
         guard let firstRow = result.rows.first,
               firstRow.count >= 2,
@@ -307,10 +309,10 @@ final class MySQLDriver: DatabaseDriver {
         else {
             throw DatabaseError.queryFailed("Failed to fetch DDL for table '\(table)'")
         }
-        
+
         return ddl
     }
-    
+
     func fetchTableMetadata(tableName: String) async throws -> TableMetadata {
         let escapedTableName = tableName.replacingOccurrences(of: "'", with: "''")
         // NOTE: `SHOW TABLE STATUS LIKE` expects a pattern string literal, not an
@@ -320,7 +322,7 @@ final class MySQLDriver: DatabaseDriver {
         // by escaping single quotes above.
         let query = "SHOW TABLE STATUS WHERE Name = '\(escapedTableName)'"
         let result = try await execute(query: query)
-        
+
         guard let row = result.rows.first else {
             return TableMetadata(
                 tableName: tableName,
@@ -336,13 +338,13 @@ final class MySQLDriver: DatabaseDriver {
                 updateTime: nil
             )
         }
-        
+
         // SHOW TABLE STATUS columns:
         // 0: Name, 1: Engine, 2: Version, 3: Row_format, 4: Rows, 5: Avg_row_length,
         // 6: Data_length, 7: Max_data_length, 8: Index_length, 9: Data_free,
         // 10: Auto_increment, 11: Create_time, 12: Update_time, 13: Check_time,
         // 14: Collation, 15: Checksum, 16: Create_options, 17: Comment
-        
+
         let engine = row.count > 1 ? row[1] : nil
         let rowCount = row.count > 4 ? Int64(row[4] ?? "0") : nil
         let avgRowLength = row.count > 5 ? Int64(row[5] ?? "0") : nil
@@ -350,23 +352,23 @@ final class MySQLDriver: DatabaseDriver {
         let indexSize = row.count > 8 ? Int64(row[8] ?? "0") : nil
         let collation = row.count > 14 ? row[14] : nil
         let comment = row.count > 17 ? row[17] : nil
-        
+
         // Parse dates using static formatter for performance
         let createTime: Date? = {
             guard row.count > 11, let dateStr = row[11] else { return nil }
             return Self.mysqlDateFormatter.date(from: dateStr)
         }()
-        
+
         let updateTime: Date? = {
             guard row.count > 12, let dateStr = row[12] else { return nil }
             return Self.mysqlDateFormatter.date(from: dateStr)
         }()
-        
+
         let totalSize: Int64? = {
             guard let data = dataSize, let index = indexSize else { return nil }
             return data + index
         }()
-        
+
         return TableMetadata(
             tableName: tableName,
             dataSize: dataSize,
@@ -393,9 +395,9 @@ final class MySQLDriver: DatabaseDriver {
 
         // Get the count from first row, first column
         guard let firstRow = result.rows.first,
-            !firstRow.isEmpty,
-            let countStr = firstRow[0],
-            let count = Int(countStr)
+              !firstRow.isEmpty,
+              let countStr = firstRow[0],
+              let count = Int(countStr)
         else {
             return 0
         }
@@ -416,8 +418,8 @@ final class MySQLDriver: DatabaseDriver {
     private func extractTableName(from query: String) -> String? {
         let pattern = "(?i)\\bFROM\\s+[`\"']?([\\w]+)[`\"']?"
         guard let regex = try? NSRegularExpression(pattern: pattern),
-            let match = regex.firstMatch(in: query, range: NSRange(query.startIndex..., in: query)),
-            let range = Range(match.range(at: 1), in: query)
+              let match = regex.firstMatch(in: query, range: NSRange(query.startIndex..., in: query)),
+              let range = Range(match.range(at: 1), in: query)
         else {
             return nil
         }
@@ -430,8 +432,8 @@ final class MySQLDriver: DatabaseDriver {
 
         var columns: [String] = []
         for row in result.rows {
-            if let columnName = row.first ?? nil {
-                columns.append(columnName)
+            if let columnName = row.first, let unwrappedName = columnName {
+                columns.append(unwrappedName)
             }
         }
         return columns

@@ -28,10 +28,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Close any restored main windows (no active connection on fresh launch)
         // macOS may restore window state from previous session
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            for window in NSApp.windows {
-                if window.identifier?.rawValue.contains("main") == true {
-                    window.close()
-                }
+            for window in NSApp.windows where window.identifier?.rawValue.contains("main") == true {
+                window.close()
             }
         }
 
@@ -42,7 +40,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             name: NSWindow.didBecomeKeyNotification,
             object: nil
         )
-        
+
         // Observe for main window being closed
         NotificationCenter.default.addObserver(
             self,
@@ -50,10 +48,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             name: NSWindow.willCloseNotification,
             object: nil
         )
-
     }
 
-    @objc private func windowWillClose(_ notification: Notification) {
+    @objc
+    private func windowWillClose(_ notification: Notification) {
         guard let window = notification.object as? NSWindow else { return }
 
         // Clean up window tracking
@@ -69,7 +67,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             // This is more elegant than Thread.sleep as it processes pending events
             // rather than blocking the main thread entirely
             RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.05))
-            
+
             // NOTE: We do NOT call saveAllTabStates() here because:
             // 1. MainContentView already flushed the correct state via the notification above
             // 2. By this point, SwiftUI may have torn down views and session.tabs could be stale/empty
@@ -106,29 +104,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
     }
-    
+
     private func isMainWindow(_ window: NSWindow) -> Bool {
         // Main window has identifier containing "main" (from WindowGroup(id: "main"))
         // This excludes temporary windows like context menus, panels, popovers, etc.
         guard let identifier = window.identifier?.rawValue else { return false }
         return identifier.contains("main")
     }
-    
+
     private func openWelcomeWindow() {
         // Check if welcome window already exists and is visible
-        for window in NSApp.windows {
-            if isWelcomeWindow(window) {
-                window.makeKeyAndOrderFront(nil)
-                return
-            }
+        for window in NSApp.windows where isWelcomeWindow(window) {
+            window.makeKeyAndOrderFront(nil)
+            return
         }
-        
+
         // If no welcome window exists, we need to create one via SwiftUI's openWindow
         // Post a notification that SwiftUI can handle
         NotificationCenter.default.post(name: .openWelcomeWindow, object: nil)
     }
-    
-    @objc private func windowDidBecomeKey(_ notification: Notification) {
+
+    @objc
+    private func windowDidBecomeKey(_ notification: Notification) {
         guard let window = notification.object as? NSWindow else { return }
         let windowId = ObjectIdentifier(window)
 
@@ -144,52 +141,50 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             configuredWindows.insert(windowId)
         }
     }
-    
+
     private func configureWelcomeWindow() {
         // Find and configure the welcome window after a brief delay to ensure SwiftUI has created it
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            for window in NSApp.windows {
-                if self?.isWelcomeWindow(window) == true {
-                    self?.configureWelcomeWindowStyle(window)
-                }
+            for window in NSApp.windows where self?.isWelcomeWindow(window) == true {
+                self?.configureWelcomeWindowStyle(window)
             }
         }
     }
-    
+
     private func isWelcomeWindow(_ window: NSWindow) -> Bool {
         // Check by window identifier or title
-        return window.identifier?.rawValue == "welcome" ||
-               window.title.lowercased().contains("welcome")
+        window.identifier?.rawValue == "welcome" ||
+            window.title.lowercased().contains("welcome")
     }
-    
+
     private func configureWelcomeWindowStyle(_ window: NSWindow) {
         // Remove miniaturize (yellow) button functionality
         window.standardWindowButton(.miniaturizeButton)?.isHidden = true
-        
-        // Remove zoom (green) button functionality  
+
+        // Remove zoom (green) button functionality
         window.standardWindowButton(.zoomButton)?.isHidden = true
-        
+
         // Remove these capabilities from the window's style mask
         // This prevents the actions even if buttons were visible
         window.styleMask.remove(.miniaturizable)
-        
+
         // Prevent full screen
         window.collectionBehavior.remove(.fullScreenPrimary)
         window.collectionBehavior.insert(.fullScreenNone)
-        
+
         // Keep the window non-resizable (already set via SwiftUI, but reinforce here)
         if !window.styleMask.contains(.resizable) == false {
             window.styleMask.remove(.resizable)
         }
     }
-    
+
     private func isConnectionFormWindow(_ window: NSWindow) -> Bool {
         // Check by window identifier or title
         // WindowGroup uses "connection-form-X" format for identifiers
-        return window.identifier?.rawValue.contains("connection-form") == true ||
-               window.title == "Connection"
+        window.identifier?.rawValue.contains("connection-form") == true ||
+            window.title == "Connection"
     }
-    
+
     private func configureConnectionFormWindowStyle(_ window: NSWindow) {
         // Remove miniaturize (yellow) button functionality
         window.standardWindowButton(.miniaturizeButton)?.isHidden = true

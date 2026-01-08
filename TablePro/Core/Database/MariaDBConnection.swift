@@ -57,7 +57,6 @@ struct MariaDBColumnInfo {
 /// Thread-safe MySQL/MariaDB connection using libmariadb
 /// All blocking C calls are dispatched to a dedicated serial queue
 final class MariaDBConnection: @unchecked Sendable {
-
     // MARK: - Properties
 
     /// The underlying MYSQL pointer (opaque handle)
@@ -110,8 +109,7 @@ final class MariaDBConnection: @unchecked Sendable {
     /// Connect to the MySQL/MariaDB server
     /// - Throws: MariaDBError if connection fails
     func connect() async throws {
-        try await withCheckedThrowingContinuation {
-            (continuation: CheckedContinuation<Void, Error>) in
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             queue.async { [self] in
                 // Initialize MySQL client
                 guard let mysql = mysql_init(nil) else {
@@ -147,7 +145,7 @@ final class MariaDBConnection: @unchecked Sendable {
                 mysql_options(mysql, MYSQL_OPT_WRITE_TIMEOUT, &writeTimeout)
 
                 // Force TCP protocol (instead of Unix socket for localhost)
-                var protocol_tcp: UInt32 = UInt32(MYSQL_PROTOCOL_TCP.rawValue)
+                var protocol_tcp = UInt32(MYSQL_PROTOCOL_TCP.rawValue)
                 mysql_options(mysql, MYSQL_OPT_PROTOCOL, &protocol_tcp)
 
                 // Disable SSL requirement - allows connection to servers without SSL
@@ -335,7 +333,7 @@ final class MariaDBConnection: @unchecked Sendable {
         // before calling mysql_free_result
         var rows: [[String?]] = []
         // Pre-allocate capacity for better performance
-        rows.reserveCapacity(1000)  // Initial capacity
+        rows.reserveCapacity(1_000)  // Initial capacity
 
         while let rowPtr = mysql_fetch_row(resultPtr) {
             // Get lengths for each field (needed for binary data)
@@ -454,7 +452,7 @@ final class MariaDBConnection: @unchecked Sendable {
 
     /// Get the current database name
     func currentDatabase() -> String {
-        return database
+        database
     }
 
     // MARK: - Private Helpers
@@ -473,7 +471,7 @@ final class MariaDBConnection: @unchecked Sendable {
             message = "Unknown error"
         }
 
-        var sqlState: String? = nil
+        var sqlState: String?
         if let statePtr = mysql_sqlstate(mysql), statePtr[0] != 0 {
             sqlState = String(cString: statePtr)
         }
@@ -516,7 +514,7 @@ final class MariaDBStreamingResult: @unchecked Sendable {
 
     /// Fetch the next row, returns nil when no more rows
     func fetchNextRow() async -> [String?]? {
-        return await withCheckedContinuation { [self] (cont: CheckedContinuation<[String?]?, Never>) in
+        await withCheckedContinuation { [self] (cont: CheckedContinuation<[String?]?, Never>) in
             queue.async { [self] in
                 let row = fetchNextRowSync()
                 cont.resume(returning: row)

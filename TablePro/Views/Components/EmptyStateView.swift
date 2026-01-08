@@ -14,7 +14,7 @@ struct EmptyStateView: View {
     let description: String?
     let actionTitle: String?
     let action: (() -> Void)?
-    
+
     init(
         icon: String,
         title: String,
@@ -28,7 +28,7 @@ struct EmptyStateView: View {
         self.actionTitle = actionTitle
         self.action = action
     }
-    
+
     var body: some View {
         VStack(spacing: DesignConstants.Spacing.sm) {
             // Icon
@@ -36,12 +36,12 @@ struct EmptyStateView: View {
                 .font(.system(size: DesignConstants.IconSize.huge))
                 .foregroundStyle(DesignConstants.Colors.tertiaryText)
                 .padding(.bottom, DesignConstants.Spacing.xxs)
-            
+
             // Title
             Text(title)
                 .font(.system(size: DesignConstants.FontSize.body, weight: .medium))
                 .foregroundStyle(DesignConstants.Colors.secondaryText)
-            
+
             // Description (optional)
             if let description = description {
                 Text(description)
@@ -50,7 +50,7 @@ struct EmptyStateView: View {
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            
+
             // Action button (optional)
             if let actionTitle = actionTitle, let action = action {
                 Button(action: action) {
@@ -83,7 +83,7 @@ extension EmptyStateView {
             action: onAdd
         )
     }
-    
+
     /// Empty state for indexes
     static func indexes(onAdd: @escaping () -> Void) -> EmptyStateView {
         EmptyStateView(
@@ -94,7 +94,7 @@ extension EmptyStateView {
             action: onAdd
         )
     }
-    
+
     /// Empty state for check constraints
     static func checkConstraints(onAdd: @escaping () -> Void) -> EmptyStateView {
         EmptyStateView(
@@ -105,7 +105,7 @@ extension EmptyStateView {
             action: onAdd
         )
     }
-    
+
     /// Empty state for columns
     static func columns(onAdd: @escaping () -> Void) -> EmptyStateView {
         EmptyStateView(

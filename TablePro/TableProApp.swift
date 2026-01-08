@@ -25,7 +25,8 @@ final class AppState: ObservableObject {
 /// Custom Commands struct to properly access FocusedValue for disabling ESC when sheet is open
 struct PasteboardCommands: Commands {
     @ObservedObject var appState: AppState
-    @FocusedValue(\.isDatabaseSwitcherOpen) var isDatabaseSwitcherOpen: Bool?
+    @FocusedValue(\.isDatabaseSwitcherOpen)
+    var isDatabaseSwitcherOpen: Bool?
 
     var body: some Commands {
         CommandGroup(replacing: .pasteboard) {
@@ -99,8 +100,9 @@ struct PasteboardCommands: Commands {
 @main
 struct TableProApp: App {
     // Connect AppKit delegate for proper window configuration
-    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    
+    @NSApplicationDelegateAdaptor(AppDelegate.self)
+    var appDelegate
+
     @StateObject private var appState = AppState.shared
     @StateObject private var dbManager = DatabaseManager.shared
 
@@ -112,14 +114,14 @@ struct TableProApp: App {
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
         .defaultSize(width: 700, height: 450)
-        
+
         // Connection Form Window - opens when creating/editing a connection
         WindowGroup("Connection", id: "connection-form", for: UUID?.self) { $connectionId in
-            ConnectionFormView(connectionId: connectionId ?? nil)
+            ConnectionFormView(connectionId: connectionId)
         }
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
-        
+
         // Main Window - opens when connecting to database
         WindowGroup(id: "main") {
             ContentView()
@@ -127,7 +129,7 @@ struct TableProApp: App {
                 .background(OpenWindowHandler())
         }
         .windowStyle(.automatic)
-        .defaultSize(width: 1200, height: 800)
+        .defaultSize(width: 1_200, height: 800)
         .commands {
             // File menu
             CommandGroup(replacing: .newItem) {
@@ -143,7 +145,7 @@ struct TableProApp: App {
                 }
                 .keyboardShortcut("t", modifiers: .command)
                 .disabled(!appState.isConnected)
-                
+
                 Button("New Table...") {
                     NotificationCenter.default.post(name: .createTable, object: nil)
                 }
@@ -200,7 +202,7 @@ struct TableProApp: App {
                 .keyboardShortcut("i", modifiers: [.command, .shift])
                 .disabled(!appState.isConnected)
             }
-            
+
             // Edit menu - Undo/Redo (smart handling for both text editor and data grid)
             CommandGroup(replacing: .undoRedo) {
                 Button("Undo") {
@@ -215,7 +217,7 @@ struct TableProApp: App {
                     }
                 }
                 .keyboardShortcut("z", modifiers: .command)
-                
+
                 Button("Redo") {
                     // Check if first responder is a text view (SQL editor)
                     if let firstResponder = NSApp.keyWindow?.firstResponder,
@@ -229,14 +231,14 @@ struct TableProApp: App {
                 }
                 .keyboardShortcut("z", modifiers: [.command, .shift])
             }
-            
+
             // Edit menu - pasteboard commands with FocusedValue support
             PasteboardCommands(appState: appState)
 
             // Edit menu - row operations (after pasteboard)
             CommandGroup(after: .pasteboard) {
                 Divider()
-                
+
                 Button("Add Row") {
                     NotificationCenter.default.post(name: .addNewRow, object: nil)
                 }
@@ -250,7 +252,7 @@ struct TableProApp: App {
                 .disabled(!appState.isCurrentTabEditable)
 
                 Divider()
-                
+
                 // Table operations (work when tables selected in sidebar)
                 Button("Truncate Table") {
                     NotificationCenter.default.post(name: .truncateTables, object: nil)
@@ -280,7 +282,7 @@ struct TableProApp: App {
                 }
                 .keyboardShortcut("f", modifiers: .command)
                 .disabled(!appState.isConnected)
-                
+
                 Button("Toggle History") {
                     NotificationCenter.default.post(name: .toggleHistoryPanel, object: nil)
                 }
@@ -323,13 +325,13 @@ extension Notification.Name {
     static let applyAllFilters = Notification.Name("applyAllFilters")
     static let duplicateFilter = Notification.Name("duplicateFilter")
     static let removeFilter = Notification.Name("removeFilter")
-    
+
     // History panel notifications
     static let toggleHistoryPanel = Notification.Name("toggleHistoryPanel")
 
     // Database switcher notifications
     static let openDatabaseSwitcher = Notification.Name("openDatabaseSwitcher")
-    
+
     // Table creation notifications
     static let createTable = Notification.Name("createTable")
 
@@ -347,8 +349,9 @@ extension Notification.Name {
 
 /// Helper view that listens for openWelcomeWindow notification
 private struct OpenWindowHandler: View {
-    @Environment(\.openWindow) private var openWindow
-    
+    @Environment(\.openWindow)
+    private var openWindow
+
     var body: some View {
         Color.clear
             .frame(width: 0, height: 0)

@@ -12,7 +12,6 @@ import Foundation
 /// Service for executing database queries and parsing SQL
 @MainActor
 final class QueryExecutionService: ObservableObject {
-
     // MARK: - Published State
 
     @Published var isExecuting: Bool = false
@@ -65,7 +64,7 @@ final class QueryExecutionService: ObservableObject {
 
                 // Fetch column defaults and total row count if editable table
                 var columnDefaults: [String: String?] = [:]
-                var totalRowCount: Int? = nil
+                var totalRowCount: Int?
 
                 if isEditable, let tableName = tableName {
                     if let driver = DatabaseManager.shared.activeDriver {
@@ -135,7 +134,6 @@ final class QueryExecutionService: ObservableObject {
                 }
 
                 await onSuccess(safeResult)
-
             } catch {
                 guard capturedGeneration == queryGeneration else { return }
 

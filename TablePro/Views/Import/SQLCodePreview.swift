@@ -5,8 +5,8 @@
 //  Simple read-only SQL code preview using native NSTextView
 //
 
-import SwiftUI
 import AppKit
+import SwiftUI
 
 /// Read-only SQL code preview with line numbers
 struct SQLCodePreview: NSViewRepresentable {

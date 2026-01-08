@@ -231,7 +231,7 @@ struct DataGridView: NSViewRepresentable {
 
 /// Coordinator handling NSTableView delegate and data source
 final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource,
-    NSControlTextEditingDelegate, NSTextFieldDelegate, NSMenuDelegate
+                                  NSControlTextEditingDelegate, NSTextFieldDelegate, NSMenuDelegate
 {
     var rowProvider: InMemoryRowProvider
     var changeManager: DataChangeManager
@@ -256,7 +256,7 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
 
     private let cellIdentifier = NSUserInterfaceItemIdentifier("DataCell")
     private var rowVisualStateCache: [Int: RowVisualState] = [:]
-    private let largeDatasetThreshold = 5000
+    private let largeDatasetThreshold = 5_000
 
     var isLargeDataset: Bool { cachedRowCount > largeDatasetThreshold }
 

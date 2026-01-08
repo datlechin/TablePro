@@ -12,7 +12,6 @@ import Foundation
 /// Manager for row operations in the data grid
 @MainActor
 final class RowOperationsManager {
-
     // MARK: - Dependencies
 
     private let changeManager: DataChangeManager
@@ -176,7 +175,7 @@ final class RowOperationsManager {
     func undoLastChange(resultRows: inout [QueryResultRow]) -> Set<Int>? {
         guard let result = changeManager.undoLastChange() else { return nil }
 
-        var adjustedSelection: Set<Int>? = nil
+        var adjustedSelection: Set<Int>?
 
         switch result.action {
         case .cellEdit(let rowIndex, let columnIndex, _, let previousValue, _):
@@ -190,11 +189,11 @@ final class RowOperationsManager {
                 adjustedSelection = Set<Int>()
             }
 
-        case .rowDeletion(_, _):
+        case .rowDeletion:
             // Row is restored in changeManager - visual indicator will be removed
             break
 
-        case .batchRowDeletion(_):
+        case .batchRowDeletion:
             // All rows are restored in changeManager
             break
 
@@ -234,11 +233,11 @@ final class RowOperationsManager {
                 resultRows.insert(newRow, at: rowIndex)
             }
 
-        case .rowDeletion(_, _):
+        case .rowDeletion:
             // Row is re-marked as deleted in changeManager
             break
 
-        case .batchRowDeletion(_):
+        case .batchRowDeletion:
             // Rows are re-marked as deleted
             break
 

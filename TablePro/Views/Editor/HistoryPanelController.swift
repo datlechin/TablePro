@@ -10,7 +10,6 @@ import AppKit
 /// Main controller for the history/bookmark panel
 /// Uses NSSplitView for master-detail layout: list on left, preview on right
 final class HistoryPanelController: NSViewController {
-
     // MARK: - Child Controllers
 
     private let listController = HistoryListViewController()
@@ -97,26 +96,24 @@ final class HistoryPanelController: NSViewController {
 // MARK: - NSSplitViewDelegate
 
 extension HistoryPanelController: NSSplitViewDelegate {
-
     func splitView(_ splitView: NSSplitView, constrainMinCoordinate proposedMinimumPosition: CGFloat, ofSubviewAt dividerIndex: Int) -> CGFloat {
         // Minimum width for left pane (list)
-        return 200
+        200
     }
 
     func splitView(_ splitView: NSSplitView, constrainMaxCoordinate proposedMaximumPosition: CGFloat, ofSubviewAt dividerIndex: Int) -> CGFloat {
         // Maximum width for left pane (leaving 300pt minimum for right pane)
-        return splitView.bounds.width - 300
+        splitView.bounds.width - 300
     }
 
     func splitView(_ splitView: NSSplitView, canCollapseSubview subview: NSView) -> Bool {
-        return false
+        false
     }
 }
 
 // MARK: - HistoryListViewControllerDelegate
 
 extension HistoryPanelController: HistoryListViewControllerDelegate {
-
     func historyListViewController(_ controller: HistoryListViewController, didSelectHistoryEntry entry: QueryHistoryEntry) {
         previewController.showHistoryEntry(entry)
     }

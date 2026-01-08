@@ -107,14 +107,12 @@ struct ConnectionTagEditor: View {
         }
         .onAppear { allTags = tagStorage.loadTags() }
         .sheet(isPresented: $showingCreateSheet) {
-            CreateTagSheet(
-                onSave: { tagName, tagColor in
-                    let tag = ConnectionTag(name: tagName.lowercased(), isPreset: false, color: tagColor)
-                    tagStorage.addTag(tag)
-                    selectedTagId = tag.id
-                    allTags = tagStorage.loadTags()
-                }
-            )
+            CreateTagSheet                { tagName, tagColor in
+                let tag = ConnectionTag(name: tagName.lowercased(), isPreset: false, color: tagColor)
+                tagStorage.addTag(tag)
+                selectedTagId = tag.id
+                allTags = tagStorage.loadTags()
+            }
         }
     }
 
@@ -233,7 +231,7 @@ private struct TagColorPicker: View {
 
 #Preview {
     struct PreviewWrapper: View {
-        @State private var tagId: UUID? = nil
+        @State private var tagId: UUID?
 
         var body: some View {
             VStack(spacing: 20) {

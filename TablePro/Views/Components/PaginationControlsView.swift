@@ -17,18 +17,18 @@ struct PaginationControlsView: View {
     let onLimitChange: (Int) -> Void
     let onOffsetChange: (Int) -> Void
     let onGo: () -> Void
-    
+
     @State private var limitText: String = ""
     @State private var offsetText: String = ""
     @State private var showSettings = false
     @FocusState private var isLimitFocused: Bool
     @FocusState private var isOffsetFocused: Bool
-    
+
     var body: some View {
         HStack(spacing: 8) {
             // Navigation buttons
             navigationButtons
-            
+
             // Settings button (gear icon) - opens popover
             Button(action: { showSettings.toggle() }) {
                 Image(systemName: "slider.horizontal.3")
@@ -51,9 +51,9 @@ struct PaginationControlsView: View {
             offsetText = "\(newValue)"
         }
     }
-    
+
     // MARK: - Navigation Buttons
-    
+
     private var navigationButtons: some View {
         HStack(spacing: 4) {
             // Previous page button
@@ -65,13 +65,13 @@ struct PaginationControlsView: View {
             .disabled(!pagination.hasPreviousPage || pagination.isLoading)
             .help("Previous Page (⌘[)")
             .keyboardShortcut("[", modifiers: .command)
-            
+
             // Page indicator: "1 of 25"
             Text("\(pagination.currentPage) of \(pagination.totalPages)")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .frame(minWidth: 60)
-            
+
             // Next page button
             Button(action: onNext) {
                 Image(systemName: "chevron.right")
@@ -83,9 +83,9 @@ struct PaginationControlsView: View {
             .keyboardShortcut("]", modifiers: .command)
         }
     }
-    
+
     // MARK: - Settings Popover
-    
+
     private var settingsPopover: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Limit field
@@ -101,7 +101,7 @@ struct PaginationControlsView: View {
                         applyLimitChange()
                     }
             }
-            
+
             // Offset field
             VStack(alignment: .leading, spacing: 4) {
                 Text("Offset")
@@ -115,7 +115,7 @@ struct PaginationControlsView: View {
                         applyOffsetChange()
                     }
             }
-            
+
             // Go button
             Button(action: {
                 applyLimitChange()
@@ -131,9 +131,9 @@ struct PaginationControlsView: View {
         .padding(12)
         .frame(width: 160)
     }
-    
+
     // MARK: - Helpers
-    
+
     private func applyLimitChange() {
         if let limit = Int(limitText), limit > 0 {
             onLimitChange(limit)
@@ -141,7 +141,7 @@ struct PaginationControlsView: View {
             limitText = "\(pagination.pageSize)"
         }
     }
-    
+
     private func applyOffsetChange() {
         if let offset = Int(offsetText), offset >= 0 {
             onOffsetChange(offset)
@@ -156,7 +156,7 @@ struct PaginationControlsView: View {
         // Preview with multiple pages
         PaginationControlsView(
             pagination: PaginationState(
-                totalRowCount: 5000,
+                totalRowCount: 5_000,
                 pageSize: 200,
                 currentPage: 3,
                 currentOffset: 400,
@@ -170,11 +170,11 @@ struct PaginationControlsView: View {
             onOffsetChange: { _ in },
             onGo: {}
         )
-        
+
         // Preview on first page
         PaginationControlsView(
             pagination: PaginationState(
-                totalRowCount: 1000,
+                totalRowCount: 1_000,
                 pageSize: 200,
                 currentPage: 1,
                 currentOffset: 0,
@@ -188,11 +188,11 @@ struct PaginationControlsView: View {
             onOffsetChange: { _ in },
             onGo: {}
         )
-        
+
         // Preview loading state
         PaginationControlsView(
             pagination: PaginationState(
-                totalRowCount: 5000,
+                totalRowCount: 5_000,
                 pageSize: 200,
                 currentPage: 2,
                 currentOffset: 200,

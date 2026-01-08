@@ -16,7 +16,7 @@ struct ForeignKeyConstraint: Identifiable, Equatable, Codable {
     var referencedColumns: [String]
     var onDelete: ReferentialAction = .noAction
     var onUpdate: ReferentialAction = .noAction
-    
+
     init(
         id: UUID = UUID(),
         name: String = "",
@@ -34,7 +34,7 @@ struct ForeignKeyConstraint: Identifiable, Equatable, Codable {
         self.onDelete = onDelete
         self.onUpdate = onUpdate
     }
-    
+
     var isValid: Bool {
         !columns.isEmpty && !referencedTable.isEmpty && !referencedColumns.isEmpty
     }
@@ -56,7 +56,7 @@ struct IndexDefinition: Identifiable, Equatable, Codable {
     var columns: [String]
     var isUnique: Bool = false
     var type: IndexType = .btree
-    
+
     init(
         id: UUID = UUID(),
         name: String = "",
@@ -70,7 +70,7 @@ struct IndexDefinition: Identifiable, Equatable, Codable {
         self.isUnique = isUnique
         self.type = type
     }
-    
+
     var isValid: Bool {
         !name.isEmpty && !columns.isEmpty
     }
@@ -89,7 +89,7 @@ struct CheckConstraint: Identifiable, Equatable, Codable {
     let id: UUID
     var name: String
     var expression: String
-    
+
     init(
         id: UUID = UUID(),
         name: String = "",
@@ -99,7 +99,7 @@ struct CheckConstraint: Identifiable, Equatable, Codable {
         self.name = name
         self.expression = expression
     }
-    
+
     var isValid: Bool {
         !name.isEmpty && !expression.isEmpty
     }
@@ -114,23 +114,23 @@ struct TableCreationOptions: Equatable, Codable {
     var foreignKeys: [ForeignKeyConstraint] = []
     var indexes: [IndexDefinition] = []
     var checkConstraints: [CheckConstraint] = []
-    
+
     // MySQL/MariaDB specific (in Advanced Options)
     var engine: String? = "InnoDB"
     var charset: String? = "utf8mb4"
     var collation: String? = "utf8mb4_unicode_ci"
     var comment: String? = ""
-    
+
     // PostgreSQL specific (in Advanced Options)
     var tablespace: String? = ""
-    
+
     var isValid: Bool {
-        !tableName.isEmpty && 
-        !columns.isEmpty && 
-        columns.allSatisfy { $0.isValid } &&
-        Set(columns.map { $0.name.lowercased() }).count == columns.count
+        !tableName.isEmpty &&
+            !columns.isEmpty &&
+            columns.allSatisfy { $0.isValid } &&
+            Set(columns.map { $0.name.lowercased() }).count == columns.count
     }
-    
+
     var hasPrimaryKey: Bool {
         !primaryKeyColumns.isEmpty
     }
@@ -141,15 +141,15 @@ struct ColumnDefinition: Identifiable, Equatable, Codable {
     let id: UUID
     var name: String
     var dataType: String
-    var length: Int? = nil
-    var precision: Int? = nil
+    var length: Int?
+    var precision: Int?
     var notNull: Bool = false
-    var defaultValue: String? = nil
+    var defaultValue: String?
     var autoIncrement: Bool = false
     var unsigned: Bool = false  // MySQL only
     var zerofill: Bool = false  // MySQL only
-    var comment: String? = nil
-    
+    var comment: String?
+
     init(
         id: UUID = UUID(),
         name: String = "",
@@ -175,11 +175,11 @@ struct ColumnDefinition: Identifiable, Equatable, Codable {
         self.zerofill = zerofill
         self.comment = comment
     }
-    
+
     var isValid: Bool {
         !name.isEmpty && !dataType.isEmpty
     }
-    
+
     var fullDataType: String {
         var type = dataType.uppercased()
         if let len = length {
@@ -191,15 +191,15 @@ struct ColumnDefinition: Identifiable, Equatable, Codable {
         }
         return type
     }
-    
+
     func needsLength(for dbType: DatabaseType) -> Bool {
         let typeUpper = dataType.uppercased()
-        return typeUpper.contains("VARCHAR") || 
-               typeUpper.contains("CHAR") ||
-               typeUpper == "VARBINARY" ||
-               typeUpper == "BINARY"
+        return typeUpper.contains("VARCHAR") ||
+            typeUpper.contains("CHAR") ||
+            typeUpper == "VARBINARY" ||
+            typeUpper == "BINARY"
     }
-    
+
     func supportsAutoIncrement(for dbType: DatabaseType) -> Bool {
         let typeUpper = dataType.uppercased()
         let integerTypes = ["INT", "INTEGER", "BIGINT", "SMALLINT", "TINYINT", "MEDIUMINT"]
@@ -217,9 +217,9 @@ enum ColumnTemplate: String, CaseIterable, Identifiable {
     case createdAt = "Created At"
     case updatedAt = "Updated At"
     case isActive = "Is Active (BOOLEAN)"
-    
+
     var id: String { rawValue }
-    
+
     func createColumn(for dbType: DatabaseType) -> ColumnDefinition {
         switch self {
         case .id:
@@ -290,7 +290,7 @@ enum DataTypeCategory: String, CaseIterable {
     case dateTime = "Date & Time"
     case binary = "Binary"
     case other = "Other"
-    
+
     func types(for dbType: DatabaseType) -> [String] {
         switch self {
         case .numeric:

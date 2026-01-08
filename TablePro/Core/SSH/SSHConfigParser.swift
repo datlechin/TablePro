@@ -27,7 +27,6 @@ struct SSHConfigEntry: Identifiable, Hashable {
 
 /// Parser for SSH config file (~/.ssh/config)
 final class SSHConfigParser {
-
     /// Default SSH config file path
     static let defaultConfigPath = NSHomeDirectory() + "/.ssh/config"
 

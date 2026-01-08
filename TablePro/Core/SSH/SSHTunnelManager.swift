@@ -49,8 +49,8 @@ actor SSHTunnelManager {
     static let shared = SSHTunnelManager()
 
     private var tunnels: [UUID: SSHTunnel] = [:]
-    private let portRangeStart = 60000
-    private let portRangeEnd = 65000
+    private let portRangeStart = 60_000
+    private let portRangeEnd = 65_000
 
     private init() {}
 
@@ -108,9 +108,9 @@ actor SSHTunnelManager {
             guard let keyPath = privateKeyPath, !keyPath.isEmpty else {
                 throw SSHTunnelError.tunnelCreationFailed("Private key path is required for key authentication")
             }
-            
+
             let expandedPath = expandPath(keyPath)
-            
+
             // Validate private key exists and is readable
             let fileManager = FileManager.default
             guard fileManager.fileExists(atPath: expandedPath) else {
@@ -119,13 +119,13 @@ actor SSHTunnelManager {
             guard fileManager.isReadableFile(atPath: expandedPath) else {
                 throw SSHTunnelError.tunnelCreationFailed("Private key file is not readable. Check permissions (should be 600): \(expandedPath)")
             }
-            
+
             // Force public key authentication
             arguments.append(contentsOf: ["-i", expandedPath])
             arguments.append(contentsOf: ["-o", "PubkeyAuthentication=yes"])
             arguments.append(contentsOf: ["-o", "PasswordAuthentication=no"])
             arguments.append(contentsOf: ["-o", "PreferredAuthentications=publickey"])
-            
+
         case .password:
             // For password auth, we'll use SSH_ASKPASS with a helper script
             // Note: This requires ssh to be run without a TTY (which -N provides)
@@ -139,8 +139,8 @@ actor SSHTunnelManager {
         process.arguments = arguments
 
         // Set up SSH_ASKPASS for passphrase or password
-        var askpassScript: String? = nil
-        
+        var askpassScript: String?
+
         if authMethod == .privateKey, let passphrase = keyPassphrase {
             // Private key with passphrase - use SSH_ASKPASS to provide it
             askpassScript = try await createAskpassScript(password: passphrase)
@@ -148,7 +148,7 @@ actor SSHTunnelManager {
             // Password authentication
             askpassScript = try await createAskpassScript(password: password)
         }
-        
+
         if let script = askpassScript {
             var environment = ProcessInfo.processInfo.environment
             environment["SSH_ASKPASS"] = script
@@ -182,29 +182,29 @@ actor SSHTunnelManager {
                 if authMethod == .privateKey {
                     throw SSHTunnelError.tunnelCreationFailed(
                         "Private key authentication failed. Possible causes:\n" +
-                        "• Private key doesn't match the public key on server\n" +
-                        "• Wrong passphrase for encrypted private key\n" +
-                        "• Wrong user or server\n" +
-                        "Debug: \(errorMessage)"
+                            "• Private key doesn't match the public key on server\n" +
+                            "• Wrong passphrase for encrypted private key\n" +
+                            "• Wrong user or server\n" +
+                            "Debug: \(errorMessage)"
                     )
                 } else {
                     throw SSHTunnelError.authenticationFailed
                 }
             }
-            
+
             if errorMessage.contains("authentication") {
                 throw SSHTunnelError.authenticationFailed
             }
-            
+
             if errorMessage.contains("Connection timed out") || errorMessage.contains("Connection refused") {
                 throw SSHTunnelError.tunnelCreationFailed(
                     "Cannot connect to SSH server. Check:\n" +
-                    "• Server address and port are correct\n" +
-                    "• Server is reachable (firewall, network)\n" +
-                    "Debug: \(errorMessage)"
+                        "• Server address and port are correct\n" +
+                        "• Server is reachable (firewall, network)\n" +
+                        "Debug: \(errorMessage)"
                 )
             }
-            
+
             throw SSHTunnelError.tunnelCreationFailed(errorMessage)
         }
 

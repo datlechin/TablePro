@@ -17,7 +17,7 @@ struct QueryBookmark: Identifiable, Codable, Hashable {
     let createdAt: Date
     var lastUsedAt: Date?
     var notes: String?
-    
+
     init(
         id: UUID = UUID(),
         name: String,
@@ -37,17 +37,17 @@ struct QueryBookmark: Identifiable, Codable, Hashable {
         self.lastUsedAt = lastUsedAt
         self.notes = notes
     }
-    
+
     /// Formatted tags for display (comma-separated)
     var formattedTags: String {
         tags.joined(separator: ", ")
     }
-    
+
     /// Has tags
     var hasTags: Bool {
         !tags.isEmpty
     }
-    
+
     /// Parse comma-separated tag string into array
     static func parseTags(_ tagString: String) -> [String] {
         tagString

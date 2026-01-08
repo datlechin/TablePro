@@ -119,11 +119,10 @@ struct SidebarView: View {
                         isPresented: $showOperationDialog,
                         tableName: tableName,
                         operationType: operationType,
-                        databaseType: databaseType,
-                        onConfirm: { options in
-                            confirmOperation(options: options)
-                        }
-                    )
+                        databaseType: databaseType
+                    )                        { options in
+                        confirmOperation(options: options)
+                    }
                 }
             }
         }
@@ -329,7 +328,7 @@ struct SidebarView: View {
         .keyboardShortcut(.delete, modifiers: .command)
         .disabled(!hasSelection)
     }
-    
+
     /// Batch toggle truncate for all selected tables
     private func batchToggleTruncate() {
         let tablesToToggle = selectedTables.isEmpty ? [] : Array(selectedTables.map { $0.name })

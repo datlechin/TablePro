@@ -19,16 +19,16 @@ extension Notification.Name {
 /// NOT an ObservableObject - uses NotificationCenter for UI communication
 final class QueryHistoryManager {
     static let shared = QueryHistoryManager()
-    
+
     private let storage = QueryHistoryStorage.shared
-    
+
     private init() {
         // Perform cleanup on initialization (app launch)
         storage.cleanup()
     }
-    
+
     // MARK: - History Capture
-    
+
     /// Record a query execution (non-blocking background write)
     func recordQuery(
         query: String,
@@ -48,7 +48,7 @@ final class QueryHistoryManager {
             wasSuccessful: wasSuccessful,
             errorMessage: errorMessage
         )
-        
+
         // Background write (non-blocking)
         storage.addHistory(entry) { success in
             if success {
@@ -62,9 +62,9 @@ final class QueryHistoryManager {
             }
         }
     }
-    
+
     // MARK: - History Retrieval
-    
+
     /// Fetch history entries (synchronous - safe for UI)
     func fetchHistory(
         limit: Int = 100,
@@ -73,7 +73,7 @@ final class QueryHistoryManager {
         searchText: String? = nil,
         dateFilter: DateFilter = .all
     ) -> [QueryHistoryEntry] {
-        return storage.fetchHistory(
+        storage.fetchHistory(
             limit: limit,
             offset: offset,
             connectionId: connectionId,
@@ -81,7 +81,7 @@ final class QueryHistoryManager {
             dateFilter: dateFilter
         )
     }
-    
+
     /// Search queries using FTS5 full-text search
     func searchQueries(_ text: String) -> [QueryHistoryEntry] {
         guard !text.trimmingCharacters(in: .whitespaces).isEmpty else {
@@ -89,7 +89,7 @@ final class QueryHistoryManager {
         }
         return storage.fetchHistory(searchText: text)
     }
-    
+
     /// Delete a history entry
     func deleteHistory(id: UUID) -> Bool {
         let success = storage.deleteHistory(id: id)
@@ -98,14 +98,14 @@ final class QueryHistoryManager {
         }
         return success
     }
-    
+
     /// Get total history count
     func getHistoryCount() -> Int {
-        return storage.getHistoryCount()
+        storage.getHistoryCount()
     }
-    
+
     // MARK: - Bookmarks
-    
+
     /// Save a new bookmark
     func saveBookmark(
         name: String,
@@ -121,23 +121,23 @@ final class QueryHistoryManager {
             tags: tags,
             notes: notes
         )
-        
+
         let success = storage.addBookmark(bookmark)
         if success {
             NotificationCenter.default.post(name: .queryBookmarksDidUpdate, object: nil)
         }
         return success
     }
-    
+
     /// Save bookmark from history entry
     func saveBookmarkFromHistory(_ entry: QueryHistoryEntry, name: String) -> Bool {
-        return saveBookmark(
+        saveBookmark(
             name: name,
             query: entry.query,
             connectionId: entry.connectionId
         )
     }
-    
+
     /// Update an existing bookmark
     func updateBookmark(_ bookmark: QueryBookmark) -> Bool {
         let success = storage.updateBookmark(bookmark)
@@ -146,7 +146,7 @@ final class QueryHistoryManager {
         }
         return success
     }
-    
+
     /// Update bookmark's last used timestamp
     func markBookmarkUsed(id: UUID) {
         if var bookmark = fetchBookmarks().first(where: { $0.id == id }) {
@@ -154,12 +154,12 @@ final class QueryHistoryManager {
             _ = storage.updateBookmark(bookmark)
         }
     }
-    
+
     /// Fetch bookmarks with optional filters
     func fetchBookmarks(searchText: String? = nil, tag: String? = nil) -> [QueryBookmark] {
-        return storage.fetchBookmarks(searchText: searchText, tag: tag)
+        storage.fetchBookmarks(searchText: searchText, tag: tag)
     }
-    
+
     /// Delete a bookmark
     func deleteBookmark(id: UUID) -> Bool {
         let success = storage.deleteBookmark(id: id)
@@ -168,7 +168,7 @@ final class QueryHistoryManager {
         }
         return success
     }
-    
+
     /// Clear all history entries
     func clearAllHistory() -> Bool {
         let success = storage.clearAllHistory()
@@ -177,7 +177,7 @@ final class QueryHistoryManager {
         }
         return success
     }
-    
+
     /// Clear all bookmarks
     func clearAllBookmarks() -> Bool {
         let success = storage.clearAllBookmarks()
@@ -186,9 +186,9 @@ final class QueryHistoryManager {
         }
         return success
     }
-    
+
     // MARK: - Cleanup
-    
+
     /// Manually trigger cleanup (normally runs automatically)
     func cleanup() {
         storage.cleanup()

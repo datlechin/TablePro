@@ -15,7 +15,7 @@ struct SectionHeaderView<Actions: View>: View {
     let isCollapsible: Bool
     @Binding var isExpanded: Bool
     let actions: () -> Actions
-    
+
     init(
         title: String,
         icon: String? = nil,
@@ -31,7 +31,7 @@ struct SectionHeaderView<Actions: View>: View {
         self._isExpanded = isExpanded
         self.actions = actions
     }
-    
+
     var body: some View {
         HStack(spacing: DesignConstants.Spacing.xs) {
             // Collapse/expand chevron (if collapsible)
@@ -42,36 +42,36 @@ struct SectionHeaderView<Actions: View>: View {
                     .rotationEffect(.degrees(isExpanded ? 90 : 0))
                     .animation(.easeInOut(duration: DesignConstants.AnimationDuration.normal), value: isExpanded)
             }
-            
+
             // Icon (optional)
             if let icon = icon {
                 Image(systemName: icon)
                     .font(.system(size: DesignConstants.FontSize.body))
                     .foregroundStyle(DesignConstants.Colors.secondaryText)
             }
-            
+
             // Title
             Text(title)
                 .font(.system(size: DesignConstants.FontSize.title3, weight: .semibold))
                 .foregroundStyle(DesignConstants.Colors.primaryText)
-            
+
             // Count badge (optional)
             if let count = count {
                 Text("(\(count))")
                     .font(.system(size: DesignConstants.FontSize.small))
                     .foregroundStyle(DesignConstants.Colors.tertiaryText)
             }
-            
+
             Spacer()
-            
+
             // Action buttons
             actions()
         }
         .padding(.horizontal, DesignConstants.Spacing.sm)
         .padding(.vertical, DesignConstants.Spacing.xs)
         .background(
-            isCollapsible ? 
-                DesignConstants.Colors.sectionBackground.opacity(0.5) : 
+            isCollapsible ?
+                DesignConstants.Colors.sectionBackground.opacity(0.5) :
                 Color.clear
         )
         .cornerRadius(DesignConstants.CornerRadius.medium)
@@ -99,8 +99,7 @@ extension SectionHeaderView where Actions == EmptyView {
             icon: icon,
             count: count,
             isCollapsible: isCollapsible,
-            isExpanded: isExpanded,
-            actions: { EmptyView() }
-        )
+            isExpanded: isExpanded
+        )               { EmptyView() }
     }
 }

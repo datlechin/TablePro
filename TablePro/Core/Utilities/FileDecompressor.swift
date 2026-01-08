@@ -9,7 +9,6 @@ import Foundation
 
 /// Utility for decompressing gzip-compressed files
 enum FileDecompressor {
-
     /// Decompress a .gz file to a temporary location
     /// - Parameters:
     ///   - url: URL to the .gz file

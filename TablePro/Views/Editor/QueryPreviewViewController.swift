@@ -9,7 +9,6 @@ import AppKit
 
 /// Displays query preview with syntax highlighting and metadata
 final class QueryPreviewViewController: NSViewController {
-
     // MARK: - State
 
     private enum PreviewMode {

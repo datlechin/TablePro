@@ -13,7 +13,7 @@ struct MainStatusBarView: View {
     let filterStateManager: FilterStateManager
     let selectedRowIndices: Set<Int>
     @Binding var showStructure: Bool
-    
+
     // Pagination callbacks
     let onFirstPage: () -> Void
     let onPreviousPage: () -> Void
@@ -60,8 +60,8 @@ struct MainStatusBarView: View {
                     )) {
                         HStack(spacing: 4) {
                             Image(systemName: filterStateManager.hasAppliedFilters
-                                ? "line.3.horizontal.decrease.circle.fill"
-                                : "line.3.horizontal.decrease.circle")
+                                    ? "line.3.horizontal.decrease.circle.fill"
+                                    : "line.3.horizontal.decrease.circle")
                             Text("Filters")
                             if filterStateManager.hasAppliedFilters {
                                 Text("(\(filterStateManager.appliedFilters.count))")
@@ -73,7 +73,7 @@ struct MainStatusBarView: View {
                     .controlSize(.small)
                     .help("Toggle Filters (Cmd+F)")
                 }
-                
+
                 // Pagination controls for table tabs
                 if let tab = tab, tab.tabType == .table, tab.tableName != nil,
                    let total = tab.pagination.totalRowCount, total > 0 {
@@ -114,7 +114,7 @@ struct MainStatusBarView: View {
             let formatter = NumberFormatter()
             formatter.numberStyle = .decimal
             let formattedTotal = formatter.string(from: NSNumber(value: total)) ?? "\(total)"
-            
+
             return "\(pagination.rangeStart)-\(pagination.rangeEnd) of \(formattedTotal) rows"
         } else if loadedCount > 0 {
             // Simple mode: "100 rows"

@@ -15,7 +15,7 @@ struct TableTabContentView: View {
     let filterStateManager: FilterStateManager
     @Binding var selectedRowIndices: Set<Int>
     @Binding var editingCell: CellPosition?
-    
+
     // Callbacks
     let onCommit: (String) -> Void
     let onRefresh: () -> Void
@@ -28,7 +28,7 @@ struct TableTabContentView: View {
     let onClearFilters: () -> Void
     let onQuickSearch: (String) -> Void
     let sortedRows: [QueryResultRow]
-    
+
     // Pagination callbacks
     let onFirstPage: () -> Void
     let onPreviousPage: () -> Void
@@ -38,10 +38,10 @@ struct TableTabContentView: View {
     let onOffsetChange: (Int) -> Void
     let onPaginationGo: () -> Void
     let onDismissError: () -> Void
-    
+
     @Binding var sortState: SortState
     @Binding var showStructure: Bool
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // Error banner (if query failed)
@@ -75,7 +75,7 @@ struct TableTabContentView: View {
                 )
                 .frame(maxHeight: .infinity, alignment: .top)
             }
-            
+
             // Filter panel (collapsible, at bottom)
             if filterStateManager.isVisible && tab.tabType == .table {
                 Divider()
@@ -90,7 +90,7 @@ struct TableTabContentView: View {
                 )
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
-            
+
             // Status bar
             MainStatusBarView(
                 tab: tab,

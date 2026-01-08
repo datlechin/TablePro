@@ -16,7 +16,6 @@ import Foundation
 
 /// SQL statement parser that handles comments, strings, and multi-line statements
 final class SQLFileParser {
-
     // MARK: - Parser State
 
     private enum ParserState {
@@ -39,8 +38,7 @@ final class SQLFileParser {
         url: URL,
         encoding: String.Encoding
     ) async throws -> AsyncStream<(statement: String, lineNumber: Int)> {
-
-        return AsyncStream { continuation in
+        AsyncStream { continuation in
             Task {
                 do {
                     let fileHandle = try FileHandle(forReadingFrom: url)
@@ -59,7 +57,7 @@ final class SQLFileParser {
                     var buffer = ""
 
                     // Read file in chunks
-                    let chunkSize = 4096
+                    let chunkSize = 4_096
 
                     while true {
                         let data = fileHandle.readData(ofLength: chunkSize)
@@ -243,7 +241,6 @@ final class SQLFileParser {
                     }
 
                     continuation.finish()
-
                 } catch {
                     // Log parsing errors - these should not fail silently
                     print("ERROR: SQL file parsing failed: \(error.localizedDescription)")

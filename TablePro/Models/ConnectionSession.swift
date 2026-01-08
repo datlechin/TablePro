@@ -14,7 +14,7 @@ struct ConnectionSession: Identifiable {
     var driver: DatabaseDriver?
     var status: ConnectionStatus = .disconnected
     var lastError: String?
-    
+
     // Per-connection state
     var tables: [TableInfo] = []
     var selectedTables: Set<TableInfo> = []
@@ -23,11 +23,11 @@ struct ConnectionSession: Identifiable {
     var pendingTruncates: Set<String> = []
     var pendingDeletes: Set<String> = []
     var tableOperationOptions: [String: TableOperationOptions] = [:]
-    
+
     // Metadata
     let connectedAt: Date
     var lastActiveAt: Date
-    
+
     init(connection: DatabaseConnection, driver: DatabaseDriver? = nil) {
         self.id = connection.id
         self.connection = connection
@@ -35,12 +35,12 @@ struct ConnectionSession: Identifiable {
         self.connectedAt = Date()
         self.lastActiveAt = Date()
     }
-    
+
     /// Update last active timestamp
     mutating func markActive() {
         lastActiveAt = Date()
     }
-    
+
     /// Check if session is currently connected
     var isConnected: Bool {
         if case .connected = status {

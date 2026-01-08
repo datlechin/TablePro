@@ -14,7 +14,7 @@ final class PostgreSQLDriver: DatabaseDriver {
 
     /// Native libpq connection wrapper
     private var libpqConnection: LibPQConnection?
-    
+
     /// Server version string (e.g., "16.1.0")
     var serverVersion: String? {
         libpqConnection?.serverVersion()
@@ -130,8 +130,8 @@ final class PostgreSQLDriver: DatabaseDriver {
 
         return result.rows.compactMap { row in
             guard row.count >= 4,
-                let name = row[0],
-                let dataType = row[1]
+                  let name = row[0],
+                  let dataType = row[1]
             else {
                 return nil
             }
@@ -188,8 +188,8 @@ final class PostgreSQLDriver: DatabaseDriver {
 
         return result.rows.compactMap { row in
             guard row.count >= 5,
-                let name = row[0],
-                let columnsStr = row[1]
+                  let name = row[0],
+                  let columnsStr = row[1]
             else {
                 return nil
             }
@@ -235,10 +235,10 @@ final class PostgreSQLDriver: DatabaseDriver {
 
         return result.rows.compactMap { row in
             guard row.count >= 6,
-                let name = row[0],
-                let column = row[1],
-                let refTable = row[2],
-                let refColumn = row[3]
+                  let name = row[0],
+                  let column = row[1],
+                  let refTable = row[2],
+                  let refColumn = row[3]
             else {
                 return nil
             }
@@ -307,11 +307,11 @@ final class PostgreSQLDriver: DatabaseDriver {
         let paginatedQuery = "\(baseQuery) LIMIT \(limit) OFFSET \(offset)"
         return try await execute(query: paginatedQuery)
     }
-    
+
     func fetchTableMetadata(tableName: String) async throws -> TableMetadata {
         // Escape single quotes to prevent SQL injection (string literal context)
         let safeTableName = tableName.replacingOccurrences(of: "'", with: "''")
-        
+
         let query = """
             SELECT
                 pg_total_relation_size(c.oid) AS total_size,
@@ -325,9 +325,9 @@ final class PostgreSQLDriver: DatabaseDriver {
             WHERE c.relname = '\(safeTableName)'
               AND n.nspname = 'public'
             """
-        
+
         let result = try await execute(query: query)
-        
+
         guard let row = result.rows.first else {
             return TableMetadata(
                 tableName: tableName,
@@ -343,14 +343,14 @@ final class PostgreSQLDriver: DatabaseDriver {
                 updateTime: nil
             )
         }
-        
-        let totalSize = row.count > 0 ? Int64(row[0] ?? "0") : nil
+
+        let totalSize = !row.isEmpty ? Int64(row[0] ?? "0") : nil
         let dataSize = row.count > 1 ? Int64(row[1] ?? "0") : nil
         let indexSize = row.count > 2 ? Int64(row[2] ?? "0") : nil
         let rowCount = row.count > 3 ? Int64(row[3] ?? "0") : nil
         let avgRowLength = row.count > 4 ? Int64(row[4] ?? "0") : nil
         let comment = row.count > 5 ? row[5] : nil
-        
+
         return TableMetadata(
             tableName: tableName,
             dataSize: dataSize,

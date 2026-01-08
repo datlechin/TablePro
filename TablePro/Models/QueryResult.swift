@@ -11,7 +11,7 @@ import Foundation
 struct QueryResultRow: Identifiable, Equatable {
     let id = UUID()
     var values: [String?]
-    
+
     static func == (lhs: QueryResultRow, rhs: QueryResultRow) -> Bool {
         lhs.id == rhs.id
     }
@@ -24,26 +24,26 @@ struct QueryResult {
     let rowsAffected: Int
     let executionTime: TimeInterval
     let error: DatabaseError?
-    
+
     var isEmpty: Bool {
         rows.isEmpty
     }
-    
+
     var rowCount: Int {
         rows.count
     }
-    
+
     var columnCount: Int {
         columns.count
     }
-    
+
     /// Convert to QueryResultRow format for UI
     func toQueryResultRows() -> [QueryResultRow] {
         rows.map { row in
             QueryResultRow(values: row)
         }
     }
-    
+
     static let empty = QueryResult(
         columns: [],
         rows: [],
@@ -61,7 +61,7 @@ enum DatabaseError: Error, LocalizedError {
     case fileNotFound(String)
     case notConnected
     case unsupportedOperation
-    
+
     var errorDescription: String? {
         switch self {
         case .connectionFailed(let message):
@@ -86,7 +86,7 @@ struct TableInfo: Identifiable, Hashable {
     let name: String
     let type: TableType
     let rowCount: Int?
-    
+
     enum TableType: String {
         case table = "TABLE"
         case view = "VIEW"
@@ -135,7 +135,7 @@ enum ConnectionStatus: Equatable {
     case connecting
     case connected
     case error(String)
-    
+
     var isConnected: Bool {
         if case .connected = self { return true }
         return false

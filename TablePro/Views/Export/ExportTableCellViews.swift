@@ -13,7 +13,6 @@ import SwiftUI
 
 /// Cell view for database rows with tristate checkbox and name
 final class DatabaseRowCellView: NSTableCellView {
-
     private let checkbox: NSButton
     private let iconView: NSImageView
     private let nameLabel: NSTextField
@@ -103,7 +102,6 @@ final class DatabaseRowCellView: NSTableCellView {
 
 /// Cell view for table rows with selection checkbox, name, and optional SQL options
 final class TableRowCellView: NSTableCellView {
-
     private let selectionCheckbox: NSButton
     private let iconView: NSImageView
     private let nameLabel: NSTextField

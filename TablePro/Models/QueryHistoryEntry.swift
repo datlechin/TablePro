@@ -18,7 +18,7 @@ struct QueryHistoryEntry: Identifiable, Codable, Hashable {
     let rowCount: Int  // -1 if unknown
     let wasSuccessful: Bool
     let errorMessage: String?
-    
+
     init(
         id: UUID = UUID(),
         query: String,
@@ -40,16 +40,16 @@ struct QueryHistoryEntry: Identifiable, Codable, Hashable {
         self.wasSuccessful = wasSuccessful
         self.errorMessage = errorMessage
     }
-    
+
     /// Formatted execution time for display
     var formattedExecutionTime: String {
         if executionTime < 1.0 {
-            return String(format: "%.0f ms", executionTime * 1000)
+            return String(format: "%.0f ms", executionTime * 1_000)
         } else {
             return String(format: "%.2f s", executionTime)
         }
     }
-    
+
     /// Formatted row count for display
     var formattedRowCount: String {
         if rowCount < 0 {
@@ -60,7 +60,7 @@ struct QueryHistoryEntry: Identifiable, Codable, Hashable {
             return "\(rowCount) rows"
         }
     }
-    
+
     /// Truncated query for preview (first 100 chars)
     var queryPreview: String {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)

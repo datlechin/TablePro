@@ -171,8 +171,8 @@ final class ConnectionStorage {
         let status = SecItemCopyMatching(query as CFDictionary, &result)
 
         guard status == errSecSuccess,
-            let data = result as? Data,
-            let password = String(data: data, encoding: .utf8)
+              let data = result as? Data,
+              let password = String(data: data, encoding: .utf8)
         else {
             return nil
         }
@@ -233,8 +233,8 @@ final class ConnectionStorage {
         let status = SecItemCopyMatching(query as CFDictionary, &result)
 
         guard status == errSecSuccess,
-            let data = result as? Data,
-            let password = String(data: data, encoding: .utf8)
+              let data = result as? Data,
+              let password = String(data: data, encoding: .utf8)
         else {
             return nil
         }
@@ -295,8 +295,8 @@ final class ConnectionStorage {
         let status = SecItemCopyMatching(query as CFDictionary, &result)
 
         guard status == errSecSuccess,
-            let data = result as? Data,
-            let passphrase = String(data: data, encoding: .utf8)
+              let data = result as? Data,
+              let passphrase = String(data: data, encoding: .utf8)
         else {
             return nil
         }

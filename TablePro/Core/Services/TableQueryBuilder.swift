@@ -10,7 +10,6 @@ import Foundation
 
 /// Service for building SQL queries for table operations
 struct TableQueryBuilder {
-
     // MARK: - Properties
 
     private let databaseType: DatabaseType

@@ -55,7 +55,6 @@ enum UIDateFilter: Int {
 // MARK: - HistoryListViewController
 
 final class HistoryListViewController: NSViewController, NSMenuItemValidation {
-
     // MARK: - Properties
 
     weak var delegate: HistoryListViewControllerDelegate?
@@ -569,7 +568,6 @@ extension HistoryListViewController: NSTableViewDataSource {
 // MARK: - NSTableViewDelegate
 
 extension HistoryListViewController: NSTableViewDelegate {
-
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         switch displayMode {
         case .history:
@@ -630,7 +628,6 @@ extension HistoryListViewController: NSTableViewDelegate {
 // MARK: - NSSearchFieldDelegate
 
 extension HistoryListViewController: NSSearchFieldDelegate {
-
     func controlTextDidChange(_ obj: Notification) {
         if let field = obj.object as? NSSearchField {
             searchText = field.stringValue
@@ -652,7 +649,6 @@ extension HistoryListViewController: NSSearchFieldDelegate {
 // MARK: - Context Menu
 
 extension HistoryListViewController {
-
     override func rightMouseDown(with event: NSEvent) {
         let point = tableView.convert(event.locationInWindow, from: nil)
         let row = tableView.row(at: point)
@@ -668,7 +664,6 @@ extension HistoryListViewController {
 // MARK: - HistoryTableViewKeyboardDelegate
 
 extension HistoryListViewController: HistoryTableViewKeyboardDelegate {
-
     func handleDeleteKey() {
         deleteSelectedRow()
     }
@@ -683,7 +678,7 @@ extension HistoryListViewController: HistoryTableViewKeyboardDelegate {
 
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         if menuItem.action == #selector(delete(_:)) {
-            return tableView.selectedRow >= 0 && dataProvider.count > 0
+            return tableView.selectedRow >= 0 && !dataProvider.isEmpty
         }
         if menuItem.action == #selector(copy(_:)) {
             return tableView.selectedRow >= 0

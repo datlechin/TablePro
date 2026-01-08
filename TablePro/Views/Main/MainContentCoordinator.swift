@@ -20,7 +20,6 @@ enum DiscardAction {
 /// Coordinator managing MainContentView business logic
 @MainActor
 final class MainContentCoordinator: ObservableObject {
-
     // MARK: - Dependencies
 
     let connection: DatabaseConnection
@@ -140,7 +139,7 @@ final class MainContentCoordinator: ObservableObject {
         toolbarState.isExecuting = true
 
         let fullQuery = tabManager.tabs[index].query
-        
+
         // For table tabs, use the full query. For query tabs, extract at cursor
         let sql: String
         if tabManager.tabs[index].tabType == .table {
@@ -165,7 +164,7 @@ final class MainContentCoordinator: ObservableObject {
                 let result = try await DatabaseManager.shared.execute(query: sql)
 
                 var columnDefaults: [String: String?] = [:]
-                var totalRowCount: Int? = nil
+                var totalRowCount: Int?
 
                 if isEditable, let tableName = tableName {
                     if let driver = DatabaseManager.shared.activeDriver {
@@ -346,7 +345,7 @@ final class MainContentCoordinator: ObservableObject {
 
         tabManager.tabs[tabIndex].sortState = currentSort
         tabManager.tabs[tabIndex].hasUserInteraction = true
-        
+
         // Reset pagination to page 1 when sorting changes
         tabManager.tabs[tabIndex].pagination.reset()
 
@@ -375,10 +374,10 @@ final class MainContentCoordinator: ObservableObject {
     func goToNextPage() {
         guard let tabIndex = tabManager.selectedTabIndex,
               tabIndex < tabManager.tabs.count else { return }
-        
+
         var tab = tabManager.tabs[tabIndex]
         guard tab.pagination.hasNextPage else { return }
-        
+
         tab.pagination.goToNextPage()
         tabManager.tabs[tabIndex] = tab
         reloadCurrentPage()
@@ -388,10 +387,10 @@ final class MainContentCoordinator: ObservableObject {
     func goToPreviousPage() {
         guard let tabIndex = tabManager.selectedTabIndex,
               tabIndex < tabManager.tabs.count else { return }
-        
+
         var tab = tabManager.tabs[tabIndex]
         guard tab.pagination.hasPreviousPage else { return }
-        
+
         tab.pagination.goToPreviousPage()
         tabManager.tabs[tabIndex] = tab
         reloadCurrentPage()
@@ -401,10 +400,10 @@ final class MainContentCoordinator: ObservableObject {
     func goToFirstPage() {
         guard let tabIndex = tabManager.selectedTabIndex,
               tabIndex < tabManager.tabs.count else { return }
-        
+
         var tab = tabManager.tabs[tabIndex]
         guard tab.pagination.currentPage != 1 else { return }
-        
+
         tab.pagination.goToFirstPage()
         tabManager.tabs[tabIndex] = tab
         reloadCurrentPage()
@@ -414,10 +413,10 @@ final class MainContentCoordinator: ObservableObject {
     func goToLastPage() {
         guard let tabIndex = tabManager.selectedTabIndex,
               tabIndex < tabManager.tabs.count else { return }
-        
+
         var tab = tabManager.tabs[tabIndex]
         guard tab.pagination.currentPage != tab.pagination.totalPages else { return }
-        
+
         tab.pagination.goToLastPage()
         tabManager.tabs[tabIndex] = tab
         reloadCurrentPage()
@@ -428,35 +427,35 @@ final class MainContentCoordinator: ObservableObject {
         guard let tabIndex = tabManager.selectedTabIndex,
               tabIndex < tabManager.tabs.count,
               newSize > 0 else { return }
-        
+
         tabManager.tabs[tabIndex].pagination.updatePageSize(newSize)
         reloadCurrentPage()
     }
-    
+
     /// Update offset and reload
     func updateOffset(_ newOffset: Int) {
         guard let tabIndex = tabManager.selectedTabIndex,
               tabIndex < tabManager.tabs.count,
               newOffset >= 0 else { return }
-        
+
         tabManager.tabs[tabIndex].pagination.updateOffset(newOffset)
         reloadCurrentPage()
     }
-    
+
     /// Apply both limit and offset changes and reload
     func applyPaginationSettings() {
         reloadCurrentPage()
     }
-    
+
     /// Reload current page data
     private func reloadCurrentPage() {
         guard let tabIndex = tabManager.selectedTabIndex,
               tabIndex < tabManager.tabs.count,
               let tableName = tabManager.tabs[tabIndex].tableName else { return }
-        
+
         let tab = tabManager.tabs[tabIndex]
         let pagination = tab.pagination
-        
+
         let newQuery = queryBuilder.buildBaseQuery(
             tableName: tableName,
             sortState: tab.sortState,
@@ -464,7 +463,7 @@ final class MainContentCoordinator: ObservableObject {
             limit: pagination.pageSize,
             offset: pagination.currentOffset
         )
-        
+
         tabManager.tabs[tabIndex].query = newQuery
         runQuery()
     }
@@ -475,7 +474,7 @@ final class MainContentCoordinator: ObservableObject {
         guard let tabIndex = tabManager.selectedTabIndex,
               tabIndex < tabManager.tabs.count,
               let tableName = tabManager.tabs[tabIndex].tableName else { return }
-        
+
         // Reset pagination when filters change
         tabManager.tabs[tabIndex].pagination.reset()
 
@@ -502,7 +501,7 @@ final class MainContentCoordinator: ObservableObject {
               tabIndex < tabManager.tabs.count,
               let tableName = tabManager.tabs[tabIndex].tableName,
               !searchText.trimmingCharacters(in: .whitespaces).isEmpty else { return }
-        
+
         // Reset pagination when search changes
         tabManager.tabs[tabIndex].pagination.reset()
 
@@ -871,7 +870,7 @@ final class MainContentCoordinator: ObservableObject {
 
     /// Generates DROP TABLE statement with optional CASCADE.
     private func dropTableStatement(quotedName: String, options: TableOperationOptions, dbType: DatabaseType) -> String {
-        return switch dbType {
+        switch dbType {
         case .postgresql:
             "DROP TABLE \(quotedName)\(options.cascade ? " CASCADE" : "")"
         case .mysql, .mariadb, .sqlite:
@@ -986,7 +985,6 @@ final class MainContentCoordinator: ObservableObject {
                 if tabManager.selectedTabIndex != nil && !tabManager.tabs.isEmpty {
                     runQuery()
                 }
-
             } catch {
                 let executionTime = Date().timeIntervalSince(overallStartTime)
 
@@ -1045,12 +1043,12 @@ final class MainContentCoordinator: ObservableObject {
     }
 
     // MARK: - Table Creation
-    
+
     /// Creates a new table from the provided options
     /// - Parameter options: Table creation configuration
     func createTable(_ options: TableCreationOptions) {
         let service = CreateTableService(databaseType: connection.type)
-        
+
         // Generate SQL
         let sql: String
         do {
@@ -1062,11 +1060,11 @@ final class MainContentCoordinator: ObservableObject {
             }
             return
         }
-        
+
         // Execute the CREATE TABLE statement
         Task {
             let startTime = Date()
-            
+
             do {
                 guard let driver = DatabaseManager.shared.activeDriver else {
                     await MainActor.run {
@@ -1076,15 +1074,15 @@ final class MainContentCoordinator: ObservableObject {
                     }
                     throw DatabaseError.notConnected
                 }
-                
+
                 // Execute CREATE TABLE
-                let _ = try await driver.execute(query: sql)
-                
+                _ = try await driver.execute(query: sql)
+
                 let duration = Date().timeIntervalSince(startTime)
-                
+
                 // Refresh schema to show new table (outside MainActor)
                 await schemaProvider.invalidateCache()
-                
+
                 let needsQuery = await MainActor.run { () -> Bool in
                     // Close the create table tab
                     if let tabIndex = tabManager.selectedTabIndex,
@@ -1092,27 +1090,26 @@ final class MainContentCoordinator: ObservableObject {
                         let currentTab = tabManager.tabs[tabIndex]
                         tabManager.closeTab(currentTab)
                     }
-                    
+
                     // Open the newly created table in a new tab
                     let needs = tabManager.TableProTabSmart(
                         tableName: options.tableName,
                         hasUnsavedChanges: changeManager.hasChanges,
                         databaseType: connection.type
                     )
-                    
+
                     // Refresh sidebar to show new table
                     NotificationCenter.default.post(name: .refreshData, object: nil)
-                    
+
                     return needs
                 }
-                
+
                 // Execute query to load table data if needed (runs async)
                 if needsQuery {
                     await MainActor.run {
                         runQuery()
                     }
                 }
-                
             } catch {
                 await MainActor.run {
                     if let index = tabManager.selectedTabIndex {
@@ -1122,7 +1119,7 @@ final class MainContentCoordinator: ObservableObject {
             }
         }
     }
-    
+
     // MARK: - Discard Handling
 
     func handleDiscard(
@@ -1230,10 +1227,10 @@ final class MainContentCoordinator: ObservableObject {
                 tabPersistence.clearJustRestoredFlag()
 
                 if !shouldSkipLazyLoad &&
-                   newTab.tabType == .table &&
-                   newTab.resultRows.isEmpty &&
-                   newTab.lastExecutedAt == nil &&
-                   !newTab.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    newTab.tabType == .table &&
+                    newTab.resultRows.isEmpty &&
+                    newTab.lastExecutedAt == nil &&
+                    !newTab.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     if let session = DatabaseManager.shared.currentSession, session.isConnected {
                         runQuery()
                     } else {
@@ -1254,7 +1251,7 @@ final class MainContentCoordinator: ObservableObject {
             hasUnsavedChanges: changeManager.hasChanges,
             databaseType: connection.type
         )
-        
+
         // Initialize pagination for new table tab
         if needsQuery, let tabIndex = tabManager.selectedTabIndex {
             tabManager.tabs[tabIndex].pagination.reset()
@@ -1351,12 +1348,12 @@ final class MainContentCoordinator: ObservableObject {
         guard let driver = DatabaseManager.shared.activeDriver else {
             return
         }
-        
+
         do {
             // For MySQL/MariaDB, use USE command
             if connection.type == .mysql || connection.type == .mariadb {
                 _ = try await driver.execute(query: "USE `\(database)`")
-                
+
                 // Update session with new database
                 if let sessionId = DatabaseManager.shared.currentSessionId {
                     DatabaseManager.shared.updateSession(sessionId) { session in
@@ -1365,10 +1362,10 @@ final class MainContentCoordinator: ObservableObject {
                         session.connection = updatedConnection
                     }
                 }
-                
+
                 // Update toolbar state
                 toolbarState.databaseName = database
-                
+
                 // Clear tab results but keep tabs open
                 tabManager.tabs = tabManager.tabs.map { tab in
                     var updatedTab = tab
@@ -1378,27 +1375,25 @@ final class MainContentCoordinator: ObservableObject {
                     updatedTab.executionTime = nil
                     return updatedTab
                 }
-                
+
                 // Reload schema for autocomplete
                 await loadSchema()
-                
+
                 // Refresh tables list in sidebar
                 NotificationCenter.default.post(name: .refreshAll, object: nil)
-                
+
                 // Re-execute current tab's query if it's a table tab
                 if let currentTab = tabManager.selectedTab, currentTab.tabType == .table {
                     runQuery()
                 }
-                
             } else {
                 // For PostgreSQL and SQLite, reconnect with new database
                 // (SQLite doesn't apply, but keeping for completeness)
             }
-            
         } catch {
         }
     }
-    
+
     /// Switch to a different database (legacy method - creates new connection)
     func switchToDatabase(_ database: String) {
         let newConnection = DatabaseConnection(
@@ -1462,4 +1457,3 @@ final class MainContentCoordinator: ObservableObject {
         }
     }
 }
-

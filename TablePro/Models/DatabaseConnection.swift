@@ -77,8 +77,8 @@ enum DatabaseType: String, CaseIterable, Identifiable, Codable {
     /// Default port for each database type
     var defaultPort: Int {
         switch self {
-        case .mysql, .mariadb: return 3306
-        case .postgresql: return 5432
+        case .mysql, .mariadb: return 3_306
+        case .postgresql: return 5_432
         case .sqlite: return 0
         }
     }
@@ -158,7 +158,7 @@ struct DatabaseConnection: Identifiable, Hashable {
         id: UUID = UUID(),
         name: String,
         host: String = "localhost",
-        port: Int = 3306,
+        port: Int = 3_306,
         database: String = "",
         username: String = "root",
         type: DatabaseType = .mysql,

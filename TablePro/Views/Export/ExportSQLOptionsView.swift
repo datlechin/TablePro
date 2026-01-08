@@ -14,7 +14,7 @@ struct ExportSQLOptionsView: View {
     @Binding var options: SQLExportOptions
 
     /// Available batch size options
-    private static let batchSizeOptions = [1, 100, 500, 1000]
+    private static let batchSizeOptions = [1, 100, 500, 1_000]
 
     var body: some View {
         VStack(alignment: .leading, spacing: DesignConstants.Spacing.xs) {

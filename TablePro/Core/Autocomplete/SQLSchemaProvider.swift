@@ -9,7 +9,6 @@ import Foundation
 
 /// Provides cached database schema information for autocomplete
 actor SQLSchemaProvider {
-
     // MARK: - Properties
 
     private var tables: [TableInfo] = []

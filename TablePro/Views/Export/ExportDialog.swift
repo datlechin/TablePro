@@ -83,11 +83,10 @@ struct ExportDialog: View {
                 totalTables: exportServiceState.totalTables,
                 processedRows: exportServiceState.processedRows,
                 totalRows: exportServiceState.totalRows,
-                statusMessage: exportServiceState.statusMessage,
-                onStop: {
-                    exportServiceState.service?.cancelExport()
-                }
-            )
+                statusMessage: exportServiceState.statusMessage
+            )                {
+                exportServiceState.service?.cancelExport()
+            }
             .interactiveDismissDisabled()
         }
         .sheet(isPresented: $showSuccessDialog) {
@@ -356,9 +355,9 @@ struct ExportDialog: View {
 
         // Prevent path traversal attempts and special directory names
         if name == "." || name == ".." ||
-           name.hasPrefix("../") || name.hasPrefix("..\\") ||
-           name.hasSuffix("/..") || name.hasSuffix("\\..") ||
-           name.contains("/../") || name.contains("\\..\\") {
+            name.hasPrefix("../") || name.hasPrefix("..\\") ||
+            name.hasSuffix("/..") || name.hasSuffix("\\..") ||
+            name.contains("/../") || name.contains("\\..\\") {
             return "Filename cannot be '.' or '..' or contain path traversal"
         }
 
@@ -481,7 +480,6 @@ struct ExportDialog: View {
             } else if !connection.database.isEmpty {
                 config.fileName = connection.database
             }
-
         } catch {
             isLoading = false
             errorMessage = "Failed to load databases: \(error.localizedDescription)"
@@ -610,7 +608,6 @@ struct ExportDialog: View {
             } else {
                 showSuccessDialog = true
             }
-
         } catch {
             showProgressDialog = false
             isExporting = false

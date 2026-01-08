@@ -13,21 +13,21 @@ struct SaveTemplateSheet: View {
     @Binding var templateName: String
     let onSave: () -> Void
     let onCancel: () -> Void
-    
+
     var body: some View {
         VStack(spacing: DesignConstants.Spacing.md) {
             Text("Save Table Template")
                 .font(.headline)
-            
+
             TextField("Template Name", text: $templateName)
                 .textFieldStyle(.roundedBorder)
-            
+
             HStack {
                 Button("Cancel", action: onCancel)
                     .keyboardShortcut(.escape)
-                
+
                 Spacer()
-                
+
                 Button("Save", action: onSave)
                     .buttonStyle(.borderedProminent)
                     .disabled(templateName.isEmpty)
@@ -47,21 +47,21 @@ struct LoadTemplateSheet: View {
     let onLoad: (String) -> Void
     let onDelete: (String) -> Void
     let onCancel: () -> Void
-    
+
     @State private var selectedTemplate: String?
-    
+
     private var listHeight: CGFloat {
         // Dynamic height based on number of templates (max 8 items visible)
         let itemHeight: CGFloat = 30
         let maxItems = min(templates.count, 8)
         return CGFloat(maxItems) * itemHeight + 10
     }
-    
+
     var body: some View {
         VStack(spacing: DesignConstants.Spacing.md) {
             Text("Load Table Template")
                 .font(.headline)
-            
+
             if templates.isEmpty {
                 Text("No saved templates")
                     .foregroundStyle(.secondary)
@@ -71,9 +71,9 @@ struct LoadTemplateSheet: View {
                     HStack {
                         Text(template)
                             .font(.system(size: DesignConstants.FontSize.body))
-                        
+
                         Spacer()
-                        
+
                         Button(action: {
                             onDelete(template)
                         }) {
@@ -89,13 +89,13 @@ struct LoadTemplateSheet: View {
                 .scrollContentBackground(.hidden)
                 .frame(height: listHeight)
             }
-            
+
             HStack {
                 Button("Cancel", action: onCancel)
                     .keyboardShortcut(.escape)
-                
+
                 Spacer()
-                
+
                 Button("Load") {
                     if let selected = selectedTemplate {
                         onLoad(selected)
@@ -118,16 +118,16 @@ struct ImportDDLSheet: View {
     @Binding var ddlText: String
     let onImport: () -> Void
     let onCancel: () -> Void
-    
+
     var body: some View {
         VStack(spacing: DesignConstants.Spacing.md) {
             Text("Import from DDL")
                 .font(.headline)
-            
+
             Text("Paste your CREATE TABLE statement below:")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            
+
             TextEditor(text: $ddlText)
                 .font(.system(.body, design: .monospaced))
                 .frame(height: 250)
@@ -135,13 +135,13 @@ struct ImportDDLSheet: View {
                 .padding(DesignConstants.Spacing.xs)
                 .background(Color(nsColor: .textBackgroundColor))
                 .cornerRadius(6)
-            
+
             HStack {
                 Button("Cancel", action: onCancel)
                     .keyboardShortcut(.escape)
-                
+
                 Spacer()
-                
+
                 Button("Import") {
                     onImport()
                 }
@@ -163,23 +163,23 @@ struct DuplicateTableSheet: View {
     @Binding var selectedTable: String?
     let onDuplicate: () -> Void
     let onCancel: () -> Void
-    
+
     private var listHeight: CGFloat {
         // Dynamic height based on number of tables (max 10 items visible)
         let itemHeight: CGFloat = 30
         let maxItems = min(tables.count, 10)
         return CGFloat(max(maxItems, 1)) * itemHeight + 10
     }
-    
+
     var body: some View {
         VStack(spacing: DesignConstants.Spacing.md) {
             Text("Duplicate Table Structure")
                 .font(.headline)
-            
+
             Text("Select a table to copy its structure:")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            
+
             if tables.isEmpty {
                 ProgressView("Loading tables...")
                     .padding(.vertical, 40)
@@ -193,13 +193,13 @@ struct DuplicateTableSheet: View {
                 .scrollContentBackground(.hidden)
                 .frame(height: listHeight)
             }
-            
+
             HStack {
                 Button("Cancel", action: onCancel)
                     .keyboardShortcut(.escape)
-                
+
                 Spacer()
-                
+
                 Button("Duplicate") {
                     onDuplicate()
                 }

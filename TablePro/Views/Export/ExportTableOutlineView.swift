@@ -124,7 +124,6 @@ struct ExportTableOutlineView: NSViewRepresentable {
             dataColumn.minWidth = 44
             dataColumn.maxWidth = 44
             outlineView.addTableColumn(dataColumn)
-
         } else {
             // CSV/JSON format: Single name column, truncates long names
             let nameColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("name"))
@@ -163,7 +162,6 @@ private final class ItemWrapper: NSObject {
 
 @MainActor
 final class OutlineViewCoordinator: NSObject, NSOutlineViewDataSource, NSOutlineViewDelegate {
-
     @Binding var databaseItems: [ExportDatabaseItem]
     var format: ExportFormat
 
@@ -290,7 +288,6 @@ final class OutlineViewCoordinator: NSObject, NSOutlineViewDataSource, NSOutline
             }
             // For SQL format, database rows span all columns (shown in name column only)
             return nil
-
         } else if let table = wrapper.table {
             // Table row
             if columnId == "name" {
@@ -306,7 +303,7 @@ final class OutlineViewCoordinator: NSObject, NSOutlineViewDataSource, NSOutline
 
     func outlineView(_ outlineView: NSOutlineView, shouldSelectItem item: Any) -> Bool {
         // Prevent selection - we handle clicks via checkboxes
-        return false
+        false
     }
 
     func outlineViewItemDidExpand(_ notification: Notification) {

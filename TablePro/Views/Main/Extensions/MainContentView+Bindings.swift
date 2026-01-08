@@ -9,7 +9,6 @@
 import SwiftUI
 
 extension MainContentView {
-
     // MARK: - Selected Row Data for Sidebar
 
     /// Compute selected row data for right sidebar display

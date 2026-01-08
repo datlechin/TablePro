@@ -49,7 +49,6 @@ struct LibPQQueryResult {
 /// Thread-safe PostgreSQL connection using libpq
 /// All blocking C calls are dispatched to a dedicated serial queue
 final class LibPQConnection: @unchecked Sendable {
-
     // MARK: - Properties
 
     /// The underlying PGconn pointer (opaque handle)
@@ -102,8 +101,7 @@ final class LibPQConnection: @unchecked Sendable {
     /// Connect to the PostgreSQL server
     /// - Throws: LibPQError if connection fails
     func connect() async throws {
-        try await withCheckedThrowingContinuation {
-            (continuation: CheckedContinuation<Void, Error>) in
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             queue.async { [self] in
                 // Build connection string
                 var connStr = "host='\(host)' port='\(port)' dbname='\(database)'"
@@ -168,8 +166,7 @@ final class LibPQConnection: @unchecked Sendable {
         // Capture query string to avoid potential issues with closure capture
         let queryToRun = String(query)
 
-        return try await withCheckedThrowingContinuation {
-            [self] (cont: CheckedContinuation<LibPQQueryResult, Error>) in
+        return try await withCheckedThrowingContinuation { [self] (cont: CheckedContinuation<LibPQQueryResult, Error>) in
             queue.async { [self] in
                 // Check if shutting down
                 guard !isShuttingDown else {
@@ -306,7 +303,7 @@ final class LibPQConnection: @unchecked Sendable {
             // Return nil if not connected (version == 0)
             guard version > 0 else { return nil }
             // Format: XXYYYZZ where XX is major, YYY is minor, ZZ is revision
-            let major = version / 10000
+            let major = version / 10_000
             let minor = (version / 100) % 100
             let revision = version % 100
             return "\(major).\(minor).\(revision)"
@@ -315,7 +312,7 @@ final class LibPQConnection: @unchecked Sendable {
 
     /// Get the current database name
     func currentDatabase() -> String {
-        return database
+        database
     }
 
     // MARK: - Private Helpers
@@ -332,8 +329,8 @@ final class LibPQConnection: @unchecked Sendable {
     /// Get error from a result handle
     private func getResultError(from result: OpaquePointer) -> LibPQError {
         var message = "Unknown error"
-        var sqlState: String? = nil
-        var detail: String? = nil
+        var sqlState: String?
+        var detail: String?
 
         if let msgPtr = PQresultErrorMessage(result) {
             message = String(cString: msgPtr).trimmingCharacters(in: .whitespacesAndNewlines)

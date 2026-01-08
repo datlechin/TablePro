@@ -68,9 +68,8 @@ struct InlineErrorBanner: View {
 #Preview("Light Mode") {
     VStack {
         InlineErrorBanner(
-            message: "Table 'users' doesn't exist",
-            onDismiss: {}
-        )
+            message: "Table 'users' doesn't exist"
+        )            {}
         Spacer()
     }
     .frame(width: 500, height: 200)
@@ -79,9 +78,8 @@ struct InlineErrorBanner: View {
 #Preview("Dark Mode") {
     VStack {
         InlineErrorBanner(
-            message: "You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'SELEC' at line 1",
-            onDismiss: {}
-        )
+            message: "You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'SELEC' at line 1"
+        )            {}
         Spacer()
     }
     .frame(width: 500, height: 200)

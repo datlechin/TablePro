@@ -384,10 +384,6 @@ private class PassThroughDoubleClickView: NSView {
         // Always forward to next responder for List selection
         super.mouseDown(with: event)
     }
-
-    override func mouseUp(with event: NSEvent) {
-        super.mouseUp(with: event)
-    }
 }
 
 // MARK: - Preview
@@ -396,16 +392,14 @@ private class PassThroughDoubleClickView: NSView {
     DatabaseSwitcherSheet(
         isPresented: .constant(true),
         currentDatabase: "laravel",
-        databaseType: .mysql,
-        onSelect: { db in print("Selected: \(db)") }
-    )
+        databaseType: .mysql
+    )           { db in print("Selected: \(db)") }
 }
 
 #Preview("SQLite Empty") {
     DatabaseSwitcherSheet(
         isPresented: .constant(true),
         currentDatabase: nil,
-        databaseType: .sqlite,
-        onSelect: { db in print("Selected: \(db)") }
-    )
+        databaseType: .sqlite
+    )           { db in print("Selected: \(db)") }
 }

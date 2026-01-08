@@ -5,14 +5,13 @@
 //  SwiftUI wrapper for HistoryPanelController
 //
 
-import SwiftUI
 import AppKit
+import SwiftUI
 
 /// SwiftUI wrapper for the history/bookmark panel
 struct HistoryPanelView: NSViewControllerRepresentable {
-
     func makeNSViewController(context: Context) -> HistoryPanelController {
-        return HistoryPanelController()
+        HistoryPanelController()
     }
 
     func updateNSViewController(_ nsViewController: HistoryPanelController, context: Context) {

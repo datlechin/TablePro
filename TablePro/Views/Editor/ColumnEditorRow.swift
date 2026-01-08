@@ -15,7 +15,7 @@ struct ColumnEditorRow: View {
     let onDelete: () -> Void
     let onMoveUp: () -> Void
     let onMoveDown: () -> Void
-    
+
     var body: some View {
         HStack(spacing: DesignConstants.Spacing.xs) {
             // Column name
@@ -23,13 +23,13 @@ struct ColumnEditorRow: View {
                 .font(.system(size: DesignConstants.FontSize.body, weight: isSelected ? .medium : .regular))
                 .foregroundStyle(column.name.isEmpty ? .secondary : .primary)
                 .frame(width: 120, alignment: .leading)
-            
+
             // Data type with length
             Text(column.fullDataType)
                 .font(.system(size: DesignConstants.FontSize.small, design: .monospaced))
                 .foregroundStyle(.secondary)
                 .frame(width: 100, alignment: .leading)
-            
+
             // Nullable indicator
             if !column.notNull {
                 Text("NULL")
@@ -40,7 +40,7 @@ struct ColumnEditorRow: View {
                     .background(Color.secondary.opacity(0.1))
                     .cornerRadius(3)
             }
-            
+
             // Auto-increment indicator
             if column.autoIncrement {
                 Text("AUTO")
@@ -51,7 +51,7 @@ struct ColumnEditorRow: View {
                     .background(Color.blue.opacity(0.1))
                     .cornerRadius(3)
             }
-            
+
             // Default value
             if let defaultValue = column.defaultValue, !defaultValue.isEmpty {
                 HStack(spacing: 2) {
@@ -64,9 +64,9 @@ struct ColumnEditorRow: View {
                 }
                 .frame(maxWidth: 100, alignment: .leading)
             }
-            
+
             Spacer()
-            
+
             // Action buttons (show on hover or when selected)
             HStack(spacing: 2) {
                 Button(action: onMoveUp) {
@@ -75,14 +75,14 @@ struct ColumnEditorRow: View {
                 }
                 .buttonStyle(.borderless)
                 .help("Move Up")
-                
+
                 Button(action: onMoveDown) {
                     Image(systemName: "chevron.down")
                         .font(.caption)
                 }
                 .buttonStyle(.borderless)
                 .help("Move Down")
-                
+
                 Button(action: onDelete) {
                     Image(systemName: "trash")
                         .font(.caption)

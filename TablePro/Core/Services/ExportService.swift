@@ -55,7 +55,6 @@ private extension String {
 /// Service responsible for exporting table data to various formats
 @MainActor
 final class ExportService: ObservableObject {
-
     // MARK: - Published State
 
     @Published var isExporting: Bool = false
@@ -95,7 +94,7 @@ final class ExportService: ObservableObject {
     // MARK: - Progress Throttling
 
     /// Number of rows to process before updating UI
-    private let progressUpdateInterval: Int = 1000
+    private let progressUpdateInterval: Int = 1_000
     /// Internal counter for processed rows (updated every row)
     private var internalProcessedRows: Int = 0
 
@@ -454,10 +453,10 @@ final class ExportService: ObservableObject {
             // (important when convertLineBreakToSpace is enabled - original line breaks
             // mean the field should still be quoted even after conversion to spaces)
             let needsQuotes = processed.contains(options.delimiter.actualValue) ||
-                              processed.contains("\"") ||
-                              processed.contains("\n") ||
-                              processed.contains("\r") ||
-                              originalHadLineBreaks
+                processed.contains("\"") ||
+                processed.contains("\n") ||
+                processed.contains("\r") ||
+                originalHadLineBreaks
             if needsQuotes {
                 let escaped = processed.replacingOccurrences(of: "\"", with: "\"\"")
                 return "\"\(escaped)\""
@@ -497,10 +496,10 @@ final class ExportService: ObservableObject {
             try fileHandle.write(contentsOf: "\(indent)\"\(escapedTableName)\": [\(newline)".toUTF8Data())
 
             // Stream rows in batches to avoid loading the entire table into memory
-            let batchSize = 1000
+            let batchSize = 1_000
             var offset = 0
             var hasWrittenRow = false
-            var columns: [String]? = nil
+            var columns: [String]?
 
             batchLoop: while true {
                 try checkCancellation()
@@ -640,7 +639,7 @@ final class ExportService: ObservableObject {
         }
         if let doubleVal = Double(val), !val.contains("e") && !val.contains("E") {
             // Avoid scientific notation issues
-            let jsMaxSafeInteger = 9007199254740991.0 // 2^53 - 1, JavaScript's Number.MAX_SAFE_INTEGER
+            let jsMaxSafeInteger = 9_007_199_254_740_991.0 // 2^53 - 1, JavaScript's Number.MAX_SAFE_INTEGER
 
             if doubleVal.truncatingRemainder(dividingBy: 1) == 0 && !val.contains(".") {
                 // For integral values, only convert to Int when within both Int and JS safe integer bounds
@@ -867,7 +866,7 @@ final class ExportService: ObservableObject {
             guard FileManager.default.isExecutableFile(atPath: gzipPath) else {
                 throw ExportError.exportFailed(
                     "Compression unavailable: gzip not found at \(gzipPath). " +
-                    "Please install gzip or disable compression in export options."
+                        "Please install gzip or disable compression in export options."
                 )
             }
 

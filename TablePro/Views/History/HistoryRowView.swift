@@ -10,7 +10,6 @@ import AppKit
 
 /// Table cell view for history and bookmark entries
 final class HistoryRowView: NSTableCellView {
-
     private let statusIcon: NSImageView = {
         let imageView = NSImageView()
         imageView.imageScaling = .scaleProportionallyUpOrDown

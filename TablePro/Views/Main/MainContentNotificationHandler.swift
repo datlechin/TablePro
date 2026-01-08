@@ -15,7 +15,6 @@ import UniformTypeIdentifiers
 /// Handles all NotificationCenter subscriptions for MainContentView
 @MainActor
 final class MainContentNotificationHandler: ObservableObject {
-
     // MARK: - Dependencies
 
     private weak var coordinator: MainContentCoordinator?
@@ -197,7 +196,7 @@ final class MainContentNotificationHandler: ObservableObject {
                 self?.coordinator?.showAllTablesMetadata()
             }
             .store(in: &cancellables)
-        
+
         NotificationCenter.default.publisher(for: .createTable)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -227,13 +226,13 @@ final class MainContentNotificationHandler: ObservableObject {
             selectedTables.wrappedValue = selectedTables.wrappedValue.filter { $0.name != tableName }
         }
     }
-    
+
     private func handleCreateTable() {
         guard let coordinator = coordinator else { return }
-        
+
         // Get current database name from the connection
         let currentDatabase = connection.database
-        
+
         coordinator.tabManager.addCreateTableTab(
             databaseName: currentDatabase,
             databaseType: connection.type

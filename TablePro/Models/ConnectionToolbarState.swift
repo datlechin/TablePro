@@ -96,11 +96,10 @@ enum ToolbarConnectionState: Equatable {
 /// Uses ObservableObject for macOS 13+ compatibility.
 /// This is the single source of truth for all toolbar UI state.
 final class ConnectionToolbarState: ObservableObject {
-
     // MARK: - Connection Info
 
     /// The tag assigned to this connection (optional)
-    @Published var tagId: UUID? = nil
+    @Published var tagId: UUID?
 
     /// Database type (MySQL, MariaDB, PostgreSQL, SQLite)
     @Published var databaseType: DatabaseType = .mysql

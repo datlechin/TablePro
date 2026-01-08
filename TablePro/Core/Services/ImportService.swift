@@ -14,7 +14,6 @@ import Foundation
 /// Service responsible for importing SQL files
 @MainActor
 final class ImportService: ObservableObject {
-
     // MARK: - Published State
 
     @Published var isImporting: Bool = false
@@ -171,7 +170,6 @@ final class ImportService: ObservableObject {
 
                     executedCount += 1
                     progress = Double(executedCount) / Double(totalStatements)
-
                 } catch {
                     // Statement execution failed
                     failedStatement = statement
@@ -208,13 +206,12 @@ final class ImportService: ObservableObject {
                     _ = try await driver.execute(query: stmt)
                 }
             }
-
         } catch {
             // Rollback on error - this is CRITICAL and must not fail silently
             if config.wrapInTransaction {
                 do {
                     _ = try await driver.execute(query: rollbackStatement(for: connection.type))
-                } catch let rollbackError {
+                } catch {
                     // Rollback failed - database may be in inconsistent state
                     // This is a critical error that MUST be reported to the user
                     throw ImportError.rollbackFailed(rollbackError.localizedDescription)
@@ -228,7 +225,7 @@ final class ImportService: ObservableObject {
                 for stmt in fkEnableStmts {
                     do {
                         _ = try await driver.execute(query: stmt)
-                    } catch let fkError {
+                    } catch {
                         // FK re-enable failed - warn user but don't override original error
                         // Store this as a warning that should be shown alongside the original error
                         let message = fkError.localizedDescription
@@ -280,7 +277,7 @@ final class ImportService: ObservableObject {
     }
 
     private func decompressIfNeeded(_ url: URL) async throws -> URL {
-        return try await FileDecompressor.decompressIfNeeded(url, fileSystemPath: fileSystemPath)
+        try await FileDecompressor.decompressIfNeeded(url, fileSystemPath: fileSystemPath)
     }
 
     private func checkCancellation() throws {
@@ -322,10 +319,10 @@ final class ImportService: ObservableObject {
     }
 
     private func commitStatement(for dbType: DatabaseType) -> String {
-        return "COMMIT"
+        "COMMIT"
     }
 
     private func rollbackStatement(for dbType: DatabaseType) -> String {
-        return "ROLLBACK"
+        "ROLLBACK"
     }
 }

@@ -11,7 +11,6 @@ import SwiftUI
 
 /// Main content view - thin presentation layer
 struct MainContentView: View {
-
     // MARK: - Properties
 
     let connection: DatabaseConnection
@@ -35,7 +34,7 @@ struct MainContentView: View {
     // MARK: - Local State
 
     @State var selectedRowIndices: Set<Int> = []
-    @State private var editingCell: CellPosition? = nil
+    @State private var editingCell: CellPosition?
     @State private var notificationHandler: MainContentNotificationHandler?
     @State private var showDatabaseSwitcher = false
 
@@ -131,11 +130,10 @@ struct MainContentView: View {
                 DatabaseSwitcherSheet(
                     isPresented: $showDatabaseSwitcher,
                     currentDatabase: DatabaseManager.shared.currentSession?.connection.database,
-                    databaseType: connection.type,
-                    onSelect: { database in
-                        switchDatabase(to: database)
-                    }
-                )
+                    databaseType: connection.type
+                )                    { database in
+                    switchDatabase(to: database)
+                }
             }
     }
 
@@ -263,9 +261,9 @@ struct MainContentView: View {
             showDatabaseSwitcher: $showDatabaseSwitcher
         )
     }
-    
+
     // MARK: - Database Switcher
-    
+
     private func switchDatabase(to database: String) {
         Task {
             await coordinator.switchDatabase(to: database)
@@ -323,11 +321,11 @@ struct MainContentView: View {
         guard let newColumns = newColumns, !newColumns.isEmpty,
               let tab = tabManager.selectedTab,
               !tab.pendingChanges.hasChanges else { return }
-        
+
         // Reconfigure if columns changed OR table name changed (switching tables)
         let columnsChanged = changeManager.columns != newColumns
         let tableChanged = changeManager.tableName != (tab.tableName ?? "")
-        
+
         guard columnsChanged || tableChanged else { return }
 
         changeManager.configureForTable(
@@ -408,7 +406,6 @@ struct MainContentView: View {
                 }
 
                 coordinator.runQuery()
-
             } catch {
                 if let index = tabManager.selectedTabIndex {
                     tabManager.tabs[index].errorMessage = "Save failed: \(error.localizedDescription)"
@@ -439,5 +436,5 @@ struct MainContentView: View {
         tableOperationOptions: .constant([:]),
         isInspectorPresented: .constant(false)
     )
-    .frame(width: 1000, height: 600)
+    .frame(width: 1_000, height: 600)
 }

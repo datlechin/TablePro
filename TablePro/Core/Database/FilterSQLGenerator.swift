@@ -11,10 +11,6 @@ import Foundation
 struct FilterSQLGenerator {
     let databaseType: DatabaseType
 
-    init(databaseType: DatabaseType) {
-        self.databaseType = databaseType
-    }
-
     // MARK: - Public API
 
     /// Generate a complete WHERE clause from filters
@@ -158,10 +154,10 @@ struct FilterSQLGenerator {
         }
 
         // Try to detect numeric values
-        if let _ = Int(trimmed) {
+        if Int(trimmed) != nil {
             return trimmed
         }
-        if let _ = Double(trimmed) {
+        if Double(trimmed) != nil {
             return trimmed
         }
 
@@ -195,7 +191,7 @@ struct FilterSQLGenerator {
     /// Parse comma-separated list values
     private func parseListValues(_ input: String) -> [String] {
         // Split by comma, trim whitespace, filter empty
-        return input
+        input
             .components(separatedBy: ",")
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
@@ -206,7 +202,7 @@ struct FilterSQLGenerator {
 
 extension FilterSQLGenerator {
     /// Generate a preview-friendly SQL string (for display, not execution)
-    func generatePreviewSQL(tableName: String, filters: [TableFilter], limit: Int = 1000) -> String {
+    func generatePreviewSQL(tableName: String, filters: [TableFilter], limit: Int = 1_000) -> String {
         let quotedTable = databaseType.quoteIdentifier(tableName)
         var sql = "SELECT * FROM \(quotedTable)"
 

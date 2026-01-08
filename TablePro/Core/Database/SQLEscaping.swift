@@ -10,7 +10,6 @@ import Foundation
 
 /// Centralized SQL escaping utilities to prevent SQL injection vulnerabilities
 enum SQLEscaping {
-
     /// Escape a string value for use in SQL string literals (VALUES, WHERE clauses, etc.)
     ///
     /// Handles the following special characters:

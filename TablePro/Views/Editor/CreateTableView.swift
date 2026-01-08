@@ -14,7 +14,7 @@ struct CreateTableView: View {
     let databaseType: DatabaseType
     let onCancel: () -> Void
     let onCreate: (TableCreationOptions) -> Void
-    
+
     @State private var selectedColumnId: UUID?
     @State private var showDetailPanel = false
     @State private var showAdvancedOptions = false
@@ -32,9 +32,9 @@ struct CreateTableView: View {
     @State private var showDuplicateTable = false
     @State private var availableTables: [String] = []
     @State private var selectedTableToDuplicate: String?
-    
+
     private let service: CreateTableService
-    
+
     init(
         options: Binding<TableCreationOptions>,
         databaseType: DatabaseType,
@@ -47,24 +47,23 @@ struct CreateTableView: View {
         self.onCreate = onCreate
         self.service = CreateTableService(databaseType: databaseType)
     }
-    
+
     var body: some View {
         HStack(spacing: 0) {
             // Main content
             mainContent
                 .frame(maxWidth: .infinity)
-            
+
             // Detail panel (slides in from right)
             if showDetailPanel, let selectedId = selectedColumnId,
                let columnIndex = options.columns.firstIndex(where: { $0.id == selectedId }) {
                 ColumnDetailPanel(
                     column: $options.columns[columnIndex],
                     databaseType: databaseType,
-                    isVisible: showDetailPanel,
-                    onClose: {
-                        showDetailPanel = false
-                    }
-                )
+                    isVisible: showDetailPanel
+                )                    {
+                    showDetailPanel = false
+                }
                 .transition(.move(edge: .trailing))
             }
         }
@@ -78,71 +77,71 @@ struct CreateTableView: View {
             return .ignored
         }
     }
-    
+
     // MARK: - Main Content
-    
+
     private var mainContent: some View {
         VStack(spacing: 0) {
             // Toolbar
             toolbar
-            
+
             Divider()
-            
+
             // Scrollable content
             ScrollView {
                 VStack(alignment: .leading, spacing: DesignConstants.Spacing.md) {
                     // General info
                     generalSection
-                    
+
                     // Columns (table-style)
                     columnsSection
-                    
+
                     // Primary key
                     primaryKeySection
-                    
+
                     // Foreign keys
                     foreignKeysSection
-                    
+
                     // Indexes
                     indexesSection
-                    
+
                     // Check constraints (PostgreSQL/SQLite)
                     if databaseType == .postgresql || databaseType == .sqlite {
                         checkConstraintsSection
                     }
-                    
+
                     // Advanced options
                     advancedSection
-                    
+
                     // SQL Preview
                     sqlPreviewSection
                 }
                 .padding(DesignConstants.Spacing.md)
             }
-            
+
             Divider()
-            
+
             // Footer
             footer
         }
     }
-    
+
     // MARK: - Toolbar
-    
+
     private var toolbar: some View {
         HStack(spacing: DesignConstants.Spacing.sm) {
             Text("Create New Table")
                 .font(.system(size: DesignConstants.FontSize.title3, weight: .semibold))
-            
+
             Spacer()
-            
+
             // Error message
             if let error = validationError {
                 Label(error, systemImage: "exclamationmark.triangle.fill")
                     .font(.system(size: DesignConstants.FontSize.caption))
                     .foregroundStyle(.red)
             }
-            
+
             // Template actions
             Button(action: {
                 savedTemplates = TableTemplateStorage.shared.getTemplateNames()
@@ -154,17 +153,17 @@ struct CreateTableView: View {
             .controlSize(.small)
             .help("Load Template")
             .disabled(TableTemplateStorage.shared.getTemplateNames().isEmpty)
-            
+
             Button(action: { showSaveTemplate = true }) {
                 Label("Save", systemImage: "square.and.arrow.down")
             }
             .buttonStyle(.borderless)
             .controlSize(.small)
             .help("Save as Template")
-            
+
             Divider()
                 .frame(height: 16)
-            
+
             // Import actions
             Button(action: { showImportDDL = true }) {
                 Label("Import", systemImage: "square.and.arrow.up")
@@ -172,7 +171,7 @@ struct CreateTableView: View {
             .buttonStyle(.borderless)
             .controlSize(.small)
             .help("Import from DDL")
-            
+
             Button(action: {
                 loadAvailableTables()
                 showDuplicateTable = true
@@ -197,9 +196,8 @@ struct CreateTableView: View {
             LoadTemplateSheet(
                 templates: savedTemplates,
                 onLoad: { name in loadTemplate(name); showLoadTemplate = false },
-                onDelete: deleteTemplate,
-                onCancel: { showLoadTemplate = false }
-            )
+                onDelete: deleteTemplate
+            )                   { showLoadTemplate = false }
         }
         .sheet(isPresented: $showImportDDL) {
             ImportDDLSheet(
@@ -222,15 +220,15 @@ struct CreateTableView: View {
             )
         }
     }
-    
+
     // MARK: - Sections
-    
+
     private var generalSection: some View {
-        VStack(alignment: .leading, spacing: DesignConstants.Spacing.xs) {            
+        VStack(alignment: .leading, spacing: DesignConstants.Spacing.xs) {
             VStack(alignment: .leading, spacing: DesignConstants.Spacing.sm) {
                 TextField("Table Name", text: $options.tableName)
                     .textFieldStyle(.roundedBorder)
-                
+
                 HStack {
                     Text("Database/Schema:")
                         .font(.system(size: DesignConstants.FontSize.small))
@@ -245,7 +243,7 @@ struct CreateTableView: View {
             .cornerRadius(DesignConstants.CornerRadius.medium)
         }
     }
-    
+
     private var advancedSection: some View {
         VStack(alignment: .leading, spacing: DesignConstants.Spacing.xs) {
             SectionHeaderView(
@@ -253,7 +251,7 @@ struct CreateTableView: View {
                 isCollapsible: true,
                 isExpanded: $showAdvancedOptions
             )
-            
+
             if showAdvancedOptions {
                 VStack(alignment: .leading, spacing: DesignConstants.Spacing.sm) {
                     if databaseType == .mysql || databaseType == .mariadb {
@@ -262,20 +260,20 @@ struct CreateTableView: View {
                             set: { options.engine = $0.isEmpty ? nil : $0 }
                         ))
                         .textFieldStyle(.roundedBorder)
-                        
+
                         TextField("Charset (e.g., utf8mb4)", text: Binding(
                             get: { options.charset ?? "" },
                             set: { options.charset = $0.isEmpty ? nil : $0 }
                         ))
                         .textFieldStyle(.roundedBorder)
-                        
+
                         TextField("Collation", text: Binding(
                             get: { options.collation ?? "" },
                             set: { options.collation = $0.isEmpty ? nil : $0 }
                         ))
                         .textFieldStyle(.roundedBorder)
                     }
-                    
+
                     if databaseType == .postgresql {
                         TextField("Tablespace", text: Binding(
                             get: { options.tablespace ?? "" },
@@ -283,7 +281,7 @@ struct CreateTableView: View {
                         ))
                         .textFieldStyle(.roundedBorder)
                     }
-                    
+
                     TextField("Comment", text: Binding(
                         get: { options.comment ?? "" },
                         set: { options.comment = $0.isEmpty ? nil : $0 }
@@ -296,7 +294,7 @@ struct CreateTableView: View {
             }
         }
     }
-    
+
     private var columnsSection: some View {
         VStack(alignment: .leading, spacing: DesignConstants.Spacing.xs) {
             SectionHeaderView(title: "Columns", count: options.columns.count) {
@@ -312,7 +310,7 @@ struct CreateTableView: View {
                     }
                     .menuStyle(.borderlessButton)
                     .controlSize(.small)
-                    
+
                     Button(action: addColumn) {
                         Label("Add Column", systemImage: "plus")
                     }
@@ -320,7 +318,7 @@ struct CreateTableView: View {
                     .controlSize(.small)
                 }
             }
-            
+
             ColumnTableView(
                 columns: $options.columns,
                 primaryKeyColumns: $options.primaryKeyColumns,
@@ -328,19 +326,18 @@ struct CreateTableView: View {
                 databaseType: databaseType,
                 onDelete: deleteColumn,
                 onMoveUp: moveColumnUp,
-                onMoveDown: moveColumnDown,
-                onEdit: { column in
-                    selectedColumnId = column.id
-                    showDetailPanel = true
-                }
-            )
+                onMoveDown: moveColumnDown
+            )                { column in
+                selectedColumnId = column.id
+                showDetailPanel = true
+            }
         }
     }
-    
+
     private var primaryKeySection: some View {
         VStack(alignment: .leading, spacing: DesignConstants.Spacing.xs) {
             SectionHeaderView(title: "Primary Key")
-            
+
             VStack(alignment: .leading, spacing: DesignConstants.Spacing.sm) {
                 if options.columns.isEmpty {
                     Text("Add columns first")
@@ -370,7 +367,7 @@ struct CreateTableView: View {
                             .disabled(column.name.isEmpty)
                         }
                     }
-                    
+
                     if options.primaryKeyColumns.isEmpty {
                         HStack(spacing: 4) {
                             Image(systemName: "exclamationmark.triangle.fill")
@@ -387,7 +384,7 @@ struct CreateTableView: View {
             .cornerRadius(DesignConstants.CornerRadius.medium)
         }
     }
-    
+
     private var foreignKeysSection: some View {
         VStack(alignment: .leading, spacing: DesignConstants.Spacing.xs) {
             SectionHeaderView(
@@ -405,7 +402,7 @@ struct CreateTableView: View {
                 .buttonStyle(.borderless)
                 .controlSize(.small)
             }
-            
+
             if showForeignKeys {
                 if options.foreignKeys.isEmpty {
                     VStack(spacing: DesignConstants.Spacing.sm) {
@@ -431,16 +428,15 @@ struct CreateTableView: View {
                                         }
                                     }
                                 ),
-                                availableColumns: options.columns.map { $0.name },
-                                onDelete: { options.foreignKeys.removeAll { $0.id == fk.id } }
-                            )
+                                availableColumns: options.columns.map { $0.name }
+                            )                                   { options.foreignKeys.removeAll { $0.id == fk.id } }
                         }
                     }
                 }
             }
         }
     }
-    
+
     private var indexesSection: some View {
         VStack(alignment: .leading, spacing: DesignConstants.Spacing.xs) {
             SectionHeaderView(
@@ -458,7 +454,7 @@ struct CreateTableView: View {
                 .buttonStyle(.borderless)
                 .controlSize(.small)
             }
-            
+
             if showIndexes {
                 if options.indexes.isEmpty {
                     VStack(spacing: DesignConstants.Spacing.sm) {
@@ -485,16 +481,15 @@ struct CreateTableView: View {
                                     }
                                 ),
                                 availableColumns: options.columns.map { $0.name },
-                                databaseType: databaseType,
-                                onDelete: { options.indexes.removeAll { $0.id == index.id } }
-                            )
+                                databaseType: databaseType
+                            )                                   { options.indexes.removeAll { $0.id == index.id } }
                         }
                     }
                 }
             }
         }
     }
-    
+
     private var checkConstraintsSection: some View {
         VStack(alignment: .leading, spacing: DesignConstants.Spacing.xs) {
             SectionHeaderView(
@@ -512,7 +507,7 @@ struct CreateTableView: View {
                 .buttonStyle(.borderless)
                 .controlSize(.small)
             }
-            
+
             if showCheckConstraints {
                 if options.checkConstraints.isEmpty {
                     VStack(spacing: DesignConstants.Spacing.sm) {
@@ -537,16 +532,15 @@ struct CreateTableView: View {
                                             options.checkConstraints[idx] = newValue
                                         }
                                     }
-                                ),
-                                onDelete: { options.checkConstraints.removeAll { $0.id == check.id } }
-                            )
+                                )
+                            )                                   { options.checkConstraints.removeAll { $0.id == check.id } }
                         }
                     }
                 }
             }
         }
     }
-    
+
     private var sqlPreviewSection: some View {
         VStack(alignment: .leading, spacing: DesignConstants.Spacing.xs) {
             SectionHeaderView(
@@ -561,7 +555,7 @@ struct CreateTableView: View {
                 .controlSize(.small)
                 .help("Copy SQL")
             }
-            
+
             if showSQLPreview {
                 ScrollView {
                     Text(service.generatePreviewSQL(options))
@@ -580,16 +574,16 @@ struct CreateTableView: View {
             }
         }
     }
-    
+
     private var footer: some View {
         HStack {
             Spacer()
-            
+
             Button("Cancel") {
                 onCancel()
             }
             .keyboardShortcut(.escape)
-            
+
             Button("Create Table") {
                 createTable()
             }
@@ -599,9 +593,9 @@ struct CreateTableView: View {
         }
         .padding(DesignConstants.Spacing.sm)
     }
-    
+
     // MARK: - Actions
-    
+
     private func addColumn() {
         let newColumn = ColumnDefinition(
             name: "column_\(options.columns.count + 1)",
@@ -611,13 +605,13 @@ struct CreateTableView: View {
         options.columns.append(newColumn)
         selectedColumnId = newColumn.id
     }
-    
+
     private func addColumnFromTemplate(_ template: ColumnTemplate) {
         let newColumn = template.createColumn(for: databaseType)
         options.columns.append(newColumn)
         selectedColumnId = newColumn.id
     }
-    
+
     private func deleteColumn(_ column: ColumnDefinition) {
         options.primaryKeyColumns.removeAll { $0 == column.name }
         options.columns.removeAll { $0.id == column.id }
@@ -625,18 +619,18 @@ struct CreateTableView: View {
             selectedColumnId = options.columns.first?.id
         }
     }
-    
+
     private func moveColumnUp(_ column: ColumnDefinition) {
         guard let index = options.columns.firstIndex(where: { $0.id == column.id }), index > 0 else { return }
         options.columns.swapAt(index, index - 1)
     }
-    
+
     private func moveColumnDown(_ column: ColumnDefinition) {
         guard let index = options.columns.firstIndex(where: { $0.id == column.id }),
               index < options.columns.count - 1 else { return }
         options.columns.swapAt(index, index + 1)
     }
-    
+
     private func createTable() {
         do {
             try service.validate(options)
@@ -646,7 +640,7 @@ struct CreateTableView: View {
             validationError = error.localizedDescription
         }
     }
-    
+
     private func saveTemplate() {
         guard !templateName.isEmpty else { return }
         do {
@@ -656,7 +650,7 @@ struct CreateTableView: View {
             validationError = "Failed to save template: \(error.localizedDescription)"
         }
     }
-    
+
     private func loadTemplate(_ name: String) {
         do {
             if let loaded = try TableTemplateStorage.shared.loadTemplate(name: name) {
@@ -671,7 +665,7 @@ struct CreateTableView: View {
             validationError = "Failed to load template: \(error.localizedDescription)"
         }
     }
-    
+
     private func deleteTemplate(_ name: String) {
         do {
             try TableTemplateStorage.shared.deleteTemplate(name: name)
@@ -680,7 +674,7 @@ struct CreateTableView: View {
             validationError = "Failed to delete template: \(error.localizedDescription)"
         }
     }
-    
+
     private func importDDL() {
         do {
             let parsed = try DDLParser.parse(ddlText, databaseType: databaseType)
@@ -693,7 +687,7 @@ struct CreateTableView: View {
             validationError = "Failed to import DDL: \(error.localizedDescription)"
         }
     }
-    
+
     private func loadAvailableTables() {
         Task {
             do {
@@ -705,7 +699,7 @@ struct CreateTableView: View {
                 }
                 let result = try await driver.execute(query: query)
                 await MainActor.run {
-                    availableTables = result.rows.compactMap { $0.first ?? nil }
+                    availableTables = result.rows.compactMap { $0.first.flatMap { $0 } }
                 }
             } catch {
                 await MainActor.run {
@@ -714,7 +708,7 @@ struct CreateTableView: View {
             }
         }
     }
-    
+
     private func duplicateTable(_ tableName: String) {
         Task {
             do {
@@ -724,14 +718,14 @@ struct CreateTableView: View {
                     }
                     return
                 }
-                
+
                 // Query information schema directly instead of parsing DDL
                 let columnsQuery: String
-                
+
                 switch databaseType {
                 case .mysql, .mariadb:
                     columnsQuery = """
-                        SELECT 
+                        SELECT
                             COLUMN_NAME,
                             DATA_TYPE,
                             CHARACTER_MAXIMUM_LENGTH,
@@ -745,10 +739,10 @@ struct CreateTableView: View {
                         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '\(tableName)'
                         ORDER BY ORDINAL_POSITION
                     """
-                    
+
                 case .postgresql:
                     columnsQuery = """
-                        SELECT 
+                        SELECT
                             column_name,
                             data_type,
                             character_maximum_length,
@@ -760,31 +754,31 @@ struct CreateTableView: View {
                         WHERE table_name = '\(tableName)'
                         ORDER BY ordinal_position
                     """
-                    
+
                 case .sqlite:
                     columnsQuery = "PRAGMA table_info('\(tableName)')"
                 }
-                
+
                 let result = try await driver.execute(query: columnsQuery)
-                
+
                 await MainActor.run {
                     guard !result.rows.isEmpty else {
                         validationError = "Table '\(tableName)' has no columns or does not exist"
                         return
                     }
-                    
+
                     // Debug: Log what we got
                     print("DEBUG: Duplicate table - Got \(result.rows.count) rows")
                     print("DEBUG: Columns: \(result.columns)")
                     if let firstRow = result.rows.first {
                         print("DEBUG: First row: \(firstRow)")
                     }
-                    
+
                     // Build arrays locally first (don't modify options until we're done)
                     var newColumns: [ColumnDefinition] = []
                     var newPrimaryKeys: [String] = []
                     var parsedCount = 0
-                    
+
                     // Parse each column
                     for row in result.rows {
                         switch databaseType {
@@ -792,14 +786,14 @@ struct CreateTableView: View {
                             guard row.count >= 9,
                                   let columnName = row[0],
                                   let dataType = row[1] else { continue }
-                            
+
                             let length = row[2].flatMap { Int($0) }
                             let precision = row[3].flatMap { Int($0) }
                             let isNullable = row[5] == "YES"
                             let defaultValue = row[6]
                             let extra = row[7] ?? ""
                             let columnKey = row[8] ?? ""
-                            
+
                             let column = ColumnDefinition(
                                 name: columnName,
                                 dataType: dataType.uppercased(),
@@ -809,24 +803,24 @@ struct CreateTableView: View {
                                 defaultValue: defaultValue,
                                 autoIncrement: extra.uppercased().contains("AUTO_INCREMENT")
                             )
-                            
+
                             newColumns.append(column)
                             parsedCount += 1
-                            
+
                             if columnKey == "PRI" {
                                 newPrimaryKeys.append(columnName)
                             }
-                            
+
                         case .postgresql:
                             guard row.count >= 7,
                                   let columnName = row[0],
                                   let dataType = row[1] else { continue }
-                            
+
                             let length = row[2].flatMap { Int($0) }
                             let precision = row[3].flatMap { Int($0) }
                             let isNullable = row[5] == "YES"
                             let defaultValue = row[6]
-                            
+
                             let column = ColumnDefinition(
                                 name: columnName,
                                 dataType: dataType.uppercased(),
@@ -835,49 +829,49 @@ struct CreateTableView: View {
                                 notNull: !isNullable,
                                 defaultValue: defaultValue
                             )
-                            
+
                             newColumns.append(column)
                             parsedCount += 1
-                            
+
                         case .sqlite:
                             // SQLite PRAGMA format: cid, name, type, notnull, dflt_value, pk
                             guard row.count >= 6,
                                   let columnName = row[1],
                                   let dataType = row[2] else { continue }
-                            
+
                             let notNull = row[3] == "1"
                             let defaultValue = row[4]
                             let isPk = row[5] == "1"
-                            
+
                             let column = ColumnDefinition(
                                 name: columnName,
                                 dataType: dataType.uppercased(),
                                 notNull: notNull,
                                 defaultValue: defaultValue
                             )
-                            
+
                             newColumns.append(column)
                             parsedCount += 1
-                            
+
                             if isPk {
                                 newPrimaryKeys.append(columnName)
                             }
                         }
                     }
-                    
+
                     // Debug: Log results
                     print("DEBUG: Parsed \(parsedCount) columns out of \(result.rows.count) rows")
                     print("DEBUG: newColumns.count = \(newColumns.count)")
                     print("DEBUG: Primary keys = \(newPrimaryKeys)")
-                    
+
                     guard !newColumns.isEmpty else {
                         validationError = "Failed to parse any columns from table '\(tableName)'. Check console for debug info."
                         return
                     }
-                    
+
                     // Create a completely new TableCreationOptions to avoid binding issues
                     var newOptions = TableCreationOptions()
-                    
+
                     // For PostgreSQL, use current database/schema, for MySQL use DATABASE()
                     // For duplicates, just use the table name without schema prefix
                     if databaseType == .postgresql {
@@ -886,17 +880,17 @@ struct CreateTableView: View {
                     } else {
                         newOptions.databaseName = options.databaseName
                     }
-                    
+
                     newOptions.tableName = "\(tableName)_copy"
                     newOptions.columns = newColumns
                     newOptions.primaryKeyColumns = newPrimaryKeys
-                    
+
                     // Assign the entire new object at once
                     options = newOptions
-                    
+
                     selectedColumnId = options.columns.first?.id
                     validationError = nil
-                    
+
                     print("DEBUG: Duplicate complete - \(options.columns.count) columns copied")
                 }
             } catch {
@@ -906,7 +900,7 @@ struct CreateTableView: View {
             }
         }
     }
-    
+
     private func copySQLToClipboard() {
         let sql = service.generatePreviewSQL(options)
         NSPasteboard.general.clearContents()

@@ -19,7 +19,7 @@ final class KeyHandlingTableView: NSTableView, NSMenuItemValidation {
             if oldValue != focusedRow && oldValue >= 0 {
                 if focusedColumn >= 0 && focusedColumn < numberOfColumns && oldValue < numberOfRows {
                     reloadData(forRowIndexes: IndexSet(integer: oldValue),
-                              columnIndexes: IndexSet(integer: focusedColumn))
+                               columnIndexes: IndexSet(integer: focusedColumn))
                 }
             }
         }
@@ -34,11 +34,11 @@ final class KeyHandlingTableView: NSTableView, NSMenuItemValidation {
                     guard let self = self else { return }
                     if oldValue >= 0 && oldValue < self.numberOfColumns && rowToUpdate >= 0 && rowToUpdate < self.numberOfRows {
                         self.reloadData(forRowIndexes: IndexSet(integer: rowToUpdate),
-                                   columnIndexes: IndexSet(integer: oldValue))
+                                        columnIndexes: IndexSet(integer: oldValue))
                     }
                     if self.focusedColumn >= 0 && self.focusedColumn < self.numberOfColumns && self.focusedRow >= 0 && self.focusedRow < self.numberOfRows {
                         self.reloadData(forRowIndexes: IndexSet(integer: self.focusedRow),
-                                   columnIndexes: IndexSet(integer: self.focusedColumn))
+                                        columnIndexes: IndexSet(integer: self.focusedColumn))
                     }
                 }
             }

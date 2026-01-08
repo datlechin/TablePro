@@ -146,9 +146,9 @@ struct SQLExportOptions: Equatable {
 struct ExportConfiguration {
     var format: ExportFormat = .csv
     var fileName: String = "export"
-    var csvOptions: CSVExportOptions = CSVExportOptions()
-    var jsonOptions: JSONExportOptions = JSONExportOptions()
-    var sqlOptions: SQLExportOptions = SQLExportOptions()
+    var csvOptions = CSVExportOptions()
+    var jsonOptions = JSONExportOptions()
+    var sqlOptions = SQLExportOptions()
 
     /// Full file name including extension
     var fullFileName: String {
@@ -173,7 +173,7 @@ struct ExportTableItem: Identifiable, Hashable {
     let databaseName: String
     let type: TableInfo.TableType
     var isSelected: Bool = false
-    var sqlOptions: SQLTableExportOptions = SQLTableExportOptions()
+    var sqlOptions = SQLTableExportOptions()
 
     init(
         id: UUID = UUID(),

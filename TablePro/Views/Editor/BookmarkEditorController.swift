@@ -9,7 +9,6 @@ import AppKit
 
 /// Native AppKit controller for bookmark editor using standard macOS form patterns
 final class BookmarkEditorController: NSViewController {
-
     // MARK: - Properties
 
     private var bookmark: QueryBookmark?
@@ -74,7 +73,7 @@ final class BookmarkEditorController: NSViewController {
         title = isEditing ? "Edit Bookmark" : "New Bookmark"
         populateFields()
         preferredContentSize = NSSize(width: 520, height: 380)
-        
+
         // Add accessibility identifiers
         nameField.setAccessibilityIdentifier("bookmarkNameField")
         tagsField.setAccessibilityIdentifier("bookmarkTagsField")

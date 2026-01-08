@@ -12,27 +12,27 @@ struct RightSidebarView: View {
     let tableName: String?
     let tableMetadata: TableMetadata?
     let selectedRowData: [(column: String, value: String?, type: String)]?
-    
+
     @State private var searchText: String = ""
-    
+
     private var mode: String {
         selectedRowData != nil ? "Row Details" : "Table Info"
     }
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // Header
             headerView
-            
+
             Divider()
-            
+
             // Search (only for row details)
             if selectedRowData != nil {
                 searchField
-                
+
                 Divider()
             }
-            
+
             // Content
             ScrollView {
                 LazyVStack(spacing: 0) {
@@ -48,9 +48,9 @@ struct RightSidebarView: View {
         }
         .background(Color(NSColor.windowBackgroundColor))
     }
-    
+
     // MARK: - Header
-    
+
     private var headerView: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
@@ -67,9 +67,9 @@ struct RightSidebarView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
     }
-    
+
     // MARK: - Search
-    
+
     private var searchField: some View {
         HStack(spacing: 6) {
             Image(systemName: "magnifyingglass")
@@ -93,9 +93,9 @@ struct RightSidebarView: View {
         .padding(.vertical, DesignConstants.Spacing.xs)
         .background(Color(NSColor.textBackgroundColor).opacity(0.5))
     }
-    
+
     // MARK: - Empty State
-    
+
     private var emptyState: some View {
         VStack(spacing: 8) {
             Image(systemName: "sidebar.right")
@@ -108,16 +108,16 @@ struct RightSidebarView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
     }
-    
+
     // MARK: - Table Info Content
-    
+
     @ViewBuilder
     private func tableInfoContent(_ metadata: TableMetadata) -> some View {
         sectionHeader("SIZE")
         propertyRow("Data Size", TableMetadata.formatSize(metadata.dataSize))
         propertyRow("Index Size", TableMetadata.formatSize(metadata.indexSize))
         propertyRow("Total Size", TableMetadata.formatSize(metadata.totalSize))
-        
+
         sectionHeader("STATISTICS")
         if let rows = metadata.rowCount {
             propertyRow("Rows", "\(rows)")
@@ -125,7 +125,7 @@ struct RightSidebarView: View {
         if let avgLen = metadata.avgRowLength {
             propertyRow("Avg Row", "\(avgLen) B")
         }
-        
+
         if metadata.engine != nil || metadata.collation != nil {
             sectionHeader("METADATA")
             if let engine = metadata.engine {
@@ -135,7 +135,7 @@ struct RightSidebarView: View {
                 propertyRow("Collation", collation)
             }
         }
-        
+
         if metadata.createTime != nil || metadata.updateTime != nil {
             sectionHeader("TIMESTAMPS")
             if let create = metadata.createTime {
@@ -146,36 +146,36 @@ struct RightSidebarView: View {
             }
         }
     }
-    
+
     private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .short
         formatter.timeStyle = .short
         return formatter
     }()
-    
+
     private func formatDate(_ date: Date) -> String {
-        return RightSidebarView.dateFormatter.string(from: date)
+        RightSidebarView.dateFormatter.string(from: date)
     }
-    
+
     // MARK: - Row Detail Content
-    
+
     @ViewBuilder
     private func rowDetailContent(_ rowData: [(column: String, value: String?, type: String)]) -> some View {
         let filtered = searchText.isEmpty ? rowData : rowData.filter {
             $0.column.localizedCaseInsensitiveContains(searchText) ||
-            ($0.value?.localizedCaseInsensitiveContains(searchText) ?? false)
+                ($0.value?.localizedCaseInsensitiveContains(searchText) ?? false)
         }
-        
+
         sectionHeader("FIELDS (\(filtered.count))")
-        
+
         ForEach(filtered, id: \.column) { field in
             fieldRow(field)
         }
     }
-    
+
     // MARK: - UI Components
-    
+
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
             .font(.system(size: DesignConstants.FontSize.caption, weight: .medium))
@@ -199,7 +199,7 @@ struct RightSidebarView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 4)
     }
-    
+
     private func fieldRow(_ field: (column: String, value: String?, type: String)) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             // Field name + type badge
@@ -247,11 +247,11 @@ struct RightSidebarView: View {
         tableName: "users",
         tableMetadata: TableMetadata(
             tableName: "users",
-            dataSize: 16384,
-            indexSize: 8192,
-            totalSize: 24576,
+            dataSize: 16_384,
+            indexSize: 8_192,
+            totalSize: 24_576,
             avgRowLength: 128,
-            rowCount: 1250,
+            rowCount: 1_250,
             comment: "User accounts",
             engine: "InnoDB",
             collation: "utf8mb4_unicode_ci",
