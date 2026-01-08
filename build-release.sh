@@ -17,17 +17,18 @@ prepare_mariadb() {
     local target_arch=$1
     echo "📦 Preparing libmariadb.a for $target_arch..."
 
-    cd Libs
-    if [ ! -f "libmariadb_universal.a" ]; then
-        echo "❌ Error: libmariadb_universal.a not found!"
-        echo "Run this first to create universal library:"
-        echo "  lipo -create libmariadb_arm64.a libmariadb_x86_64.a -output libmariadb_universal.a"
-        exit 1
-    fi
+    (
+        cd Libs || exit 1
+        if [ ! -f "libmariadb_universal.a" ]; then
+            echo "❌ Error: libmariadb_universal.a not found!"
+            echo "Run this first to create universal library:"
+            echo "  lipo -create libmariadb_arm64.a libmariadb_x86_64.a -output libmariadb_universal.a"
+            exit 1
+        fi
 
-    lipo libmariadb_universal.a -thin $target_arch -output libmariadb.a
-    echo "✅ libmariadb.a is now $target_arch-only ($(ls -lh libmariadb.a | awk '{print $5}'))"
-    cd ..
+        lipo libmariadb_universal.a -thin $target_arch -output libmariadb.a
+        echo "✅ libmariadb.a is now $target_arch-only ($(ls -lh libmariadb.a | awk '{print $5}'))"
+    )
 }
 
 build_for_arch() {
