@@ -68,39 +68,168 @@ jobs:
 
       - name: Install ARM64 Homebrew dependencies
         run: |
+          echo "Installing ARM64 dependencies..."
           brew install mariadb-connector-c libpq
+
+          # Verify installations
+          if ! brew list mariadb-connector-c >/dev/null 2>&1; then
+            echo "❌ ERROR: mariadb-connector-c installation failed or incomplete"
+            exit 1
+          fi
+
+          if ! brew list libpq >/dev/null 2>&1; then
+            echo "❌ ERROR: libpq installation failed or incomplete"
+            exit 1
+          fi
+
+          # Verify libraries exist at expected paths
+          if [ ! -f "/opt/homebrew/opt/mariadb-connector-c/lib/mariadb/libmariadb.a" ]; then
+            echo "❌ ERROR: mariadb-connector-c installed but library file not found"
+            exit 1
+          fi
+
+          echo "✅ All ARM64 dependencies installed successfully"
 
       - name: Install x86_64 Homebrew
         run: |
           # Install Rosetta 2 if needed
           if ! arch -x86_64 /usr/bin/true 2>/dev/null; then
             echo "Installing Rosetta 2..."
-            softwareupdate --install-rosetta --agree-to-license
+            if ! softwareupdate --install-rosetta --agree-to-license; then
+              echo "❌ ERROR: Failed to install Rosetta 2"
+              echo "This is required to run x86_64 binaries on Apple Silicon"
+              exit 1
+            fi
+
+            # Verify Rosetta 2 is now working
+            if ! arch -x86_64 /usr/bin/true 2>/dev/null; then
+              echo "❌ ERROR: Rosetta 2 installed but not functional"
+              exit 1
+            fi
+
+            echo "✅ Rosetta 2 installed successfully"
+          else
+            echo "✅ Rosetta 2 already installed"
           fi
 
           # Check if x86_64 Homebrew is already installed
           if [ ! -f /usr/local/bin/brew ]; then
             echo "Installing x86_64 Homebrew..."
-            arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+            # Using official Homebrew installer (trusted source)
+            if ! arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"; then
+              echo "❌ ERROR: Homebrew installation script failed"
+              exit 1
+            fi
+
+            # Verify installation
+            if [ ! -f /usr/local/bin/brew ]; then
+              echo "❌ ERROR: Homebrew installed but /usr/local/bin/brew not found"
+              exit 1
+            fi
+
+            # Verify it's executable
+            if ! /usr/local/bin/brew --version; then
+              echo "❌ ERROR: Homebrew binary is not functional"
+              exit 1
+            fi
+
+            echo "✅ x86_64 Homebrew installed successfully"
           else
             echo "x86_64 Homebrew already installed"
+
+            # Still verify it works
+            if ! /usr/local/bin/brew --version; then
+              echo "❌ ERROR: x86_64 Homebrew exists but is not functional"
+              exit 1
+            fi
           fi
 
       - name: Install x86_64 Homebrew dependencies
         run: |
+          echo "Installing x86_64 dependencies..."
           arch -x86_64 /usr/local/bin/brew install mariadb-connector-c libpq
+
+          # Verify installations
+          if ! arch -x86_64 /usr/local/bin/brew list mariadb-connector-c >/dev/null 2>&1; then
+            echo "❌ ERROR: mariadb-connector-c installation failed or incomplete"
+            exit 1
+          fi
+
+          if ! arch -x86_64 /usr/local/bin/brew list libpq >/dev/null 2>&1; then
+            echo "❌ ERROR: libpq installation failed or incomplete"
+            exit 1
+          fi
+
+          # Verify libraries exist at expected paths
+          if [ ! -f "/usr/local/opt/mariadb-connector-c/lib/mariadb/libmariadb.a" ]; then
+            echo "❌ ERROR: mariadb-connector-c installed but library file not found"
+            exit 1
+          fi
+
+          echo "✅ All x86_64 dependencies installed successfully"
 
       - name: Create universal libmariadb library
         run: |
           echo "Creating universal libmariadb.a..."
-          lipo -create \
-            /opt/homebrew/opt/mariadb-connector-c/lib/mariadb/libmariadb.a \
-            /usr/local/opt/mariadb-connector-c/lib/mariadb/libmariadb.a \
-            -output Libs/libmariadb_universal.a
 
-          echo "Verifying universal library:"
+          # Define library paths
+          ARM64_LIB="/opt/homebrew/opt/mariadb-connector-c/lib/mariadb/libmariadb.a"
+          X86_LIB="/usr/local/opt/mariadb-connector-c/lib/mariadb/libmariadb.a"
+
+          # Verify input files exist
+          if [ ! -f "$ARM64_LIB" ]; then
+            echo "❌ ERROR: ARM64 library not found at: $ARM64_LIB"
+            echo "ARM64 Homebrew installation may have failed"
+            exit 1
+          fi
+
+          if [ ! -f "$X86_LIB" ]; then
+            echo "❌ ERROR: x86_64 library not found at: $X86_LIB"
+            echo "x86_64 Homebrew installation may have failed"
+            exit 1
+          fi
+
+          # Verify inputs are correct architectures
+          echo "Verifying input architectures:"
+          lipo -info "$ARM64_LIB"
+          lipo -info "$X86_LIB"
+
+          # Ensure output directory exists
+          mkdir -p Libs
+
+          # Create universal binary
+          if ! lipo -create "$ARM64_LIB" "$X86_LIB" -output Libs/libmariadb_universal.a; then
+            echo "❌ ERROR: Failed to create universal library"
+            echo "This could mean:"
+            echo "  - Libraries are incompatible"
+            echo "  - Libraries are already universal"
+            echo "  - Output directory is not writable"
+            exit 1
+          fi
+
+          # Verify output
+          if [ ! -f "Libs/libmariadb_universal.a" ]; then
+            echo "❌ ERROR: Universal library was not created"
+            exit 1
+          fi
+
+          echo "✅ Universal library created successfully:"
           lipo -info Libs/libmariadb_universal.a
           ls -lh Libs/libmariadb_universal.a
+
+          # Verify it's actually universal (contains both architectures)
+          if ! lipo -info Libs/libmariadb_universal.a | grep -q "arm64"; then
+            echo "❌ ERROR: Universal library missing arm64 architecture"
+            exit 1
+          fi
+
+          if ! lipo -info Libs/libmariadb_universal.a | grep -q "x86_64"; then
+            echo "❌ ERROR: Universal library missing x86_64 architecture"
+            exit 1
+          fi
+
+          echo "✅ Verified: Library contains both arm64 and x86_64"
 
       - name: Upload library artifacts
         uses: actions/upload-artifact@v4
@@ -125,6 +254,26 @@ jobs:
           name: libs-universal
           path: Libs/
 
+      - name: Verify downloaded artifacts
+        run: |
+          echo "Verifying downloaded library artifacts..."
+
+          if [ ! -f "Libs/libmariadb_universal.a" ]; then
+            echo "❌ ERROR: Required library artifact not found: Libs/libmariadb_universal.a"
+            echo "This means:"
+            echo "  - The prepare-libs job failed to create the library"
+            echo "  - The artifact upload failed"
+            echo "  - The artifact download was corrupted"
+            echo ""
+            echo "Contents of Libs directory:"
+            ls -la Libs/ || echo "Libs directory is empty or doesn't exist"
+            exit 1
+          fi
+
+          echo "✅ Universal library found"
+          lipo -info Libs/libmariadb_universal.a
+          ls -lh Libs/libmariadb_universal.a
+
       - name: Cache Homebrew packages
         uses: actions/cache@v4
         with:
@@ -137,7 +286,22 @@ jobs:
             brew-arm64-${{ runner.os }}-
 
       - name: Install ARM64 dependencies
-        run: brew install mariadb-connector-c libpq
+        run: |
+          echo "Installing ARM64 dependencies..."
+          brew install mariadb-connector-c libpq
+
+          # Verify installations
+          if ! brew list mariadb-connector-c >/dev/null 2>&1; then
+            echo "❌ ERROR: mariadb-connector-c installation failed"
+            exit 1
+          fi
+
+          if ! brew list libpq >/dev/null 2>&1; then
+            echo "❌ ERROR: libpq installation failed"
+            exit 1
+          fi
+
+          echo "✅ ARM64 dependencies installed"
 
       - name: Build ARM64
         run: |
@@ -146,15 +310,78 @@ jobs:
 
       - name: Verify build
         run: |
-          echo "Build completed. Binary info:"
-          ls -lh build/Release/TablePro-arm64.app/Contents/MacOS/TablePro
-          lipo -info build/Release/TablePro-arm64.app/Contents/MacOS/TablePro
-          du -sh build/Release/TablePro-arm64.app
+          echo "Verifying build output..."
+
+          BINARY_PATH="build/Release/TablePro-arm64.app/Contents/MacOS/TablePro"
+
+          # Check binary exists
+          if [ ! -f "$BINARY_PATH" ]; then
+            echo "❌ ERROR: Built binary not found at: $BINARY_PATH"
+            echo "Build may have failed silently"
+            exit 1
+          fi
+
+          # Check it's not empty
+          if [ ! -s "$BINARY_PATH" ]; then
+            echo "❌ ERROR: Binary file is empty"
+            exit 1
+          fi
+
+          # Check architecture
+          ARCH_INFO=$(lipo -info "$BINARY_PATH")
+          echo "Architecture: $ARCH_INFO"
+
+          if ! echo "$ARCH_INFO" | grep -q "arm64"; then
+            echo "❌ ERROR: Binary does not contain arm64 architecture"
+            echo "Expected: arm64 only"
+            echo "Got: $ARCH_INFO"
+            exit 1
+          fi
+
+          if echo "$ARCH_INFO" | grep -q "x86_64"; then
+            echo "❌ ERROR: Binary contains x86_64 but should be arm64 only"
+            exit 1
+          fi
+
+          # Check it's executable
+          if [ ! -x "$BINARY_PATH" ]; then
+            echo "❌ ERROR: Binary is not executable"
+            exit 1
+          fi
+
+          # Display info
+          echo "✅ Build verified successfully"
+          echo "Binary size: $(ls -lh "$BINARY_PATH" | awk '{print $5}')"
+          echo "App bundle size: $(du -sh build/Release/TablePro-arm64.app | awk '{print $1}')"
 
       - name: Create ZIP archive
         run: |
+          echo "Creating ZIP archive..."
+
+          if [ ! -d "build/Release/TablePro-arm64.app" ]; then
+            echo "❌ ERROR: App bundle not found for archiving"
+            exit 1
+          fi
+
           cd build/Release
-          zip -r TablePro-arm64.zip TablePro-arm64.app
+
+          if ! zip -r TablePro-arm64.zip TablePro-arm64.app; then
+            echo "❌ ERROR: Failed to create ZIP archive"
+            exit 1
+          fi
+
+          if [ ! -f "TablePro-arm64.zip" ]; then
+            echo "❌ ERROR: ZIP file was not created"
+            exit 1
+          fi
+
+          # Verify it's a valid ZIP
+          if ! unzip -t TablePro-arm64.zip > /dev/null; then
+            echo "❌ ERROR: Created ZIP is corrupted or invalid"
+            exit 1
+          fi
+
+          echo "✅ ZIP archive created and verified"
           ls -lh TablePro-arm64.zip
 
       - name: Upload artifact
@@ -180,6 +407,21 @@ jobs:
           name: libs-universal
           path: Libs/
 
+      - name: Verify downloaded artifacts
+        run: |
+          echo "Verifying downloaded library artifacts..."
+
+          if [ ! -f "Libs/libmariadb_universal.a" ]; then
+            echo "❌ ERROR: Required library artifact not found: Libs/libmariadb_universal.a"
+            echo ""
+            echo "Contents of Libs directory:"
+            ls -la Libs/ || echo "Libs directory is empty or doesn't exist"
+            exit 1
+          fi
+
+          echo "✅ Universal library found"
+          lipo -info Libs/libmariadb_universal.a
+
       - name: Cache Homebrew packages
         uses: actions/cache@v4
         with:
@@ -194,17 +436,70 @@ jobs:
       - name: Install Rosetta 2
         run: |
           if ! arch -x86_64 /usr/bin/true 2>/dev/null; then
-            softwareupdate --install-rosetta --agree-to-license
+            echo "Installing Rosetta 2..."
+            if ! softwareupdate --install-rosetta --agree-to-license; then
+              echo "❌ ERROR: Failed to install Rosetta 2"
+              exit 1
+            fi
+
+            # Verify Rosetta 2 works
+            if ! arch -x86_64 /usr/bin/true 2>/dev/null; then
+              echo "❌ ERROR: Rosetta 2 installed but not functional"
+              exit 1
+            fi
+
+            echo "✅ Rosetta 2 installed"
+          else
+            echo "✅ Rosetta 2 already installed"
           fi
 
       - name: Install x86_64 Homebrew
         run: |
           if [ ! -f /usr/local/bin/brew ]; then
-            arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            echo "Installing x86_64 Homebrew..."
+
+            if ! arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"; then
+              echo "❌ ERROR: Homebrew installation failed"
+              exit 1
+            fi
+
+            if [ ! -f /usr/local/bin/brew ]; then
+              echo "❌ ERROR: Homebrew not found after installation"
+              exit 1
+            fi
+
+            if ! /usr/local/bin/brew --version; then
+              echo "❌ ERROR: Homebrew not functional"
+              exit 1
+            fi
+
+            echo "✅ x86_64 Homebrew installed"
+          else
+            echo "x86_64 Homebrew already installed"
+
+            if ! /usr/local/bin/brew --version; then
+              echo "❌ ERROR: Homebrew not functional"
+              exit 1
+            fi
           fi
 
       - name: Install x86_64 dependencies
-        run: arch -x86_64 /usr/local/bin/brew install mariadb-connector-c libpq
+        run: |
+          echo "Installing x86_64 dependencies..."
+          arch -x86_64 /usr/local/bin/brew install mariadb-connector-c libpq
+
+          # Verify installations
+          if ! arch -x86_64 /usr/local/bin/brew list mariadb-connector-c >/dev/null 2>&1; then
+            echo "❌ ERROR: mariadb-connector-c installation failed"
+            exit 1
+          fi
+
+          if ! arch -x86_64 /usr/local/bin/brew list libpq >/dev/null 2>&1; then
+            echo "❌ ERROR: libpq installation failed"
+            exit 1
+          fi
+
+          echo "✅ x86_64 dependencies installed"
 
       - name: Build x86_64
         run: |
@@ -213,15 +508,77 @@ jobs:
 
       - name: Verify build
         run: |
-          echo "Build completed. Binary info:"
-          ls -lh build/Release/TablePro-x86_64.app/Contents/MacOS/TablePro
-          lipo -info build/Release/TablePro-x86_64.app/Contents/MacOS/TablePro
-          du -sh build/Release/TablePro-x86_64.app
+          echo "Verifying build output..."
+
+          BINARY_PATH="build/Release/TablePro-x86_64.app/Contents/MacOS/TablePro"
+
+          # Check binary exists
+          if [ ! -f "$BINARY_PATH" ]; then
+            echo "❌ ERROR: Built binary not found at: $BINARY_PATH"
+            exit 1
+          fi
+
+          # Check it's not empty
+          if [ ! -s "$BINARY_PATH" ]; then
+            echo "❌ ERROR: Binary file is empty"
+            exit 1
+          fi
+
+          # Check architecture
+          ARCH_INFO=$(lipo -info "$BINARY_PATH")
+          echo "Architecture: $ARCH_INFO"
+
+          if ! echo "$ARCH_INFO" | grep -q "x86_64"; then
+            echo "❌ ERROR: Binary does not contain x86_64 architecture"
+            echo "Expected: x86_64 only"
+            echo "Got: $ARCH_INFO"
+            exit 1
+          fi
+
+          if echo "$ARCH_INFO" | grep -q "arm64"; then
+            echo "❌ ERROR: Binary contains arm64 but should be x86_64 only"
+            exit 1
+          fi
+
+          # Check it's executable
+          if [ ! -x "$BINARY_PATH" ]; then
+            echo "❌ ERROR: Binary is not executable"
+            exit 1
+          fi
+
+          # Display info
+          echo "✅ Build verified successfully"
+          echo "Binary size: $(ls -lh "$BINARY_PATH" | awk '{print $5}')"
+          echo "App bundle size: $(du -sh build/Release/TablePro-x86_64.app | awk '{print $1}')"
 
       - name: Create ZIP archive
         run: |
+          echo "Creating ZIP archive..."
+
+          if [ ! -d "build/Release/TablePro-x86_64.app" ]; then
+            echo "❌ ERROR: App bundle not found for archiving"
+            exit 1
+          fi
+
           cd build/Release
-          zip -r TablePro-x86_64.zip TablePro-x86_64.app
+
+          if ! zip -r TablePro-x86_64.zip TablePro-x86_64.app; then
+            echo "❌ ERROR: Failed to create ZIP archive"
+            exit 1
+          fi
+
+          if [ ! -f "TablePro-x86_64.zip" ]; then
+            echo "❌ ERROR: ZIP file was not created"
+            exit 1
+          fi
+
+          # Verify it's a valid ZIP
+          if ! unzip -t TablePro-x86_64.zip > /dev/null; then
+            echo "❌ ERROR: Created ZIP is corrupted or invalid"
+            exit 1
+          fi
+
+          echo "✅ ZIP archive created and verified"
           ls -lh TablePro-x86_64.zip
 
       - name: Upload artifact
@@ -254,17 +611,77 @@ jobs:
           name: TablePro-x86_64-${{ github.sha }}
           path: artifacts/
 
-      - name: Rename artifacts for release
+      - name: Verify and rename artifacts for release
         run: |
           VERSION=${GITHUB_REF#refs/tags/}
-          mv artifacts/TablePro-arm64.zip artifacts/TablePro-${VERSION}-arm64.zip
-          mv artifacts/TablePro-x86_64.zip artifacts/TablePro-${VERSION}-x86_64.zip
+
+          if [ -z "$VERSION" ]; then
+            echo "❌ ERROR: Failed to extract version from ref: $GITHUB_REF"
+            exit 1
+          fi
+
+          echo "Preparing artifacts for version: $VERSION"
+
+          # Check source files exist
+          if [ ! -f "artifacts/TablePro-arm64.zip" ]; then
+            echo "❌ ERROR: ARM64 artifact not found"
+            echo "Contents of artifacts directory:"
+            ls -la artifacts/
+            exit 1
+          fi
+
+          if [ ! -f "artifacts/TablePro-x86_64.zip" ]; then
+            echo "❌ ERROR: x86_64 artifact not found"
+            echo "Contents of artifacts directory:"
+            ls -la artifacts/
+            exit 1
+          fi
+
+          # Rename with verification
+          if ! mv artifacts/TablePro-arm64.zip "artifacts/TablePro-${VERSION}-arm64.zip"; then
+            echo "❌ ERROR: Failed to rename ARM64 artifact"
+            exit 1
+          fi
+
+          if ! mv artifacts/TablePro-x86_64.zip "artifacts/TablePro-${VERSION}-x86_64.zip"; then
+            echo "❌ ERROR: Failed to rename x86_64 artifact"
+            exit 1
+          fi
+
+          # Verify renamed files exist
+          if [ ! -f "artifacts/TablePro-${VERSION}-arm64.zip" ]; then
+            echo "❌ ERROR: Renamed ARM64 file not found"
+            exit 1
+          fi
+
+          if [ ! -f "artifacts/TablePro-${VERSION}-x86_64.zip" ]; then
+            echo "❌ ERROR: Renamed x86_64 file not found"
+            exit 1
+          fi
+
+          echo "✅ Artifacts renamed successfully"
           ls -lh artifacts/
 
       - name: Generate release notes
         id: release_notes
         run: |
           VERSION=${GITHUB_REF#refs/tags/}
+
+          # Try to get previous tag
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -z "$PREVIOUS_TAG" ]; then
+            echo "No previous tag found, showing recent commits"
+            CHANGES=$(git log --pretty=format:"- %s" HEAD~10..HEAD 2>/dev/null || echo "- Initial release")
+          else
+            echo "Generating changes since $PREVIOUS_TAG"
+            CHANGES=$(git log --pretty=format:"- %s" "$PREVIOUS_TAG"..HEAD 2>/dev/null || echo "- Initial release")
+          fi
+
+          if [ -z "$CHANGES" ]; then
+            CHANGES="- Initial release"
+          fi
+
           cat > release_notes.md <<EOF
           ## TablePro ${VERSION}
 
@@ -284,9 +701,10 @@ jobs:
 
           ### Changes
 
-          $(git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD^)..HEAD)
+          $CHANGES
           EOF
 
+          echo "✅ Release notes generated"
           cat release_notes.md
 
       - name: Create GitHub Release

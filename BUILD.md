@@ -11,13 +11,13 @@ TablePro supports both Apple Silicon (ARM64) and Intel (x86_64) Macs.
 Build architecture-specific binaries to minimize download size:
 
 ```bash
-# Build Apple Silicon version only (9.4MB)
+# Build Apple Silicon version only (~6MB)
 ./build-release.sh arm64
 
-# Build Intel version only (9.5MB)
+# Build Intel version only (~6MB)
 ./build-release.sh x86_64
 
-# Build both
+# Build both architectures
 ./build-release.sh both
 ```
 
