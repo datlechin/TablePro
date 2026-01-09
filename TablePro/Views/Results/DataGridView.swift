@@ -598,6 +598,7 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
         NSPasteboard.general.setString(text, forType: .string)
     }
 
+    @MainActor
     func setCellValue(_ value: String?, at rowIndex: Int) {
         guard let tableView = tableView else { return }
         var columnIndex = max(0, tableView.selectedColumn - 1)

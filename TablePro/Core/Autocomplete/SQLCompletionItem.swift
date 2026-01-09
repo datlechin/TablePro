@@ -9,7 +9,6 @@ import AppKit
 import Foundation
 
 /// Category of completion item
-@MainActor
 enum SQLCompletionKind: String, CaseIterable {
     case keyword    // SELECT, FROM, WHERE, etc.
     case table      // Database tables
@@ -64,7 +63,6 @@ enum SQLCompletionKind: String, CaseIterable {
 }
 
 /// A single completion suggestion
-@MainActor
 struct SQLCompletionItem: Identifiable, Hashable {
     let id: UUID
     let label: String           // Display text
