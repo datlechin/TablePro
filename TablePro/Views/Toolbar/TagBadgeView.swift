@@ -2,31 +2,35 @@
 //  TagBadgeView.swift
 //  TablePro
 //
-//  Tag badge for toolbar display.
+//  Tag badge for toolbar display showing connection environment.
+//  Uses capsule background with colored text matching tag color.
 //
 
 import SwiftUI
 
-/// Compact badge showing the connection's tag
+/// Compact badge showing the connection's tag with capsule background
 struct TagBadgeView: View {
     let tag: ConnectionTag
+    
+    /// Display name with validation for empty/whitespace tags
+    private var displayName: String {
+        let trimmed = tag.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? "UNTAGGED" : trimmed.uppercased()
+    }
 
     var body: some View {
-        HStack(spacing: 4) {
-            Image(systemName: "tag.fill")
-                .font(.system(size: DesignConstants.FontSize.tiny, weight: .semibold))
-
-            Text(tag.name.uppercased())
-                .font(.system(size: DesignConstants.FontSize.caption, weight: .bold))
-        }
-        .foregroundStyle(tag.color.color)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(
-            Capsule()
-                .fill(tag.color.color.opacity(0.2))
-        )
-        .help("Tag: \(tag.name)")
+        Text(displayName)
+            .font(ToolbarDesignTokens.Typography.tagLabel)
+            .foregroundStyle(tag.color.color)
+            .lineLimit(1)  // Prevent overflow from very long tag names
+            .padding(.horizontal, ToolbarDesignTokens.Tag.horizontalPadding)
+            .padding(.vertical, ToolbarDesignTokens.Tag.verticalPadding)
+            .background(
+                Capsule()
+                    .fill(tag.color.color.opacity(ToolbarDesignTokens.Tag.backgroundOpacity))
+            )
+            .help("Tag: \(tag.name)")
+            .accessibilityLabel("Tag: \(tag.name)")
     }
 }
 
