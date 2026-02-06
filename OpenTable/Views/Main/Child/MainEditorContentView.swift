@@ -91,6 +91,7 @@ struct MainEditorContentView: View {
             // Clean up sort cache for closed tabs
             let openTabIds = Set(tabManager.tabs.map(\.id))
             sortCache = sortCache.filter { openTabIds.contains($0.key) }
+            coordinator.cleanupSortCache(openTabIds: openTabIds)
         }
     }
 
@@ -269,7 +270,20 @@ struct MainEditorContentView: View {
             return tab.resultRows
         }
 
-        // Check sort cache to avoid re-sorting on every render
+        // Check coordinator's async sort cache (for large datasets sorted on background thread)
+        if let cached = coordinator.querySortCache[tab.id],
+           cached.columnIndex == columnIndex,
+           cached.direction == tab.sortState.direction,
+           cached.resultVersion == tab.resultVersion {
+            return cached.rows
+        }
+
+        // For large datasets sorted async, return unsorted until cache is ready
+        if tab.resultRows.count > 10_000 {
+            return tab.resultRows
+        }
+
+        // Small dataset: sort synchronously with view-level cache
         if let cached = sortCache[tab.id],
            cached.columnIndex == columnIndex,
            cached.direction == tab.sortState.direction,

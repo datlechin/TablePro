@@ -229,7 +229,7 @@ final class DataGridCellFactory {
             cellView.layer?.backgroundColor = CellColors.deletedBackground
         } else if isInserted {
             cellView.layer?.backgroundColor = CellColors.insertedBackground
-        } else if isModified && !isLargeDataset {
+        } else if isModified {
             cellView.layer?.backgroundColor = CellColors.modifiedBackground
         } else {
             cellView.layer?.backgroundColor = nil
