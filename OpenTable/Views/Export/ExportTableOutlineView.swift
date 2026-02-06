@@ -85,7 +85,8 @@ struct ExportTableOutlineView: NSViewRepresentable {
             }
         }
 
-        // Note: No column reconfiguration needed - we just swap pre-configured views
+        // Expand newly added databases that have isExpanded set
+        context.coordinator.expandNewItems()
     }
 
     func makeCoordinator() -> OutlineViewCoordinator {
@@ -173,6 +174,7 @@ final class OutlineViewCoordinator: NSObject, NSOutlineViewDataSource, NSOutline
     weak var outlineView: NSOutlineView?
 
     private var expandedDatabases: Set<UUID> = []
+    private var knownDatabaseIds: Set<UUID> = []
     private var isUpdating: Bool = false
 
     // Wrapper caches for stable item identity (NSOutlineView uses === comparison)
@@ -489,6 +491,30 @@ final class OutlineViewCoordinator: NSObject, NSOutlineViewDataSource, NSOutline
         // Use expandedDatabases set, not database.isExpanded binding
         // (we don't update the binding to avoid triggering updateNSView)
         // Expand using wrapper objects (same instances that NSOutlineView tracks)
+        for databaseId in expandedDatabases {
+            if let wrapper = databaseWrappers[databaseId] {
+                outlineView.expandItem(wrapper)
+            }
+        }
+    }
+
+    /// Expand databases that were just loaded and have isExpanded set.
+    /// Called from updateNSView after data loads asynchronously.
+    func expandNewItems() {
+        guard let outlineView = outlineView else { return }
+
+        var hasNewItems = false
+        for database in databaseItems where !knownDatabaseIds.contains(database.id) {
+            hasNewItems = true
+            knownDatabaseIds.insert(database.id)
+            if database.isExpanded {
+                expandedDatabases.insert(database.id)
+            }
+        }
+
+        guard hasNewItems else { return }
+
+        outlineView.reloadData()
         for databaseId in expandedDatabases {
             if let wrapper = databaseWrappers[databaseId] {
                 outlineView.expandItem(wrapper)

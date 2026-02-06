@@ -136,7 +136,7 @@ struct MainContentView: View {
                 ExportDialog(
                     isPresented: $coordinator.showExportDialog,
                     connection: connection,
-                    preselectedTables: []
+                    preselectedTables: Set(selectedTables.map(\.name))
                 )
             }
             .sheet(isPresented: $coordinator.showImportDialog) {
