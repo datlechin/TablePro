@@ -109,16 +109,18 @@ struct MainStatusBarView: View {
             } else {
                 return "\(selectedCount) of \(loadedCount) rows selected"
             }
-        } else if let total = total, total > 0 {
-            // Pagination mode: "201-400 of 5,000 rows"
+        } else if tab.tabType == .table, let total = total, total > 0 {
+            // Pagination mode (table tabs only): "201-400 of 5,000 rows"
             let formatter = NumberFormatter()
             formatter.numberStyle = .decimal
             let formattedTotal = formatter.string(from: NSNumber(value: total)) ?? "\(total)"
 
             return "\(pagination.rangeStart)-\(pagination.rangeEnd) of \(formattedTotal) rows"
         } else if loadedCount > 0 {
-            // Simple mode: "100 rows"
-            return "\(loadedCount) rows"
+            let formatter = NumberFormatter()
+            formatter.numberStyle = .decimal
+            let formattedCount = formatter.string(from: NSNumber(value: loadedCount)) ?? "\(loadedCount)"
+            return "\(formattedCount) rows"
         } else {
             return "No rows"
         }

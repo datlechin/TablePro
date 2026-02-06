@@ -57,90 +57,104 @@ final class TableRowData {
 
 // MARK: - In-Memory Row Provider
 
-/// Row provider that keeps all data in memory (for existing QueryResultRow data)
+/// Row provider that keeps all data in memory (for existing QueryResultRow data).
+/// Uses lazy TableRowData creation to avoid O(n) heap allocations on init.
 final class InMemoryRowProvider: RowProvider {
-    private var rows: [TableRowData] = []
+    private var sourceRows: [QueryResultRow]
+    private var rowCache: [Int: TableRowData] = [:]
     private(set) var columns: [String]
     private(set) var columnDefaults: [String: String?]
     private(set) var columnTypes: [ColumnType]
 
     var totalRowCount: Int {
-        rows.count
+        sourceRows.count
     }
 
     init(rows: [QueryResultRow], columns: [String], columnDefaults: [String: String?] = [:], columnTypes: [ColumnType]? = nil) {
         self.columns = columns
         self.columnDefaults = columnDefaults
-        // Default to .text if columnTypes not provided
         self.columnTypes = columnTypes ?? Array(repeating: ColumnType.text(rawType: nil), count: columns.count)
-        self.rows = rows.enumerated().map { index, row in
-            TableRowData(index: index, values: row.values)
-        }
+        self.sourceRows = rows
     }
 
     func fetchRows(offset: Int, limit: Int) -> [TableRowData] {
-        let endIndex = min(offset + limit, rows.count)
+        let endIndex = min(offset + limit, sourceRows.count)
         guard offset < endIndex else { return [] }
-        return Array(rows[offset..<endIndex])
+        var result: [TableRowData] = []
+        result.reserveCapacity(endIndex - offset)
+        for i in offset..<endIndex {
+            result.append(materializeRow(at: i))
+        }
+        return result
     }
 
     func prefetchRows(at indices: [Int]) {
-        // No-op for in-memory provider - all data already loaded
+        // No-op for in-memory provider - all data already available
     }
 
     func invalidateCache() {
-        // No-op for in-memory provider
+        rowCache.removeAll()
     }
 
     /// Update a cell value
     func updateValue(_ value: String?, at rowIndex: Int, columnIndex: Int) {
-        guard rowIndex < rows.count else { return }
-        rows[rowIndex].setValue(value, at: columnIndex)
+        guard rowIndex < sourceRows.count else { return }
+        // Update the source row
+        sourceRows[rowIndex].values[columnIndex] = value
+        // Update cached TableRowData if it exists
+        rowCache[rowIndex]?.setValue(value, at: columnIndex)
     }
 
     /// Get row data at index
     func row(at index: Int) -> TableRowData? {
-        guard index >= 0 && index < rows.count else { return nil }
-        return rows[index]
+        guard index >= 0 && index < sourceRows.count else { return nil }
+        return materializeRow(at: index)
     }
 
     /// Update rows from QueryResultRow array
     func updateRows(_ newRows: [QueryResultRow]) {
-        self.rows = newRows.enumerated().map { index, row in
-            TableRowData(index: index, values: row.values)
-        }
+        self.sourceRows = newRows
+        self.rowCache.removeAll()
     }
 
     /// Append a new row with given values
     /// Returns the index of the new row
     func appendRow(values: [String?]) -> Int {
-        let newIndex = rows.count
-        let newRow = TableRowData(index: newIndex, values: values)
-        rows.append(newRow)
+        let newIndex = sourceRows.count
+        sourceRows.append(QueryResultRow(values: values))
+        let rowData = TableRowData(index: newIndex, values: values)
+        rowCache[newIndex] = rowData
         return newIndex
     }
 
     /// Remove row at index (used when discarding new rows)
     func removeRow(at index: Int) {
-        guard index >= 0 && index < rows.count else { return }
-        rows.remove(at: index)
-        // Re-index remaining rows
-        for i in index..<rows.count {
-            rows[i] = TableRowData(index: i, values: rows[i].values)
-        }
+        guard index >= 0 && index < sourceRows.count else { return }
+        sourceRows.remove(at: index)
+        // Clear entire cache since indices shift
+        rowCache.removeAll()
     }
 
     /// Remove multiple rows at indices (used when discarding new rows)
     /// Indices should be sorted in descending order to maintain correct removal
     func removeRows(at indices: Set<Int>) {
         for index in indices.sorted(by: >) {
-            guard index >= 0 && index < rows.count else { continue }
-            rows.remove(at: index)
+            guard index >= 0 && index < sourceRows.count else { continue }
+            sourceRows.remove(at: index)
         }
-        // Re-index all remaining rows
-        for i in 0..<rows.count {
-            rows[i] = TableRowData(index: i, values: rows[i].values)
+        // Clear entire cache since indices shift
+        rowCache.removeAll()
+    }
+
+    // MARK: - Private
+
+    private func materializeRow(at index: Int) -> TableRowData {
+        if let cached = rowCache[index] {
+            return cached
         }
+        let rowData = TableRowData(index: index, values: sourceRows[index].values)
+        rowCache[index] = rowData
+        return rowData
     }
 }
 

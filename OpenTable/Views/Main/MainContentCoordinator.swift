@@ -266,6 +266,7 @@ final class MainContentCoordinator: ObservableObject {
                         updatedTab.columnTypes = safeColumnTypes
                         updatedTab.columnDefaults = safeColumnDefaults
                         updatedTab.resultRows = safeRows
+                        updatedTab.resultVersion += 1
                         updatedTab.executionTime = safeExecutionTime
                         updatedTab.rowsAffected = result.rowsAffected
                         updatedTab.isExecuting = false

@@ -8,6 +8,14 @@
 
 import SwiftUI
 
+/// Cache for sorted query result rows to avoid re-sorting on every SwiftUI body evaluation
+private struct SortedRowsCache {
+    let rows: [QueryResultRow]
+    let columnIndex: Int
+    let direction: SortDirection
+    let resultVersion: Int
+}
+
 /// Main editor content with tab bar and content switching
 struct MainEditorContentView: View {
     // MARK: - Dependencies
@@ -45,6 +53,10 @@ struct MainEditorContentView: View {
     let onOffsetChange: (Int) -> Void
     let onPaginationGo: () -> Void
 
+    // MARK: - Sort Cache
+
+    @State private var sortCache: [UUID: SortedRowsCache] = [:]
+
     // MARK: - Environment
 
     @EnvironmentObject private var appState: AppState
@@ -75,6 +87,11 @@ struct MainEditorContentView: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: appState.isHistoryPanelVisible)
+        .onChange(of: tabManager.tabs.count) { _ in
+            // Clean up sort cache for closed tabs
+            let openTabIds = Set(tabManager.tabs.map(\.id))
+            sortCache = sortCache.filter { openTabIds.contains($0.key) }
+        }
     }
 
     // MARK: - Tab Content
@@ -252,7 +269,15 @@ struct MainEditorContentView: View {
             return tab.resultRows
         }
 
-        return tab.resultRows.sorted { row1, row2 in
+        // Check sort cache to avoid re-sorting on every render
+        if let cached = sortCache[tab.id],
+           cached.columnIndex == columnIndex,
+           cached.direction == tab.sortState.direction,
+           cached.resultVersion == tab.resultVersion {
+            return cached.rows
+        }
+
+        let sorted = tab.resultRows.sorted { row1, row2 in
             let val1 = row1.values[columnIndex] ?? ""
             let val2 = row2.values[columnIndex] ?? ""
 
@@ -262,6 +287,16 @@ struct MainEditorContentView: View {
                 return val1.localizedStandardCompare(val2) == .orderedDescending
             }
         }
+
+        // Cache the result
+        sortCache[tab.id] = SortedRowsCache(
+            rows: sorted,
+            columnIndex: columnIndex,
+            direction: tab.sortState.direction,
+            resultVersion: tab.resultVersion
+        )
+
+        return sorted
     }
 
     private func sortStateBinding(for tab: QueryTab) -> Binding<SortState> {
