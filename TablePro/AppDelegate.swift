@@ -122,6 +122,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Start license periodic validation
+        Task { @MainActor in
+            LicenseManager.shared.startPeriodicValidation()
+        }
+
         // Configure windows after app launch
         configureWelcomeWindow()
 

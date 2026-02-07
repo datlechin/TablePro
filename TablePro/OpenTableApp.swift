@@ -453,6 +453,9 @@ extension Notification.Name {
     // Window lifecycle notifications
     static let mainWindowWillClose = Notification.Name("mainWindowWillClose")
     static let openMainWindow = Notification.Name("openMainWindow")
+
+    // License notifications
+    static let licenseStatusDidChange = Notification.Name("licenseStatusDidChange")
 }
 
 // MARK: - Open Window Handler

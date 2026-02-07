@@ -37,6 +37,11 @@ struct SettingsView: View {
                 .tabItem {
                     Label("History", systemImage: "clock")
                 }
+
+            LicenseSettingsView()
+                .tabItem {
+                    Label("License", systemImage: "key")
+                }
         }
         .frame(width: 500, height: 400)
     }
