@@ -40,13 +40,20 @@ final class TagStorage {
     }
 
     /// Save all tags
-    func saveTags(_ tags: [ConnectionTag]) {
+    func saveTags(_ tags: [ConnectionTag], triggeredBySync: Bool = false) {
         do {
             let encoder = JSONEncoder()
             let data = try encoder.encode(tags)
             defaults.set(data, forKey: tagsKey)
         } catch {
             print("Failed to save tags: \(error)")
+        }
+
+        // Push to iCloud if sync enabled (skip when applying remote data)
+        if !triggeredBySync {
+            Task { @MainActor in
+                SyncCoordinator.shared.didUpdateTags(tags)
+            }
         }
     }
 

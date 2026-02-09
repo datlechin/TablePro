@@ -19,6 +19,17 @@ final class AppSettingsManager: ObservableObject {
     @Published var general: GeneralSettings {
         didSet {
             storage.saveGeneral(general)
+
+            // Handle iCloud sync toggle changes
+            if oldValue.iCloudSyncEnabled != general.iCloudSyncEnabled {
+                if general.iCloudSyncEnabled {
+                    SyncCoordinator.shared.enable()
+                } else {
+                    SyncCoordinator.shared.disable()
+                }
+            }
+
+            SyncCoordinator.shared.didUpdateGeneralSettings(general)
             notifyChange(domain: "general", notification: .generalSettingsDidChange)
         }
     }
@@ -27,6 +38,7 @@ final class AppSettingsManager: ObservableObject {
         didSet {
             storage.saveAppearance(appearance)
             appearance.theme.apply()
+            SyncCoordinator.shared.didUpdateAppearanceSettings(appearance)
             notifyChange(domain: "appearance", notification: .appearanceSettingsDidChange)
         }
     }
@@ -36,6 +48,7 @@ final class AppSettingsManager: ObservableObject {
             storage.saveEditor(editor)
             // Update cached theme values for thread-safe access
             SQLEditorTheme.reloadFromSettings(editor)
+            SyncCoordinator.shared.didUpdateEditorSettings(editor)
             notifyChange(domain: "editor", notification: .editorSettingsDidChange)
         }
     }
@@ -50,6 +63,7 @@ final class AppSettingsManager: ObservableObject {
             storage.saveDataGrid(validated)
             // Update date formatting service with new format
             DateFormattingService.shared.updateFormat(validated.dateFormat)
+            SyncCoordinator.shared.didUpdateDataGridSettings(validated)
             notifyChange(domain: "dataGrid", notification: .dataGridSettingsDidChange)
         }
     }
@@ -64,6 +78,7 @@ final class AppSettingsManager: ObservableObject {
             storage.saveHistory(validated)
             // Apply history settings immediately (cleanup if auto-cleanup enabled)
             Task { await applyHistorySettingsImmediately() }
+            SyncCoordinator.shared.didUpdateHistorySettings(validated)
             notifyChange(domain: "history", notification: .historySettingsDidChange)
         }
     }

@@ -35,7 +35,7 @@ final class TableTemplateStorage {
     // MARK: - Save/Load
 
     /// Save a table template
-    func saveTemplate(name: String, options: TableCreationOptions) throws {
+    func saveTemplate(name: String, options: TableCreationOptions, triggeredBySync: Bool = false) throws {
         var templates = try loadTemplates()
         templates[name] = options
 
@@ -43,6 +43,13 @@ final class TableTemplateStorage {
         encoder.outputFormatting = .prettyPrinted
         let data = try encoder.encode(templates)
         try data.write(to: templatesURL)
+
+        // Push to iCloud if sync enabled (skip when applying remote data)
+        if !triggeredBySync {
+            Task { @MainActor in
+                SyncCoordinator.shared.didUpdateTemplates(templates)
+            }
+        }
     }
 
     /// Load all templates
@@ -57,7 +64,7 @@ final class TableTemplateStorage {
     }
 
     /// Delete a template
-    func deleteTemplate(name: String) throws {
+    func deleteTemplate(name: String, triggeredBySync: Bool = false) throws {
         var templates = try loadTemplates()
         templates.removeValue(forKey: name)
 
@@ -65,6 +72,13 @@ final class TableTemplateStorage {
         encoder.outputFormatting = .prettyPrinted
         let data = try encoder.encode(templates)
         try data.write(to: templatesURL)
+
+        // Push to iCloud if sync enabled (skip when applying remote data)
+        if !triggeredBySync {
+            Task { @MainActor in
+                SyncCoordinator.shared.didUpdateTemplates(templates)
+            }
+        }
     }
 
     /// Get template names

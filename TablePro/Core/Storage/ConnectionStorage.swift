@@ -42,7 +42,7 @@ final class ConnectionStorage {
     }
 
     /// Save all connections
-    func saveConnections(_ connections: [DatabaseConnection]) {
+    func saveConnections(_ connections: [DatabaseConnection], triggeredBySync: Bool = false) {
         let storedConnections = connections.map { StoredConnection(from: $0) }
 
         do {
@@ -51,6 +51,13 @@ final class ConnectionStorage {
             defaults.set(data, forKey: connectionsKey)
         } catch {
             print("Failed to save connections: \(error)")
+        }
+
+        // Push to iCloud if sync enabled (skip when applying remote data)
+        if !triggeredBySync {
+            Task { @MainActor in
+                SyncCoordinator.shared.didUpdateConnections(connections)
+            }
         }
     }
 
@@ -128,6 +135,13 @@ final class ConnectionStorage {
         }
 
         return duplicate
+    }
+
+    // MARK: - Password Availability
+
+    /// Check if a connection has a local password stored in Keychain
+    func hasPassword(for connectionId: UUID) -> Bool {
+        loadPassword(for: connectionId) != nil
     }
 
     // MARK: - Keychain (Password Storage)

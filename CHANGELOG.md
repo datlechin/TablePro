@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- iCloud sync for connections, tags, settings, and table templates across Macs
+- Opt-in toggle in Settings > General (off by default)
+- Conflict resolution UI when local and remote data differ
+- Password badge indicator on synced connections that need local password entry
+- Protocol-based sync engine architecture (SyncEngine, ICloudSyncEngine)
+
 ## [0.1.1] - 2026-02-09
 
 ### Added
