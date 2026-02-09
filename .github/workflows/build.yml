@@ -549,96 +549,29 @@ jobs:
           echo "Final artifacts:"
           ls -lh artifacts/
 
-      - name: Generate release notes
-        id: release_notes
+      - name: Extract release notes from CHANGELOG.md
         run: |
-          VERSION=${GITHUB_REF#refs/tags/}
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "Extracting release notes for version: $VERSION"
 
-          # Try to get previous tag
-          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          # Extract the section for this version from CHANGELOG.md
+          # Matches from "## [X.Y.Z]" until the next "## [" or end of file
+          NOTES=$(awk -v ver="$VERSION" '
+            /^## \[/ {
+              if (found) exit
+              if ($0 ~ "\\[" ver "\\]") { found=1; next }
+            }
+            found { print }
+          ' CHANGELOG.md)
 
-          if [ -z "$PREVIOUS_TAG" ]; then
-            echo "No previous tag found, showing recent commits"
-            COMMIT_RANGE="HEAD~10..HEAD"
+          if [ -z "$NOTES" ]; then
+            echo "⚠️  No changelog entry found for version $VERSION, using fallback"
+            echo "- Bug fixes and improvements" > release_notes.md
           else
-            echo "Generating changes since $PREVIOUS_TAG"
-            COMMIT_RANGE="$PREVIOUS_TAG..HEAD"
+            echo "$NOTES" > release_notes.md
           fi
 
-          # Extract raw commits
-          RAW_COMMITS=$(git log --pretty=format:"%s" "$COMMIT_RANGE" 2>/dev/null || echo "")
-
-          # Filter noise commits
-          FILTERED_COMMITS=$(echo "$RAW_COMMITS" | awk '
-            tolower($0) ~ /^wip$/ { next }
-            tolower($0) ~ /^wip:/ { next }
-            /^Merge pull request/ { next }
-            /^Merge branch/ { next }
-            /^Bump [0-9]/ { next }
-            tolower($0) ~ /^bump version/ { next }
-            tolower($0) ~ /^bump [0-9]/ { next }
-            /^\[.*[Bb]ot\]/ { next }
-            /^$/ { next }
-            { print }
-          ')
-
-          # Categorize commits by conventional commit type
-          FEAT_COMMITS=$(echo "$FILTERED_COMMITS" | grep -i "^feat:" | sed 's/^feat: *//' || true)
-          FIX_COMMITS=$(echo "$FILTERED_COMMITS" | grep -i "^fix:" | sed 's/^fix: *//' || true)
-          PERF_COMMITS=$(echo "$FILTERED_COMMITS" | grep -i "^perf:" | sed 's/^perf: *//' || true)
-          DOCS_COMMITS=$(echo "$FILTERED_COMMITS" | grep -i "^docs:" | sed 's/^docs: *//' || true)
-          REFACTOR_COMMITS=$(echo "$FILTERED_COMMITS" | grep -i "^refactor:" | sed 's/^refactor: *//' || true)
-          CHORE_COMMITS=$(echo "$FILTERED_COMMITS" | grep -iE "^(chore|style|test):" | sed 's/^[^:]*: *//' || true)
-          OTHER_COMMITS=$(echo "$FILTERED_COMMITS" | grep -ivE "^(feat|fix|perf|docs|refactor|chore|style|test):" || true)
-
-          # Build categorized output
-          CHANGES=""
-
-          if [ -n "$FEAT_COMMITS" ]; then
-            CHANGES="${CHANGES}### New Features"$'\n\n'
-            CHANGES="${CHANGES}$(echo "$FEAT_COMMITS" | sed 's/^/- /')"$'\n\n'
-          fi
-
-          if [ -n "$FIX_COMMITS" ]; then
-            CHANGES="${CHANGES}### Bug Fixes"$'\n\n'
-            CHANGES="${CHANGES}$(echo "$FIX_COMMITS" | sed 's/^/- /')"$'\n\n'
-          fi
-
-          if [ -n "$PERF_COMMITS" ]; then
-            CHANGES="${CHANGES}### Performance Improvements"$'\n\n'
-            CHANGES="${CHANGES}$(echo "$PERF_COMMITS" | sed 's/^/- /')"$'\n\n'
-          fi
-
-          if [ -n "$DOCS_COMMITS" ]; then
-            CHANGES="${CHANGES}### Documentation"$'\n\n'
-            CHANGES="${CHANGES}$(echo "$DOCS_COMMITS" | sed 's/^/- /')"$'\n\n'
-          fi
-
-          if [ -n "$REFACTOR_COMMITS" ]; then
-            CHANGES="${CHANGES}### Refactoring"$'\n\n'
-            CHANGES="${CHANGES}$(echo "$REFACTOR_COMMITS" | sed 's/^/- /')"$'\n\n'
-          fi
-
-          if [ -n "$CHORE_COMMITS" ]; then
-            CHANGES="${CHANGES}### Maintenance"$'\n\n'
-            CHANGES="${CHANGES}$(echo "$CHORE_COMMITS" | sed 's/^/- /')"$'\n\n'
-          fi
-
-          if [ -n "$OTHER_COMMITS" ]; then
-            CHANGES="${CHANGES}### Other Changes"$'\n\n'
-            CHANGES="${CHANGES}$(echo "$OTHER_COMMITS" | sed 's/^/- /')"$'\n\n'
-          fi
-
-          # Fallback if all commits were filtered out
-          if [ -z "$CHANGES" ]; then
-            CHANGES="### Changes"$'\n\n'"- Minor improvements and bug fixes"$'\n\n'
-          fi
-
-          cat > release_notes.md <<EOF
-          $CHANGES
-          EOF
-
-          echo "✅ Release notes generated"
+          echo "✅ Release notes extracted"
           cat release_notes.md
 
       - name: Create GitHub Release
