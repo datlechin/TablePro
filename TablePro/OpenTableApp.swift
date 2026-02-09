@@ -123,6 +123,13 @@ struct TableProApp: App {
         Task { @MainActor in
             QueryHistoryManager.shared.performStartupCleanup()
         }
+
+        // Start iCloud sync if previously enabled
+        Task { @MainActor in
+            if AppSettingsManager.shared.general.iCloudSyncEnabled {
+                SyncCoordinator.shared.enable()
+            }
+        }
     }
 
     /// Get tint color from settings (nil for system default)

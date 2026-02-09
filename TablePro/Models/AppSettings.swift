@@ -30,21 +30,29 @@ enum StartupBehavior: String, Codable, CaseIterable, Identifiable {
 struct GeneralSettings: Codable, Equatable {
     var startupBehavior: StartupBehavior
     var automaticallyCheckForUpdates: Bool
+    var iCloudSyncEnabled: Bool
 
     static let `default` = GeneralSettings(
         startupBehavior: .showWelcome,
-        automaticallyCheckForUpdates: true
+        automaticallyCheckForUpdates: true,
+        iCloudSyncEnabled: false
     )
 
-    init(startupBehavior: StartupBehavior = .showWelcome, automaticallyCheckForUpdates: Bool = true) {
+    init(
+        startupBehavior: StartupBehavior = .showWelcome,
+        automaticallyCheckForUpdates: Bool = true,
+        iCloudSyncEnabled: Bool = false
+    ) {
         self.startupBehavior = startupBehavior
         self.automaticallyCheckForUpdates = automaticallyCheckForUpdates
+        self.iCloudSyncEnabled = iCloudSyncEnabled
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         startupBehavior = try container.decode(StartupBehavior.self, forKey: .startupBehavior)
         automaticallyCheckForUpdates = try container.decodeIfPresent(Bool.self, forKey: .automaticallyCheckForUpdates) ?? true
+        iCloudSyncEnabled = try container.decodeIfPresent(Bool.self, forKey: .iCloudSyncEnabled) ?? false
     }
 }
 

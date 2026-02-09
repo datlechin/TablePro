@@ -71,6 +71,9 @@ struct WelcomeWindowView: View {
         .onReceive(NotificationCenter.default.publisher(for: .connectionUpdated)) { _ in
             loadConnections()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .iCloudSyncDidUpdateData)) { _ in
+            loadConnections()
+        }
     }
 
     // MARK: - Left Panel
@@ -353,6 +356,14 @@ private struct ConnectionRow: View {
         return TagStorage.shared.tag(for: tagId)
     }
 
+    /// Show a password badge when iCloud sync is enabled but no local password exists
+    private var needsPasswordBadge: Bool {
+        guard AppSettingsManager.shared.general.iCloudSyncEnabled else { return false }
+        // Only show badge for non-SQLite connections (SQLite doesn't use passwords)
+        guard connection.type != .sqlite else { return false }
+        return !ConnectionStorage.shared.hasPassword(for: connection.id)
+    }
+
     var body: some View {
         HStack(spacing: 12) {
             // Database type icon
@@ -377,6 +388,14 @@ private struct ConnectionRow: View {
                             .padding(.horizontal, DesignConstants.Spacing.xxs)
                             .padding(.vertical, DesignConstants.Spacing.xxxs)
                             .background(Capsule().fill(tag.color.color.opacity(0.15)))
+                    }
+
+                    // Password badge for synced connections without local password
+                    if needsPasswordBadge {
+                        Image(systemName: "key")
+                            .font(.system(size: DesignConstants.FontSize.tiny))
+                            .foregroundStyle(.orange)
+                            .help("Password not synced. Enter password on first connect.")
                     }
                 }
 
