@@ -505,6 +505,65 @@ jobs:
           echo "Final artifacts:"
           ls -lh artifacts/
 
+      - name: Create Universal Binary for Sparkle
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+
+          echo "🔨 Creating universal binary from ARM64 and x86_64 builds..."
+
+          # Unzip both architecture-specific builds
+          unzip -q "artifacts/TablePro-${VERSION}-arm64.zip" -d artifacts/arm64-extracted
+          unzip -q "artifacts/TablePro-${VERSION}-x86_64.zip" -d artifacts/x86_64-extracted
+
+          # Verify both app bundles exist
+          if [ ! -d "artifacts/arm64-extracted/TablePro-arm64.app" ]; then
+            echo "❌ ERROR: ARM64 app bundle not found"
+            exit 1
+          fi
+
+          if [ ! -d "artifacts/x86_64-extracted/TablePro-x86_64.app" ]; then
+            echo "❌ ERROR: x86_64 app bundle not found"
+            exit 1
+          fi
+
+          # Create a copy of one architecture as the base for universal binary
+          cp -R "artifacts/arm64-extracted/TablePro-arm64.app" "artifacts/TablePro.app"
+
+          # Use lipo to create universal binary from both architectures
+          ARM64_BINARY="artifacts/arm64-extracted/TablePro-arm64.app/Contents/MacOS/TablePro"
+          X86_64_BINARY="artifacts/x86_64-extracted/TablePro-x86_64.app/Contents/MacOS/TablePro"
+          UNIVERSAL_BINARY="artifacts/TablePro.app/Contents/MacOS/TablePro"
+
+          echo "Creating universal binary with lipo..."
+          lipo -create "$ARM64_BINARY" "$X86_64_BINARY" -output "$UNIVERSAL_BINARY"
+
+          # Verify the universal binary contains both architectures
+          echo "Verifying universal binary..."
+          ARCH_INFO=$(lipo -info "$UNIVERSAL_BINARY")
+          echo "Architecture info: $ARCH_INFO"
+
+          if ! echo "$ARCH_INFO" | grep -q "arm64"; then
+            echo "❌ ERROR: Universal binary missing arm64 architecture"
+            exit 1
+          fi
+
+          if ! echo "$ARCH_INFO" | grep -q "x86_64"; then
+            echo "❌ ERROR: Universal binary missing x86_64 architecture"
+            exit 1
+          fi
+
+          # Create ZIP for Sparkle updates (using ditto for proper macOS metadata)
+          echo "Creating universal ZIP for Sparkle..."
+          cd artifacts
+          ditto -c -k --sequesterRsrc --keepParent "TablePro.app" "TablePro-${VERSION}.zip"
+          cd ..
+
+          echo "✅ Universal binary created successfully"
+          ls -lh "artifacts/TablePro-${VERSION}.zip"
+
+          # Clean up extracted directories
+          rm -rf artifacts/arm64-extracted artifacts/x86_64-extracted artifacts/TablePro.app
+
       - name: Sign update archives with Sparkle
         if: env.SPARKLE_PRIVATE_KEY != ''
         env:
@@ -516,12 +575,11 @@ jobs:
           brew install --cask sparkle
           SPARKLE_BIN="$(brew --caskroom)/sparkle/$(ls "$(brew --caskroom)/sparkle" | head -1)/bin"
 
-          # Sign ZIP files and generate appcast
+          # Sign universal ZIP file and generate appcast
           mkdir -p appcast
-          cp artifacts/TablePro-${VERSION}-arm64.zip appcast/
-          cp artifacts/TablePro-${VERSION}-x86_64.zip appcast/
+          cp "artifacts/TablePro-${VERSION}.zip" appcast/
 
-          # Generate appcast.xml with EdDSA signatures
+          # Generate appcast.xml with EdDSA signatures for the universal binary
           echo "$SPARKLE_PRIVATE_KEY" | "$SPARKLE_BIN/generate_appcast" \
             --ed-key-file /dev/stdin \
             --download-url-prefix "https://github.com/datlechin/TablePro/releases/download/v${VERSION}/" \

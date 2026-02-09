@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix appcast.xml to support both ARM64 and x86_64 architectures by creating a universal binary for Sparkle auto-updates
+
 ## [0.1.1] - 2026-02-09
 
 ### Added
