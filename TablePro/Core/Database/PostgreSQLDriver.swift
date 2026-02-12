@@ -260,11 +260,12 @@ final class PostgreSQLDriver: DatabaseDriver {
 
     /// Fetch allowed values for a PostgreSQL user-defined enum type
     func fetchEnumValues(typeName: String) async throws -> [String] {
+        let safeTypeName = typeName.replacingOccurrences(of: "'", with: "''")
         let query = """
             SELECT e.enumlabel
             FROM pg_enum e
             JOIN pg_type t ON e.enumtypid = t.oid
-            WHERE t.typname = '\(typeName)'
+            WHERE t.typname = '\(safeTypeName)'
             ORDER BY e.enumsortorder
         """
         let result = try await execute(query: query)

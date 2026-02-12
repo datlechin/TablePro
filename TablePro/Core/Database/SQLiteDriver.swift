@@ -424,7 +424,8 @@ final class SQLiteDriver: DatabaseDriver {
 
     /// Fetch the CREATE TABLE SQL from sqlite_master
     private func fetchCreateTableSQL(table: String) async throws -> String? {
-        let query = "SELECT sql FROM sqlite_master WHERE type='table' AND name='\(table)'"
+        let safeTable = table.replacingOccurrences(of: "'", with: "''")
+        let query = "SELECT sql FROM sqlite_master WHERE type='table' AND name='\(safeTable)'"
         let result = try await execute(query: query)
         return result.rows.first?.first ?? nil
     }
@@ -453,26 +454,8 @@ final class SQLiteDriver: DatabaseDriver {
         let valuesRange = match.range(at: 1)
         let valuesString = nsString.substring(with: valuesRange)
 
-        // Parse 'val1','val2','val3'
-        var values: [String] = []
-        var current = ""
-        var inQuote = false
-
-        for char in valuesString {
-            if char == "'" {
-                inQuote.toggle()
-            } else if char == "," && !inQuote {
-                values.append(current.trimmingCharacters(in: .whitespaces))
-                current = ""
-            } else if inQuote {
-                current.append(char)
-            }
-        }
-        if !current.isEmpty {
-            values.append(current.trimmingCharacters(in: .whitespaces))
-        }
-
-        return values.isEmpty ? nil : values
+        // Reuse shared parser by wrapping in ENUM(...) format
+        return ColumnType.parseEnumValues(from: "ENUM(\(valuesString))")
     }
 
     func fetchTableDDL(table: String) async throws -> String {

@@ -71,7 +71,8 @@ struct TableTabContentView: View {
                         columns: tab.resultColumns,
                         columnDefaults: tab.columnDefaults,
                         columnTypes: tab.columnTypes,
-                        columnEnumValues: tab.columnEnumValues
+                        columnEnumValues: tab.columnEnumValues,
+                        columnNullable: tab.columnNullable
                     ),
                     changeManager: AnyChangeManager(dataManager: changeManager),
                     isEditable: tab.isEditable && !tab.isView,

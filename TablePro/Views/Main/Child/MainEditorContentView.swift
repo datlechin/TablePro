@@ -276,7 +276,8 @@ struct MainEditorContentView: View {
                 columnDefaults: tab.columnDefaults,
                 columnTypes: tab.columnTypes,
                 columnForeignKeys: tab.columnForeignKeys,
-                columnEnumValues: tab.columnEnumValues
+                columnEnumValues: tab.columnEnumValues,
+                columnNullable: tab.columnNullable
             ),
             changeManager: AnyChangeManager(dataManager: changeManager),
             isEditable: tab.isEditable && !tab.isView && !connection.isReadOnly,

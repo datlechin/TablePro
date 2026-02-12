@@ -335,6 +335,7 @@ final class MainContentCoordinator: ObservableObject {
                 var primaryKeyColumn: String?
 
                 var columnEnumValues: [String: [String]] = [:]
+                var columnNullable: [String: Bool] = [:]
 
                 if isEditable, let tableName = tableName {
                     if let driver = DatabaseManager.shared.activeDriver {
@@ -347,6 +348,7 @@ final class MainContentCoordinator: ObservableObject {
 
                         for col in columnInfo {
                             columnDefaults[col.name] = col.defaultValue
+                            columnNullable[col.name] = col.isNullable
                         }
 
                         // Build FK lookup map (column name -> FK info)
@@ -383,6 +385,7 @@ final class MainContentCoordinator: ObservableObject {
                 let safeColumnDefaults = columnDefaults.mapValues { $0.map { String($0) } }
                 let safeColumnForeignKeys = columnForeignKeys
                 let safeColumnEnumValues = columnEnumValues
+                let safeColumnNullable = columnNullable
                 let safeTableName = tableName.map { String($0) }
                 let safeTotalRowCount = totalRowCount
                 let safePrimaryKeyColumn = primaryKeyColumn.map { String($0) }
@@ -413,6 +416,7 @@ final class MainContentCoordinator: ObservableObject {
                         updatedTab.columnDefaults = safeColumnDefaults
                         updatedTab.columnForeignKeys = safeColumnForeignKeys
                         updatedTab.columnEnumValues = safeColumnEnumValues
+                        updatedTab.columnNullable = safeColumnNullable
                         updatedTab.resultRows = safeRows
                         updatedTab.resultVersion += 1
                         updatedTab.executionTime = safeExecutionTime

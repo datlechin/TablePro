@@ -789,16 +789,13 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
     }
 
     private func showEnumPopover(tableView: NSTableView, row: Int, column: Int, columnIndex: Int) {
-        guard let rowData = rowProvider.row(at: row) else { return }
-        let currentValue = rowData.value(at: columnIndex)
+        guard let cellView = tableView.view(atColumn: column, row: row, makeIfNecessary: false),
+              let rowData = rowProvider.row(at: row) else { return }
         let columnName = rowProvider.columns[columnIndex]
-
-        guard let cellView = tableView.view(atColumn: column, row: row, makeIfNecessary: false) else { return }
         guard let allowedValues = rowProvider.columnEnumValues[columnName] else { return }
 
-        // Determine nullable from column info
-        let columnType = rowProvider.columnTypes[columnIndex]
-        let isNullable = currentValue == nil || columnType.rawType?.uppercased().contains("NOT NULL") != true
+        let currentValue = rowData.value(at: columnIndex)
+        let isNullable = rowProvider.columnNullable[columnName] ?? true
 
         EnumPopoverController.shared.show(
             relativeTo: cellView.bounds,
@@ -807,35 +804,17 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
             allowedValues: allowedValues,
             isNullable: isNullable
         ) { [weak self] newValue in
-            guard let self = self else { return }
-            guard let rowData = self.rowProvider.row(at: row) else { return }
-            let oldValue = rowData.value(at: columnIndex)
-            guard oldValue != newValue else { return }
-
-            let columnName = self.rowProvider.columns[columnIndex]
-            self.changeManager.recordCellChange(
-                rowIndex: row,
-                columnIndex: columnIndex,
-                columnName: columnName,
-                oldValue: oldValue,
-                newValue: newValue,
-                originalRow: rowData.values
-            )
-
-            self.rowProvider.updateValue(newValue, at: row, columnIndex: columnIndex)
-            self.onCellEdit?(row, columnIndex, newValue)
-
-            tableView.reloadData(forRowIndexes: IndexSet(integer: row), columnIndexes: IndexSet(integer: column))
+            self?.commitPopoverEdit(tableView: tableView, row: row, column: column, columnIndex: columnIndex, newValue: newValue)
         }
     }
 
     private func showSetPopover(tableView: NSTableView, row: Int, column: Int, columnIndex: Int) {
-        guard let rowData = rowProvider.row(at: row) else { return }
-        let currentValue = rowData.value(at: columnIndex)
+        guard let cellView = tableView.view(atColumn: column, row: row, makeIfNecessary: false),
+              let rowData = rowProvider.row(at: row) else { return }
         let columnName = rowProvider.columns[columnIndex]
-
-        guard let cellView = tableView.view(atColumn: column, row: row, makeIfNecessary: false) else { return }
         guard let allowedValues = rowProvider.columnEnumValues[columnName] else { return }
+
+        let currentValue = rowData.value(at: columnIndex)
 
         SetPopoverController.shared.show(
             relativeTo: cellView.bounds,
@@ -843,26 +822,29 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
             currentValue: currentValue,
             allowedValues: allowedValues
         ) { [weak self] newValue in
-            guard let self = self else { return }
-            guard let rowData = self.rowProvider.row(at: row) else { return }
-            let oldValue = rowData.value(at: columnIndex)
-            guard oldValue != newValue else { return }
-
-            let columnName = self.rowProvider.columns[columnIndex]
-            self.changeManager.recordCellChange(
-                rowIndex: row,
-                columnIndex: columnIndex,
-                columnName: columnName,
-                oldValue: oldValue,
-                newValue: newValue,
-                originalRow: rowData.values
-            )
-
-            self.rowProvider.updateValue(newValue, at: row, columnIndex: columnIndex)
-            self.onCellEdit?(row, columnIndex, newValue)
-
-            tableView.reloadData(forRowIndexes: IndexSet(integer: row), columnIndexes: IndexSet(integer: column))
+            self?.commitPopoverEdit(tableView: tableView, row: row, column: column, columnIndex: columnIndex, newValue: newValue)
         }
+    }
+
+    private func commitPopoverEdit(tableView: NSTableView, row: Int, column: Int, columnIndex: Int, newValue: String?) {
+        guard let rowData = rowProvider.row(at: row) else { return }
+        let oldValue = rowData.value(at: columnIndex)
+        guard oldValue != newValue else { return }
+
+        let columnName = rowProvider.columns[columnIndex]
+        changeManager.recordCellChange(
+            rowIndex: row,
+            columnIndex: columnIndex,
+            columnName: columnName,
+            oldValue: oldValue,
+            newValue: newValue,
+            originalRow: rowData.values
+        )
+
+        rowProvider.updateValue(newValue, at: row, columnIndex: columnIndex)
+        onCellEdit?(row, columnIndex, newValue)
+
+        tableView.reloadData(forRowIndexes: IndexSet(integer: row), columnIndexes: IndexSet(integer: column))
     }
 
     func control(_ control: NSControl, textShouldEndEditing fieldEditor: NSText) -> Bool {
