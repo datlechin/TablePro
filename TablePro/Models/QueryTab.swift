@@ -387,7 +387,7 @@ final class QueryTabManager: ObservableObject {
     // MARK: - Tab Management
 
     func addTab(initialQuery: String? = nil, title: String? = nil) {
-        let queryCount = tabs.filter { $0.tabType == .query }.count
+        let queryCount = tabs.count(where: { $0.tabType == .query })
         let tabTitle = title ?? "Query \(queryCount + 1)"
         var newTab = QueryTab(title: tabTitle, tabType: .query)
 
@@ -427,7 +427,7 @@ final class QueryTabManager: ObservableObject {
     ///   - databaseName: The database/schema name to create the table in
     ///   - databaseType: The type of database (MySQL, PostgreSQL, SQLite)
     func addCreateTableTab(databaseName: String, databaseType: DatabaseType) {
-        let createTableCount = tabs.filter { $0.tabType == .createTable }.count
+        let createTableCount = tabs.count(where: { $0.tabType == .createTable })
 
         // Initialize with one default column (id INT AUTO_INCREMENT PRIMARY KEY)
         var options = TableCreationOptions()

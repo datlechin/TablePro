@@ -238,7 +238,7 @@ struct ExportDatabaseItem: Identifiable {
 
     /// Number of selected tables
     var selectedCount: Int {
-        tables.filter { $0.isSelected }.count
+        tables.count(where: \.isSelected)
     }
 
     /// Whether all tables are selected

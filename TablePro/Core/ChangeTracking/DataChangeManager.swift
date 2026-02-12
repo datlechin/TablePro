@@ -558,8 +558,8 @@ final class DataChangeManager: ObservableObject {
         )
 
         // Count expected UPDATE statements (DELETEs can work without PK using full row match)
-        let expectedUpdates = changes.filter { $0.type == .update }.count
-        let actualUpdates = statements.filter { $0.sql.hasPrefix("UPDATE") }.count
+        let expectedUpdates = changes.count(where: { $0.type == .update })
+        let actualUpdates = statements.count(where: { $0.sql.hasPrefix("UPDATE") })
 
         // Check if any UPDATE statements were skipped due to missing primary key
         // Note: DELETEs are allowed without PK (they match all columns)

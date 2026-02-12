@@ -233,7 +233,7 @@ final class FilterStateManager: ObservableObject {
 
     /// Count of valid filters
     var validFilterCount: Int {
-        filters.filter { $0.isValid }.count
+        filters.count(where: \.isValid)
     }
 
     // MARK: - State Persistence
@@ -351,7 +351,7 @@ final class FilterStateManager: ObservableObject {
 
         // If no valid filters but filters exist, show helpful message
         if filtersToPreview.isEmpty && !filters.isEmpty {
-            let invalidCount = filters.filter { !$0.isValid }.count
+            let invalidCount = filters.count(where: { !$0.isValid })
             if invalidCount > 0 {
                 return "-- No valid filters to preview\n-- Complete \(invalidCount) filter(s) by:\n--   • Selecting a column\n--   • Entering a value (if required)\n--   • Filling in second value for BETWEEN"
             }

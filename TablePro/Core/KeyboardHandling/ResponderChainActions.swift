@@ -171,7 +171,7 @@ import AppKit
 
  @objc func delete(_ sender: Any?) {
  // Your delete logic here
- print("Deleting selected rows")
+ logger.debug("Deleting selected rows")
  }
  }
  ```
@@ -184,7 +184,7 @@ import AppKit
  switch item.action {
  case #selector(delete(_:)):
  // Enable Delete only when rows are selected
- return selectedRowIndexes.count > 0
+ return !selectedRowIndexes.isEmpty
  default:
  return false
  }

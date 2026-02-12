@@ -434,7 +434,7 @@ private class PassThroughDoubleClickView: NSView {
         currentDatabase: "production",
         databaseType: .mysql,
         connectionId: UUID()
-    ) { db in print("Selected: \(db)") }
+    ) { _ in }
 }
 
 #Preview("SQLite Empty") {
@@ -443,5 +443,5 @@ private class PassThroughDoubleClickView: NSView {
         currentDatabase: nil,
         databaseType: .sqlite,
         connectionId: UUID()
-    ) { db in print("Selected: \(db)") }
+    ) { _ in }
 }

@@ -156,7 +156,7 @@ final class RowOperationsManager {
         let totalRows = resultRows.count
         let rowsDeleted = insertedRowsToDelete.count
         let adjustedMaxRow = maxSelectedRow - rowsDeleted
-        let adjustedMinRow = minSelectedRow - insertedRowsToDelete.filter { $0 < minSelectedRow }.count
+        let adjustedMinRow = minSelectedRow - insertedRowsToDelete.count(where: { $0 < minSelectedRow })
 
         if adjustedMaxRow + 1 < totalRows {
             return min(adjustedMaxRow + 1, totalRows - 1)
@@ -364,8 +364,8 @@ final class RowOperationsManager {
             .filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
         guard !lines.isEmpty else { return TSVRowParser() }
 
-        let tabCount = lines.filter { $0.contains("\t") }.count
-        let commaCount = lines.filter { $0.contains(",") }.count
+        let tabCount = lines.count(where: { $0.contains("\t") })
+        let commaCount = lines.count(where: { $0.contains(",") })
 
         // If majority of lines have tabs, use TSV; otherwise CSV
         if tabCount > commaCount {
