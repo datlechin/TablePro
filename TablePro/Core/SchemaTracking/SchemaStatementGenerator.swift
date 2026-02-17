@@ -141,9 +141,16 @@ struct SchemaStatementGenerator {
 
         switch databaseType {
         case .mysql, .mariadb:
-            // MySQL: ALTER TABLE t MODIFY COLUMN col definition
             let columnDef = try buildEditableColumnDefinition(new)
-            let sql = "ALTER TABLE \(tableQuoted) MODIFY COLUMN \(columnDef)"
+            let sql: String
+            if old.name != new.name {
+                // CHANGE COLUMN is required for renames: ALTER TABLE t CHANGE COLUMN old_name new_name definition
+                let oldQuoted = databaseType.quoteIdentifier(old.name)
+                sql = "ALTER TABLE \(tableQuoted) CHANGE COLUMN \(oldQuoted) \(columnDef)"
+            } else {
+                // MODIFY COLUMN when name is unchanged: ALTER TABLE t MODIFY COLUMN col definition
+                sql = "ALTER TABLE \(tableQuoted) MODIFY COLUMN \(columnDef)"
+            }
             return SchemaStatement(
                 sql: sql,
                 description: "Modify column '\(old.name)' to '\(new.name)'",

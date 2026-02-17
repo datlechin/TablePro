@@ -98,6 +98,8 @@ final class DataGridCellFactory {
 
     // MARK: - Data Cell
 
+    private static let chevronTag = 999
+
     func makeDataCell(
         tableView: NSTableView,
         row: Int,
@@ -108,9 +110,10 @@ final class DataGridCellFactory {
         isEditable: Bool,
         isLargeDataset: Bool,
         isFocused: Bool,
+        isDropdown: Bool = false,
         delegate: NSTextFieldDelegate
     ) -> NSView {
-        let cellViewId = NSUserInterfaceItemIdentifier("DataCellView")
+        let cellViewId = NSUserInterfaceItemIdentifier(isDropdown ? "DropdownCellView" : "DataCellView")
         let cellView: NSTableCellView
         let cell: NSTextField
         let isNewCell: Bool
@@ -120,7 +123,6 @@ final class DataGridCellFactory {
             cellView = reused
             cell = textField
             isNewCell = false
-            // Ensure layer exists for background color
             if !cellView.wantsLayer {
                 cellView.wantsLayer = true
             }
@@ -142,11 +144,33 @@ final class DataGridCellFactory {
             cellView.textField = cell
             cellView.addSubview(cell)
 
-            NSLayoutConstraint.activate([
-                cell.leadingAnchor.constraint(equalTo: cellView.leadingAnchor, constant: 4),
-                cell.trailingAnchor.constraint(equalTo: cellView.trailingAnchor, constant: -4),
-                cell.centerYAnchor.constraint(equalTo: cellView.centerYAnchor),
-            ])
+            if isDropdown {
+                let chevron = NSImageView()
+                chevron.tag = Self.chevronTag
+                chevron.image = NSImage(systemSymbolName: "chevron.up.chevron.down", accessibilityDescription: nil)
+                chevron.contentTintColor = .tertiaryLabelColor
+                chevron.translatesAutoresizingMaskIntoConstraints = false
+                chevron.setContentHuggingPriority(.required, for: .horizontal)
+                chevron.setContentCompressionResistancePriority(.required, for: .horizontal)
+                chevron.imageScaling = .scaleProportionallyDown
+                cellView.addSubview(chevron)
+
+                NSLayoutConstraint.activate([
+                    cell.leadingAnchor.constraint(equalTo: cellView.leadingAnchor, constant: 4),
+                    cell.trailingAnchor.constraint(equalTo: chevron.leadingAnchor, constant: -2),
+                    cell.centerYAnchor.constraint(equalTo: cellView.centerYAnchor),
+                    chevron.trailingAnchor.constraint(equalTo: cellView.trailingAnchor, constant: -4),
+                    chevron.centerYAnchor.constraint(equalTo: cellView.centerYAnchor),
+                    chevron.widthAnchor.constraint(equalToConstant: 10),
+                    chevron.heightAnchor.constraint(equalToConstant: 12),
+                ])
+            } else {
+                NSLayoutConstraint.activate([
+                    cell.leadingAnchor.constraint(equalTo: cellView.leadingAnchor, constant: 4),
+                    cell.trailingAnchor.constraint(equalTo: cellView.trailingAnchor, constant: -4),
+                    cell.centerYAnchor.constraint(equalTo: cellView.centerYAnchor),
+                ])
+            }
             isNewCell = true
         }
 

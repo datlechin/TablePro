@@ -78,6 +78,7 @@ struct DataGridView: NSViewRepresentable {
         tableView.delegate = context.coordinator
         tableView.dataSource = context.coordinator
         tableView.target = context.coordinator
+        tableView.action = #selector(TableViewCoordinator.handleClick(_:))
         tableView.doubleAction = #selector(TableViewCoordinator.handleDoubleClick(_:))
 
         // Add row number column
@@ -180,6 +181,7 @@ struct DataGridView: NSViewRepresentable {
         coordinator.onUndoInsert = onUndoInsert
         coordinator.onFilterColumn = onFilterColumn
         coordinator.getVisualState = getVisualState
+        coordinator.dropdownColumns = dropdownColumns
 
         coordinator.rebuildVisualStateCache()
 
@@ -427,6 +429,7 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
     var onUndoInsert: ((Int) -> Void)?
     var onFilterColumn: ((String) -> Void)?
     var getVisualState: ((Int) -> RowVisualState)?
+    var dropdownColumns: Set<Int>?
 
     /// Check if undo is available
     func canUndo() -> Bool {
@@ -454,6 +457,8 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
     var hasUserResizedColumns: Bool = false
 
     private let cellIdentifier = NSUserInterfaceItemIdentifier("DataCell")
+    private var pendingDropdownRow: Int = 0
+    private var pendingDropdownColumn: Int = 0
     private var rowVisualStateCache: [Int: RowVisualState] = [:]
     private var lastVisualStateCacheVersion: Int = 0
     private let largeDatasetThreshold = 5_000
@@ -692,6 +697,8 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
             return true
         }()
 
+        let isDropdown = dropdownColumns?.contains(columnIndex) == true
+
         return cellFactory?.makeDataCell(
             tableView: tableView,
             row: row,
@@ -702,6 +709,7 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
             isEditable: isEditable && !state.isDeleted,
             isLargeDataset: isLargeDataset,
             isFocused: isFocused,
+            isDropdown: isDropdown,
             delegate: self
         )
     }
@@ -739,7 +747,23 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
         }
     }
 
-    // MARK: - Double-Click Popover Editors
+    // MARK: - Click Handlers
+
+    @objc func handleClick(_ sender: NSTableView) {
+        guard isEditable else { return }
+
+        let row = sender.clickedRow
+        let column = sender.clickedColumn
+        guard row >= 0, column > 0 else { return }
+
+        let columnIndex = column - 1
+        guard !changeManager.isRowDeleted(row) else { return }
+
+        // Dropdown columns open on single click
+        if let dropdownCols = dropdownColumns, dropdownCols.contains(columnIndex) {
+            showDropdownMenu(tableView: sender, row: row, column: column, columnIndex: columnIndex)
+        }
+    }
 
     @objc func handleDoubleClick(_ sender: NSTableView) {
         guard isEditable else { return }
@@ -750,6 +774,11 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
 
         let columnIndex = column - 1
         guard !changeManager.isRowDeleted(row) else { return }
+
+        // Dropdown columns already handled by single click
+        if let dropdownCols = dropdownColumns, dropdownCols.contains(columnIndex) {
+            return
+        }
 
         // ENUM columns use searchable dropdown popover
         if columnIndex < rowProvider.columnTypes.count,
@@ -821,6 +850,9 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
             if columnIndex < rowProvider.columnTypes.count {
                 let ct = rowProvider.columnTypes[columnIndex]
                 if ct.isDateType || ct.isJsonType || ct.isEnumType || ct.isSetType { return false }
+            }
+            if let dropdownCols = dropdownColumns, dropdownCols.contains(columnIndex) {
+                return false
             }
         }
 
@@ -967,6 +999,36 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
         ) { [weak self] newValue in
             self?.commitPopoverEdit(tableView: tableView, row: row, column: column, columnIndex: columnIndex, newValue: newValue)
         }
+    }
+
+    private func showDropdownMenu(tableView: NSTableView, row: Int, column: Int, columnIndex: Int) {
+        guard let cellView = tableView.view(atColumn: column, row: row, makeIfNecessary: false),
+              let rowData = rowProvider.row(at: row) else { return }
+
+        let currentValue = rowData.value(at: columnIndex)
+        pendingDropdownRow = row
+        pendingDropdownColumn = columnIndex
+
+        let menu = NSMenu()
+        for option in ["YES", "NO"] {
+            let item = NSMenuItem(title: option, action: #selector(dropdownMenuItemSelected(_:)), keyEquivalent: "")
+            item.target = self
+            if option == currentValue {
+                item.state = .on
+            }
+            menu.addItem(item)
+        }
+
+        let cellRect = cellView.bounds
+        menu.popUp(positioning: nil, at: NSPoint(x: cellRect.minX, y: cellRect.maxY), in: cellView)
+    }
+
+    @objc private func dropdownMenuItemSelected(_ sender: NSMenuItem) {
+        let newValue = sender.title
+        guard let rowData = rowProvider.row(at: pendingDropdownRow) else { return }
+        let oldValue = rowData.value(at: pendingDropdownColumn)
+        guard oldValue != newValue else { return }
+        onCellEdit?(pendingDropdownRow, pendingDropdownColumn, newValue)
     }
 
     private func commitPopoverEdit(tableView: NSTableView, row: Int, column: Int, columnIndex: Int, newValue: String?) {

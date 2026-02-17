@@ -7,69 +7,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-
-- Structure view: redundant double `discardChanges()` call after save removed
-- Structure view: eliminated wasteful double `loadSchemaForEditing()` on initial load (onChange loop)
-- Structure view: `canCommit` now checks validation errors — prevents saving invalid placeholders
-- Security: escape table and database names in all driver schema queries (MySQLDriver, PostgreSQLDriver, SQLiteDriver) using `SQLEscaping.escapeStringLiteral()` to prevent SQL injection from names containing single quotes or special characters
-- PostgreSQL DDL: `fetchTableDDL` now includes PRIMARY KEY, UNIQUE, CHECK, and FOREIGN KEY constraints plus standalone indexes (previously only generated column definitions)
-- Structure view: visual state cache key collision risk from non-deterministic `hashValue` replaced with stable index-based keys
-- Structure view: multi-column foreign keys are now correctly merged into a single entry instead of being silently split into separate single-column entries
-- Structure view: "Don't show again" toggle in schema preview sheet now correctly skips the SQL review popover and applies changes directly
-- Structure view: undo deleting existing columns/indexes/FKs no longer duplicates the row
-- Structure view: undo after multiple edits now visually refreshes correctly on each Cmd+Z
-- Structure view: deleting a new (unsaved) column then undoing now correctly re-adds it
-- Structure view: index/FK/PK validation now correctly rejects references to columns pending deletion
-- Structure view: localize column headers in structure grid (`String(localized:)` for all 16 headers)
-- Structure view: localize `"No DDL available"` and `"Not connected"` strings passed to helper views
-
-### Removed
-
-- Deleted dead code `StructureTableCoordinator.swift` (~275 lines of unused NSTableView delegate/datasource)
-
 ### Added
 
 - Tab reuse setting — opt-in option in Settings > Tabs to reuse clean table tabs when clicking a new table in the sidebar (off by default)
+- Structure view: full undo/redo support (⌘Z / ⇧⌘Z) for all column, index, and foreign key operations
+- Structure view: YES/NO dropdown menu for Nullable, Auto Inc, and Unique columns (replaces freeform text input)
+- Structure view: "Don't show again" toggle in SQL preview sheet now correctly skips the review step on future saves
 - SQL autocomplete: new clause types — RETURNING, UNION/INTERSECT/EXCEPT, OVER/PARTITION BY, USING, DROP/CREATE INDEX/VIEW
-- SQL autocomplete: clause transition suggestions — after FROM suggest WHERE/JOIN, after GROUP BY suggest HAVING, after ORDER BY suggest LIMIT, etc.
-- SQL autocomplete: qualified column suggestions (`table.column`) in JOIN ON clauses
-- SQL autocomplete: `table.*` suggestions in SELECT when multiple tables in scope
-- SQL autocomplete: `IS NULL`, `IS NOT NULL`, `NULLS FIRST`, `NULLS LAST` as single completion items
-- SQL autocomplete: `ON CONFLICT`, `ON DUPLICATE KEY UPDATE`, `RETURNING` suggestions after VALUES
-- SQL autocomplete: richer column metadata in suggestions (PK, NOT NULL, default value, comment)
-- SQL autocomplete: documentation for common SQL keywords in completion popover
-- SQL autocomplete: missing SQL keywords — window functions, PostgreSQL, MySQL, transaction, DCL, utility
-- SQL autocomplete: missing SQL functions — aggregate, datetime, string, numeric, JSON categories
-- SQL autocomplete: ALTER TABLE ADD CONSTRAINT suggestions
-- SQL autocomplete: INSERT INTO VALUES/SELECT suggestions
-- SQL autocomplete: CREATE TABLE improvements — IF NOT EXISTS, REFERENCES, FK actions, ENGINE
-- SQL autocomplete: 50ms debounce for completion triggers to reduce unnecessary work
-- SQL autocomplete: COUNT(*) special suggestion — `*` and `DISTINCT` as top items inside `COUNT(`
-- SQL autocomplete: fuzzy match scoring — prefix and contains matches now rank above fuzzy-only matches
+- SQL autocomplete: smart clause transition suggestions (e.g., WHERE after FROM, HAVING after GROUP BY, LIMIT after ORDER BY)
+- SQL autocomplete: qualified column suggestions (`table.column`) in JOIN ON clauses and `table.*` in SELECT
+- SQL autocomplete: compound keyword suggestions — `IS NULL`, `IS NOT NULL`, `NULLS FIRST`, `NULLS LAST`, `ON CONFLICT`, `ON DUPLICATE KEY UPDATE`
+- SQL autocomplete: richer column metadata in suggestions (primary key, nullability, default value, comment)
+- SQL autocomplete: keyword documentation in completion popover
+- SQL autocomplete: expanded keyword and function coverage — window functions, PostgreSQL/MySQL-specific, transaction, DCL, aggregate, datetime, string, numeric, JSON
+- SQL autocomplete: context-aware suggestions for ALTER TABLE, INSERT INTO, CREATE TABLE, and COUNT(*)
+- SQL autocomplete: improved fuzzy match scoring — prefix and contains matches rank above fuzzy-only matches
 
 ### Changed
 
-- Structure tab grid columns now auto-size to fit content correctly on data load
-- SQL autocomplete: rewrite `fuzzyMatch()` to use NSString character-at-index for O(1) random access instead of Swift String indexing
+- Structure tab grid columns now auto-size to fit content on data load
+- Structure view column headers and status messages are now localized
+- SQL autocomplete: 50ms debounce for completion triggers to reduce unnecessary work
+- SQL autocomplete: fuzzy matching rewritten for O(1) character access performance
 
 ### Fixed
 
-- Fix SQL autocomplete clause detection inside subqueries — `WHERE id IN (SELECT ` now correctly detects `.select` instead of `.inList` by extracting innermost subquery text for clause analysis
-- Fix undo/redo (Cmd+Z / Cmd+Shift+Z) not working in SQL editor due to selector mismatch — `undo` vs `undo:` in responder chain routing
-- Fix block comment detection incorrectly treating `--` inside `/* */` as line comment in SQL autocomplete
-- Fix schema-qualified name edge cases in autocomplete (e.g., `schema.table.column`)
-- Fix SQL autocomplete not showing database-specific type keywords (e.g., PostgreSQL `JSONB`, MySQL `ENUM`) by threading `databaseType` through the completion pipeline
-- Fix schema autocomplete disappearing after CREATE TABLE by reloading schema after cache invalidation
-- Add `*` (all columns) as top suggestion in SELECT clause autocomplete
-- Fix function autocomplete inserting `COUNT(` instead of `COUNT()` — cursor now lands between the parentheses
-- Fix column flashing/swapping when sorting by using stable column identifiers instead of mutable titles for layout persistence
-- Fix "Copy Column Name" and "Filter with column" context menu actions copying sort indicators (e.g., "name 1▲") instead of base column name
-- Fix generated SQL statements (ALTER TABLE, DDL, SQL Preview) not consistently ending with a semicolon
-- Fix RETURNING autocomplete not suggesting columns after `INSERT INTO table ... RETURNING` by adding INSERT INTO to table reference extraction
-- Fix RETURNING not appearing as suggestion when typing after closed `VALUES (...)` parentheses
-- Fix `CREATE INDEX ... ON table (` autocomplete showing table names instead of columns from the referenced table
-- Fix SQL autocomplete transition keywords (WHERE, JOIN, ORDER BY, AND) buried under columns/tables when cursor is at clause boundary with empty prefix
+- **Structure view:** undo/redo (⌘Z / ⇧⌘Z) now works for all schema editing operations — previously non-functional
+- **Structure view:** undo-delete no longer duplicates existing rows in the grid
+- **Structure view:** deleting a new (unsaved) item then undoing correctly re-adds it
+- **Structure view:** save button now disabled when validation errors exist (empty column names/types)
+- **Structure view:** validation now rejects indexes and foreign keys referencing columns pending deletion
+- **Structure view:** multi-column foreign keys are correctly preserved instead of being truncated to single-column
+- **Structure view:** renaming a MySQL/MariaDB column now uses `CHANGE COLUMN` instead of `MODIFY COLUMN` (which cannot rename)
+- **Structure view:** eliminated redundant `discardChanges()` and `loadSchemaForEditing()` calls on save and initial load
+- **PostgreSQL:** DDL tab now includes PRIMARY KEY, UNIQUE, CHECK, and FOREIGN KEY constraints plus standalone indexes
+- **PostgreSQL:** primary key columns are now correctly detected and displayed in the structure grid
+- **Security:** escape table and database names in all driver schema queries to prevent SQL injection from names containing special characters
+- **SQL editor:** undo/redo (⌘Z / ⇧⌘Z) now works correctly (was blocked by responder chain selector mismatch)
+- **SQL autocomplete:** clause detection now works correctly inside subqueries
+- **SQL autocomplete:** block comment detection no longer treats `--` inside `/* */` as a line comment
+- **SQL autocomplete:** database-specific type keywords (e.g., PostgreSQL `JSONB`, MySQL `ENUM`) now appear in suggestions
+- **SQL autocomplete:** schema suggestions no longer disappear after CREATE TABLE
+- **SQL autocomplete:** function completion now inserts `COUNT()` with cursor between parentheses instead of `COUNT(`
+- **SQL autocomplete:** RETURNING suggestions now work after INSERT INTO and after closed `VALUES (...)` parentheses
+- **SQL autocomplete:** CREATE INDEX ON suggests columns from the referenced table instead of table names
+- **SQL autocomplete:** transition keywords (WHERE, JOIN, ORDER BY) no longer buried under columns at clause boundaries
+- **SQL autocomplete:** schema-qualified names (e.g., `schema.table.column`) handled correctly
+- **Data grid:** column order no longer flashes/swaps when sorting (stable identifiers for layout persistence)
+- **Data grid:** "Copy Column Name" and "Filter with column" context menu actions no longer copy sort indicators (e.g., "name 1▲")
+- **SQL generation:** ALTER TABLE, DDL, and SQL Preview statements now consistently end with a semicolon
+
+### Removed
+
+- Deleted unused `StructureTableCoordinator.swift` (~275 lines of dead code)
 
 ## [0.4.0] - 2026-02-16
 

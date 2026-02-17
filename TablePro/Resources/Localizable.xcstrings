@@ -1004,6 +1004,9 @@
         }
       }
     },
+    "Auto Inc" : {
+
+    },
     "Auto Increment" : {
       "localizations" : {
         "vi" : {
@@ -1419,6 +1422,9 @@
           }
         }
       }
+    },
+    "Columns" : {
+
     },
     "Columns (comma-separated)" : {
       "localizations" : {
@@ -4177,6 +4183,9 @@
         }
       }
     },
+    "No DDL available" : {
+
+    },
     "No Foreign Keys Yet" : {
       "localizations" : {
         "vi" : {
@@ -4347,6 +4356,9 @@
         }
       }
     },
+    "Not connected" : {
+
+    },
     "Not connected to database" : {
       "localizations" : {
         "vi" : {
@@ -4457,6 +4469,9 @@
         }
       }
     },
+    "Nullable" : {
+
+    },
     "Offset" : {
       "localizations" : {
         "vi" : {
@@ -4476,6 +4491,12 @@
           }
         }
       }
+    },
+    "On Delete" : {
+
+    },
+    "On Update" : {
+
     },
     "Open" : {
       "localizations" : {
@@ -5065,6 +5086,12 @@
           }
         }
       }
+    },
+    "Ref Columns" : {
+
+    },
+    "Ref Table" : {
+
     },
     "Referenced columns (comma-separated)" : {
       "localizations" : {
@@ -6336,6 +6363,9 @@
           }
         }
       }
+    },
+    "Type" : {
+
     },
     "Undo" : {
       "localizations" : {
