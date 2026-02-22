@@ -38,7 +38,7 @@ final class LicenseManager: ObservableObject {
     /// Grace period: 30 days without server contact before forcing re-validation
     private let gracePeriodDays = 30
 
-    private var revalidationTimer: Timer?
+    private var revalidationTask: Task<Void, Never>?
 
     private init() {
         loadCachedLicense()
@@ -78,22 +78,18 @@ final class LicenseManager: ObservableObject {
         }
     }
 
-    /// Start periodic re-validation timer. Call from AppDelegate.applicationDidFinishLaunching.
+    /// Start periodic re-validation. Call from AppDelegate.applicationDidFinishLaunching.
     func startPeriodicValidation() {
-        // Check if revalidation is needed right now
-        if let license, license.daysSinceLastValidation >= Int(revalidationInterval / 86_400) {
-            Task {
-                await revalidate()
+        revalidationTask?.cancel()
+        revalidationTask = Task { [weak self] in
+            // Check if revalidation is needed right now
+            if let self, let license = self.license,
+               license.daysSinceLastValidation >= Int(self.revalidationInterval / 86_400) {
+                await self.revalidate()
             }
-        }
 
-        // Schedule periodic timer
-        revalidationTimer?.invalidate()
-        revalidationTimer = Timer.scheduledTimer(
-            withTimeInterval: revalidationInterval,
-            repeats: true
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(self?.revalidationInterval ?? 604_800))
                 await self?.revalidate()
             }
         }
@@ -184,8 +180,8 @@ final class LicenseManager: ObservableObject {
         self.license = nil
         status = .deactivated
 
-        revalidationTimer?.invalidate()
-        revalidationTimer = nil
+        revalidationTask?.cancel()
+        revalidationTask = nil
 
         NotificationCenter.default.post(name: .licenseStatusDidChange, object: nil)
         Self.logger.info("License deactivated")

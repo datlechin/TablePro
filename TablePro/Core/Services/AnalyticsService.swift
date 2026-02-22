@@ -35,7 +35,7 @@ final class AnalyticsService {
         return value
     }()
 
-    private var heartbeatTimer: Timer?
+    private var heartbeatTask: Task<Void, Never>?
 
     private let session: URLSession = {
         let config = URLSessionConfiguration.default
@@ -57,21 +57,14 @@ final class AnalyticsService {
 
     /// Start periodic heartbeat. Call from AppDelegate.applicationDidFinishLaunching.
     func startPeriodicHeartbeat() {
-        // Send first heartbeat after initial delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + initialDelay) { [weak self] in
-            Task { @MainActor in
-                await self?.sendHeartbeat()
-            }
-        }
+        heartbeatTask?.cancel()
+        heartbeatTask = Task { [weak self] in
+            // Initial delay before first heartbeat (let connections establish)
+            try? await Task.sleep(for: .seconds(self?.initialDelay ?? 10))
 
-        // Schedule periodic timer
-        heartbeatTimer?.invalidate()
-        heartbeatTimer = Timer.scheduledTimer(
-            withTimeInterval: heartbeatInterval,
-            repeats: true
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
+            while !Task.isCancelled {
                 await self?.sendHeartbeat()
+                try? await Task.sleep(for: .seconds(self?.heartbeatInterval ?? 86_400))
             }
         }
     }
