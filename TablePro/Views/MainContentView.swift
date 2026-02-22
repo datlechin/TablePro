@@ -30,7 +30,7 @@ struct MainContentView: View {
     @StateObject private var changeManager: DataChangeManager
     @StateObject private var filterStateManager: FilterStateManager
     @StateObject private var toolbarState: ConnectionToolbarState
-    @StateObject private(set) var coordinator: MainContentCoordinator
+    @StateObject var coordinator: MainContentCoordinator
 
     // MARK: - Local State
 
