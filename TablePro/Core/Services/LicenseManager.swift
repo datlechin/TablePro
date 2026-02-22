@@ -112,7 +112,7 @@ final class LicenseManager: ObservableObject {
         lastError = nil
         defer { isValidating = false }
 
-        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
+        let appVersion = Bundle.main.appVersion
         let osVersion = ProcessInfo.processInfo.operatingSystemVersionString
 
         let request = LicenseActivationRequest(

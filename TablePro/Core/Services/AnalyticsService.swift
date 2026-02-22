@@ -113,7 +113,7 @@ final class AnalyticsService {
     }
 
     private func buildPayload() -> AnalyticsPayload {
-        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+        let appVersion = Bundle.main.appVersion
 
         let osVersion: String = {
             let version = ProcessInfo.processInfo.operatingSystemVersion
