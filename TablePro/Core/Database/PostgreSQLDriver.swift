@@ -397,6 +397,42 @@ final class PostgreSQLDriver: DatabaseDriver {
         try await fetchEnumTypesForTable(table)
     }
 
+
+    /// Fetch sequences referenced in column defaults (nextval) for the given table.
+    /// Returns array of (sequenceName, CREATE SEQUENCE DDL) pairs.
+    func fetchDependentSequences(forTable table: String) async throws -> [(name: String, ddl: String)] {
+        let safeTable = SQLEscaping.escapeStringLiteral(table)
+        let query = """
+            SELECT s.sequencename,
+                   s.start_value,
+                   s.min_value,
+                   s.max_value,
+                   s.increment_by,
+                   s.cycle
+            FROM pg_attrdef ad
+            JOIN pg_class c ON c.oid = ad.adrelid
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            JOIN pg_sequences s ON s.schemaname = n.nspname
+                 AND ad.adsrc LIKE '%' || quote_ident(s.sequencename) || '%'
+            WHERE c.relname = '\(safeTable)'
+              AND n.nspname = 'public'
+              AND ad.adsrc LIKE '%nextval%'
+            """
+        let result = try await execute(query: query)
+        return result.rows.compactMap { row in
+            guard let seqName = row[0] else { return nil }
+            let startVal = row[1] ?? "1"
+            let minVal = row[2] ?? "1"
+            let maxVal = row[3] ?? "9223372036854775807"
+            let incrementBy = row[4] ?? "1"
+            let cycle = row[5] == "t" ? " CYCLE" : ""
+            let ddl = "CREATE SEQUENCE \"\(seqName)\" INCREMENT BY \(incrementBy)"
+                + " MINVALUE \(minVal) MAXVALUE \(maxVal)"
+                + " START WITH \(startVal)\(cycle);"
+            return (name: seqName, ddl: ddl)
+        }
+    }
+
     func fetchIndexes(table: String) async throws -> [IndexInfo] {
         let query = """
             SELECT

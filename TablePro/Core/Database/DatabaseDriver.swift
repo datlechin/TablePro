@@ -88,6 +88,10 @@ protocol DatabaseDriver: AnyObject {
     /// Returns array of (typeName, labels) pairs. Default returns empty.
     func fetchDependentTypes(forTable table: String) async throws -> [(name: String, labels: [String])]
 
+    /// Fetch dependent sequence definitions (e.g., PostgreSQL sequences used by table columns).
+    /// Returns array of (sequenceName, CREATE SEQUENCE DDL) pairs. Default returns empty.
+    func fetchDependentSequences(forTable table: String) async throws -> [(name: String, ddl: String)]
+
     /// Fetch the view definition (SELECT statement) for a specific view
     func fetchViewDefinition(view: String) async throws -> String
 
@@ -151,6 +155,11 @@ extension DatabaseDriver {
 
     /// Default: no dependent types (MySQL/SQLite don't have standalone enum types)
     func fetchDependentTypes(forTable table: String) async throws -> [(name: String, labels: [String])] {
+        []
+    }
+
+    /// Default: no dependent sequences (MySQL/SQLite don't use standalone sequences)
+    func fetchDependentSequences(forTable table: String) async throws -> [(name: String, ddl: String)] {
         []
     }
 
