@@ -446,6 +446,20 @@ struct QueryTab: Identifiable, Equatable {
 
     static func == (lhs: QueryTab, rhs: QueryTab) -> Bool {
         lhs.id == rhs.id
+            && lhs.title == rhs.title
+            && lhs.isPinned == rhs.isPinned
+            && lhs.isExecuting == rhs.isExecuting
+            && lhs.errorMessage == rhs.errorMessage
+            && lhs.executionTime == rhs.executionTime
+            && lhs.resultVersion == rhs.resultVersion
+            && lhs.metadataVersion == rhs.metadataVersion
+            && lhs.pagination == rhs.pagination
+            && lhs.sortState == rhs.sortState
+            && lhs.showStructure == rhs.showStructure
+            && lhs.isEditable == rhs.isEditable
+            && lhs.isView == rhs.isView
+            && lhs.tabType == rhs.tabType
+            && lhs.rowsAffected == rhs.rowsAffected
     }
 }
 
