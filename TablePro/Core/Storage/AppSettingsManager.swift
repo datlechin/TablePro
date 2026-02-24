@@ -45,10 +45,18 @@ final class AppSettingsManager: ObservableObject {
 
     @Published var dataGrid: DataGridSettings {
         didSet {
+            guard !isValidating else { return }
             // Validate and sanitize before saving
             var validated = dataGrid
             validated.nullDisplay = dataGrid.validatedNullDisplay
             validated.defaultPageSize = dataGrid.validatedDefaultPageSize
+
+            // Store validated values back so in-memory state matches persisted state
+            if validated != dataGrid {
+                isValidating = true
+                dataGrid = validated
+                isValidating = false
+            }
 
             storage.saveDataGrid(validated)
             // Update date formatting service with new format
@@ -59,10 +67,18 @@ final class AppSettingsManager: ObservableObject {
 
     @Published var history: HistorySettings {
         didSet {
+            guard !isValidating else { return }
             // Validate before saving
             var validated = history
             validated.maxEntries = history.validatedMaxEntries
             validated.maxDays = history.validatedMaxDays
+
+            // Store validated values back so in-memory state matches persisted state
+            if validated != history {
+                isValidating = true
+                history = validated
+                isValidating = false
+            }
 
             storage.saveHistory(validated)
             // Apply history settings immediately (cleanup if auto-cleanup enabled)
@@ -93,6 +109,8 @@ final class AppSettingsManager: ObservableObject {
     }
 
     private let storage = AppSettingsStorage.shared
+    /// Reentrancy guard for didSet validation that re-assigns the property.
+    private var isValidating = false
     private var accessibilityTextSizeObserver: NSObjectProtocol?
     /// Tracks the last-seen accessibility scale factor to avoid redundant reloads.
     /// The accessibility display options notification fires for all display option changes
