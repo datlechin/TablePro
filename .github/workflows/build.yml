@@ -227,14 +227,14 @@ jobs:
           echo "✅ ZIP archive created"
           ls -lh TablePro-arm64.zip
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: TablePro-arm64-${{ github.sha }}
-          path: |
-            build/Release/*.dmg
-            build/Release/TablePro-arm64.zip
-          retention-days: ${{ startsWith(github.ref, 'refs/tags/v') && 90 || 7 }}
+      - name: Stage artifacts for release job
+        run: |
+          STAGING="/tmp/tablepro-artifacts-${{ github.sha }}"
+          mkdir -p "$STAGING"
+          cp build/Release/*.dmg "$STAGING/" 2>/dev/null || true
+          cp build/Release/TablePro-arm64.zip "$STAGING/" 2>/dev/null || true
+          echo "✅ ARM64 artifacts staged to $STAGING"
+          ls -lh "$STAGING"
 
   build-x86_64:
     name: Build x86_64
@@ -483,14 +483,14 @@ jobs:
           echo "✅ ZIP archive created"
           ls -lh TablePro-x86_64.zip
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: TablePro-x86_64-${{ github.sha }}
-          path: |
-            build/Release/*.dmg
-            build/Release/TablePro-x86_64.zip
-          retention-days: ${{ startsWith(github.ref, 'refs/tags/v') && 90 || 7 }}
+      - name: Stage artifacts for release job
+        run: |
+          STAGING="/tmp/tablepro-artifacts-${{ github.sha }}"
+          mkdir -p "$STAGING"
+          cp build/Release/*.dmg "$STAGING/" 2>/dev/null || true
+          cp build/Release/TablePro-x86_64.zip "$STAGING/" 2>/dev/null || true
+          echo "✅ x86_64 artifacts staged to $STAGING"
+          ls -lh "$STAGING"
 
   release:
     name: Create GitHub Release
@@ -507,17 +507,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download ARM64 artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: TablePro-arm64-${{ github.sha }}
-          path: artifacts/
-
-      - name: Download x86_64 artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: TablePro-x86_64-${{ github.sha }}
-          path: artifacts/
+      - name: Collect staged artifacts
+        run: |
+          STAGING="/tmp/tablepro-artifacts-${{ github.sha }}"
+          mkdir -p artifacts/
+          cp "$STAGING"/* artifacts/
+          echo "✅ Artifacts collected from $STAGING"
+          ls -lh artifacts/
 
       - name: Verify and organize artifacts for release
         run: |
@@ -696,3 +692,7 @@ jobs:
           prerelease: ${{ contains(github.ref, '-beta') || contains(github.ref, '-alpha') || contains(github.ref, '-rc') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Clean up staging directory
+        if: always()
+        run: rm -rf "/tmp/tablepro-artifacts-${{ github.sha }}" || true
