@@ -1,5 +1,5 @@
 #!/bin/bash
-set -eo
+set -eo pipefail
 
 # Run a command silently, showing output only on failure.
 run_quiet() {
@@ -37,6 +37,8 @@ run_quiet() {
 DEPLOY_TARGET="14.0"
 PG_VERSION="17.4"
 OPENSSL_VERSION="3.4.1"
+OPENSSL_SHA256="002a2d6b30b58bf4bea46c43bdd96365aaf8daa6c428782aa4feee06da197df3"
+PG_SHA256="c4605b73fea11963406699f949b966e5d173a7ee0ccaef8938dec0ca8a995fe7"
 
 ARCH="${1:-both}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -64,11 +66,13 @@ download_sources() {
         curl -fSL "https://github.com/openssl/openssl/releases/download/openssl-$OPENSSL_VERSION/openssl-$OPENSSL_VERSION.tar.gz" \
             -o "$BUILD_DIR/openssl-$OPENSSL_VERSION.tar.gz"
     fi
+    echo "$OPENSSL_SHA256  $BUILD_DIR/openssl-$OPENSSL_VERSION.tar.gz" | shasum -a 256 -c -
 
     if [ ! -f "$BUILD_DIR/postgresql-$PG_VERSION.tar.bz2" ]; then
         curl -fSL "https://ftp.postgresql.org/pub/source/v$PG_VERSION/postgresql-$PG_VERSION.tar.bz2" \
             -o "$BUILD_DIR/postgresql-$PG_VERSION.tar.bz2"
     fi
+    echo "$PG_SHA256  $BUILD_DIR/postgresql-$PG_VERSION.tar.bz2" | shasum -a 256 -c -
 
     echo "✅ Sources downloaded"
 }
@@ -168,8 +172,7 @@ COMPAT_EOF
     # Compile and add strchrnul compat to both libpgport variants
     cc -arch "$arch" -mmacosx-version-min="$DEPLOY_TARGET" \
         -c -o src/port/strchrnul_compat.o src/port/strchrnul_compat.c
-    ar rs src/port/libpgport.a src/port/strchrnul_compat.o 2>/dev/null
-    ar rs src/port/libpgport_shlib.a src/port/strchrnul_compat.o 2>/dev/null
+    run_quiet ar rs src/port/libpgport_shlib.a src/port/strchrnul_compat.o
 
     mkdir -p "$prefix/lib"
     cp src/interfaces/libpq/libpq.a "$prefix/lib/"
@@ -195,6 +198,20 @@ install_libs() {
     cp "$openssl_prefix/lib/libcrypto.a" "$LIBS_DIR/libcrypto_${arch}.a"
 }
 
+install_headers() {
+    local arch=$1
+    local pg_src="$BUILD_DIR/postgresql-$PG_VERSION-$arch"
+    local dest="$PROJECT_DIR/TablePro/Core/Database/CLibPQ/include"
+
+    echo "📦 Installing libpq headers..."
+    mkdir -p "$dest"
+    cp "$pg_src/src/interfaces/libpq/libpq-fe.h" "$dest/"
+    cp "$pg_src/src/interfaces/libpq/libpq-events.h" "$dest/"
+    cp "$pg_src/src/include/postgres_ext.h" "$dest/"
+    cp "$pg_src/src/include/pg_config_ext.h" "$dest/"
+    echo "✅ Headers installed to $dest"
+}
+
 create_universal() {
     echo ""
     echo "🔗 Creating universal (fat) libraries..."
@@ -214,6 +231,10 @@ build_for_arch() {
     build_openssl "$arch"
     build_libpq "$arch"
     install_libs "$arch"
+    # Install headers once (they're arch-independent)
+    if [ ! -f "$PROJECT_DIR/TablePro/Core/Database/CLibPQ/include/libpq-fe.h" ]; then
+        install_headers "$arch"
+    fi
 }
 
 verify_deployment_target() {
@@ -229,10 +250,7 @@ verify_deployment_target() {
             min_ver=$(otool -l "$lib" 2>/dev/null | awk '/LC_VERSION_MIN_MACOSX/{found=1} found && /version/{print $2; found=0}' | sort -V | tail -1)
         fi
         if [ -n "$min_ver" ]; then
-            local min_major deploy_major
-            min_major=$(echo "$min_ver" | cut -d. -f1)
-            deploy_major=$(echo "$DEPLOY_TARGET" | cut -d. -f1)
-            if [ "$min_major" -gt "$deploy_major" ]; then
+            if [ "$(printf '%s\n' "$DEPLOY_TARGET" "$min_ver" | sort -V | head -1)" != "$DEPLOY_TARGET" ]; then
                 echo "   ❌ $name targets macOS $min_ver (expected $DEPLOY_TARGET)"
                 failed=1
             else

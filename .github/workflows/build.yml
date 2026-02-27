@@ -59,28 +59,12 @@ jobs:
             echo "✅ mariadb-connector-c already installed"
           fi
 
-          # Build libpq from source with deployment target matching the app (macOS 14.0).
-          # Homebrew bottles target the *host* OS, so on macOS 26.0 the bottle
-          # uses strchrnul (26.0-only) → crash at launch on older macOS.
-          if ! brew list libpq &>/dev/null; then
-            echo "📦 Installing libpq (from source, targeting macOS 14.0)..."
-            HOMEBREW_MACOS_DEPLOYMENT_TARGET=14.0 HOMEBREW_NO_INSTALL_UPGRADE=1 brew install --build-from-source libpq
-          else
-            echo "✅ libpq already installed"
-          fi
-
           # Link packages with --force and --overwrite (needed for keg-only formulas)
           brew link --force --overwrite mariadb-connector-c 2>/dev/null || true
-          brew link --force --overwrite libpq 2>/dev/null || true
 
           # Verify installations
           if ! brew list mariadb-connector-c >/dev/null 2>&1; then
             echo "❌ ERROR: mariadb-connector-c installation failed"
-            exit 1
-          fi
-
-          if ! brew list libpq >/dev/null 2>&1; then
-            echo "❌ ERROR: libpq installation failed"
             exit 1
           fi
 
@@ -93,6 +77,15 @@ jobs:
           echo "✅ libmariadb.a ready"
           lipo -info Libs/libmariadb.a
           ls -lh Libs/libmariadb.a
+
+      - name: Prepare libpq
+        run: |
+          echo "📦 Preparing libpq + OpenSSL static libraries for arm64..."
+          for lib in libpq libpgcommon libpgport libssl libcrypto; do
+            cp "Libs/${lib}_arm64.a" "Libs/${lib}.a"
+          done
+          echo "✅ libpq + OpenSSL libraries ready"
+          ls -lh Libs/lib{pq,pgcommon,pgport,ssl,crypto}.a
 
       - name: Verify Xcode
         run: |
@@ -316,28 +309,12 @@ jobs:
             echo "✅ mariadb-connector-c (x86_64) already installed"
           fi
 
-          # Build libpq from source with deployment target matching the app (macOS 14.0).
-          # Homebrew bottles target the *host* OS, so on macOS 26.0 the bottle
-          # uses strchrnul (26.0-only) → crash at launch on older macOS.
-          if ! arch -x86_64 /usr/local/bin/brew list libpq &>/dev/null; then
-            echo "📦 Installing libpq (x86_64, from source, targeting macOS 14.0)..."
-            arch -x86_64 env HOMEBREW_MACOS_DEPLOYMENT_TARGET=14.0 HOMEBREW_NO_INSTALL_UPGRADE=1 /usr/local/bin/brew install --build-from-source libpq
-          else
-            echo "✅ libpq (x86_64) already installed"
-          fi
-
           # Link packages with --force (needed for keg-only formulas)
           arch -x86_64 /usr/local/bin/brew link --force --overwrite mariadb-connector-c 2>/dev/null || true
-          arch -x86_64 /usr/local/bin/brew link --force --overwrite libpq 2>/dev/null || true
 
           # Verify installations
           if ! arch -x86_64 /usr/local/bin/brew list mariadb-connector-c >/dev/null 2>&1; then
             echo "❌ ERROR: mariadb-connector-c installation failed"
-            exit 1
-          fi
-
-          if ! arch -x86_64 /usr/local/bin/brew list libpq >/dev/null 2>&1; then
-            echo "❌ ERROR: libpq installation failed"
             exit 1
           fi
 
@@ -350,6 +327,15 @@ jobs:
           echo "✅ libmariadb.a ready"
           lipo -info Libs/libmariadb.a
           ls -lh Libs/libmariadb.a
+
+      - name: Prepare libpq
+        run: |
+          echo "📦 Preparing libpq + OpenSSL static libraries for x86_64..."
+          for lib in libpq libpgcommon libpgport libssl libcrypto; do
+            cp "Libs/${lib}_x86_64.a" "Libs/${lib}.a"
+          done
+          echo "✅ libpq + OpenSSL libraries ready"
+          ls -lh Libs/lib{pq,pgcommon,pgport,ssl,crypto}.a
 
       - name: Verify Xcode
         run: |

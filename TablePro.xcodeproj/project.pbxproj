@@ -397,8 +397,7 @@
 				HEADER_SEARCH_PATHS = (
 					"/opt/homebrew/opt/mariadb-connector-c/include/mariadb",
 					"/usr/local/opt/mariadb-connector-c/include/mariadb",
-					/opt/homebrew/opt/libpq/include,
-					/usr/local/opt/libpq/include,
+					"$(PROJECT_DIR)/TablePro/Core/Database/CLibPQ/include",
 				);
 				INFOPLIST_FILE = TablePro/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = TablePro;
@@ -478,8 +477,7 @@
 				HEADER_SEARCH_PATHS = (
 					"/opt/homebrew/opt/mariadb-connector-c/include/mariadb",
 					"/usr/local/opt/mariadb-connector-c/include/mariadb",
-					/opt/homebrew/opt/libpq/include,
-					/usr/local/opt/libpq/include,
+					"$(PROJECT_DIR)/TablePro/Core/Database/CLibPQ/include",
 				);
 				INFOPLIST_FILE = TablePro/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = TablePro;
