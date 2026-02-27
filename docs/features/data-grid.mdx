@@ -1,0 +1,699 @@
+---
+title: Data Grid
+description: View, edit, and manage your data in a powerful spreadsheet-like interface
+---
+
+# Data Grid
+
+The data grid displays query results and table contents in a spreadsheet-like interface. It supports viewing, editing, sorting, and exporting data with high performance even for large datasets.
+
+{/* Screenshot: Data grid showing query results with multiple columns */}
+<Frame caption="Data grid displaying query results">
+  <img 
+    className="block dark:hidden" 
+    src="/images/data-grid.png" 
+    alt="Data Grid" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/data-grid-dark.png" 
+    alt="Data Grid" 
+  />
+</Frame>
+
+## Viewing Data
+
+### Opening Tables
+
+To view a table's contents:
+
+1. Expand a database in the sidebar
+2. Click on a table name
+3. The data grid loads the table contents
+
+Or run a query:
+
+```sql
+SELECT * FROM users;
+```
+
+### Result Information
+
+The data grid header shows:
+
+- **Row count**: Number of rows returned
+- **Execution time**: How long the query took
+- **Affected rows**: For UPDATE/DELETE queries
+
+## Column Features
+
+### Resizing Columns
+
+- Drag column borders to resize
+- Double-click a border to auto-fit column width
+- Column widths are remembered for each table
+
+### Sorting Data
+
+Click a column header to sort:
+
+- **First click**: Sort ascending (A-Z, 0-9)
+- **Second click**: Sort descending (Z-A, 9-0)
+- **Third click**: Remove sort
+
+<Tip>
+Sorting is done locally on the loaded data. For server-side sorting, use `ORDER BY` in your query.
+</Tip>
+
+{/* Screenshot: Column header with sort indicator */}
+<Frame caption="Column header with sort indicator">
+  <img
+    className="block dark:hidden"
+    src="/images/column-sorting.png"
+    alt="Column header with sort indicator"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/column-sorting-dark.png"
+    alt="Column header with sort indicator"
+  />
+</Frame>
+
+### Column Types
+
+The data grid displays different data types appropriately:
+
+| Type | Display |
+|------|---------|
+| Text/Varchar | Plain text |
+| Integer | Right-aligned numbers |
+| Decimal/Float | Formatted numbers |
+| Boolean | True/False |
+| Date/Time | Formatted date strings |
+| NULL | Styled "NULL" indicator |
+| JSON | Formatted JSON (expandable) |
+| ENUM | Dropdown popover editor |
+| SET | Checkbox popover editor |
+| Binary/BLOB | Binary indicator |
+
+## Data Editing
+
+### Inline Editing
+
+To edit a cell:
+
+1. Double-click the cell
+2. Enter the new value
+3. Press `Enter` to confirm or `Escape` to cancel
+
+{/* Screenshot: Cell being edited with cursor */}
+<Frame caption="Inline cell editing">
+  <img 
+    className="block dark:hidden" 
+    src="/images/cell-editing.png" 
+    alt="Cell editing" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/cell-editing-dark.png" 
+    alt="Cell editing" 
+  />
+</Frame>
+
+### Edit Modes
+
+| Mode | Trigger | Description |
+|------|---------|-------------|
+| View | Default | Read-only display |
+| Edit | Double-click | Modify cell value |
+
+### Date/Time Picker
+
+When you edit a cell in a date, datetime, timestamp, or time column, a native date picker popover appears instead of a plain text field. The picker automatically adapts to the column type:
+
+| Column Type | Picker Elements |
+|-------------|----------------|
+| `DATE` | Year, month, day |
+| `DATETIME` / `TIMESTAMP` | Year, month, day, hour, minute, second |
+| `TIME` | Hour, minute, second |
+
+The picker supports common database date formats and outputs values in the standard format (`YYYY-MM-DD HH:MM:SS`). Use the stepper controls or type directly in the picker fields to change the date.
+
+<Tip>
+The date picker automatically parses the existing cell value. If the value cannot be parsed, it defaults to the current date/time.
+</Tip>
+
+{/* Screenshot: Date picker for editing date columns */}
+<Frame caption="Date picker for editing date columns">
+  <img
+    className="block dark:hidden"
+    src="/images/date-picker-editor.png"
+    alt="Date picker for editing date columns"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/date-picker-editor-dark.png"
+    alt="Date picker for editing date columns"
+  />
+</Frame>
+
+### Foreign Key Lookup
+
+When you edit a cell in a foreign key column, a searchable dropdown popover appears showing valid values from the referenced table:
+
+- The dropdown displays both the FK value and a descriptive text column (e.g., `1 — John Doe`)
+- Type in the search field to filter values
+- Single-click a value to highlight it; double-click or press `Enter` to commit the selection
+- The popover auto-detects the best display column from the referenced table
+
+<Tip>
+Foreign key lookups fetch up to 1,000 values from the referenced table. For tables with more values, use the search field to narrow results.
+</Tip>
+
+{/* Screenshot: Foreign key lookup with search */}
+<Frame caption="Foreign key lookup with search">
+  <img
+    className="block dark:hidden"
+    src="/images/fk-lookup-popover.png"
+    alt="Foreign key lookup with search"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/fk-lookup-popover-dark.png"
+    alt="Foreign key lookup with search"
+  />
+</Frame>
+
+### Boolean Cell Editor
+
+When you double-click a cell in a BOOLEAN, BIT, or TINYINT(1) column, a checkbox popover appears for quick true/false toggling:
+
+- **Checkbox**: Click to toggle between true and false
+- **OK/Cancel**: Click **OK** or press `Enter` to commit; click **Cancel** or press `Escape` to discard
+- **Nullable columns**: A third indeterminate state represents NULL
+
+Database-specific behavior:
+
+| Database | Column Types | Values |
+|----------|-------------|--------|
+| MySQL/MariaDB | `TINYINT(1)`, `BIT(1)` | `0` / `1` |
+| PostgreSQL | `BOOLEAN` | `TRUE` / `FALSE` |
+| SQLite | `INTEGER` | `0` / `1` |
+
+<Tip>
+For nullable boolean columns, the checkbox supports three states: checked (true), unchecked (false), and indeterminate (NULL).
+</Tip>
+
+{/* Screenshot: Boolean cell checkbox editor */}
+<Frame caption="Boolean cell checkbox editor">
+  <img
+    className="block dark:hidden"
+    src="/images/boolean-cell-editor.png"
+    alt="Boolean cell checkbox editor"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/boolean-cell-editor-dark.png"
+    alt="Boolean cell checkbox editor"
+  />
+</Frame>
+
+### ENUM Column Editor
+
+When you double-click a cell in an ENUM column, a searchable dropdown popover appears showing all allowed values:
+
+- **Search field**: Type to filter the list of values
+- **NULL option**: Shown at the top for nullable columns (displayed in italic)
+- **Current value**: Highlighted in the accent color
+- Single-click a value to select and commit immediately
+- Press `Escape` to cancel without changes
+
+This works across all supported databases:
+
+| Database | ENUM Source |
+|----------|------------|
+| MySQL/MariaDB | Native `ENUM` type from column definition |
+| PostgreSQL | User-defined enum types (via `pg_enum` catalog) |
+| SQLite | `CHECK(column IN ('val1','val2'))` constraints |
+
+{/* Screenshot: ENUM value selector */}
+<Frame caption="ENUM value selector">
+  <img
+    className="block dark:hidden"
+    src="/images/enum-editor-popover.png"
+    alt="ENUM value selector"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/enum-editor-popover-dark.png"
+    alt="ENUM value selector"
+  />
+</Frame>
+
+### SET Column Editor
+
+When you double-click a cell in a SET column (MySQL/MariaDB), a checkbox popover appears:
+
+- Each allowed value is shown as a checkbox
+- Currently selected values are pre-checked (parsed from the comma-separated cell value)
+- Click **OK** or press `Enter` to commit the selected values (joined with commas)
+- Click **Cancel** or press `Escape` to discard changes
+
+<Tip>
+If ENUM/SET values are not available (e.g., from a complex query result rather than a direct table browse), the cell falls back to inline text editing.
+</Tip>
+
+{/* Screenshot: SET value multi-select editor */}
+<Frame caption="SET value multi-select editor">
+  <img
+    className="block dark:hidden"
+    src="/images/set-editor-popover.png"
+    alt="SET value multi-select editor"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/set-editor-popover-dark.png"
+    alt="SET value multi-select editor"
+  />
+</Frame>
+
+### JSON Editor
+
+When you edit a cell in a JSON or JSONB column, a dedicated JSON editor popover appears:
+
+- **Real-time validation**: Shows whether the JSON is valid as you type
+- **Save/Cancel**: Explicit buttons to commit or discard changes
+
+The editor validates JSON before saving. If the text is not valid JSON, you'll see a confirmation dialog before the value is saved.
+
+<Tip>
+JSON values are automatically compacted (minified) when saved to the database for efficient storage.
+</Tip>
+
+{/* Screenshot: JSON editor with validation */}
+<Frame caption="JSON editor with validation">
+  <img
+    className="block dark:hidden"
+    src="/images/json-editor-popover.png"
+    alt="JSON editor with validation"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/json-editor-popover-dark.png"
+    alt="JSON editor with validation"
+  />
+</Frame>
+
+### Multi-Row Editing
+
+You can perform operations on multiple rows at once:
+
+- **Select multiple rows**: Click row numbers while holding `Cmd` (non-contiguous) or `Shift` (range)
+- **Delete multiple rows**: Select rows, then click **Delete** or press the `Delete` key
+- **Multi-row operations**: Use toolbar buttons to act on the current selection
+
+{/* Screenshot: Multiple rows selected for editing */}
+<Frame caption="Multiple rows selected for editing">
+  <img
+    className="block dark:hidden"
+    src="/images/multi-row-selection.png"
+    alt="Multiple rows selected for editing"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/multi-row-selection-dark.png"
+    alt="Multiple rows selected for editing"
+  />
+</Frame>
+
+### Saving Changes
+
+Changes are queued and not applied to the database immediately. Use the following actions to manage pending changes:
+
+- **Preview SQL**: Click the **Preview SQL** button (eye icon) or press `Cmd+Shift+P` to review pending SQL statements before committing
+- **Commit**: Click the **Commit** button (or press `Cmd+S`) to apply all pending changes to the database
+- **Discard**: Click the **Discard** button to revert all pending changes
+- **Undo/Redo**: Press `Cmd+Z` to undo or `Cmd+Shift+Z` to redo individual edits before committing
+
+See [Change Tracking](/features/change-tracking) for full details on how changes are queued and applied.
+
+<Warning>
+Editing is available for simple `SELECT * FROM table` queries. Complex queries with joins or aggregations are read-only.
+</Warning>
+
+### Adding New Rows
+
+To add a new row:
+
+1. Click the **+** button in the toolbar (or use keyboard shortcut)
+2. Fill in the values for each column
+3. Apply changes to save
+
+### Deleting Rows
+
+To delete rows:
+
+1. Select the row(s) to delete
+2. Click the **Delete** button or press `Delete` key
+3. Confirm the deletion
+4. Apply changes to execute
+
+## Change Indicators
+
+When you make edits, TablePro provides visual feedback on pending changes:
+
+- **Modified cells** are highlighted with a distinct background color
+- **New rows** display an insertion indicator
+- **Deleted rows** display a deletion indicator
+- The **toolbar** shows the count of pending changes
+
+These indicators help you review all modifications before committing them to the database. See [Change Tracking](/features/change-tracking) for details on how change tracking works.
+
+## Cell Inspector
+
+The Cell Inspector is a right sidebar panel that provides detailed information about the selected row or the current table. Toggle it with `Cmd+Shift+B` or via **View** > **Toggle Cell Inspector**.
+
+{/* Screenshot: Cell Inspector showing row details */}
+<Frame caption="Cell Inspector showing row details">
+  <img
+    className="block dark:hidden"
+    src="/images/cell-inspector.png"
+    alt="Cell Inspector"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/cell-inspector-dark.png"
+    alt="Cell Inspector"
+  />
+</Frame>
+
+### Row Details Mode
+
+When a row is selected, the Cell Inspector displays all column values for that row:
+
+- **Searchable column list**: Quickly find a column by typing in the search field
+- **Column name and data type**: Each entry shows the column name alongside its data type
+- **Full cell value**: Values are displayed without truncation, so you can see the complete content
+- **Multi-line text editing**: TEXT/VARCHAR columns provide a multi-line text area for editing long values
+- **Read-only indicator**: Non-editable cells are clearly marked as read-only
+
+You can edit values directly in the inspector. Changes are queued just like inline editing in the data grid — they are not applied until you commit.
+
+### Table Info Mode
+
+When no row is selected, the Cell Inspector switches to Table Info mode and displays metadata about the current table:
+
+| Metadata | Description |
+|----------|-------------|
+| Table name | Name of the current table |
+| Row count | Total number of rows |
+| Storage size | Disk space used by the table |
+| Creation date | When the table was created |
+| Engine | Storage engine (e.g., InnoDB, MyISAM) |
+| Charset | Character set of the table |
+| Collation | Collation used for sorting |
+
+<Note>
+Read-only connections and query results respect the read-only state — editing is disabled in the Cell Inspector for those contexts.
+</Note>
+
+## Navigation
+
+### Keyboard Navigation
+
+| Key | Action |
+|-----|--------|
+| Arrow keys | Move between cells |
+| `Tab` | Move to next cell |
+| `Shift+Tab` | Move to previous cell |
+| `Enter` | Edit selected cell |
+| `Escape` | Cancel edit / Deselect |
+| `Home` | Go to first cell in row |
+| `End` | Go to last cell in row |
+| `Cmd+Home` | Go to first row |
+| `Cmd+End` | Go to last row |
+| `Page Up` | Scroll up one page |
+| `Page Down` | Scroll down one page |
+
+### Mouse Navigation
+
+- **Click**: Select a cell
+- **Double-click**: Edit a cell
+- **Click + drag**: Select multiple cells
+- **Scroll wheel**: Vertical scrolling
+- **Shift + scroll**: Horizontal scrolling
+
+## Selection
+
+### Selecting Cells
+
+- **Single cell**: Click the cell
+- **Cell range**: Click and drag, or click first cell then Shift+click last cell
+- **Entire row**: Click the row number
+- **Multiple rows**: Click row number and drag, or Cmd+click for non-contiguous
+
+### Copying Data
+
+1. Select the cells or rows you want to copy
+2. Press `Cmd+C`
+3. Paste into another application
+
+TablePro supports multiple copy formats:
+
+| Format | Shortcut | Description |
+|--------|----------|-------------|
+| Tab-separated | `Cmd+C` | Default copy, compatible with spreadsheets |
+| CSV | `Cmd+Shift+C` | Comma-separated values |
+| JSON | `Cmd+Option+C` | JSON array of objects |
+| TSV | Available from context menu | Tab-separated with header |
+
+The default tab-separated format is compatible with:
+- Excel
+- Numbers
+- Google Sheets
+- Text editors
+
+{/* Screenshot: Copy options in context menu */}
+<Frame caption="Copy options in context menu">
+  <img
+    className="block dark:hidden"
+    src="/images/copy-context-menu.png"
+    alt="Copy options in context menu"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/copy-context-menu-dark.png"
+    alt="Copy options in context menu"
+  />
+</Frame>
+
+## Pagination
+
+For large result sets, the data grid uses pagination:
+
+### Page Controls
+
+- **First page**: Go to the beginning
+- **Previous page**: Go back one page
+- **Page number**: Current page / total pages
+- **Next page**: Go forward one page
+- **Last page**: Go to the end
+
+### Page Size
+
+Configure the default page size in **Settings** > **Data Grid**:
+
+| Option | Rows per Page |
+|--------|---------------|
+| Small | 100 |
+| Medium | 500 |
+| Large | 1,000 |
+| Custom | 10 - 100,000 |
+
+<Tip>
+Smaller page sizes load faster and use less memory. Use larger sizes when you need to see more data at once.
+</Tip>
+
+{/* Screenshot: Pagination controls with page navigation */}
+<Frame caption="Pagination controls with page navigation">
+  <img
+    className="block dark:hidden"
+    src="/images/pagination-controls.png"
+    alt="Pagination controls with page navigation"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/pagination-controls-dark.png"
+    alt="Pagination controls with page navigation"
+  />
+</Frame>
+
+## NULL Values
+
+NULL values are displayed distinctively:
+
+- Styled text showing "NULL" (customizable)
+- Different color from regular values
+- Cannot be confused with the string "NULL"
+
+{/* Screenshot: Data grid showing NULL values */}
+<Frame caption="NULL value display">
+  <img 
+    className="block dark:hidden" 
+    src="/images/null-values.png" 
+    alt="NULL values" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/null-values-dark.png" 
+    alt="NULL values" 
+  />
+</Frame>
+
+### Customizing NULL Display
+
+In **Settings** > **Data Grid**:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| **NULL Display** | "NULL" | Text shown for NULL values |
+
+## Date Formatting
+
+Configure how dates are displayed:
+
+| Format | Example |
+|--------|---------|
+| ISO 8601 | 2024-12-31 23:59:59 |
+| ISO Date | 2024-12-31 |
+| US Long | 12/31/2024 11:59:59 PM |
+| US Short | 12/31/2024 |
+| EU Long | 31/12/2024 23:59:59 |
+| EU Short | 31/12/2024 |
+
+Configure in **Settings** > **Data Grid** > **Date Format**.
+
+## Row Height
+
+Adjust row height for better readability:
+
+| Option | Height | Best For |
+|--------|--------|----------|
+| Compact | 20px | Dense data, more rows visible |
+| Normal | 24px | Standard viewing |
+| Comfortable | 28px | Better readability |
+| Spacious | 32px | Accessibility, touch |
+
+Configure in **Settings** > **Data Grid** > **Row Height**.
+
+{/* Screenshot: Row height comparison: Compact, Normal, Comfortable, Spacious */}
+<Frame caption="Row height comparison: Compact, Normal, Comfortable, Spacious">
+  <img
+    className="block dark:hidden"
+    src="/images/row-height-options.png"
+    alt="Row height comparison: Compact, Normal, Comfortable, Spacious"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/row-height-options-dark.png"
+    alt="Row height comparison: Compact, Normal, Comfortable, Spacious"
+  />
+</Frame>
+
+## Alternate Row Colors
+
+Enable alternating row colors for easier scanning:
+
+- **On**: Every other row has a subtle background color
+- **Off**: All rows have the same background
+
+Configure in **Settings** > **Data Grid** > **Show Alternate Rows**.
+
+{/* Screenshot: Data grid with alternate row colors */}
+<Frame caption="Data grid with alternate row colors">
+  <img
+    className="block dark:hidden"
+    src="/images/alternate-row-colors.png"
+    alt="Data grid with alternate row colors"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/alternate-row-colors-dark.png"
+    alt="Data grid with alternate row colors"
+  />
+</Frame>
+
+## Working with Large Datasets
+
+### Performance Tips
+
+1. **Use LIMIT**: Always limit results when exploring
+   ```sql
+   SELECT * FROM large_table LIMIT 100;
+   ```
+
+2. **Select specific columns**: Avoid `SELECT *` for tables with many columns
+   ```sql
+   SELECT id, name, email FROM users;
+   ```
+
+3. **Use pagination**: Let the data grid paginate results
+
+4. **Filter at the database**: Use WHERE clauses instead of loading all data
+   ```sql
+   SELECT * FROM orders WHERE status = 'pending';
+   ```
+
+### Memory Usage
+
+The data grid loads data in pages to manage memory:
+
+- Only visible pages are kept in memory
+- Scrolling loads new pages as needed
+- Large BLOB/TEXT columns are loaded on demand
+
+## Export Options
+
+Export data directly from the data grid:
+
+1. Run your query or open a table
+2. Click the **Export** button
+3. Choose format: CSV, JSON, SQL
+4. Select destination
+
+See [Import & Export](/features/import-export) for detailed export options.
+
+## Keyboard Shortcuts
+
+| Action | Shortcut |
+|--------|----------|
+| Copy selection | `Cmd+C` |
+| Copy as CSV | `Cmd+Shift+C` |
+| Copy as JSON | `Cmd+Option+C` |
+| Select all | `Cmd+A` |
+| Delete row | `Delete` |
+| Edit cell | `Enter` |
+| Cancel edit | `Escape` |
+| Undo | `Cmd+Z` |
+| Redo | `Cmd+Shift+Z` |
+| Commit changes | `Cmd+S` |
+| Navigate | Arrow keys |
+| Next cell | `Tab` |
+| Previous cell | `Shift+Tab` |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="SQL Editor" icon="code" href="/features/sql-editor">
+    Write queries for the data grid
+  </Card>
+  <Card title="Import & Export" icon="file-import" href="/features/import-export">
+    Export data from the grid
+  </Card>
+  <Card title="Table Structure" icon="table-columns" href="/features/table-structure">
+    View table definitions
+  </Card>
+  <Card title="Settings" icon="gear" href="/customization/settings">
+    Configure data grid options
+  </Card>
+</CardGroup>

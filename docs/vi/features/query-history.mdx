@@ -1,0 +1,369 @@
+---
+title: Lịch sử truy vấn
+description: Truy cập và tìm kiếm lịch sử query hoàn chỉnh của bạn
+---
+
+# Lịch sử Truy vấn
+
+TablePro tự động lưu mọi query bạn thực thi, giúp dễ dàng tìm, chạy lại hoặc chỉnh sửa các query trước đó. Lịch sử query được lưu trữ qua các phiên và có thể tìm kiếm với full-text search.
+
+{/* Screenshot: Query history panel showing list of past queries */}
+<Frame caption="Panel lịch sử query">
+  <img
+    className="block dark:hidden"
+    src="/images/query-history.png"
+    alt="Query History"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/query-history-dark.png"
+    alt="Query History"
+  />
+</Frame>
+
+## Truy Cập Lịch Sử
+
+### Panel Lịch Sử
+
+Mở panel lịch sử:
+
+1. Click **View** > **Query History**
+2. Hoặc sử dụng phím tắt `Cmd+Y`
+3. Hoặc click biểu tượng **History** trong toolbar
+
+### Lịch Sử Trong Sidebar
+
+Các query gần đây cũng xuất hiện trong sidebar dưới kết nối đang hoạt động.
+
+## Tính Năng Lịch Sử
+
+### Danh Sách Query
+
+Panel lịch sử hiển thị:
+
+| Cột | Mô tả |
+|--------|-------------|
+| **Query** | Văn bản SQL (được cắt ngắn nếu dài) |
+| **Time** | Khi query được thực thi |
+| **Duration** | Thời gian thực thi |
+| **Status** | Thành công hoặc lỗi |
+| **Database** | Database/kết nối được sử dụng |
+
+### Sắp Xếp
+
+Sắp xếp lịch sử theo:
+
+- **Time**: Gần nhất trước (mặc định)
+- **Duration**: Query chậm nhất trước
+- **Query text**: Theo thứ tự abc
+
+Click header cột để thay đổi thứ tự sắp xếp.
+
+### Lọc
+
+Lọc query theo:
+
+- **Connection**: Chỉ hiển thị query từ kết nối cụ thể
+- **Status**: Chỉ hiển thị query thành công hoặc thất bại
+- **Time range**: Hôm nay, tuần này, tháng này, tất cả
+
+{/* Screenshot: Panel lịch sử với các điều khiển lọc */}
+<Frame caption="Panel lịch sử với các điều khiển lọc">
+  <img
+    className="block dark:hidden"
+    src="/images/history-filters.png"
+    alt="Panel lịch sử với các điều khiển lọc"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/history-filters-dark.png"
+    alt="Panel lịch sử với các điều khiển lọc"
+  />
+</Frame>
+
+## Tìm Kiếm Lịch Sử
+
+### Full-Text Search
+
+Gõ vào ô tìm kiếm để tìm query chứa văn bản cụ thể:
+
+```
+SELECT users  -- Tìm tất cả query chứa "SELECT" và "users"
+```
+
+{/* Screenshot: Search results in history */}
+<Frame caption="Tìm kiếm lịch sử query">
+  <img
+    className="block dark:hidden"
+    src="/images/history-search.png"
+    alt="History search"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/history-search-dark.png"
+    alt="History search"
+  />
+</Frame>
+
+### Mẹo Tìm Kiếm
+
+- Tìm kiếm không phân biệt chữ hoa chữ thường
+- Khớp một phần được bao gồm
+- Tìm kiếm xem xét toàn bộ văn bản query
+
+**Ví dụ tìm kiếm**:
+
+| Tìm kiếm | Tìm thấy |
+|--------|-------|
+| `users` | Query đề cập đến "users" |
+| `JOIN orders` | Query join bảng orders |
+| `WHERE created` | Query lọc theo created |
+| `UPDATE users SET` | Câu lệnh update trên users |
+
+## Sử Dụng Lịch Sử
+
+### Chạy Lại Query
+
+Để chạy lại query từ lịch sử:
+
+1. Tìm query trong danh sách lịch sử
+2. Double-click vào query
+3. Nó được tải vào SQL editor
+4. Nhấn `Cmd+Enter` để thực thi
+
+Hoặc click chuột phải và chọn **Run Query**.
+
+### Sao Chép Query
+
+Để sao chép query:
+
+1. Chọn query trong danh sách
+2. Click chuột phải > **Copy Query**
+3. Hoặc nhấn `Cmd+C`
+
+Toàn bộ văn bản query được sao chép vào clipboard.
+
+{/* Screenshot: Menu ngữ cảnh lịch sử query */}
+<Frame caption="Menu ngữ cảnh lịch sử query">
+  <img
+    className="block dark:hidden"
+    src="/images/history-context-menu.png"
+    alt="Menu ngữ cảnh lịch sử query"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/history-context-menu-dark.png"
+    alt="Menu ngữ cảnh lịch sử query"
+  />
+</Frame>
+
+### Chỉnh Sửa Trước Khi Chạy
+
+Để sửa đổi query lịch sử:
+
+1. Double-click để tải vào editor
+2. Thực hiện thay đổi
+3. Thực thi query đã sửa đổi
+
+Entry lịch sử gốc được bảo tồn; một entry mới được tạo cho query đã sửa đổi.
+
+## Lưu Trữ Lịch Sử
+
+### Lịch Sử Được Lưu Ở Đâu
+
+Lịch sử query được lưu trữ trong:
+
+```
+~/Library/Application Support/TablePro/query_history.db
+```
+
+Database SQLite này chứa:
+
+- Văn bản query
+- Timestamp thực thi
+- Thời lượng
+- Thông tin kết nối/database
+- Trạng thái thành công/thất bại
+- Thông báo lỗi (nếu thất bại)
+
+### Giữ Lại Lịch Sử
+
+Cấu hình giữ lại lịch sử trong **Settings** > **History**:
+
+| Thiết lập | Mặc định | Mô tả |
+|---------|---------|-------------|
+| **Max Entries** | 10,000 | Số query tối đa để lưu trữ |
+| **Max Days** | 90 | Xóa query cũ hơn số ngày này |
+| **Auto Cleanup** | Bật | Tự động xóa entry cũ |
+
+<Tip>
+Đặt **Max Entries** thành 0 cho lịch sử không giới hạn (có thể ảnh hưởng hiệu suất với lịch sử rất lớn).
+</Tip>
+
+### Xóa Lịch Sử
+
+Để xóa tất cả lịch sử:
+
+1. Mở **Settings** > **History**
+2. Click **Clear All History**
+3. Xác nhận hành động
+
+<Warning>
+Xóa lịch sử không thể hoàn tác. Cân nhắc export các query quan trọng trước.
+</Warning>
+
+Để xóa lịch sử cho kết nối cụ thể:
+
+1. Click chuột phải vào kết nối trong sidebar
+2. Chọn **Clear History**
+
+## Chi Tiết Query
+
+### Xem Query Đầy Đủ
+
+Đối với query dài, click để mở rộng và xem toàn bộ văn bản:
+
+{/* Screenshot: Expanded query detail view */}
+<Frame caption="Xem query đầy đủ">
+  <img
+    className="block dark:hidden"
+    src="/images/history-detail.png"
+    alt="Query detail"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/history-detail-dark.png"
+    alt="Query detail"
+  />
+</Frame>
+
+### Chi Tiết Thực Thi
+
+Mỗi entry lịch sử bao gồm:
+
+| Chi tiết | Mô tả |
+|--------|-------------|
+| **Started** | Timestamp khi bắt đầu thực thi |
+| **Duration** | Thời gian query mất bao lâu |
+| **Rows affected** | Số hàng trả về/sửa đổi |
+| **Error** | Thông báo lỗi nếu query thất bại |
+
+### Query Thất Bại
+
+Query thất bại hiển thị:
+
+- Thông báo lỗi
+- Query gây ra lỗi
+- Timestamp của lỗi
+
+Điều này giúp debug vấn đề:
+
+1. Tìm query thất bại
+2. Đọc thông báo lỗi
+3. Tải vào editor
+4. Sửa và chạy lại
+
+{/* Screenshot: Entry query thất bại với thông báo lỗi */}
+<Frame caption="Entry query thất bại với thông báo lỗi">
+  <img
+    className="block dark:hidden"
+    src="/images/history-failed-query.png"
+    alt="Entry query thất bại với thông báo lỗi"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/history-failed-query-dark.png"
+    alt="Entry query thất bại với thông báo lỗi"
+  />
+</Frame>
+
+## Thực Hành Tốt Nhất
+
+### Chú Thích Query
+
+Thêm comment vào các query quan trọng để tìm kiếm dễ dàng hơn:
+
+```sql
+-- Báo cáo doanh thu tháng 2024
+SELECT
+    DATE_FORMAT(created_at, '%Y-%m') as month,
+    SUM(total) as revenue
+FROM orders
+WHERE created_at >= '2024-01-01'
+GROUP BY month;
+```
+
+Bây giờ bạn có thể tìm kiếm "Báo cáo doanh thu tháng" để tìm thấy nó.
+
+### Tổ Chức Với Comment
+
+Sử dụng mẫu comment nhất quán:
+
+```sql
+-- [REPORT] Tăng trưởng người dùng
+-- [DEBUG] Vấn đề hiệu suất
+-- [ADMIN] Dọn dẹp dữ liệu
+-- [TEMP] Query thử nghiệm
+```
+
+### Export Query Quan Trọng
+
+Đối với query bạn muốn giữ vĩnh viễn:
+
+1. Tìm query trong lịch sử
+2. Sao chép vào file SQL
+3. Lưu trong version control
+
+## Phím Tắt
+
+| Hành động | Phím tắt |
+|--------|----------|
+| Mở lịch sử | `Cmd+Y` |
+| Tìm kiếm lịch sử | `Cmd+F` (khi lịch sử đang mở) |
+| Tải query đã chọn | `Enter` hoặc double-click |
+| Sao chép query | `Cmd+C` |
+
+## Khắc Phục Sự Cố
+
+### Lịch Sử Không Lưu
+
+1. Kiểm tra dung lượng ổ đĩa - lịch sử cần không gian lưu trữ
+2. Xác minh TablePro có quyền ghi
+3. Kiểm tra xem lịch sử có bị tắt trong cài đặt không
+
+### Tìm Kiếm Lịch Sử Chậm
+
+Đối với lịch sử rất lớn:
+
+1. Giảm **Max Entries** trong cài đặt
+2. Xóa lịch sử cũ
+3. Sử dụng từ khóa tìm kiếm cụ thể hơn
+
+### Thiếu Query Cũ
+
+Kiểm tra cài đặt **Max Days** - query cũ hơn giới hạn này tự động bị xóa.
+
+Để ngăn xóa tự động:
+1. Mở **Settings** > **History**
+2. Đặt **Max Days** thành 0 (không giới hạn)
+
+### Entry Trùng Lặp
+
+Mỗi lần thực thi tạo một entry lịch sử mới, ngay cả với query giống hệt nhau. Điều này là có chủ ý để theo dõi khi query được chạy.
+
+## Các Bước Tiếp Theo
+
+<CardGroup cols={2}>
+  <Card title="Trình soạn thảo SQL" icon="code" href="/vi/features/sql-editor">
+    Viết và thực thi query
+  </Card>
+  <Card title="Bảng Dữ liệu" icon="table" href="/vi/features/data-grid">
+    Xem kết quả query
+  </Card>
+  <Card title="Cài đặt" icon="gear" href="/vi/customization/settings">
+    Cấu hình tùy chọn lịch sử
+  </Card>
+  <Card title="Phím tắt" icon="keyboard" href="/vi/features/keyboard-shortcuts">
+    Học tất cả phím tắt
+  </Card>
+</CardGroup>

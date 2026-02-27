@@ -1,0 +1,499 @@
+---
+title: Nhập & Xuất
+description: Import dữ liệu từ file SQL và export dữ liệu theo nhiều định dạng
+---
+
+# Nhập & Xuất
+
+TablePro hỗ trợ export dữ liệu theo nhiều định dạng (CSV, JSON, SQL và Excel XLSX) để sao lưu, di chuyển hoặc phân tích, cũng như import dữ liệu từ file SQL.
+
+## Export Dữ Liệu
+
+### Tùy Chọn Export
+
+Export dữ liệu từ kết quả query hoặc bảng:
+
+1. Chạy query hoặc mở bảng
+2. Click nút **Export** trong toolbar
+3. Chọn định dạng export
+4. Chọn bảng cần export (dạng tree view, có thể chọn nhiều bảng)
+5. Cấu hình tùy chọn cho từng định dạng
+6. Click **Export**
+
+{/* Screenshot: Export dialog with format options */}
+<Frame caption="Hộp thoại export">
+  <img
+    className="block dark:hidden"
+    src="/images/export-dialog.png"
+    alt="Export dialog"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/export-dialog-dark.png"
+    alt="Export dialog"
+  />
+</Frame>
+
+### Định Dạng Export
+
+<Tabs>
+  <Tab title="CSV">
+    **Comma-Separated Values**
+
+    Tốt nhất cho:
+    - Excel và ứng dụng bảng tính
+    - Công cụ phân tích dữ liệu
+    - Trao đổi dữ liệu đơn giản
+
+    Tùy chọn:
+    | Tùy chọn | Mô tả | Mặc định |
+    |--------|-------------|---------|
+    | Header | Bao gồm tên cột ở hàng đầu | Có |
+    | Delimiter | Ký tự phân tách giá trị: dấu phẩy, chấm phẩy, tab, pipe | Dấu phẩy |
+    | Quote handling | Cách trích dẫn chuỗi: always, as needed, never | As needed |
+    | Line break | Định dạng xuống dòng: LF, CRLF, CR | LF |
+    | Decimal format | Dấu chấm hoặc dấu phẩy cho số thập phân | Dấu chấm |
+    | NULL as empty | Chuyển giá trị NULL thành chuỗi rỗng | Có |
+    | Convert line breaks | Chuyển ký tự xuống dòng trong giá trị thành khoảng trắng | Không |
+    | Formula sanitization | Ngăn chặn CSV injection | Có |
+
+    Ví dụ output:
+    ```csv
+    id,name,email,created_at
+    1,"John Doe",john@example.com,2024-01-15 10:30:00
+    2,"Jane Smith",jane@example.com,2024-01-16 14:45:00
+    ```
+
+    {/* Screenshot: Tùy chọn export CSV: delimiter, trích dẫn, xuống dòng */}
+    <Frame caption="Tùy chọn export CSV: delimiter, trích dẫn, xuống dòng">
+      <img
+        className="block dark:hidden"
+        src="/images/export-csv-options.png"
+        alt="Tùy chọn export CSV: delimiter, trích dẫn, xuống dòng"
+      />
+      <img
+        className="hidden dark:block"
+        src="/images/export-csv-options-dark.png"
+        alt="Tùy chọn export CSV: delimiter, trích dẫn, xuống dòng"
+      />
+    </Frame>
+  </Tab>
+  <Tab title="JSON">
+    **JavaScript Object Notation**
+
+    Tốt nhất cho:
+    - Ứng dụng web
+    - API
+    - NoSQL database
+    - Xử lý tự động
+
+    Tùy chọn:
+    | Tùy chọn | Mô tả | Mặc định |
+    |--------|-------------|---------|
+    | Pretty print | Định dạng với indent dễ đọc | Có |
+    | Include null values | Bao gồm các trường có giá trị NULL | Có |
+    | Preserve as strings | Giữ tất cả giá trị dạng chuỗi (hữu ích cho mã ZIP, số điện thoại) | Không |
+
+    <Note>
+    Dữ liệu luôn được export dạng mảng object (array of objects).
+    </Note>
+
+    Ví dụ output:
+    ```json
+    [
+      {
+        "id": 1,
+        "name": "John Doe",
+        "email": "john@example.com",
+        "created_at": "2024-01-15T10:30:00Z"
+      },
+      {
+        "id": 2,
+        "name": "Jane Smith",
+        "email": "jane@example.com",
+        "created_at": "2024-01-16T14:45:00Z"
+      }
+    ]
+    ```
+
+    {/* Screenshot: Tùy chọn export JSON */}
+    <Frame caption="Tùy chọn export JSON">
+      <img
+        className="block dark:hidden"
+        src="/images/export-json-options.png"
+        alt="Tùy chọn export JSON"
+      />
+      <img
+        className="hidden dark:block"
+        src="/images/export-json-options-dark.png"
+        alt="Tùy chọn export JSON"
+      />
+    </Frame>
+  </Tab>
+  <Tab title="SQL">
+    **SQL INSERT Statements**
+
+    Tốt nhất cho:
+    - Di chuyển database
+    - Sao lưu và khôi phục
+    - Seeding database
+
+    Tùy chọn chung:
+    | Tùy chọn | Mô tả | Mặc định |
+    |--------|-------------|---------|
+    | Compress with gzip | Nén file output bằng gzip | Không |
+    | Batch size | Số hàng INSERT mỗi câu lệnh | 500 |
+
+    Tùy chọn cho từng bảng (khi export nhiều bảng):
+    | Tùy chọn | Mô tả | Mặc định |
+    |--------|-------------|---------|
+    | Include structure | Bao gồm câu lệnh CREATE TABLE | Có |
+    | Include DROP | Bao gồm DROP TABLE IF EXISTS | Có |
+    | Include data | Bao gồm dữ liệu (INSERT statements) | Có |
+
+    Ví dụ output:
+    ```sql
+    DROP TABLE IF EXISTS `users`;
+    CREATE TABLE `users` ( ... );
+
+    INSERT INTO `users` (id, name, email, created_at) VALUES
+    (1, 'John Doe', 'john@example.com', '2024-01-15 10:30:00'),
+    (2, 'Jane Smith', 'jane@example.com', '2024-01-16 14:45:00');
+    ```
+
+    {/* Screenshot: Tùy chọn export SQL: cấu trúc, dữ liệu, batch size */}
+    <Frame caption="Tùy chọn export SQL: cấu trúc, dữ liệu, batch size">
+      <img
+        className="block dark:hidden"
+        src="/images/export-sql-options.png"
+        alt="Tùy chọn export SQL: cấu trúc, dữ liệu, batch size"
+      />
+      <img
+        className="hidden dark:block"
+        src="/images/export-sql-options-dark.png"
+        alt="Tùy chọn export SQL: cấu trúc, dữ liệu, batch size"
+      />
+    </Frame>
+  </Tab>
+  <Tab title="XLSX">
+    **Bảng tính Excel**
+
+    Tốt nhất cho:
+    - Chia sẻ dữ liệu với người dùng không kỹ thuật
+    - Excel và ứng dụng bảng tính
+    - Báo cáo và phân tích kinh doanh
+
+    Tùy chọn:
+    | Tùy chọn | Mô tả | Mặc định |
+    |--------|-------------|---------|
+    | Include headers | Tên cột ở hàng đầu (in đậm) | Có |
+    | NULL as empty | Chuyển giá trị NULL thành ô trống | Có |
+
+    Tính năng:
+    - **Export nhiều sheet**: Khi export nhiều bảng, mỗi bảng trở thành một worksheet riêng
+    - **Nhận diện số**: Số được lưu dạng numeric cell (không phải text) để Excel định dạng đúng
+    - **Shared strings**: Loại bỏ chuỗi trùng lặp để giảm kích thước file
+    - **Header in đậm**: Hàng đầu tự động in đậm khi bao gồm header
+    - **Hỗ trợ dataset lớn**: Tối ưu cho 175K+ hàng sử dụng Data buffer streaming và lắp ráp file trên background thread
+    - **Không phụ thuộc**: Sử dụng OOXML writer thuần Swift -- không cần thư viện bên ngoài
+
+    {/* Screenshot: Tùy chọn export Excel */}
+    <Frame caption="Tùy chọn export Excel">
+      <img
+        className="block dark:hidden"
+        src="/images/export-xlsx-options.png"
+        alt="Tùy chọn export Excel"
+      />
+      <img
+        className="hidden dark:block"
+        src="/images/export-xlsx-options-dark.png"
+        alt="Tùy chọn export Excel"
+      />
+    </Frame>
+  </Tab>
+</Tabs>
+
+### Export Kết Quả Query
+
+Để export kết quả của query cụ thể:
+
+1. Viết và thực thi query
+2. Click **Export** khi kết quả được hiển thị
+3. Chỉ kết quả hiển thị được export
+
+<Tip>
+Đối với export lớn, sử dụng phân trang hoặc LIMIT trong query để kiểm soát kích thước export.
+</Tip>
+
+### Export Toàn Bộ Bảng
+
+Để export tất cả dữ liệu từ bảng:
+
+1. Click vào bảng trong sidebar
+2. Click **Export** mà không áp dụng bộ lọc nào
+3. Hoặc chạy `SELECT * FROM table_name` và export
+
+<Tip>
+Bạn có thể export nhiều bảng cùng lúc bằng cách chọn chúng trong tree view của hộp thoại export. Mỗi bảng có thể có tùy chọn riêng cho cấu trúc (DDL) và dữ liệu khi export dạng SQL.
+</Tip>
+
+### Export Chỉ Cấu Trúc
+
+Để export chỉ cấu trúc bảng (DDL):
+
+1. Mở tab **Structure** của bảng
+2. Đi đến tab con **DDL**
+3. Sao chép câu lệnh CREATE TABLE
+
+Hoặc sử dụng lệnh cụ thể theo database:
+
+```sql
+-- MySQL
+SHOW CREATE TABLE users;
+
+-- PostgreSQL
+pg_dump -s -t users database_name
+```
+
+### Tiến Trình Export
+
+Khi export bảng lớn hoặc nhiều bảng, thanh tiến trình hiển thị:
+
+- Số hàng đã xử lý / tổng số hàng
+- Bảng đang được export
+
+## Dán từ Clipboard (CSV/TSV)
+
+Bạn có thể dán dữ liệu dạng bảng trực tiếp từ clipboard vào bảng dữ liệu. TablePro tự động phát hiện nội dung clipboard là định dạng CSV (phân tách bằng dấu phẩy) hay TSV (phân tách bằng tab).
+
+**Cách hoạt động:**
+
+1. Sao chép dữ liệu từ bảng tính, trình soạn thảo văn bản hoặc nguồn khác
+2. Chọn một hàng trong bảng dữ liệu
+3. Nhấn `Cmd+V` để dán
+
+TablePro sử dụng trình phân tích CSV tuân thủ RFC 4180, hỗ trợ:
+
+- Trường được trích dẫn có dấu phẩy bên trong (ví dụ: `"New York, NY"`)
+- Dấu ngoặc kép thoát (ví dụ: `"He said ""hello"""`)
+- Giá trị nhiều dòng trong trường được trích dẫn
+- Tự động phát hiện hàng tiêu đề (bỏ qua nếu tên cột khớp)
+
+<Tip>
+Định dạng được tự động phát hiện dựa trên nội dung: nếu dữ liệu chứa nhiều tab hơn dấu phẩy, nó được phân tích dạng TSV; ngược lại là CSV. Dữ liệu sao chép từ Excel hoặc Google Sheets thường là dạng tab-separated.
+</Tip>
+
+## Import Dữ Liệu
+
+TablePro hỗ trợ import file SQL (`.sql` và `.sql.gz`). Đây là cách nhanh nhất để khôi phục database dump, chạy migration script hoặc seeding dữ liệu.
+
+### Quy Trình Import
+
+<Steps>
+  <Step title="Mở hộp thoại Import">
+    Click **File** > **Import** hoặc kéo thả file `.sql` / `.sql.gz` vào cửa sổ ứng dụng
+  </Step>
+  <Step title="Chọn file SQL">
+    Chọn file `.sql` hoặc `.sql.gz` từ máy tính. File `.gz` sẽ được tự động giải nén.
+  </Step>
+  <Step title="Cấu hình tùy chọn">
+    Đặt encoding, transaction và các tùy chọn khác (xem bảng bên dưới)
+  </Step>
+  <Step title="Xem trước mã SQL">
+    Xem mã SQL trong file, cùng với số lượng câu lệnh và kích thước file
+  </Step>
+  <Step title="Import">
+    Click **Import** và theo dõi tiến trình thực thi
+  </Step>
+</Steps>
+
+{/* Screenshot: Import dialog with SQL preview */}
+<Frame caption="Hộp thoại import SQL">
+  <img
+    className="block dark:hidden"
+    src="/images/import-dialog.png"
+    alt="Import dialog"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/import-dialog-dark.png"
+    alt="Import dialog"
+  />
+</Frame>
+
+### Tùy Chọn Import
+
+| Tùy chọn | Mô tả | Mặc định |
+|--------|-------------|---------|
+| Encoding | Encoding của file SQL: UTF-8, UTF-16, Latin1, ASCII | UTF-8 |
+| Wrap in transaction | Bao toàn bộ import trong một transaction | Có |
+| Disable foreign key checks | Tạm tắt kiểm tra foreign key trong quá trình import | Có |
+
+<Note>
+Khi bật "Wrap in transaction", nếu có lỗi xảy ra, tất cả thay đổi sẽ được rollback tự động, giữ database ở trạng thái nhất quán.
+</Note>
+
+### Xem Trước SQL
+
+Trước khi import, hộp thoại hiển thị:
+
+- **Mã SQL**: Nội dung file SQL để bạn kiểm tra trước khi thực thi
+- **Số câu lệnh**: Tổng số câu lệnh SQL trong file
+- **Kích thước file**: Dung lượng file gốc
+
+<Tip>
+Luôn kiểm tra mã SQL trước khi import, đặc biệt với các file dump từ nguồn bên ngoài, để đảm bảo không có câu lệnh gây hại (ví dụ: DROP DATABASE).
+</Tip>
+
+### Tiến Trình và Lỗi Import
+
+#### Tiến Trình
+
+Khi import đang chạy, thanh tiến trình hiển thị:
+
+- Số câu lệnh đã xử lý / tổng số câu lệnh
+- Câu lệnh đang thực thi (rút gọn còn 50 ký tự)
+- Thanh tiến trình phần trăm
+
+{/* Screenshot: Import progress bar */}
+<Frame caption="Tiến trình import">
+  <img
+    className="block dark:hidden"
+    src="/images/import-progress.png"
+    alt="Import progress"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/import-progress-dark.png"
+    alt="Import progress"
+  />
+</Frame>
+
+#### Xử Lý Lỗi
+
+Import luôn dừng ngay khi gặp lỗi đầu tiên. Nếu "Wrap in transaction" được bật, tất cả thay đổi sẽ được rollback.
+
+Khi lỗi xảy ra, thông tin hiển thị bao gồm:
+
+- **Câu lệnh thất bại**: Nội dung câu lệnh SQL gây lỗi
+- **Số dòng**: Vị trí của câu lệnh trong file
+- **Thông báo lỗi**: Lỗi trả về từ database
+
+<Warning>
+Import không có tùy chọn "bỏ qua lỗi". Nếu gặp lỗi, bạn cần sửa file SQL và import lại. Bật "Wrap in transaction" để đảm bảo database không bị ở trạng thái nửa chừng.
+</Warning>
+
+## Nén
+
+### Export Nén
+
+Nén gzip chỉ khả dụng cho định dạng **SQL**:
+
+- Bật tùy chọn "Compress with gzip" trong hộp thoại export SQL
+- File output nhận phần mở rộng `.sql.gz`
+- Giảm đáng kể kích thước file cho export lớn
+
+<Note>
+Nén gzip không khả dụng cho các định dạng CSV, JSON và XLSX.
+</Note>
+
+### Import Nén
+
+- TablePro tự động phát hiện file `.gz`
+- Giải nén tức thì trong quá trình import
+- Không cần giải nén thủ công
+
+## Thực Hành Tốt Nhất
+
+### Export
+
+1. **Lọc trước**: Chỉ export những gì bạn cần
+   ```sql
+   SELECT * FROM orders WHERE status = 'completed' AND year(created_at) = 2024;
+   ```
+
+2. **Cân nhắc kích thước file**: Sử dụng LIMIT cho bảng rất lớn
+   ```sql
+   SELECT * FROM logs ORDER BY created_at DESC LIMIT 100000;
+   ```
+
+3. **Chọn định dạng phù hợp**:
+   - CSV cho công cụ phân tích dữ liệu
+   - JSON cho API/web
+   - SQL cho di chuyển database
+   - XLSX cho chia sẻ với người dùng không kỹ thuật qua Excel
+
+### Import
+
+1. **Sao lưu trước**: Luôn sao lưu trước khi import file SQL lớn
+
+2. **Kiểm tra với mẫu**: Import vào bảng test trước
+   ```sql
+   -- Tạo bảng test
+   CREATE TABLE users_import_test LIKE users;
+   -- Import mẫu vào bảng test
+   ```
+
+3. **Bật transaction**: Luôn bật "Wrap in transaction" cho import quan trọng để có thể rollback nếu gặp lỗi
+
+4. **Bật tắt foreign key checks**: Khi import database dump có nhiều bảng liên quan, bật "Disable foreign key checks" để tránh lỗi thứ tự import
+
+5. **Kiểm tra encoding**: Đảm bảo encoding file SQL khớp với nội dung thực tế, đặc biệt với file chứa ký tự tiếng Việt hoặc Unicode
+
+## Khắc Phục Sự Cố
+
+### Vấn Đề Export
+
+**"File too large"**
+- Sử dụng LIMIT trong query
+- Export theo batch
+- Chọn định dạng nhỏ gọn hơn (CSV vs JSON)
+
+**"Character encoding issues"**
+- Xác minh encoding database
+- Export với encoding UTF-8
+- Kiểm tra ký tự đặc biệt
+
+### Vấn Đề Import
+
+**"Syntax error" hoặc lỗi SQL**
+- Kiểm tra file SQL có đúng cú pháp không
+- Xác minh file được tạo cho đúng loại database (MySQL vs PostgreSQL vs SQLite)
+- Kiểm tra encoding file có khớp với tùy chọn đã chọn
+
+**"Foreign key constraint"**
+- Bật tùy chọn "Disable foreign key checks" trong hộp thoại import
+- Hoặc đảm bảo bảng cha đã tồn tại trước khi import
+
+**"Duplicate key error"**
+- File SQL chứa dữ liệu trùng với dữ liệu đã có trong database
+- Thêm `DROP TABLE IF EXISTS` vào file SQL trước câu lệnh CREATE TABLE
+- Hoặc xóa dữ liệu cũ trước khi import
+
+**Import bị dừng giữa chừng**
+- Bật "Wrap in transaction" để tự động rollback khi có lỗi
+- Kiểm tra thông tin lỗi (câu lệnh, số dòng) để sửa file SQL
+
+## Phím Tắt
+
+| Hành động | Phím tắt |
+|--------|----------|
+| Export | `Cmd+Shift+E` |
+| Import | `Cmd+Shift+I` |
+
+## Các Bước Tiếp Theo
+
+<CardGroup cols={2}>
+  <Card title="Bảng Dữ liệu" icon="table" href="/vi/features/data-grid">
+    Xem dữ liệu trước khi export
+  </Card>
+  <Card title="Trình soạn thảo SQL" icon="code" href="/vi/features/sql-editor">
+    Lọc dữ liệu với query
+  </Card>
+  <Card title="Cấu trúc Bảng" icon="table-columns" href="/vi/features/table-structure">
+    Export schema DDL
+  </Card>
+  <Card title="Lịch sử Truy vấn" icon="clock-rotate-left" href="/vi/features/query-history">
+    Chạy lại query import
+  </Card>
+</CardGroup>

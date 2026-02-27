@@ -1,0 +1,96 @@
+---
+title: Introduction
+description: A fast, native macOS database client built with SwiftUI and AppKit
+---
+
+# Welcome to TablePro
+
+TablePro is a native macOS database client designed to be fast and lightweight. Built entirely with SwiftUI and AppKit, it prioritizes Apple-native frameworks and system libraries for optimal performance and a seamless macOS experience.
+
+{/* Screenshot: Main application window showing the SQL editor, sidebar with connections, and data grid */}
+<Frame caption="TablePro - Native macOS Database Client">
+  <img 
+    className="block dark:hidden" 
+    src="/images/hero.png" 
+    alt="TablePro main interface" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/hero-dark.png" 
+    alt="TablePro main interface" 
+  />
+</Frame>
+
+## Why TablePro?
+
+<CardGroup cols={2}>
+  <Card title="Native Performance" icon="bolt">
+    Built with Swift and native Apple frameworks, TablePro delivers the responsiveness you expect from a macOS application.
+  </Card>
+  <Card title="Multiple Databases" icon="database">
+    Connect to MySQL, MariaDB, PostgreSQL, and SQLite databases with a unified, intuitive interface.
+  </Card>
+  <Card title="Smart Autocomplete" icon="wand-magic-sparkles">
+    Context-aware SQL autocomplete that understands your schema, tables, columns, and SQL syntax.
+  </Card>
+  <Card title="Secure Connections" icon="lock">
+    Full SSH tunnel support with password and private key authentication to securely access remote databases.
+  </Card>
+</CardGroup>
+
+## Key Features
+
+### SQL Editor
+A powerful SQL editor with syntax highlighting, line numbers, and intelligent autocomplete that adapts to your database schema.
+
+<Tip>
+Use `Cmd+Enter` to execute the current query or selected text.
+</Tip>
+
+### Data Grid
+View and edit your data in a high-performance, spreadsheet-like grid with support for inline editing, sorting, and filtering.
+
+### Table Structure
+Inspect and modify table structures, including columns, indexes, and foreign keys, all from a visual interface.
+
+### Import & Export
+Import data from CSV, JSON, and SQL files. Export your data in multiple formats for backup or migration.
+
+### Query History
+Access your complete query history with full-text search. Quickly re-run or modify previous queries.
+
+## Supported Databases
+
+| Database | Status | Default Port |
+|----------|--------|--------------|
+| MySQL | Fully Supported | 3306 |
+| MariaDB | Fully Supported | 3306 |
+| PostgreSQL | Fully Supported | 5432 |
+| SQLite | Fully Supported | N/A (file-based) |
+
+## System Requirements
+
+- **macOS**: 14.0 (Sonoma) or later
+- **Architecture**: Apple Silicon (arm64) or Intel (x86_64)
+- **Storage**: ~50 MB for the application
+
+## Getting Started
+
+Ready to dive in? Follow the [Quick Start Guide](/quickstart) to download TablePro and connect to your first database.
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get up and running in minutes with your first database connection.
+  </Card>
+  <Card title="Installation" icon="download" href="/installation">
+    Detailed installation instructions and system requirements.
+  </Card>
+</CardGroup>
+
+## Open Source
+
+TablePro is open source software. You can view the source code, report issues, and contribute on GitHub.
+
+<Card title="GitHub Repository" icon="github" href="https://github.com/datlechin/tablepro">
+  View source code, report issues, and contribute to TablePro.
+</Card>

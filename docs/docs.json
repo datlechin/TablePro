@@ -1,0 +1,238 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "aspen",
+  "name": "TablePro",
+  "colors": {
+    "primary": "#FFAA46",
+    "light": "#FFAA46",
+    "dark": "#FFAA46"
+  },
+  "fonts": {
+    "family": "Inter"
+  },
+  "favicon": "/favicon.png",
+  "api": {
+    "playground": {
+      "display": "interactive"
+    }
+  },
+  "navigation": {
+    "languages": [
+      {
+        "language": "en",
+        "tabs": [
+          {
+            "tab": "Documentation",
+            "groups": [
+              {
+                "group": "Getting Started",
+                "pages": ["index", "quickstart", "installation", "changelog"]
+              },
+              {
+                "group": "Database Connections",
+                "pages": [
+                  "databases/overview",
+                  "databases/mysql",
+                  "databases/postgresql",
+                  "databases/sqlite",
+                  "databases/ssh-tunneling"
+                ]
+              },
+              {
+                "group": "Features",
+                "pages": [
+                  "features/sql-editor",
+                  "features/data-grid",
+                  "features/autocomplete",
+                  "features/table-structure",
+                  "features/table-operations",
+                  "features/filtering",
+                  "features/change-tracking",
+                  "features/tabs",
+                  "features/import-export",
+                  "features/query-history",
+                  "features/ai-chat",
+                  "features/keyboard-shortcuts"
+                ]
+              },
+              {
+                "group": "Customization",
+                "pages": [
+                  "customization/settings",
+                  "customization/appearance",
+                  "customization/editor-settings"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "API",
+            "groups": [
+              {
+                "group": "API reference",
+                "pages": ["api/overview"]
+              },
+              {
+                "group": "License",
+                "icon": "key",
+                "pages": ["api/activate", "api/validate", "api/deactivate"]
+              }
+            ]
+          },
+          {
+            "tab": "Development",
+            "groups": [
+              {
+                "group": "Contributing",
+                "pages": [
+                  "development/setup",
+                  "development/architecture",
+                  "development/code-style",
+                  "development/building"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "vi",
+        "tabs": [
+          {
+            "tab": "Tài liệu",
+            "groups": [
+              {
+                "group": "Bắt đầu",
+                "pages": [
+                  "vi/index",
+                  "vi/quickstart",
+                  "vi/installation",
+                  "vi/changelog"
+                ]
+              },
+              {
+                "group": "Kết nối cơ sở dữ liệu",
+                "pages": [
+                  "vi/databases/overview",
+                  "vi/databases/mysql",
+                  "vi/databases/postgresql",
+                  "vi/databases/sqlite",
+                  "vi/databases/ssh-tunneling"
+                ]
+              },
+              {
+                "group": "Tính năng",
+                "pages": [
+                  "vi/features/sql-editor",
+                  "vi/features/data-grid",
+                  "vi/features/autocomplete",
+                  "vi/features/table-structure",
+                  "vi/features/table-operations",
+                  "vi/features/filtering",
+                  "vi/features/change-tracking",
+                  "vi/features/tabs",
+                  "vi/features/import-export",
+                  "vi/features/query-history",
+                  "vi/features/ai-chat",
+                  "vi/features/keyboard-shortcuts"
+                ]
+              },
+              {
+                "group": "Tùy chỉnh",
+                "pages": [
+                  "vi/customization/settings",
+                  "vi/customization/appearance",
+                  "vi/customization/editor-settings"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "API",
+            "groups": [
+              {
+                "group": "Tham chiếu API",
+                "pages": ["vi/api/overview"]
+              },
+              {
+                "group": "Giấy phép",
+                "icon": "key",
+                "pages": [
+                  "vi/api/activate",
+                  "vi/api/validate",
+                  "vi/api/deactivate"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Phát triển",
+            "groups": [
+              {
+                "group": "Đóng góp",
+                "pages": [
+                  "vi/development/setup",
+                  "vi/development/architecture",
+                  "vi/development/code-style",
+                  "vi/development/building"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "global": {
+      "anchors": [
+        {
+          "anchor": "GitHub",
+          "href": "https://github.com/datlechin/tablepro",
+          "icon": "github"
+        },
+        {
+          "anchor": "Releases",
+          "href": "https://github.com/datlechin/tablepro/releases",
+          "icon": "download"
+        }
+      ]
+    }
+  },
+  "logo": {
+    "light": "/logo/logo.png",
+    "dark": "/logo/logo.png"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Support",
+        "href": "mailto:datlechin@gmail.com"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Download",
+      "href": "https://github.com/datlechin/tablepro/releases"
+    }
+  },
+  "contextual": {
+    "options": [
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "cursor",
+      "vscode"
+    ]
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/datlechin/tablepro"
+    }
+  },
+  "integrations": {
+    "ga4": {
+      "measurementId": "G-GQYNPKSK83"
+    }
+  }
+}

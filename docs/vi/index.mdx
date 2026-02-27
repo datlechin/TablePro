@@ -1,0 +1,96 @@
+---
+title: Giới thiệu
+description: Ứng dụng quản lý cơ sở dữ liệu macOS gốc, nhanh chóng, được xây dựng bằng SwiftUI và AppKit
+---
+
+# Chào mừng đến với TablePro
+
+TablePro là ứng dụng quản lý cơ sở dữ liệu macOS gốc được thiết kế để nhanh và nhẹ. Được xây dựng hoàn toàn bằng SwiftUI và AppKit, ứng dụng ưu tiên các framework gốc của Apple và thư viện hệ thống để đạt hiệu suất tối ưu và trải nghiệm macOS liền mạch.
+
+{/* Screenshot: Main application window showing the SQL editor, sidebar with connections, and data grid */}
+<Frame caption="TablePro - Ứng dụng Quản lý Cơ sở dữ liệu macOS Gốc">
+  <img
+    className="block dark:hidden"
+    src="/images/hero.png"
+    alt="Giao diện chính của TablePro"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/hero-dark.png"
+    alt="Giao diện chính của TablePro"
+  />
+</Frame>
+
+## Tại sao chọn TablePro?
+
+<CardGroup cols={2}>
+  <Card title="Hiệu suất Gốc" icon="bolt">
+    Được xây dựng với Swift và các framework gốc của Apple, TablePro mang lại khả năng phản hồi mà bạn mong đợi từ một ứng dụng macOS.
+  </Card>
+  <Card title="Nhiều Cơ sở dữ liệu" icon="database">
+    Kết nối với MySQL, MariaDB, PostgreSQL và SQLite với giao diện thống nhất, trực quan.
+  </Card>
+  <Card title="Tự động hoàn thành Thông minh" icon="wand-magic-sparkles">
+    Tự động hoàn thành SQL nhận biết ngữ cảnh, hiểu schema, bảng, cột và cú pháp SQL của bạn.
+  </Card>
+  <Card title="Kết nối Bảo mật" icon="lock">
+    Hỗ trợ đầy đủ SSH tunnel với xác thực mật khẩu và private key để truy cập an toàn cơ sở dữ liệu từ xa.
+  </Card>
+</CardGroup>
+
+## Tính năng chính
+
+### Trình soạn thảo SQL
+Trình soạn thảo SQL mạnh mẽ với tô sáng cú pháp, số dòng và tự động hoàn thành thông minh thích ứng với schema cơ sở dữ liệu của bạn.
+
+<Tip>
+Sử dụng `Cmd+Enter` để thực thi câu truy vấn hiện tại hoặc văn bản đã chọn.
+</Tip>
+
+### Bảng dữ liệu
+Xem và chỉnh sửa dữ liệu của bạn trong bảng hiệu suất cao, giống bảng tính với hỗ trợ chỉnh sửa nội tuyến, sắp xếp và lọc.
+
+### Cấu trúc bảng
+Kiểm tra và sửa đổi cấu trúc bảng, bao gồm cột, chỉ mục và khóa ngoại, tất cả từ giao diện trực quan.
+
+### Nhập & Xuất
+Nhập dữ liệu từ CSV, JSON và file SQL. Xuất dữ liệu của bạn ở nhiều định dạng để sao lưu hoặc di chuyển.
+
+### Lịch sử truy vấn
+Truy cập lịch sử truy vấn đầy đủ với tìm kiếm toàn văn. Nhanh chóng chạy lại hoặc sửa đổi các truy vấn trước đó.
+
+## Cơ sở dữ liệu được hỗ trợ
+
+| Cơ sở dữ liệu | Trạng thái | Cổng mặc định |
+|----------|--------|--------------|
+| MySQL | Hỗ trợ đầy đủ | 3306 |
+| MariaDB | Hỗ trợ đầy đủ | 3306 |
+| PostgreSQL | Hỗ trợ đầy đủ | 5432 |
+| SQLite | Hỗ trợ đầy đủ | Không áp dụng (dựa trên file) |
+
+## Yêu cầu hệ thống
+
+- **macOS**: 14.0 (Sonoma) trở lên
+- **Kiến trúc**: Apple Silicon (arm64) hoặc Intel (x86_64)
+- **Dung lượng**: ~50 MB cho ứng dụng
+
+## Bắt đầu
+
+Sẵn sàng để bắt đầu? Làm theo [Hướng dẫn Nhanh](/vi/quickstart) để tải TablePro và kết nối với cơ sở dữ liệu đầu tiên của bạn.
+
+<CardGroup cols={2}>
+  <Card title="Bắt đầu Nhanh" icon="rocket" href="/vi/quickstart">
+    Thiết lập và chạy trong vài phút với kết nối cơ sở dữ liệu đầu tiên của bạn.
+  </Card>
+  <Card title="Cài đặt" icon="download" href="/vi/installation">
+    Hướng dẫn cài đặt chi tiết và yêu cầu hệ thống.
+  </Card>
+</CardGroup>
+
+## Mã nguồn mở
+
+TablePro là phần mềm mã nguồn mở. Bạn có thể xem mã nguồn, báo cáo vấn đề và đóng góp trên GitHub.
+
+<Card title="Repository GitHub" icon="github" href="https://github.com/datlechin/tablepro">
+  Xem mã nguồn, báo cáo vấn đề và đóng góp cho TablePro.
+</Card>

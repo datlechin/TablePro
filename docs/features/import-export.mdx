@@ -1,0 +1,494 @@
+---
+title: Import & Export
+description: Import SQL files and export your data in various formats
+---
+
+# Import & Export
+
+TablePro supports importing SQL files into your database and exporting data in multiple formats (CSV, JSON, SQL, and Excel XLSX) for backup, migration, or analysis. You can also paste tabular data from your clipboard directly into the data grid.
+
+## Export Data
+
+### Export Options
+
+Export data from query results or tables:
+
+1. Run a query or open a table
+2. Click the **Export** button in the toolbar (or press `Cmd+Shift+E`)
+3. Choose your export format
+4. Select tables to export using the tree view
+5. Configure format-specific options
+6. Click **Export**
+
+{/* Screenshot: Export dialog with format options */}
+<Frame caption="Export dialog">
+  <img
+    className="block dark:hidden"
+    src="/images/export-dialog.png"
+    alt="Export dialog"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/export-dialog-dark.png"
+    alt="Export dialog"
+  />
+</Frame>
+
+### Export Formats
+
+<Tabs>
+  <Tab title="CSV">
+    **Comma-Separated Values**
+
+    Best for:
+    - Excel and spreadsheet applications
+    - Data analysis tools
+    - Simple data exchange
+
+    Options:
+    | Option | Description | Default |
+    |--------|-------------|---------|
+    | Header | Include column names as first row | Yes |
+    | Delimiter | Character separating values: comma, semicolon, tab, or pipe | Comma |
+    | Quote handling | When to quote values: always, as needed, or never | As needed |
+    | NULL handling | Convert NULL values to empty strings | Yes |
+    | Line breaks in data | Convert line breaks within values to spaces | No |
+    | Line break format | Line ending style: LF, CRLF, or CR | LF |
+    | Decimal format | Period or comma for decimal separator | Period |
+    | Formula sanitization | Prevent CSV injection attacks | Yes |
+
+    Example output:
+    ```csv
+    id,name,email,created_at
+    1,"John Doe",john@example.com,2024-01-15 10:30:00
+    2,"Jane Smith",jane@example.com,2024-01-16 14:45:00
+    ```
+
+    {/* Screenshot: CSV export options: delimiter, quoting, line breaks */}
+    <Frame caption="CSV export options: delimiter, quoting, line breaks">
+      <img
+        className="block dark:hidden"
+        src="/images/export-csv-options.png"
+        alt="CSV export options: delimiter, quoting, line breaks"
+      />
+      <img
+        className="hidden dark:block"
+        src="/images/export-csv-options-dark.png"
+        alt="CSV export options: delimiter, quoting, line breaks"
+      />
+    </Frame>
+  </Tab>
+  <Tab title="JSON">
+    **JavaScript Object Notation**
+
+    Best for:
+    - Web applications
+    - APIs
+    - NoSQL databases
+    - Programmatic processing
+
+    Data is exported as an array of objects.
+
+    Options:
+    | Option | Description | Default |
+    |--------|-------------|---------|
+    | Pretty print | Format with indentation | Yes |
+    | Include NULL values | Include keys with null values in output | Yes |
+    | Preserve as strings | Keep all values as strings (useful for ZIP codes, phone numbers) | No |
+
+    Example output:
+    ```json
+    [
+      {
+        "id": 1,
+        "name": "John Doe",
+        "email": "john@example.com",
+        "created_at": "2024-01-15T10:30:00Z"
+      },
+      {
+        "id": 2,
+        "name": "Jane Smith",
+        "email": "jane@example.com",
+        "created_at": "2024-01-16T14:45:00Z"
+      }
+    ]
+    ```
+
+    {/* Screenshot: JSON export options */}
+    <Frame caption="JSON export options">
+      <img
+        className="block dark:hidden"
+        src="/images/export-json-options.png"
+        alt="JSON export options"
+      />
+      <img
+        className="hidden dark:block"
+        src="/images/export-json-options-dark.png"
+        alt="JSON export options"
+      />
+    </Frame>
+  </Tab>
+  <Tab title="SQL">
+    **SQL INSERT Statements**
+
+    Best for:
+    - Database migration
+    - Backup and restore
+    - Seeding databases
+
+    Global options:
+    | Option | Description | Default |
+    |--------|-------------|---------|
+    | Compress with gzip | Save as `.sql.gz` to reduce file size | No |
+    | Batch size | Number of rows per INSERT statement | 500 |
+
+    Per-table options (configurable individually when exporting multiple tables):
+    | Option | Description | Default |
+    |--------|-------------|---------|
+    | Include structure | Include CREATE TABLE statement | Yes |
+    | Include DROP | Include DROP TABLE IF EXISTS before CREATE | Yes |
+    | Include data | Include INSERT statements with row data | Yes |
+
+    Example output:
+    ```sql
+    DROP TABLE IF EXISTS `users`;
+    CREATE TABLE `users` ( ... );
+
+    INSERT INTO `users` (id, name, email, created_at) VALUES
+    (1, 'John Doe', 'john@example.com', '2024-01-15 10:30:00'),
+    (2, 'Jane Smith', 'jane@example.com', '2024-01-16 14:45:00');
+    ```
+
+    {/* Screenshot: SQL export options: structure, data, batch size */}
+    <Frame caption="SQL export options: structure, data, batch size">
+      <img
+        className="block dark:hidden"
+        src="/images/export-sql-options.png"
+        alt="SQL export options: structure, data, batch size"
+      />
+      <img
+        className="hidden dark:block"
+        src="/images/export-sql-options-dark.png"
+        alt="SQL export options: structure, data, batch size"
+      />
+    </Frame>
+  </Tab>
+  <Tab title="XLSX">
+    **Excel Spreadsheet**
+
+    Best for:
+    - Sharing data with non-technical users
+    - Excel and spreadsheet applications
+    - Business reports and analysis
+
+    Options:
+    | Option | Description | Default |
+    |--------|-------------|---------|
+    | Include headers | Column names in first row (bold) | Yes |
+    | NULL as empty | Convert NULL values to empty cells | Yes |
+
+    Features:
+    - **Multi-sheet export**: When exporting multiple tables, each table becomes a separate worksheet
+    - **Numeric detection**: Numbers are stored as numeric cells (not text) for proper Excel formatting
+    - **Shared strings**: String deduplication for efficient file size
+    - **Bold headers**: First row is automatically bolded when headers are included
+    - **Large dataset support**: Optimized for 175K+ rows using streaming Data buffers and background file assembly
+    - **No dependencies**: Uses a pure-Swift OOXML writer -- no external libraries required
+
+    {/* Screenshot: Excel export options */}
+    <Frame caption="Excel export options">
+      <img
+        className="block dark:hidden"
+        src="/images/export-xlsx-options.png"
+        alt="Excel export options"
+      />
+      <img
+        className="hidden dark:block"
+        src="/images/export-xlsx-options-dark.png"
+        alt="Excel export options"
+      />
+    </Frame>
+  </Tab>
+</Tabs>
+
+### Exporting Query Results
+
+To export the results of a specific query:
+
+1. Write and execute your query
+2. Click **Export** while results are displayed
+3. Only the displayed results are exported
+
+<Tip>
+For large exports, use pagination or LIMIT in your query to control the size of the export.
+</Tip>
+
+### Exporting Entire Tables
+
+To export all data from a table:
+
+1. Click on the table in the sidebar
+2. Click **Export** without applying any filters
+3. Or run `SELECT * FROM table_name` and export
+
+<Tip>
+You can export multiple tables at once by selecting them in the export dialog's tree view. When exporting as SQL, each table can have individual options for including structure (DDL), DROP statements, and data.
+</Tip>
+
+### Exporting Structure Only
+
+To export just the table structure (DDL):
+
+1. Open the table's **Structure** tab
+2. Go to the **DDL** sub-tab
+3. Copy the CREATE TABLE statement
+
+Or use database-specific commands:
+
+```sql
+-- MySQL
+SHOW CREATE TABLE users;
+
+-- PostgreSQL
+pg_dump -s -t users database_name
+```
+
+### Export Progress
+
+When exporting large datasets, a progress indicator shows:
+
+- **Rows processed** out of total rows
+- **Current table** being exported (for multi-table exports)
+
+## Clipboard Paste (CSV/TSV)
+
+You can paste tabular data directly from your clipboard into the data grid. TablePro automatically detects whether the clipboard content is CSV (comma-separated) or TSV (tab-separated) format.
+
+**How it works:**
+
+1. Copy data from a spreadsheet, text editor, or other source
+2. Select a row in the data grid
+3. Press `Cmd+V` to paste
+
+TablePro uses an RFC 4180-compliant CSV parser that handles:
+
+- Quoted fields with commas inside (e.g., `"New York, NY"`)
+- Escaped double quotes (e.g., `"He said ""hello"""`)
+- Multi-line values within quoted fields
+- Automatic header row detection (skips if column names match)
+
+<Tip>
+The format is auto-detected based on content: if the data contains more tabs than commas, it's parsed as TSV; otherwise as CSV. Data copied from Excel or Google Sheets is typically tab-separated.
+</Tip>
+
+## Import Data
+
+TablePro supports importing **SQL files** (`.sql` and `.sql.gz`). SQL import executes statements directly against your database, making it ideal for restoring backups, running migrations, or seeding data.
+
+### Import Workflow
+
+<Steps>
+  <Step title="Open Import Dialog">
+    Click **File** > **Import** (or press `Cmd+Shift+I`). You can also drag and drop a `.sql` or `.sql.gz` file onto the application.
+  </Step>
+  <Step title="Select SQL File">
+    Choose a `.sql` or `.sql.gz` file from your filesystem.
+  </Step>
+  <Step title="Configure Options">
+    Set encoding, transaction wrapping, and foreign key check options.
+  </Step>
+  <Step title="Preview SQL">
+    Review the SQL code preview, statement count, and file size before importing.
+  </Step>
+  <Step title="Import">
+    Click **Import** to execute the statements and monitor progress.
+  </Step>
+</Steps>
+
+{/* Screenshot: Import dialog with SQL preview */}
+<Frame caption="Import dialog with SQL file preview">
+  <img
+    className="block dark:hidden"
+    src="/images/import-dialog.png"
+    alt="Import dialog"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/import-dialog-dark.png"
+    alt="Import dialog"
+  />
+</Frame>
+
+### Import Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| Encoding | File encoding: UTF-8, UTF-16, Latin1, or ASCII | UTF-8 |
+| Wrap in transaction | Execute all statements within a single transaction | Yes |
+| Disable foreign key checks | Temporarily disable FK constraints during import | Yes |
+
+<Tip>
+Wrapping the import in a transaction ensures that if any statement fails, all changes are rolled back, leaving your database in a consistent state.
+</Tip>
+
+### SQL Preview
+
+Before running the import, the dialog shows:
+
+- **SQL code preview** of the file contents
+- **Statement count** -- the total number of SQL statements detected
+- **File size** of the selected file
+
+This lets you verify the file contains the expected SQL before executing it.
+
+## Progress and Errors
+
+### Import Progress
+
+During import, a progress indicator shows:
+
+- **Statements processed** out of total statements
+- **Current statement** being executed (truncated to 50 characters)
+- **Progress bar** showing overall completion
+
+{/* Screenshot: Import progress bar */}
+<Frame caption="Import progress">
+  <img
+    className="block dark:hidden"
+    src="/images/import-progress.png"
+    alt="Import progress"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/import-progress-dark.png"
+    alt="Import progress"
+  />
+</Frame>
+
+### Error Handling
+
+Import stops on the first error encountered. If the import is wrapped in a transaction, all changes are rolled back automatically.
+
+When an error occurs, TablePro displays:
+
+- **Failed statement** -- the SQL statement that caused the error
+- **Line number** -- where the statement appears in the file
+- **Error message** -- the error returned by the database
+
+<Warning>
+There is no "skip errors" mode. If a statement fails, the import halts immediately. Use the "Wrap in transaction" option to ensure partial imports are rolled back cleanly.
+</Warning>
+
+## Compression
+
+### Compressed Export
+
+Gzip compression is available for **SQL export only**:
+
+- Enable the "Compress with gzip" option in the SQL export settings
+- The output file is saved with a `.sql.gz` extension
+- Significantly reduces file size for large SQL dumps
+
+<Note>
+Gzip compression is not available for CSV, JSON, or XLSX exports.
+</Note>
+
+### Compressed Import
+
+- TablePro automatically detects `.sql.gz` files during import
+- Files are decompressed on-the-fly -- no manual decompression needed
+- Works identically to importing a regular `.sql` file
+
+## Best Practices
+
+### Exporting
+
+1. **Filter first**: Export only what you need
+   ```sql
+   SELECT * FROM orders WHERE status = 'completed' AND year(created_at) = 2024;
+   ```
+
+2. **Consider file size**: Use LIMIT for very large tables
+   ```sql
+   SELECT * FROM logs ORDER BY created_at DESC LIMIT 100000;
+   ```
+
+3. **Choose appropriate format**:
+   - CSV for data analysis tools
+   - JSON for APIs/web
+   - SQL for database migration
+   - XLSX for sharing with non-technical users in Excel
+
+4. **Use gzip for large SQL exports**: Enable compression to reduce file size significantly
+
+### Importing
+
+1. **Backup first**: Always backup your database before running SQL imports
+
+2. **Test with a small file first**: Verify your import settings work correctly on a subset before running a large import
+
+3. **Use transactions**: Keep "Wrap in transaction" enabled so failed imports are automatically rolled back
+
+4. **Disable foreign key checks**: When importing dumps that reference tables in a specific order, keep "Disable foreign key checks" enabled to avoid constraint errors
+
+5. **Check encoding**: Ensure the encoding setting matches your SQL file's actual encoding to avoid character corruption
+
+## Troubleshooting
+
+### Export Issues
+
+**"File too large"**
+- Use LIMIT in your query
+- Export in batches
+- Enable gzip compression for SQL exports
+- Choose a more compact format (CSV vs JSON)
+
+**"Character encoding issues"**
+- Verify database encoding
+- Export with UTF-8 encoding
+- Check for special characters
+
+### Import Issues
+
+**"Syntax error in SQL"**
+- Verify the SQL file was exported from a compatible database engine
+- Check that the file encoding matches the setting in the import dialog
+- Open the file in a text editor to inspect the problematic line
+
+**"Duplicate key error"**
+- The data contains duplicates for unique or primary key columns
+- Include DROP TABLE statements in your SQL export to start fresh
+- Or manually drop the target table before importing
+
+**"Foreign key constraint"**
+- Enable "Disable foreign key checks" in the import options
+- Or ensure parent tables are created before child tables in your SQL file
+
+**"Transaction rolled back"**
+- A statement in the file caused an error, and the entire import was rolled back
+- Check the error message and line number to identify the problematic statement
+- Fix the SQL file and re-import
+
+## Keyboard Shortcuts
+
+| Action | Shortcut |
+|--------|----------|
+| Export | `Cmd+Shift+E` |
+| Import | `Cmd+Shift+I` |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Data Grid" icon="table" href="/features/data-grid">
+    View data before exporting
+  </Card>
+  <Card title="SQL Editor" icon="code" href="/features/sql-editor">
+    Filter data with queries
+  </Card>
+  <Card title="Table Structure" icon="table-columns" href="/features/table-structure">
+    Export schema DDL
+  </Card>
+  <Card title="Query History" icon="clock-rotate-left" href="/features/query-history">
+    Re-run import queries
+  </Card>
+</CardGroup>

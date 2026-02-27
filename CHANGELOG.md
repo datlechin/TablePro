@@ -7,8 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Refactored sidebar table list to MVVM architecture with testable SidebarViewModel
+- Extracted TableRow and context menu into separate files (TableRowView.swift, SidebarContextMenu.swift)
+
+### Removed
+
+- Removed broken SidebarFocusRestorer (non-functional NSViewRepresentable focus hack)
+- Removed dead code: unused onTablePro callback, single-table toggle methods
+
 ### Fixed
 
+- Sidebar loses keyboard focus (arrow key navigation) after opening a second table tab
 - Sidebar active state flash and loss when clicking a table that opens in a new native window tab — removed the async revert; each window now re-syncs its sidebar via `NSWindow.didBecomeKeyNotification`, and programmatic syncs skip navigation via an early-return guard
 - Sidebar loses active state when opening a second table in a new native window tab — `handleTabSelectionChange` now calls `syncSidebarToCurrentTab()` so the new window's empty `localSelectedTables` is seeded from the restored tab
 - Sidebar now refreshes immediately after switching databases via Cmd+K — clears `session.tables` during the switch so `SidebarView.onChange` triggers `loadTables()` against the new database without requiring a manual refresh

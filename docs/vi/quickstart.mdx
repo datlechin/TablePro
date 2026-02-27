@@ -1,0 +1,183 @@
+---
+title: Bắt đầu nhanh
+description: Thiết lập và chạy TablePro trong vài phút
+---
+
+# Hướng dẫn Bắt đầu Nhanh
+
+Hướng dẫn này sẽ giúp bạn tải xuống TablePro, cài đặt và kết nối với cơ sở dữ liệu đầu tiên.
+
+## Bước 1: Tải xuống TablePro
+
+1. Truy cập [trang GitHub Releases](https://github.com/datlechin/tablepro/releases)
+2. Tải xuống file DMG cho Mac của bạn:
+   - **Apple Silicon** (M1/M2/M3/M4/M5): `TablePro-arm64.dmg`
+   - **Intel**: `TablePro-x86_64.dmg`
+
+<Note>
+Không chắc Mac của bạn dùng chip nào? Nhấp vào menu Apple và chọn **About This Mac**. Tìm "Chip" (Apple Silicon) hoặc "Processor" (Intel).
+</Note>
+
+## Bước 2: Cài đặt TablePro
+
+1. Mở file DMG đã tải xuống
+2. Kéo **TablePro** vào thư mục **Applications** của bạn
+3. Đẩy DMG ra
+4. Mở TablePro từ thư mục Applications
+
+{/* Screenshot: DMG installation window showing drag to Applications */}
+<Frame caption="Kéo TablePro vào Applications">
+  <img
+    className="block dark:hidden"
+    src="/images/install-dmg.png"
+    alt="Hộp thoại cài đặt"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/install-dmg-dark.png"
+    alt="Hộp thoại cài đặt"
+  />
+</Frame>
+
+<Warning>
+Khi khởi chạy lần đầu, macOS có thể hiển thị cảnh báo bảo mật vì TablePro không được ký với chứng chỉ Apple Developer. Để mở:
+1. Nhấp chuột phải (hoặc Control-click) vào TablePro trong Applications
+2. Chọn **Open** từ menu ngữ cảnh
+3. Nhấp **Open** trong hộp thoại xuất hiện
+
+Bạn chỉ cần làm điều này một lần.
+</Warning>
+
+## Bước 3: Tạo Kết nối Đầu tiên
+
+Khi TablePro khởi chạy, bạn sẽ thấy màn hình Chào mừng. Hãy tạo một kết nối cơ sở dữ liệu mới.
+
+### Đối với MySQL/MariaDB
+
+1. Nhấp **New Connection**
+2. Chọn **MySQL** hoặc **MariaDB** làm loại cơ sở dữ liệu
+3. Điền thông tin kết nối:
+   - **Name**: Tên thân thiện cho kết nối này (ví dụ: "Local MySQL")
+   - **Host**: `localhost` (hoặc địa chỉ máy chủ của bạn)
+   - **Port**: `3306` (mặc định)
+   - **Username**: Tên người dùng cơ sở dữ liệu của bạn (ví dụ: `root`)
+   - **Password**: Mật khẩu cơ sở dữ liệu của bạn
+   - **Database**: (Tùy chọn) Cơ sở dữ liệu mặc định để kết nối
+
+{/* Screenshot: Connection form with MySQL selected and fields filled in */}
+<Frame caption="Tạo kết nối MySQL">
+  <img
+    className="block dark:hidden"
+    src="/images/mysql-connection.png"
+    alt="Biểu mẫu kết nối MySQL"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/mysql-connection-dark.png"
+    alt="Biểu mẫu kết nối MySQL"
+  />
+</Frame>
+
+### Đối với PostgreSQL
+
+1. Nhấp **New Connection**
+2. Chọn **PostgreSQL** làm loại cơ sở dữ liệu
+3. Điền thông tin kết nối:
+   - **Name**: Tên thân thiện (ví dụ: "Local PostgreSQL")
+   - **Host**: `localhost` (hoặc địa chỉ máy chủ của bạn)
+   - **Port**: `5432` (mặc định)
+   - **Username**: Tên người dùng cơ sở dữ liệu của bạn (ví dụ: `postgres`)
+   - **Password**: Mật khẩu cơ sở dữ liệu của bạn
+   - **Database**: Tên cơ sở dữ liệu để kết nối
+
+### Đối với SQLite
+
+1. Nhấp **New Connection**
+2. Chọn **SQLite** làm loại cơ sở dữ liệu
+3. Nhấp **Browse** để chọn file cơ sở dữ liệu SQLite của bạn
+4. Đặt tên cho kết nối của bạn
+
+<Tip>
+Cơ sở dữ liệu SQLite không yêu cầu xác thực - chỉ cần chọn file `.sqlite` hoặc `.db` trên Mac của bạn.
+</Tip>
+
+## Bước 4: Kiểm tra và Kết nối
+
+1. Nhấp **Test Connection** để xác minh cài đặt của bạn
+2. Nếu thành công, bạn sẽ thấy dấu kiểm màu xanh
+3. Nhấp **Create** để lưu kết nối và kết nối
+
+{/* Screenshot: Successful connection test showing green checkmark */}
+<Frame caption="Kiểm tra kết nối thành công">
+  <img
+    className="block dark:hidden"
+    src="/images/connection-test.png"
+    alt="Kiểm tra kết nối thành công"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/connection-test-dark.png"
+    alt="Kiểm tra kết nối thành công"
+  />
+</Frame>
+
+## Bước 5: Khám phá Cơ sở dữ liệu của bạn
+
+Sau khi kết nối, bạn sẽ thấy giao diện chính với:
+
+- **Sidebar**: Cơ sở dữ liệu và bảng của bạn
+- **SQL Editor**: Viết và thực thi các truy vấn SQL
+- **Data Grid**: Xem và chỉnh sửa kết quả truy vấn
+
+{/* Screenshot: Main interface after connecting, showing sidebar with tables */}
+<Frame caption="Giao diện chính TablePro">
+  <img
+    className="block dark:hidden"
+    src="/images/main-interface.png"
+    alt="Giao diện chính"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/main-interface-dark.png"
+    alt="Giao diện chính"
+  />
+</Frame>
+
+### Thử Truy vấn Đầu tiên
+
+1. Nhấp vào một bảng trong sidebar để xem nội dung của nó
+2. Hoặc nhập một truy vấn trong trình soạn thảo SQL:
+
+```sql
+SELECT * FROM users LIMIT 10;
+```
+
+3. Nhấn `Cmd+Enter` để thực thi truy vấn
+4. Xem kết quả trong bảng dữ liệu bên dưới
+
+## Các bước tiếp theo
+
+Chúc mừng! Bạn đã thiết lập thành công TablePro. Đây là những gì cần khám phá tiếp theo:
+
+<CardGroup cols={2}>
+  <Card title="Kết nối Cơ sở dữ liệu" icon="plug" href="/vi/databases/overview">
+    Tìm hiểu thêm về quản lý và tổ chức các kết nối của bạn.
+  </Card>
+  <Card title="Trình soạn thảo SQL" icon="code" href="/vi/features/sql-editor">
+    Làm chủ trình soạn thảo SQL với tô sáng cú pháp và tự động hoàn thành.
+  </Card>
+  <Card title="SSH Tunneling" icon="lock" href="/vi/databases/ssh-tunneling">
+    Kết nối an toàn với cơ sở dữ liệu từ xa thông qua SSH.
+  </Card>
+  <Card title="Phím tắt" icon="keyboard" href="/vi/features/keyboard-shortcuts">
+    Tăng tốc quy trình làm việc của bạn với các phím tắt.
+  </Card>
+</CardGroup>
+
+## Cần Trợ giúp?
+
+Nếu bạn gặp bất kỳ vấn đề nào:
+
+- Kiểm tra [hướng dẫn Cài đặt](/vi/installation) để biết yêu cầu hệ thống chi tiết
+- Xem các hướng dẫn cụ thể cho từng cơ sở dữ liệu để khắc phục sự cố kết nối
+- [Mở một issue](https://github.com/datlechin/tablepro/issues) trên GitHub

@@ -1,0 +1,458 @@
+---
+title: Lọc Dữ Liệu
+description: Lọc và tìm kiếm dữ liệu của bạn với các công cụ trực quan mạnh mẽ
+---
+
+# Lọc Dữ Liệu
+
+TablePro cung cấp trình tạo filter trực quan, tìm kiếm nhanh và các preset đã lưu để giúp bạn tìm chính xác dữ liệu bạn cần. Xây dựng các mệnh đề WHERE phức tạp mà không cần viết SQL, hoặc chuyển sang chế độ raw SQL để kiểm soát hoàn toàn.
+
+{/* Screenshot: Filter panel with multiple active filters */}
+<Frame caption="Panel filter với các filter đang hoạt động">
+  <img
+    className="block dark:hidden"
+    src="/images/filter-panel.png"
+    alt="Filter Panel"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/filter-panel-dark.png"
+    alt="Filter Panel"
+  />
+</Frame>
+
+## Tổng Quan
+
+Hệ thống lọc bao gồm một số thành phần:
+
+- **Filter Panel** — trình tạo trực quan để xây dựng các điều kiện mệnh đề WHERE
+- **Quick Search** — tìm kiếm tức thì trên tất cả các cột hiển thị
+- **Filter Presets** — lưu và tải các cấu hình filter có tên
+- **SQL Preview** — xem mệnh đề WHERE được tạo trước khi áp dụng
+- **Per-Tab State** — mỗi tab nhớ các filter của riêng nó một cách độc lập
+
+## Filter Panel
+
+### Mở Filter Panel
+
+Bật/tắt hiển thị filter panel:
+
+- Click nút **Filter** trong thanh công cụ
+- Hoặc sử dụng phím tắt `Cmd+F`
+
+Panel xuất hiện phía trên khu vực data grid, đẩy data grid xuống. Trường quick search được tự động focus khi panel mở.
+
+### Xây Dựng Filters
+
+Mỗi hàng filter bao gồm ba phần:
+
+1. **Column** — chọn cột nào để lọc
+2. **Operator** — chọn toán tử so sánh
+3. **Value** — nhập giá trị để so sánh
+
+{/* Screenshot: Single filter row showing column, operator, and value */}
+<Frame caption="Một hàng filter đơn">
+  <img
+    className="block dark:hidden"
+    src="/images/filter-row.png"
+    alt="Filter row"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/filter-row-dark.png"
+    alt="Filter row"
+  />
+</Frame>
+
+### Thêm và Quản Lý Filters
+
+| Thao tác | Cách thực hiện |
+|----------|----------------|
+| Thêm filter | Click nút **+** trong header |
+| Sao chép filter | Click biểu tượng duplicate trên hàng filter |
+| Xóa filter | Click nút **x** trên hàng filter |
+| Focus vào filter | Click bất kỳ đâu trên hàng |
+
+### Logic AND / OR
+
+Chuyển đổi giữa logic AND và OR bằng segmented control trong header filter:
+
+- **AND** — tất cả filters phải khớp (giao)
+- **OR** — bất kỳ filter nào có thể khớp (hợp)
+
+<Tip>
+Sử dụng chế độ AND để thu hẹp kết quả dần dần. Sử dụng chế độ OR khi tìm kiếm các hàng khớp với bất kỳ điều kiện nào trong số nhiều điều kiện.
+</Tip>
+
+{/* Screenshot: Nút chuyển đổi logic AND/OR trong header filter */}
+<Frame caption="Nút chuyển đổi logic AND/OR trong header filter">
+  <img
+    className="block dark:hidden"
+    src="/images/filter-and-or-toggle.png"
+    alt="Nút chuyển đổi logic AND/OR trong header filter"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/filter-and-or-toggle-dark.png"
+    alt="Nút chuyển đổi logic AND/OR trong header filter"
+  />
+</Frame>
+
+### Chọn và Áp Dụng Filters
+
+Mỗi hàng filter có một checkbox để áp dụng có chọn lọc:
+
+| Thao tác | Mô tả |
+|----------|-------|
+| **Chọn/bỏ chọn** | Bật/tắt checkbox trên các filter riêng lẻ |
+| **Chọn tất cả** | Sử dụng checkbox "Select All" trong footer |
+| **Áp dụng đơn** | Click nút play trên hàng filter để chỉ áp dụng filter đó |
+| **Áp dụng tất cả** | Click **Apply All** trong footer để áp dụng tất cả filters đã chọn |
+| **Bỏ thiết lập** | Click **Unset** để xóa tất cả filters đã áp dụng và tải lại dữ liệu chưa lọc |
+
+<Note>
+Chỉ các filter hợp lệ với cột, toán tử và giá trị đầy đủ (nếu cần) mới có thể được áp dụng. Các filter không hợp lệ hiển thị nút play bị vô hiệu hóa.
+</Note>
+
+{/* Screenshot: Checkbox Chọn tất cả và nút Áp dụng tất cả */}
+<Frame caption="Checkbox Chọn tất cả và nút Áp dụng tất cả">
+  <img
+    className="block dark:hidden"
+    src="/images/filter-select-all.png"
+    alt="Checkbox Chọn tất cả và nút Áp dụng tất cả"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/filter-select-all-dark.png"
+    alt="Checkbox Chọn tất cả và nút Áp dụng tất cả"
+  />
+</Frame>
+
+## Toán Tử
+
+Trình tạo filter hỗ trợ 18 toán tử để đáp ứng tất cả các nhu cầu so sánh phổ biến.
+
+| Toán tử | Tên Hiển Thị | Yêu Cầu Giá Trị | Mô tả |
+|---------|--------------|-----------------|-------|
+| `=` | equals | Có | Khớp chính xác |
+| `!=` | not equals | Có | Loại trừ khớp chính xác |
+| CONTAINS | contains | Có | Khớp chuỗi con (LIKE %value%) |
+| NOT CONTAINS | not contains | Có | Loại trừ chuỗi con |
+| STARTS WITH | starts with | Có | Khớp tiền tố (LIKE value%) |
+| ENDS WITH | ends with | Có | Khớp hậu tố (LIKE %value) |
+| `>` | greater than | Có | So sánh lớn hơn |
+| `>=` | greater or equal | Có | Lớn hơn hoặc bằng |
+| `<` | less than | Có | So sánh nhỏ hơn |
+| `<=` | less or equal | Có | Nhỏ hơn hoặc bằng |
+| IS NULL | is NULL | Không | Giá trị cột là NULL |
+| IS NOT NULL | is not NULL | Không | Giá trị cột không phải NULL |
+| IS EMPTY | is empty | Không | Giá trị cột là chuỗi rỗng |
+| IS NOT EMPTY | is not empty | Không | Giá trị cột không phải chuỗi rỗng |
+| IN | in list | Có | Giá trị trong danh sách phân tách bằng dấu phẩy |
+| NOT IN | not in list | Có | Giá trị không có trong danh sách phân tách bằng dấu phẩy |
+| BETWEEN | between | Có (hai giá trị) | Giá trị nằm giữa hai giới hạn |
+| REGEX | matches regex | Có | Khớp biểu thức chính quy |
+
+### Toán Tử Không Cần Giá Trị
+
+Khi bạn chọn IS NULL, IS NOT NULL, IS EMPTY hoặc IS NOT EMPTY, trường giá trị được ẩn và thay thế bằng chỉ báo dấu gạch ngang. Không cần nhập gì.
+
+### Toán Tử BETWEEN
+
+Khi BETWEEN được chọn, hai trường giá trị xuất hiện với nhãn "and" ở giữa. Cả hai giá trị đều bắt buộc.
+
+{/* Screenshot: BETWEEN filter with two value fields */}
+<Frame caption="Filter BETWEEN với hai trường giá trị">
+  <img
+    className="block dark:hidden"
+    src="/images/filter-between.png"
+    alt="BETWEEN filter"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/filter-between-dark.png"
+    alt="BETWEEN filter"
+  />
+</Frame>
+
+### Toán Tử IN / NOT IN
+
+Nhập các giá trị phân tách bằng dấu phẩy để khớp với danh sách:
+
+```
+value1, value2, value3
+```
+
+## Chế Độ Raw SQL
+
+Đối với các điều kiện mà trình tạo trực quan không thể biểu thị, sử dụng chế độ Raw SQL.
+
+### Sử Dụng Raw SQL
+
+1. Click vào dropdown cột trên hàng filter
+2. Chọn **Raw SQL** ở đầu danh sách
+3. Dropdown toán tử biến mất và trường giá trị trở thành input SQL tự do
+4. Nhập điều kiện mệnh đề WHERE của bạn trực tiếp
+
+{/* Screenshot: Raw SQL filter with arbitrary WHERE clause */}
+<Frame caption="Chế độ filter Raw SQL">
+  <img
+    className="block dark:hidden"
+    src="/images/filter-raw-sql.png"
+    alt="Raw SQL filter"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/filter-raw-sql-dark.png"
+    alt="Raw SQL filter"
+  />
+</Frame>
+
+**Ví dụ:**
+
+```sql
+created_at > NOW() - INTERVAL 7 DAY
+```
+
+```sql
+LOWER(name) LIKE '%smith%' AND status IN ('active', 'pending')
+```
+
+```sql
+price * quantity > 1000
+```
+
+<Warning>
+Raw SQL được chèn trực tiếp vào mệnh đề WHERE. Đảm bảo cú pháp của bạn đúng cho loại database đang kết nối.
+</Warning>
+
+## Quick Search
+
+Quick Search cung cấp lọc tức thì trên tất cả các cột hiển thị mà không cần xây dựng các hàng filter riêng lẻ.
+
+### Sử Dụng Quick Search
+
+1. Mở filter panel
+2. Nhập vào trường **Quick search across all columns...**
+3. Nhấn `Enter` để áp dụng tìm kiếm
+
+{/* Screenshot: Quick search field with search text */}
+<Frame caption="Quick search trên tất cả các cột">
+  <img
+    className="block dark:hidden"
+    src="/images/quick-search.png"
+    alt="Quick search"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/quick-search-dark.png"
+    alt="Quick search"
+  />
+</Frame>
+
+Quick search luôn hiển thị khi filter panel được mở. Click nút **x** để xóa tìm kiếm.
+
+<Tip>
+Quick Search lý tưởng cho tìm kiếm tùy ý. Đối với các mẫu filter lặp lại, hãy lưu chúng dưới dạng preset thay thế.
+</Tip>
+
+## Filter Presets
+
+Lưu cấu hình filter hiện tại của bạn dưới dạng preset có tên để sử dụng lại nhanh chóng.
+
+### Lưu Preset
+
+1. Xây dựng các filter của bạn trong filter panel
+2. Click biểu tượng **folder** trong header filter
+3. Chọn **Save as Preset...**
+4. Nhập tên và click **Save**
+
+{/* Screenshot: Hộp thoại lưu preset filter */}
+<Frame caption="Hộp thoại lưu preset filter">
+  <img
+    className="block dark:hidden"
+    src="/images/filter-preset-save.png"
+    alt="Hộp thoại lưu preset filter"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/filter-preset-save-dark.png"
+    alt="Hộp thoại lưu preset filter"
+  />
+</Frame>
+
+### Tải Preset
+
+1. Click biểu tượng **folder** trong header filter
+2. Chọn preset từ menu dropdown
+3. Các filter đã lưu thay thế danh sách filter hiện tại
+
+{/* Screenshot: Tải các preset filter đã lưu */}
+<Frame caption="Tải các preset filter đã lưu">
+  <img
+    className="block dark:hidden"
+    src="/images/filter-preset-load.png"
+    alt="Tải các preset filter đã lưu"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/filter-preset-load-dark.png"
+    alt="Tải các preset filter đã lưu"
+  />
+</Frame>
+
+### Quản Lý Presets
+
+| Thao tác | Cách thực hiện |
+|----------|----------------|
+| Tải | Click tên preset trong menu folder |
+| Xóa | Chọn **Delete Preset** > click tên preset |
+| Ghi đè | Lưu preset mới với cùng tên |
+
+Presets được lưu qua UserDefaults và tồn tại qua các phiên.
+
+<Note>
+Presets lưu các định nghĩa filter (cột, toán tử, giá trị) nhưng không lưu trạng thái đã áp dụng hay chưa. Sau khi tải preset, click **Apply All** để kích hoạt các filter.
+</Note>
+
+## SQL Preview
+
+Xem trước mệnh đề WHERE chính xác sẽ được gửi đến database trước khi áp dụng.
+
+### Xem Preview
+
+1. Xây dựng các filter của bạn
+2. Click nút **SQL** trong footer filter
+3. Một sheet hiển thị mệnh đề WHERE được tạo
+
+{/* Screenshot: SQL preview sheet showing generated WHERE clause */}
+<Frame caption="SQL preview của các filter được tạo">
+  <img
+    className="block dark:hidden"
+    src="/images/filter-sql-preview.png"
+    alt="SQL Preview"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/filter-sql-preview-dark.png"
+    alt="SQL Preview"
+  />
+</Frame>
+
+### Preview Hiển Thị Gì
+
+- Mệnh đề WHERE hoàn chỉnh với việc trích dẫn phù hợp cho loại database của bạn
+- MySQL sử dụng backticks (`` `column` ``)
+- PostgreSQL sử dụng dấu nháy kép (`"column"`)
+- Logic AND/OR dựa trên chế độ hiện tại
+- Nút "Copy" để sao chép SQL vào clipboard
+
+Nếu một số (nhưng không phải tất cả) filters được chọn, preview chỉ hiển thị các filters đã chọn. Nếu không, nó hiển thị tất cả các filters hợp lệ.
+
+### Xử Lý Filters Không Hợp Lệ
+
+Nếu có filters tồn tại nhưng không có filter nào hợp lệ, preview hiển thị thông báo hữu ích chỉ ra những gì cần được hoàn thành:
+
+- Chọn một cột
+- Nhập một giá trị (nếu toán tử yêu cầu)
+- Điền giá trị thứ hai cho BETWEEN
+
+## Trạng Thái Filter theo Tab
+
+Mỗi tab trong TablePro duy trì trạng thái filter độc lập của riêng nó.
+
+### Cách Hoạt Động
+
+- Mở một bảng tạo trạng thái filter mới cho tab đó
+- Chuyển đổi giữa các tab giữ nguyên các filter của mỗi tab
+- Các filter đã áp dụng vẫn hoạt động khi bạn chuyển đi và quay lại
+- Trạng thái hiển thị filter panel được nhớ cho mỗi tab
+
+### Các Thành Phần Trạng Thái
+
+Mỗi tab lưu trữ:
+
+| Thành phần | Mô tả |
+|------------|-------|
+| **Danh sách filter** | Tất cả các hàng filter (đã áp dụng hay chưa) |
+| **Filters đã áp dụng** | Các filter hiện đang hoạt động ảnh hưởng đến query |
+| **Hiển thị panel** | Filter panel được hiển thị hay ẩn |
+
+## Cài Đặt Filter
+
+Cấu hình hành vi filter mặc định trong popover settings.
+
+### Truy Cập Settings
+
+Click biểu tượng **gear** trong header filter panel để mở popover settings.
+
+{/* Screenshot: Filter settings popover */}
+<Frame caption="Cài đặt filter">
+  <img
+    className="block dark:hidden"
+    src="/images/filter-settings.png"
+    alt="Filter settings"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/filter-settings-dark.png"
+    alt="Filter settings"
+  />
+</Frame>
+
+### Cột Mặc Định
+
+Kiểm soát cột nào được chọn trước khi thêm filter mới:
+
+| Tùy chọn | Mô tả |
+|----------|-------|
+| **Raw SQL** | Filters mới mặc định là chế độ Raw SQL |
+| **Primary Key** | Filters mới mặc định là cột primary key của bảng |
+| **Any Column** | Filters mới mặc định là cột có sẵn đầu tiên |
+
+### Toán Tử Mặc Định
+
+Kiểm soát toán tử nào được chọn trước khi thêm filter mới:
+
+| Tùy chọn | Mô tả |
+|----------|-------|
+| **Equal (=)** | Mặc định là khớp chính xác |
+| **Contains** | Mặc định là khớp chuỗi con |
+
+### Trạng Thái Panel khi Mở
+
+Kiểm soát hành vi filter panel khi mở bảng:
+
+| Tùy chọn | Mô tả |
+|----------|-------|
+| **Always Hide** | Filter panel bắt đầu ẩn (mặc định) |
+| **Always Show** | Filter panel luôn hiển thị khi mở bảng |
+| **Restore Last Filter** | Khôi phục các filter cuối cùng được sử dụng trên bảng cụ thể đó |
+
+<Tip>
+Tùy chọn "Restore Last Filter" nhớ các filter theo tên bảng. Nếu bạn thường xuyên lọc cùng một bảng với cùng các điều kiện, điều này giúp tiết kiệm thời gian thiết lập mỗi phiên.
+</Tip>
+
+## Phím Tắt
+
+| Thao tác | Phím tắt |
+|----------|----------|
+| Bật/tắt filter panel / Quick search | `Cmd+F` |
+| Áp dụng filter (trong trường giá trị) | `Enter` |
+
+## Bước Tiếp Theo
+
+<CardGroup cols={2}>
+  <Card title="Bảng Dữ Liệu" icon="table" href="/vi/features/data-grid">
+    Xem và điều hướng kết quả đã lọc
+  </Card>
+  <Card title="Trình soạn thảo SQL" icon="code" href="/vi/features/sql-editor">
+    Viết mệnh đề WHERE thủ công
+  </Card>
+  <Card title="Import & Export" icon="file-import" href="/vi/features/import-export">
+    Export dữ liệu đã lọc
+  </Card>
+  <Card title="Cài đặt" icon="gear" href="/vi/customization/settings">
+    Cấu hình các tùy chọn ứng dụng
+  </Card>
+</CardGroup>

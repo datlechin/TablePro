@@ -1,0 +1,347 @@
+---
+title: Appearance
+description: Customize TablePro's theme, colors, and visual style
+---
+
+# Appearance Settings
+
+Customize how TablePro looks to match your preferences and reduce eye strain. Access appearance settings via **Settings** > **Appearance**.
+
+{/* Screenshot: Appearance settings panel */}
+<Frame caption="Appearance settings">
+  <img 
+    className="block dark:hidden" 
+    src="/images/settings-appearance.png" 
+    alt="Appearance settings" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/settings-appearance-dark.png" 
+    alt="Appearance settings" 
+  />
+</Frame>
+
+## Theme
+
+TablePro supports three theme modes:
+
+| Theme | Description |
+|-------|-------------|
+| **System** | Automatically matches macOS appearance (default) |
+| **Light** | Always use light theme |
+| **Dark** | Always use dark theme |
+
+### System Theme
+
+When set to **System**, TablePro follows your macOS appearance setting:
+
+1. Open **System Settings** > **Appearance**
+2. Choose Light, Dark, or Auto
+3. TablePro updates automatically
+
+{/* Screenshot: Side-by-side light and dark themes */}
+<Frame caption="Light vs Dark theme">
+  <img 
+    className="block dark:hidden" 
+    src="/images/theme-comparison.png" 
+    alt="Theme comparison" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/theme-comparison-dark.png" 
+    alt="Theme comparison" 
+  />
+</Frame>
+
+### Light Theme
+
+The light theme features:
+
+- White/light gray backgrounds
+- Dark text for readability
+- Ideal for well-lit environments
+- Lower contrast for reduced eye strain in bright rooms
+
+### Dark Theme
+
+The dark theme features:
+
+- Dark gray/black backgrounds
+- Light text for contrast
+- Reduces eye strain in low light
+- Popular for extended coding sessions
+- Lower battery usage on OLED displays
+
+<Tip>
+Dark theme is often preferred by developers working for extended periods, especially in low-light environments.
+</Tip>
+
+## Accent Color
+
+Customize the accent color used throughout the app:
+
+| Option | Description |
+|--------|-------------|
+| **System** | Uses your macOS accent color |
+| **Blue** | Classic blue accent |
+| **Purple** | Purple accent |
+| **Pink** | Pink accent |
+| **Red** | Red accent |
+| **Orange** | Orange accent |
+| **Yellow** | Yellow accent |
+| **Green** | Green accent |
+| **Graphite** | Gray/neutral accent |
+
+### Where Accent Color Appears
+
+The accent color is used for:
+
+- Selected items and highlights
+- Buttons and interactive elements
+- Progress indicators
+- Focus rings
+- Active tab indicators
+
+{/* Screenshot: Different accent colors applied */}
+<Frame caption="Accent color options">
+  <img 
+    className="block dark:hidden" 
+    src="/images/accent-colors.png" 
+    alt="Accent colors" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/accent-colors-dark.png" 
+    alt="Accent colors" 
+  />
+</Frame>
+
+{/* Screenshot: Accent color applied to UI */}
+<Frame caption="Accent color applied to UI elements">
+  <img
+    className="block dark:hidden"
+    src="/images/accent-color-applied.png"
+    alt="Accent color applied to UI elements"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/accent-color-applied-dark.png"
+    alt="Accent color applied to UI elements"
+  />
+</Frame>
+
+### Matching macOS
+
+To use your system accent color:
+
+1. Set TablePro's accent color to **System**
+2. Open **System Settings** > **Appearance**
+3. Choose your preferred accent color
+4. TablePro updates automatically
+
+## Connection Colors
+
+Assign colors to individual connections for visual organization:
+
+| Color | Suggested Use |
+|-------|---------------|
+| None | Default, neutral |
+| Red | Production databases |
+| Orange | Staging environments |
+| Yellow | Testing databases |
+| Green | Development/local |
+| Blue | Shared databases |
+| Purple | Special purpose |
+| Pink | Personal projects |
+
+### Setting Connection Color
+
+1. Open the connection form (edit or create)
+2. In the **Appearance** section, click **Color**
+3. Select a color from the palette
+4. Save the connection
+
+{/* Screenshot: Connection color picker */}
+<Frame caption="Connection color picker">
+  <img 
+    className="block dark:hidden" 
+    src="/images/connection-colors.png" 
+    alt="Connection colors" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/connection-colors-dark.png" 
+    alt="Connection colors" 
+  />
+</Frame>
+
+### Connection Color Display
+
+Connection colors appear in:
+
+- Sidebar connection list
+- Tab headers
+- Connection status bar
+- Window title (when connected)
+
+<Warning>
+Consider using red for production databases as a visual warning to be careful with queries.
+</Warning>
+
+{/* Screenshot: Connection colors in sidebar and tabs */}
+<Frame caption="Connection colors displayed in sidebar and tabs">
+  <img
+    className="block dark:hidden"
+    src="/images/connection-colors-sidebar.png"
+    alt="Connection colors in sidebar and tabs"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/connection-colors-sidebar-dark.png"
+    alt="Connection colors in sidebar and tabs"
+  />
+</Frame>
+
+## Database Type Colors
+
+Each database type has an associated color for quick identification:
+
+| Database | Color |
+|----------|-------|
+| MySQL | Orange |
+| MariaDB | Cyan |
+| PostgreSQL | Blue |
+| SQLite | Green |
+
+These colors appear on:
+
+- Database type icons
+- Connection type indicators
+- Sidebar icons
+
+{/* Screenshot: Database type colors */}
+<Frame caption="Database type color coding: MySQL, MariaDB, PostgreSQL, SQLite">
+  <img
+    className="block dark:hidden"
+    src="/images/database-type-colors.png"
+    alt="Database type colors"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/database-type-colors-dark.png"
+    alt="Database type colors"
+  />
+</Frame>
+
+## Editor Theme
+
+The SQL editor uses syntax highlighting colors:
+
+| Element | Color |
+|---------|-------|
+| Keywords | Pink |
+| Strings | Green |
+| Numbers | Blue |
+| Comments | Gray |
+| Identifiers | Default text color |
+
+Editor colors automatically adapt to light/dark theme.
+
+## UI Elements
+
+### Status Colors
+
+| Color | Meaning |
+|-------|---------|
+| Green | Success, connected, valid |
+| Orange | Warning, in progress, connecting |
+| Red | Error, failed, invalid |
+| Blue | Information |
+| Gray | Neutral, disconnected |
+
+### Data Type Colors
+
+In the data grid:
+
+| Type | Display |
+|------|---------|
+| NULL | Gray, italicized |
+| Boolean True | Green |
+| Boolean False | Red |
+| Numbers | Standard color |
+| Text | Standard color |
+
+## Best Practices
+
+### For Readability
+
+1. **Match environment**: Use dark theme in low light, light in bright
+2. **Contrast**: Ensure sufficient contrast for your lighting
+3. **Font size**: Increase if text is hard to read
+
+### For Organization
+
+1. **Connection colors**: Develop a consistent color scheme
+2. **Environment coding**: Red=prod, green=dev, etc.
+3. **Team conventions**: Agree on color meanings with your team
+
+### For Eye Health
+
+1. **Dark theme at night**: Reduces blue light exposure
+2. **Take breaks**: Look away from screen periodically
+3. **Night Shift**: Enable macOS Night Shift for warmer colors
+
+## Accessibility
+
+### Color Blindness
+
+Consider these tips for color blind users:
+
+1. Don't rely solely on color for meaning
+2. Connection names provide text identification
+3. Icons supplement color information
+
+### High Contrast
+
+For better visibility:
+
+1. Use either light or dark theme (not auto)
+2. Choose high-contrast accent colors (blue, green)
+3. Increase font sizes in editor settings
+
+## Troubleshooting
+
+### Theme Not Changing
+
+1. Restart TablePro after changing settings
+2. Check macOS appearance if using System theme
+3. Verify settings were saved
+
+### Colors Look Wrong
+
+1. Check display color profile in System Settings
+2. Verify monitor calibration
+3. Check True Tone settings on supported displays
+
+### Accent Color Not Applying
+
+1. Restart TablePro
+2. Set to specific color instead of System
+3. Check for conflicting system extensions
+
+## Related Settings
+
+<CardGroup cols={2}>
+  <Card title="Editor Settings" icon="code" href="/customization/editor-settings">
+    Font and editor appearance
+  </Card>
+  <Card title="Settings Overview" icon="gear" href="/customization/settings">
+    All settings categories
+  </Card>
+  <Card title="Data Grid" icon="table" href="/features/data-grid">
+    Configure data display
+  </Card>
+  <Card title="Connections" icon="plug" href="/databases/overview">
+    Connection color settings
+  </Card>
+</CardGroup>

@@ -1,0 +1,384 @@
+---
+title: Build dự án
+description: Build TablePro cho phát triển và phân phối release
+---
+
+# Build TablePro
+
+Hướng dẫn này bao gồm việc build TablePro cho phát triển, tạo release builds và đóng gói cho phân phối.
+
+## Build Phát Triển
+
+### Sử dụng Xcode
+
+Cách nhanh nhất để build trong quá trình phát triển:
+
+1. Mở `TablePro.xcodeproj` trong Xcode
+2. Chọn scheme **TablePro**
+3. Chọn **My Mac** làm destination
+4. Nhấn `Cmd+R` để build và chạy
+
+Hoặc `Cmd+B` để build mà không chạy.
+
+### Sử dụng Command Line
+
+```bash
+# Build cho kiến trúc hiện tại (Debug)
+xcodebuild -project TablePro.xcodeproj \
+    -scheme TablePro \
+    -configuration Debug \
+    build \
+    -skipPackagePluginValidation
+
+# Build và chạy
+xcodebuild -project TablePro.xcodeproj \
+    -scheme TablePro \
+    -configuration Debug \
+    build \
+    -skipPackagePluginValidation && open build/Debug/TablePro.app
+```
+
+### Build Sạch
+
+Nếu bạn gặp vấn đề về build:
+
+```bash
+# Clean qua xcodebuild
+xcodebuild -project TablePro.xcodeproj -scheme TablePro clean
+
+# Hoặc clean derived data
+rm -rf ~/Library/Developer/Xcode/DerivedData
+
+# Hoặc trong Xcode: Cmd+Shift+K
+```
+
+## Build Release
+
+### Sử dụng Build Script
+
+TablePro bao gồm một build script để tạo release builds:
+
+```bash
+# Build cho Apple Silicon (M1/M2/M3/M4/M5)
+scripts/build-release.sh arm64
+
+# Build cho Intel
+scripts/build-release.sh x86_64
+
+# Build cho cả hai kiến trúc
+scripts/build-release.sh both
+```
+
+### Chi tiết Build Script
+
+Script `build-release.sh`:
+
+1. **Chuẩn bị thư viện**: Trích xuất kiến trúc đúng từ các thư viện universal
+2. **Build app**: Chạy xcodebuild với cấu hình Release
+3. **Sao chép output**: Đặt app trong `build/Release/`
+4. **Khôi phục icon**: Đảm bảo app icon đầy đủ được bao gồm
+5. **Xác minh kiến trúc**: Xác nhận binary khớp với kiến trúc target
+
+### Vị trí Output
+
+Sau khi build, tìm app tại:
+
+```
+build/Release/TablePro-arm64.app   # Apple Silicon
+build/Release/TablePro-x86_64.app  # Intel
+```
+
+### Build Release Thủ Công
+
+Nếu bạn muốn build thủ công:
+
+```bash
+# Đặt kiến trúc
+ARCH=arm64  # hoặc x86_64
+
+# Build
+xcodebuild \
+    -project TablePro.xcodeproj \
+    -scheme TablePro \
+    -configuration Release \
+    -arch $ARCH \
+    ONLY_ACTIVE_ARCH=YES \
+    CODE_SIGN_IDENTITY="" \
+    CODE_SIGNING_REQUIRED=NO \
+    clean build
+```
+
+## Thư Viện Native
+
+TablePro sử dụng các thư viện C native cho kết nối database.
+
+### Tệp thư viện
+
+Nằm trong `Libs/`:
+
+| File | Mục đích |
+|------|---------|
+| `libmariadb_universal.a` | Thư viện MariaDB universal (arm64 + x86_64) |
+| `libmariadb.a` | Đặc thù kiến trúc (được tạo trong quá trình build) |
+
+### Thiết lập thư viện
+
+Thư viện universal phải tồn tại trước khi build:
+
+```bash
+# Kiểm tra thư viện universal có tồn tại không
+ls -la Libs/libmariadb_universal.a
+
+# Nếu thiếu, tạo từ các thư viện đặc thù kiến trúc
+lipo -create \
+    Libs/libmariadb_arm64.a \
+    Libs/libmariadb_x86_64.a \
+    -output Libs/libmariadb_universal.a
+```
+
+Build script tự động trích xuất slice kiến trúc đúng.
+
+## Tạo DMG
+
+### Sử dụng DMG Script
+
+Tạo tệp DMG có thể phân phối:
+
+```bash
+# Đầu tiên, build release
+scripts/build-release.sh arm64
+
+# Sau đó tạo DMG
+scripts/create-dmg.sh arm64
+```
+
+### Nội dung DMG
+
+DMG bao gồm:
+
+- TablePro.app
+- Shortcut thư mục Applications
+- Background image (nếu được cấu hình)
+- License file (nếu được bao gồm)
+
+### Output
+
+DMGs được tạo tại:
+
+```
+build/Release/TablePro-arm64.dmg
+build/Release/TablePro-x86_64.dmg
+```
+
+## Ký Code
+
+### Build Phát Triển
+
+Development builds không được ký mặc định, điều này ổn cho việc test cục bộ.
+
+### Phân Phối Release
+
+Cho phân phối công khai:
+
+<Warning>
+TablePro hiện tại được phân phối không có chữ ký. macOS Gatekeeper sẽ hiển thị cảnh báo khi khởi chạy lần đầu.
+</Warning>
+
+Để ký app (yêu cầu tài khoản Apple Developer):
+
+```bash
+# Ký app
+codesign --force --deep --sign "Developer ID Application: Your Name (TEAM_ID)" \
+    build/Release/TablePro-arm64.app
+
+# Xác minh chữ ký
+codesign --verify --verbose build/Release/TablePro-arm64.app
+```
+
+### Công Chứng
+
+Cho phân phối ngoài App Store:
+
+```bash
+# Tạo ZIP cho notarization
+ditto -c -k --keepParent build/Release/TablePro-arm64.app TablePro.zip
+
+# Gửi để notarization
+xcrun notarytool submit TablePro.zip \
+    --apple-id "your@email.com" \
+    --team-id "TEAM_ID" \
+    --password "app-specific-password" \
+    --wait
+
+# Staple ticket
+xcrun stapler staple build/Release/TablePro-arm64.app
+```
+
+## Build Configuration
+
+### Cài Đặt Build
+
+Các build settings chính trong Xcode:
+
+| Setting | Debug | Release |
+|---------|-------|---------|
+| Optimization | None (-O0) | Optimize for Speed (-O) |
+| Debug Information | Full | Stripped |
+| Assertions | Enabled | Disabled |
+| Code Signing | None | Developer ID (optional) |
+
+### Cài Đặt Kiến Trúc
+
+| Setting | Value |
+|---------|-------|
+| ARCHS | Standard (arm64, x86_64) |
+| ONLY_ACTIVE_ARCH | Yes (Debug), No (Release) |
+| VALID_ARCHS | arm64 x86_64 |
+
+## Khắc Phục Sự Cố
+
+### Lỗi Build
+
+**Lỗi thư viện bị thiếu**:
+```
+ld: library not found for -lmariadb
+```
+
+Giải pháp:
+1. Kiểm tra thư mục `Libs/` có tồn tại
+2. Chạy `scripts/build-release.sh` để chuẩn bị thư viện
+3. Xác minh `libmariadb.a` tồn tại cho kiến trúc target
+
+**Lỗi code signing**:
+```
+Code signing is required for product type 'Application'
+```
+
+Giải pháp: Build script vô hiệu hóa code signing. Nếu build thủ công, thêm:
+```
+CODE_SIGN_IDENTITY=""
+CODE_SIGNING_REQUIRED=NO
+```
+
+**Không khớp kiến trúc**:
+```
+building for macOS-arm64 but attempting to link with file built for macOS-x86_64
+```
+
+Giải pháp:
+1. Clean build folder
+2. Đảm bảo thư viện khớp với kiến trúc target
+3. Chạy build script để xử lý kiến trúc thư viện
+
+### Vấn đề Xcode
+
+**Không tìm thấy Scheme**:
+1. Mở Xcode
+2. Product > Scheme > Manage Schemes
+3. Đảm bảo TablePro scheme được checked
+
+**Vấn đề Derived data**:
+```bash
+rm -rf ~/Library/Developer/Xcode/DerivedData
+```
+
+**Vấn đề Index**:
+```bash
+rm -rf ~/Library/Developer/Xcode/DerivedData/*/Index
+```
+
+## CI/CD
+
+### GitHub Actions (CI)
+
+Workflow mẫu cho automated builds:
+
+```yaml
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.0.app
+
+      - name: Build
+        run: |
+          xcodebuild -project TablePro.xcodeproj \
+            -scheme TablePro \
+            -configuration Debug \
+            build \
+            -skipPackagePluginValidation
+
+      - name: Test
+        run: |
+          xcodebuild -project TablePro.xcodeproj \
+            -scheme TablePro \
+            test \
+            -skipPackagePluginValidation
+```
+
+### Quy Trình Release
+
+Để tạo releases:
+
+```yaml
+release:
+  runs-on: macos-latest
+  steps:
+    - uses: actions/checkout@v4
+
+    - name: Build Release (arm64)
+      run: scripts/build-release.sh arm64
+
+    - name: Build Release (x86_64)
+      run: scripts/build-release.sh x86_64
+
+    - name: Create DMGs
+      run: |
+        scripts/create-dmg.sh arm64
+        scripts/create-dmg.sh x86_64
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: release-dmgs
+        path: build/Release/*.dmg
+```
+
+## Kích thước Build
+
+Kích thước build điển hình (v0.1.1):
+
+| Build | Kích thước |
+|-------|------|
+| Debug app | ~15 MB |
+| Release app | ~10 MB |
+| DMG (arm64) | ~3.5 MB |
+| DMG (x86_64) | ~3.5 MB |
+
+## Bước tiếp theo
+
+<CardGroup cols={2}>
+  <Card title="Thiết lập" icon="wrench" href="/vi/development/setup">
+    Thiết lập môi trường phát triển
+  </Card>
+  <Card title="Kiến trúc" icon="sitemap" href="/vi/development/architecture">
+    Kiến trúc codebase
+  </Card>
+  <Card title="Phong cách Code" icon="code" href="/vi/development/code-style">
+    Quy ước code
+  </Card>
+  <Card title="GitHub" icon="github" href="https://github.com/datlechin/tablepro">
+    Repository nguồn
+  </Card>
+</CardGroup>

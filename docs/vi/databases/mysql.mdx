@@ -1,0 +1,334 @@
+---
+title: MySQL & MariaDB
+description: Kết nối với cơ sở dữ liệu MySQL và MariaDB bằng TablePro
+---
+
+# Kết nối MySQL & MariaDB
+
+TablePro cung cấp hỗ trợ đầy đủ cho MySQL 5.7+, MySQL 8.0+ và MariaDB 10.x+. Cả hai cơ sở dữ liệu đều sử dụng cùng một giao diện kết nối vì chúng chia sẻ các giao thức tương thích.
+
+## Thiết lập Nhanh
+
+<Steps>
+  <Step title="Mở Biểu mẫu Kết nối">
+    Nhấp **New Connection** từ màn hình Chào mừng hoặc **File** > **New Connection**
+  </Step>
+  <Step title="Chọn Loại Cơ sở dữ liệu">
+    Chọn **MySQL** hoặc **MariaDB** từ trình chọn loại
+  </Step>
+  <Step title="Nhập Thông tin Kết nối">
+    Điền host, port, username, password và tùy chọn cơ sở dữ liệu mặc định
+  </Step>
+  <Step title="Kiểm tra và Kết nối">
+    Nhấp **Test Connection**, sau đó **Create**
+  </Step>
+</Steps>
+
+## Cài đặt Kết nối
+
+### Các trường Bắt buộc
+
+| Trường | Mô tả | Mặc định |
+|-------|-------------|---------|
+| **Name** | Định danh kết nối | - |
+| **Host** | Hostname hoặc IP của máy chủ | `localhost` |
+| **Port** | Cổng máy chủ MySQL | `3306` |
+| **Username** | Người dùng MySQL | `root` |
+| **Password** | Mật khẩu người dùng | - |
+
+### Các trường Tùy chọn
+
+| Trường | Mô tả |
+|-------|-------------|
+| **Database** | Cơ sở dữ liệu mặc định để sử dụng sau khi kết nối |
+
+<Tip>
+Để trống trường database cho phép bạn duyệt tất cả các cơ sở dữ liệu mà người dùng có quyền truy cập.
+</Tip>
+
+{/* Screenshot: Biểu mẫu kết nối MySQL */}
+<Frame caption="Biểu mẫu kết nối MySQL">
+  <img
+    className="block dark:hidden"
+    src="/images/mysql-connection-form.png"
+    alt="Biểu mẫu kết nối MySQL"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/mysql-connection-form-dark.png"
+    alt="Biểu mẫu kết nối MySQL"
+  />
+</Frame>
+
+## Ví dụ Cấu hình
+
+### Máy chủ Phát triển Local
+
+```
+Name:     Local MySQL
+Host:     localhost
+Port:     3306
+Username: root
+Password: (mật khẩu của bạn)
+Database: (để trống)
+```
+
+### Docker MySQL Container
+
+```
+Name:     Docker MySQL
+Host:     localhost
+Port:     3306 (hoặc cổng được ánh xạ của bạn)
+Username: root
+Password: (mật khẩu từ MYSQL_ROOT_PASSWORD)
+Database: (để trống)
+```
+
+### MAMP Pro
+
+```
+Name:     MAMP MySQL
+Host:     localhost
+Port:     8889 (mặc định của MAMP)
+Username: root
+Password: root
+Database: (để trống)
+```
+
+### Máy chủ Từ xa
+
+```
+Name:     Production DB
+Host:     db.example.com
+Port:     3306
+Username: app_user
+Password: (mật khẩu bảo mật)
+Database: production
+```
+
+<Warning>
+Đối với cơ sở dữ liệu production, hãy xem xét sử dụng [SSH tunneling](/vi/databases/ssh-tunneling) để kết nối an toàn.
+</Warning>
+
+## MySQL so với MariaDB
+
+Mặc dù TablePro sử dụng cùng một driver cho cả hai, vẫn có một số khác biệt nhỏ:
+
+| Tính năng | MySQL 8.0 | MariaDB 10.x |
+|---------|-----------|--------------|
+| Xác thực mặc định | `caching_sha2_password` | `mysql_native_password` |
+| Hỗ trợ JSON | Native | Tương thích |
+| Window functions | Có | Có |
+| CTEs | Có | Có |
+
+<Note>
+Nếu bạn gặp vấn đề xác thực với MySQL 8.0, hãy xem phần [Khắc phục sự cố Xác thực](#xac-thuc-mysql-80).
+</Note>
+
+## Tính năng
+
+### Duyệt Cơ sở dữ liệu
+
+Sau khi kết nối, sidebar hiển thị tất cả các cơ sở dữ liệu có thể truy cập cho người dùng của bạn:
+
+1. Nhấp vào tên kết nối trong sidebar
+2. Mở rộng một cơ sở dữ liệu để xem các bảng của nó
+3. Nhấp vào một bảng để xem nội dung của nó
+
+{/* Screenshot: Sidebar showing expanded MySQL database with tables */}
+<Frame caption="Trình duyệt cơ sở dữ liệu">
+  <img
+    className="block dark:hidden"
+    src="/images/mysql-database-browser.png"
+    alt="Trình duyệt cơ sở dữ liệu"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/mysql-database-browser-dark.png"
+    alt="Trình duyệt cơ sở dữ liệu"
+  />
+</Frame>
+
+### Thông tin Bảng
+
+Đối với mỗi bảng, TablePro cung cấp:
+
+- **Structure**: Định nghĩa cột, loại và ràng buộc
+- **Indexes**: Tất cả chỉ mục bao gồm primary keys
+- **Foreign Keys**: Mối quan hệ với các bảng khác
+- **DDL**: Câu lệnh CREATE TABLE
+
+### Thực thi Truy vấn
+
+Thực thi các truy vấn với hỗ trợ cú pháp MySQL đầy đủ:
+
+```sql
+-- Select với JSON
+SELECT id, JSON_EXTRACT(data, '$.name') as name
+FROM users
+WHERE JSON_CONTAINS(roles, '"admin"');
+
+-- Window functions
+SELECT
+    department,
+    employee,
+    salary,
+    RANK() OVER (PARTITION BY department ORDER BY salary DESC) as rank
+FROM employees;
+
+-- CTEs
+WITH RECURSIVE category_tree AS (
+    SELECT id, name, parent_id, 0 as level
+    FROM categories WHERE parent_id IS NULL
+    UNION ALL
+    SELECT c.id, c.name, c.parent_id, ct.level + 1
+    FROM categories c
+    JOIN category_tree ct ON c.parent_id = ct.id
+)
+SELECT * FROM category_tree;
+```
+
+## Khắc phục sự cố
+
+### Kết nối Bị từ chối
+
+**Triệu chứng**: "Connection refused" hoặc "Can't connect to MySQL server"
+
+**Nguyên nhân và Giải pháp**:
+
+1. **Máy chủ MySQL không chạy**
+   ```bash
+   # Kiểm tra xem MySQL có đang chạy không
+   mysqladmin ping -h localhost -u root -p
+
+   # Khởi động MySQL (macOS với Homebrew)
+   brew services start mysql
+   ```
+
+2. **Cổng sai**
+   - Xác minh cổng trong MySQL: `SHOW VARIABLES LIKE 'port';`
+   - Kiểm tra file cấu hình của bạn
+
+3. **MySQL không lắng nghe trên TCP**
+   - Kiểm tra `skip-networking` không được đặt trong `my.cnf`
+   - Đảm bảo `bind-address` bao gồm IP máy khách của bạn
+
+### Truy cập Bị từ chối
+
+**Triệu chứng**: "Access denied for user 'xxx'@'localhost'"
+
+**Giải pháp**:
+
+1. Xác minh username và password
+2. Kiểm tra quyền của người dùng:
+   ```sql
+   SHOW GRANTS FOR 'username'@'localhost';
+   ```
+3. Cấp quyền cần thiết:
+   ```sql
+   GRANT ALL PRIVILEGES ON database_name.* TO 'username'@'localhost';
+   FLUSH PRIVILEGES;
+   ```
+
+### Xác thực MySQL 8.0
+
+MySQL 8.0 sử dụng `caching_sha2_password` theo mặc định, có thể gây ra vấn đề kết nối.
+
+**Tùy chọn 1**: Sử dụng native password cho người dùng cụ thể
+```sql
+ALTER USER 'username'@'localhost'
+IDENTIFIED WITH mysql_native_password BY 'password';
+```
+
+**Tùy chọn 2**: Thay đổi phương thức xác thực mặc định
+```ini
+# Trong my.cnf
+[mysqld]
+default_authentication_plugin=mysql_native_password
+```
+
+### Kết nối SSL/TLS
+
+TablePro hỗ trợ mã hóa SSL/TLS cho kết nối MySQL và MariaDB. Cấu hình SSL trong phần **SSL/TLS** của biểu mẫu kết nối.
+
+| Chế độ SSL | Hành vi MySQL |
+|----------|----------------|
+| **Disabled** | SSL bị tắt rõ ràng |
+| **Preferred** | Sử dụng SSL nếu server hỗ trợ, quay lại không mã hóa nếu không |
+| **Required** | Bắt buộc mã hóa SSL (`MYSQL_OPT_SSL_ENFORCE`) |
+| **Verify CA** | Bắt buộc SSL và xác minh chứng chỉ server với CA |
+| **Verify Identity** | Bắt buộc SSL, xác minh CA và xác thực hostname server |
+
+Đối với chế độ **Verify CA** và **Verify Identity**, cung cấp đường dẫn đến file chứng chỉ CA. Tùy chọn, bạn cũng có thể cung cấp file chứng chỉ client và khóa để xác thực TLS hai chiều.
+
+<Tip>
+Hầu hết nhà cung cấp MySQL trên cloud (AWS RDS, Google Cloud SQL, Azure) yêu cầu SSL. Sử dụng chế độ **Verify CA** với chứng chỉ CA của nhà cung cấp để bảo mật tốt nhất.
+</Tip>
+
+<Note>
+Nếu bạn không cần SSL nhưng muốn kết nối được mã hóa, [SSH tunneling](/vi/databases/ssh-tunneling) là phương án thay thế mã hóa toàn bộ traffic qua đường hầm SSH.
+</Note>
+
+{/* Screenshot: Cấu hình SSL/TLS MySQL */}
+<Frame caption="Cấu hình SSL/TLS MySQL">
+  <img
+    className="block dark:hidden"
+    src="/images/mysql-ssl-config.png"
+    alt="Cấu hình SSL/TLS MySQL"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/mysql-ssl-config-dark.png"
+    alt="Cấu hình SSL/TLS MySQL"
+  />
+</Frame>
+
+## Mẹo Hiệu suất
+
+### Tập Kết quả Lớn
+
+Đối với các bảng có hàng triệu hàng:
+
+1. Sử dụng `LIMIT` trong các truy vấn của bạn
+2. Bật phân trang trong cài đặt data grid
+3. Tạo các chỉ mục phù hợp cho các truy vấn phổ biến
+
+### Truy vấn Phức tạp
+
+1. Sử dụng `EXPLAIN` để phân tích kế hoạch truy vấn:
+   ```sql
+   EXPLAIN SELECT * FROM users WHERE email LIKE '%@example.com';
+   ```
+
+2. Theo dõi thời gian thực thi truy vấn trong bảng kết quả
+
+## Bộ ký tự
+
+TablePro mặc định sử dụng UTF-8 (utf8mb4) cho các kết nối MySQL, đảm bảo xử lý đúng:
+
+- Ký tự quốc tế
+- Emoji
+- Ký hiệu đặc biệt
+
+Nếu bạn gặp vấn đề về encoding, hãy xác minh bộ ký tự của bảng/cột:
+
+```sql
+SHOW CREATE TABLE table_name;
+```
+
+## Các bước tiếp theo
+
+<CardGroup cols={2}>
+  <Card title="SSH Tunneling" icon="lock" href="/vi/databases/ssh-tunneling">
+    Kết nối an toàn đến máy chủ MySQL từ xa
+  </Card>
+  <Card title="Trình soạn thảo SQL" icon="code" href="/vi/features/sql-editor">
+    Làm chủ các tính năng trình soạn thảo SQL
+  </Card>
+  <Card title="Nhập/Xuất" icon="file-import" href="/vi/features/import-export">
+    Nhập và xuất dữ liệu MySQL
+  </Card>
+  <Card title="Cấu trúc Bảng" icon="table" href="/vi/features/table-structure">
+    Xem và sửa đổi cấu trúc bảng
+  </Card>
+</CardGroup>

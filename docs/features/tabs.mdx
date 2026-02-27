@@ -1,0 +1,389 @@
+---
+title: Query Tabs
+description: Manage multiple query tabs with persistent state
+---
+
+# Query Tabs
+
+TablePro uses a tabbed interface for working with multiple queries and tables simultaneously. Each tab maintains its own SQL content, results, pagination, sorting, and filter state, so you can switch between tasks without losing context.
+
+{/* Screenshot: Tab bar showing multiple open tabs */}
+<Frame caption="Tab bar with multiple query and table tabs">
+  <img 
+    className="block dark:hidden" 
+    src="/images/tabs.png" 
+    alt="Query Tabs" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/tabs-dark.png" 
+    alt="Query Tabs" 
+  />
+</Frame>
+
+## Overview
+
+Tabs are the primary workspace in TablePro. When you connect to a database, you can open as many tabs as you need. Tabs persist across app restarts, and each connection remembers its own set of tabs.
+
+## Tab Types
+
+TablePro supports three types of tabs, each designed for a different workflow:
+
+| Type | Icon | Purpose |
+|------|------|---------|
+| **Query Tab** | Document icon | Write and execute custom SQL queries |
+| **Table Tab** | Table icon (blue) | Browse table data with pagination and filtering |
+| **Create Table Tab** | Special | Design and create new tables visually |
+
+### Query Tabs
+
+Query tabs are general-purpose SQL editors. Use them for:
+
+- Writing and running ad-hoc queries
+- Exploring data with custom SELECT statements
+- Running DDL or DML operations
+- Testing queries before adding them to your application
+
+Query tabs start with an empty editor. Type your SQL and press `Cmd+Enter` to execute.
+
+### Table Tabs
+
+Table tabs are opened when you click a table name in the sidebar. They provide:
+
+- Automatic `SELECT * FROM table LIMIT n` query generation
+- Server-side pagination with page navigation controls
+- Inline editing with change tracking
+- Structure view toggle for viewing/modifying table schema
+- Filter support for narrowing results
+
+<Tip>
+Table tabs are editable by default. Query tabs are read-only unless the query is a simple `SELECT * FROM table` statement.
+</Tip>
+
+### Smart Tab Reuse
+
+When you click a table in the sidebar, TablePro uses smart tab management:
+
+- **Same table**: Switches to the existing tab (no new query executed)
+- **Different table**: Opens a new tab
+
+Optionally, you can enable **Reuse clean table tab** in **Settings** > **Tabs** to get TablePlus-style behavior: when enabled, clicking a different table replaces the current table tab if it has no unsaved changes, no user interaction (sorting, filtering, etc.), and is not pinned. This keeps the tab bar clean while protecting your work.
+
+{/* Screenshot: Different tab types: Query, Table, and Create Table */}
+<Frame caption="Different tab types: Query, Table, and Create Table">
+  <img
+    className="block dark:hidden"
+    src="/images/tab-types.png"
+    alt="Different tab types: Query, Table, and Create Table"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/tab-types-dark.png"
+    alt="Different tab types: Query, Table, and Create Table"
+  />
+</Frame>
+
+## Managing Tabs
+
+### Creating Tabs
+
+| Action | How |
+|--------|-----|
+| New query tab | Click the **+** button in the tab bar, or press `Cmd+T` |
+| New query tab (from toolbar) | Click the **SQL** button in the toolbar |
+| New table tab | Click a table name in the sidebar |
+| New table tab (with query) | Open a query tab, then use the SQL editor |
+
+### Closing Tabs
+
+| Action | How |
+|--------|-----|
+| Close current tab | Press `Cmd+W` |
+| Close specific tab | Hover over the tab and click the **x** button |
+| Close from context menu | Right-click the tab and select **Close Tab** |
+| Close other tabs | Right-click a tab and select **Close Other Tabs** |
+
+<Warning>
+Closing a tab with unsaved changes will discard those changes. TablePro will warn you before closing if there are pending data modifications.
+</Warning>
+
+### Switching Tabs
+
+Click any tab in the tab bar to switch to it, or use keyboard shortcuts:
+
+- `Cmd+1` through `Cmd+9` to jump to a tab by position
+- `Cmd+Shift+[` or `Cmd+Option+Left` for the previous tab
+- `Cmd+Shift+]` or `Cmd+Option+Right` for the next tab
+
+The previous tab's state is fully preserved, including:
+
+- SQL editor content and cursor position
+- Query results
+- Scroll position in the data grid
+- Selected rows
+- Sort and filter state
+- Pending changes
+
+### Reordering Tabs
+
+Drag any tab to a new position in the tab bar to reorder it. A blue insertion indicator shows where the tab will be placed when you drop it.
+
+The tab bar scrolls horizontally when there are more tabs than can fit in the available space. The selected tab is automatically scrolled into view.
+
+{/* Screenshot: Drag and drop tab reordering */}
+<Frame caption="Drag and drop tab reordering">
+  <img
+    className="block dark:hidden"
+    src="/images/tab-reorder.png"
+    alt="Drag and drop tab reordering"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/tab-reorder-dark.png"
+    alt="Drag and drop tab reordering"
+  />
+</Frame>
+
+### Pinning Tabs
+
+Pin important tabs to prevent accidental closure:
+
+1. Right-click the tab
+2. Select **Pin Tab**
+3. A pin icon appears on the tab
+
+Pinned tabs:
+
+- Cannot be closed via the close button, `Cmd+W`, or the context menu
+- Are not closed when you select **Close Other Tabs**
+- Are not replaced when clicking a different table in the sidebar
+- Remain open across sessions
+
+To unpin, right-click and select **Unpin Tab**.
+
+{/* Screenshot: Pinned tab with pin indicator */}
+<Frame caption="Pinned tab with pin indicator">
+  <img
+    className="block dark:hidden"
+    src="/images/pinned-tab.png"
+    alt="Pinned tab with pin indicator"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/pinned-tab-dark.png"
+    alt="Pinned tab with pin indicator"
+  />
+</Frame>
+
+### Duplicating Tabs
+
+To create a copy of an existing tab:
+
+1. Right-click the tab
+2. Select **Duplicate Tab**
+3. A new tab opens with the same query content and results
+
+The duplicated tab is inserted immediately after the original.
+
+## Tab State
+
+Each tab stores a comprehensive set of state that is preserved when switching between tabs.
+
+### State Properties
+
+| Property | Description |
+|----------|-------------|
+| **Tab ID** | Unique identifier (UUID) |
+| **Title** | Display name shown in the tab bar |
+| **SQL Content** | The query text in the SQL editor |
+| **Tab Type** | Query, table, or create table |
+| **Table Name** | Associated table name (for table tabs) |
+| **Result Columns** | Column names from the last query |
+| **Result Rows** | Row data from the last query (cached) |
+| **Column Types** | Data type metadata for formatting |
+| **Execution Time** | Duration of the last query |
+| **Error Message** | Error from the last failed query |
+| **Is Editable** | Whether inline editing is enabled |
+| **Pagination State** | Current page, page size, total rows |
+| **Sort State** | Sort column and direction |
+| **Filter State** | Active filters and visibility |
+| **Pending Changes** | Queued data modifications |
+| **Selected Rows** | Currently selected row indices |
+| **Result Version** | Cache invalidation counter |
+
+### Per-Tab Change Tracking
+
+Each tab maintains its own pending changes. When you switch to a different tab:
+
+1. The current tab's changes are saved to the tab's `pendingChanges` property
+2. The change manager loads the new tab's pending changes
+3. Visual indicators update to reflect the new tab's state
+
+This means you can have pending edits in multiple tabs simultaneously without interference.
+
+## Tab Persistence
+
+Tabs persist across app restarts so you can pick up exactly where you left off.
+
+### What Is Persisted
+
+| Saved | Not Saved |
+|-------|-----------|
+| Tab ID and title | Query results (re-queried on reopen) |
+| SQL content | Pending data changes |
+| Tab type | Selected rows |
+| Table name | Sort and filter state |
+| Pin state | Execution time |
+
+### How Persistence Works
+
+<Steps>
+  <Step title="Debounced Auto-Save">
+    Tab state is automatically saved 500ms after any change (debounced to avoid rapid successive writes)
+  </Step>
+  <Step title="Per-Connection Storage">
+    Each database connection has its own saved tab state, stored in UserDefaults with a connection-specific key
+  </Step>
+  <Step title="Restoration on Connect">
+    When you reconnect to a database, TablePro restores the saved tabs and re-executes queries for table tabs
+  </Step>
+  <Step title="Window Close Handling">
+    When you close a window, any pending debounced save is flushed immediately to prevent data loss
+  </Step>
+</Steps>
+
+### Last Query Memory
+
+TablePro also remembers the last query text for each connection, similar to TablePlus. Even if you close all tabs, the last query is preserved and can be restored when you create a new tab.
+
+## Pagination in Tabs
+
+TablePro uses different pagination strategies depending on the tab type.
+
+### Table Tabs (Server-Side Pagination)
+
+Table tabs use SQL `LIMIT` and `OFFSET` for pagination:
+
+- Only the current page of data is loaded from the database
+- Page navigation triggers a new query
+- Default page size is configurable in **Settings** > **Data Grid**
+
+| Control | Action |
+|---------|--------|
+| First page | Jump to page 1 |
+| Previous page | Go back one page |
+| Page indicator | Shows current page / total pages |
+| Next page | Go forward one page |
+| Last page | Jump to the last page |
+
+<Tip>
+Server-side pagination is memory efficient. Only the visible page of data is kept in memory, even for tables with millions of rows.
+</Tip>
+
+{/* Screenshot: Server-side pagination in a table tab */}
+<Frame caption="Server-side pagination in a table tab">
+  <img
+    className="block dark:hidden"
+    src="/images/tab-pagination.png"
+    alt="Server-side pagination in a table tab"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/tab-pagination-dark.png"
+    alt="Server-side pagination in a table tab"
+  />
+</Frame>
+
+### Query Tabs (Client-Side Pagination)
+
+Query tabs execute the full query and receive all results. For large result sets, TablePro applies client-side pagination:
+
+- Results are stored in memory
+- Pagination slices the result array without re-querying
+- Sorting is done locally on the cached results
+
+### Page Size Configuration
+
+Configure the default page size in **Settings** > **Data Grid**:
+
+| Option | Rows per Page |
+|--------|---------------|
+| Small | 100 |
+| Medium | 500 |
+| Large | 1,000 |
+| Custom | 10 - 100,000 |
+
+## Tab Context Menu
+
+Right-click any tab to access the context menu:
+
+| Action | Description |
+|--------|-------------|
+| **Duplicate Tab** | Create a copy of this tab |
+| **Pin Tab** / **Unpin Tab** | Toggle pin state |
+| **Close Tab** | Close this tab |
+| **Close Other Tabs** | Close all tabs except this one (respects pinned tabs) |
+
+{/* Screenshot: Tab context menu */}
+<Frame caption="Tab context menu">
+  <img 
+    className="block dark:hidden" 
+    src="/images/tab-context-menu.png" 
+    alt="Tab context menu" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/tab-context-menu-dark.png" 
+    alt="Tab context menu" 
+  />
+</Frame>
+
+## Keyboard Shortcuts
+
+| Action | Shortcut |
+|--------|----------|
+| New query tab | `Cmd+T` |
+| Close current tab | `Cmd+W` |
+| New table (create) | `Cmd+Shift+N` |
+| Switch to tab 1-9 | `Cmd+1` through `Cmd+9` |
+| Previous tab | `Cmd+Shift+[` or `Cmd+Option+Left` |
+| Next tab | `Cmd+Shift+]` or `Cmd+Option+Right` |
+
+## Best Practices
+
+### Organize by Task
+
+Use separate tabs for different tasks: one for exploring data, another for writing migration queries, another for testing. This keeps your workspace organized.
+
+### Pin Important Tabs
+
+Pin tabs containing queries you refer to frequently. This prevents them from being accidentally closed.
+
+### Use Table Tabs for Browsing
+
+When you just need to look at data, click the table in the sidebar to open a table tab. This gives you pagination, editing, and structure view without writing SQL.
+
+### Use Query Tabs for Complex Work
+
+For joins, aggregations, subqueries, and multi-statement operations, use query tabs. The SQL editor gives you full control over what executes.
+
+### Close Unused Tabs
+
+While tabs are lightweight, closing tabs you no longer need keeps the tab bar clean and makes it easier to find what you are looking for.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="SQL Editor" icon="code" href="/features/sql-editor">
+    Write queries in query tabs
+  </Card>
+  <Card title="Data Grid" icon="table" href="/features/data-grid">
+    View and edit query results
+  </Card>
+  <Card title="Query History" icon="clock-rotate-left" href="/features/query-history">
+    Access previously executed queries
+  </Card>
+  <Card title="Keyboard Shortcuts" icon="keyboard" href="/features/keyboard-shortcuts">
+    All keyboard shortcuts
+  </Card>
+</CardGroup>

@@ -1,0 +1,491 @@
+---
+title: Theo Dõi Thay Đổi
+description: Theo dõi, xem xét và áp dụng các thay đổi dữ liệu và schema với hỗ trợ hoàn tác/làm lại đầy đủ
+---
+
+# Theo Dõi Thay Đổi
+
+TablePro sử dụng hệ thống theo dõi thay đổi dựa trên hàng đợi cho phép bạn thực hiện nhiều chỉnh sửa trước khi commit chúng vào cơ sở dữ liệu. Tất cả các thay đổi được lưu trữ cục bộ, cho bạn cơ hội xem xét, hoàn tác hoặc hủy bỏ trước khi bất cứ điều gì ảnh hưởng đến dữ liệu của bạn.
+
+{/* Screenshot: Data grid with pending changes highlighted */}
+<Frame caption="Data grid với các thay đổi đang chờ được đánh dấu">
+  <img
+    className="block dark:hidden"
+    src="/images/change-tracking.png"
+    alt="Theo dõi thay đổi"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/change-tracking-dark.png"
+    alt="Theo dõi thay đổi"
+  />
+</Frame>
+
+## Tổng Quan
+
+Khi bạn chỉnh sửa dữ liệu hoặc sửa đổi cấu trúc bảng trong TablePro, các thay đổi không được áp dụng ngay lập tức. Thay vào đó, chúng được đưa vào hàng đợi trong bộ nhớ và được đánh dấu trực quan trong data grid. Sau đó, bạn có thể commit tất cả các thay đổi cùng một lúc hoặc hủy bỏ chúng hoàn toàn.
+
+Cách tiếp cận này ngăn chặn mất dữ liệu do tai nạn và cho bạn toàn quyền kiểm soát khi nào các sửa đổi đến cơ sở dữ liệu.
+
+<Tip>
+Theo dõi thay đổi hoạt động theo từng tab. Mỗi tab duy trì tập hợp các thay đổi đang chờ độc lập của riêng nó, do đó việc chuyển đổi giữa các tab sẽ bảo toàn các chỉnh sửa của bạn.
+</Tip>
+
+## Thay Đổi Dữ Liệu
+
+TablePro theo dõi ba loại thay đổi dữ liệu: chỉnh sửa ô (cập nhật), chèn hàng và xóa hàng. Tất cả các tra cứu đều là O(1) sử dụng cấu trúc dữ liệu dựa trên hash được tối ưu hóa, do đó hiệu suất vẫn nhanh ngay cả với nhiều thay đổi đang chờ.
+
+### Chỉnh Sửa Ô
+
+Để chỉnh sửa một ô hiện có:
+
+1. Double-click vào ô bạn muốn sửa đổi
+2. Nhập giá trị mới
+3. Nhấn `Enter` để xác nhận hoặc `Escape` để hủy
+
+Các ô đã sửa đổi được đánh dấu trực quan trong data grid để bạn có thể thấy chính xác những gì đã thay đổi.
+
+{/* Screenshot: Modified cell highlighted in the data grid */}
+<Frame caption="Các ô đã sửa đổi được đánh dấu">
+  <img
+    className="block dark:hidden"
+    src="/images/change-tracking-modified.png"
+    alt="Các ô đã sửa đổi"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/change-tracking-modified-dark.png"
+    alt="Các ô đã sửa đổi"
+  />
+</Frame>
+
+<Note>
+Nếu bạn thay đổi giá trị trở lại giá trị ban đầu, thay đổi sẽ tự động bị xóa khỏi hàng đợi. TablePro phát hiện khi các chỉnh sửa hủy bỏ lẫn nhau.
+</Note>
+
+### Thêm Hàng
+
+Để chèn một hàng mới:
+
+1. Click vào nút **+** trên toolbar hoặc sử dụng phím tắt
+2. Một hàng mới xuất hiện ở cuối data grid, được đánh dấu bằng chỉ báo chèn
+3. Điền các giá trị cho mỗi cột
+4. Các cột có giá trị mặc định được điền trước với `DEFAULT`
+
+Các hàng mới được theo dõi riêng biệt với các cập nhật. Bạn có thể chỉnh sửa các ô trong hàng mới được chèn, và các chỉnh sửa đó được gộp vào phép chèn thay vì tạo các bản ghi cập nhật riêng biệt.
+
+{/* Screenshot: Hàng mới được thêm với chỉ báo chèn */}
+<Frame caption="Hàng mới được thêm với chỉ báo chèn">
+  <img
+    className="block dark:hidden"
+    src="/images/change-new-row.png"
+    alt="Hàng mới được thêm với chỉ báo chèn"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/change-new-row-dark.png"
+    alt="Hàng mới được thêm với chỉ báo chèn"
+  />
+</Frame>
+
+### Xóa Hàng
+
+Để xóa các hàng:
+
+1. Chọn một hoặc nhiều hàng trong data grid
+2. Nhấn phím `Delete` hoặc click vào nút xóa
+3. Các hàng đã xóa được đánh dấu bằng chỉ báo xóa (kiểu gạch ngang)
+
+Các hàng đã xóa vẫn hiển thị trong grid cho đến khi bạn commit hoặc hủy bỏ, vì vậy bạn có thể hoàn tác việc xóa nếu cần.
+
+{/* Screenshot: Hàng đã xóa với chỉ báo xóa */}
+<Frame caption="Hàng đã xóa với chỉ báo xóa">
+  <img
+    className="block dark:hidden"
+    src="/images/change-deleted-row.png"
+    alt="Hàng đã xóa với chỉ báo xóa"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/change-deleted-row-dark.png"
+    alt="Hàng đã xóa với chỉ báo xóa"
+  />
+</Frame>
+
+<Warning>
+Việc xóa hàng loạt nhiều hàng được theo dõi như một hành động hoàn tác duy nhất. Hoàn tác một lần xóa hàng loạt sẽ khôi phục tất cả các hàng cùng một lúc.
+</Warning>
+
+## Commit & Hủy Bỏ
+
+Sau khi bạn đã lưu trữ các thay đổi của mình, bạn có thể commit chúng vào cơ sở dữ liệu hoặc hủy bỏ chúng.
+
+### Commit Thay Đổi
+
+Để áp dụng tất cả các thay đổi đang chờ:
+
+1. Click vào nút **Commit** trên toolbar, hoặc nhấn `Cmd+S`
+2. TablePro tạo các câu lệnh SQL có tham số cho tất cả các thay đổi trong hàng đợi
+3. Các câu lệnh được thực thi trên cơ sở dữ liệu
+4. Khi thành công, hàng đợi thay đổi được xóa và grid được làm mới
+
+Thao tác commit tạo ra:
+
+| Loại Thay Đổi | SQL Được Tạo |
+|-------------|--------------|
+| Chỉnh sửa ô | `UPDATE ... SET column = ? WHERE pk = ?` |
+| Chèn hàng | `INSERT INTO ... (columns) VALUES (?)` |
+| Xóa hàng | `DELETE FROM ... WHERE pk = ?` |
+
+<Note>
+Các câu lệnh UPDATE yêu cầu khóa chính trên bảng. Nếu không có khóa chính được định nghĩa, TablePro sẽ hiển thị lỗi khi bạn cố gắng commit các cập nhật. Các câu lệnh DELETE có thể hoạt động mà không có khóa chính bằng cách khớp tất cả các giá trị cột.
+</Note>
+
+### Hủy Bỏ Thay Đổi
+
+Để hoàn nguyên tất cả các thay đổi đang chờ:
+
+1. Click vào nút **Discard** trên toolbar
+2. Tất cả các thay đổi trong hàng đợi bị xóa
+3. Các ô đã sửa đổi quay về giá trị ban đầu của chúng
+4. Các hàng đã chèn bị xóa khỏi grid
+5. Các hàng đã xóa được bỏ đánh dấu
+
+Hủy bỏ cũng xóa ngăn xếp hoàn tác/làm lại cho tab hiện tại.
+
+### Xem Trước SQL Dữ Liệu
+
+Trước khi commit, bạn có thể xem trước chính xác các câu lệnh SQL sẽ được thực thi:
+
+1. Thực hiện thay đổi dữ liệu trong grid (chỉnh sửa ô, chèn/xóa hàng)
+2. Click nút **Preview SQL** (biểu tượng mắt) trên toolbar, hoặc nhấn `Cmd+Shift+P`
+3. Một popover hiển thị tất cả SQL đang chờ với syntax highlighting
+4. Sử dụng **Copy All** để sao chép SQL vào clipboard
+
+{/* Ảnh chụp: Popover xem trước SQL hiển thị các câu lệnh đang chờ */}
+
+<Tip>
+Bản xem trước hiển thị SQL thực tế với giá trị tham số được inline, giúp dễ dàng xem xét chính xác những gì sẽ được thực thi. Các thao tác phá hủy (DROP, TRUNCATE, DELETE) được đánh dấu bằng banner cảnh báo.
+</Tip>
+
+{/* Screenshot: Nút Commit và Discard với số lượng thay đổi đang chờ */}
+<Frame caption="Nút Commit và Discard với số lượng thay đổi đang chờ">
+  <img
+    className="block dark:hidden"
+    src="/images/commit-discard-buttons.png"
+    alt="Nút Commit và Discard với số lượng thay đổi đang chờ"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/commit-discard-buttons-dark.png"
+    alt="Nút Commit và Discard với số lượng thay đổi đang chờ"
+  />
+</Frame>
+
+## Hoàn Tác & Làm Lại
+
+TablePro cung cấp ngăn xếp hoàn tác/làm lại đầy đủ cho các chỉnh sửa dữ liệu, cho phép bạn bước lùi và tiến qua các thay đổi của mình trước khi commit.
+
+### Cách Hoạt Động
+
+Mọi thay đổi dữ liệu được đẩy vào ngăn xếp hoàn tác:
+
+- **Chỉnh sửa ô**: Lưu trữ giá trị trước đó và giá trị mới
+- **Chèn hàng**: Lưu trữ chỉ số hàng
+- **Xóa hàng**: Lưu trữ chỉ số hàng và dữ liệu hàng ban đầu
+- **Xóa hàng loạt**: Lưu trữ tất cả các hàng bị ảnh hưởng như một hành động duy nhất
+
+Khi bạn hoàn tác, hành động được chuyển sang ngăn xếp làm lại. Khi bạn làm lại, nó quay trở lại ngăn xếp hoàn tác.
+
+### Sử Dụng Hoàn Tác & Làm Lại
+
+| Hành Động | Phím Tắt |
+|--------|----------|
+| Hoàn tác | `Cmd+Z` |
+| Làm lại | `Cmd+Shift+Z` |
+
+<Tip>
+Hoàn tác và làm lại có nhận biết ngữ cảnh. Khi trình soạn thảo SQL được focus, `Cmd+Z` hoàn tác các chỉnh sửa văn bản. Khi data grid được focus, nó hoàn tác các thay đổi dữ liệu.
+</Tip>
+
+### Hành Vi Ngăn Xếp
+
+- Các ngăn xếp hoàn tác/làm lại được duy trì theo từng tab
+- Commit hoặc hủy bỏ các thay đổi sẽ xóa cả hai ngăn xếp
+- Các thay đổi mới sau khi hoàn tác sẽ xóa ngăn xếp làm lại (hành vi hoàn tác tiêu chuẩn)
+
+## Thay Đổi Schema
+
+TablePro cũng theo dõi các thay đổi đối với cấu trúc bảng (cột, index và foreign key) sử dụng cách tiếp cận dựa trên hàng đợi tương tự.
+
+### Các Thao Tác Schema Được Theo Dõi
+
+| Thao Tác | Những Gì Được Theo Dõi |
+|-----------|----------------|
+| **Thêm cột** | Định nghĩa cột mới (tên, kiểu, nullable, default, v.v.) |
+| **Sửa đổi cột** | Định nghĩa cột cũ và mới |
+| **Xóa cột** | Cột được đánh dấu để xóa |
+| **Thêm index** | Định nghĩa index mới (tên, cột, kiểu, tính duy nhất) |
+| **Sửa đổi index** | Định nghĩa index cũ và mới |
+| **Xóa index** | Index được đánh dấu để xóa |
+| **Thêm foreign key** | Định nghĩa FK mới (cột, tham chiếu, hành động) |
+| **Sửa đổi foreign key** | Định nghĩa FK cũ và mới |
+| **Xóa foreign key** | FK được đánh dấu để xóa |
+| **Sửa đổi primary key** | Các cột primary key cũ và mới |
+
+### Chỉ Báo Trực Quan
+
+Trong tab Structure, các thay đổi đang chờ được hiển thị với các chỉ báo trực quan:
+
+- **Các mục mới** (cột, index, foreign key) được đánh dấu bằng màu chèn
+- **Các mục đã sửa đổi** hiển thị các trường đã thay đổi
+- **Các mục đã xóa** được đánh dấu bằng chỉ báo xóa
+
+{/* Screenshot: Các thay đổi schema được đánh dấu trong tab Structure */}
+<Frame caption="Các thay đổi schema được đánh dấu trong tab Structure">
+  <img
+    className="block dark:hidden"
+    src="/images/schema-change-indicators.png"
+    alt="Các thay đổi schema được đánh dấu trong tab Structure"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/schema-change-indicators-dark.png"
+    alt="Các thay đổi schema được đánh dấu trong tab Structure"
+  />
+</Frame>
+
+### Hoàn Tác & Làm Lại Schema
+
+Các thay đổi schema có ngăn xếp hoàn tác/làm lại riêng (tách biệt với các thay đổi dữ liệu):
+
+- Lên đến 100 mức hoàn tác
+- Các hành động mới xóa ngăn xếp làm lại
+- Hỗ trợ tất cả các loại thao tác schema
+
+### Xem Trước SQL Schema
+
+Trước khi áp dụng các thay đổi schema, bạn có thể xem trước SQL được tạo:
+
+<Steps>
+  <Step title="Thực Hiện Thay Đổi">
+    Thêm, sửa đổi hoặc xóa cột, index hoặc foreign key trong tab Structure
+  </Step>
+  <Step title="Click Commit">
+    Click vào nút Commit hoặc nhấn `Cmd+S`
+  </Step>
+  <Step title="Xem Xét SQL">
+    Một sheet xem trước hiển thị tất cả các câu lệnh ALTER TABLE sẽ được thực thi
+  </Step>
+  <Step title="Áp Dụng hoặc Hủy">
+    Click **Apply Changes** để thực thi, hoặc **Cancel** để quay lại và điều chỉnh
+  </Step>
+</Steps>
+
+{/* Screenshot: Schema preview sheet showing ALTER TABLE statements */}
+<Frame caption="Xem trước thay đổi schema với SQL được tạo">
+  <img
+    className="block dark:hidden"
+    src="/images/schema-preview.png"
+    alt="Xem trước Schema"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/schema-preview-dark.png"
+    alt="Xem trước Schema"
+  />
+</Frame>
+
+<Tip>
+Bạn có thể sao chép các câu lệnh SQL riêng lẻ từ sheet xem trước bằng cách sử dụng nút sao chép bên cạnh mỗi câu lệnh.
+</Tip>
+
+## Tạo SQL
+
+TablePro tạo SQL cụ thể cho từng cơ sở dữ liệu cho cả thay đổi dữ liệu và schema.
+
+### SQL Dữ Liệu (`SQLStatementGenerator`)
+
+Các thay đổi dữ liệu tạo ra các câu lệnh có tham số để ngăn chặn SQL injection:
+
+<Tabs>
+  <Tab title="MySQL/MariaDB">
+    ```sql
+    -- UPDATE với LIMIT 1 để an toàn
+    UPDATE `users` SET `name` = ? WHERE `id` = ? LIMIT 1
+
+    -- INSERT
+    INSERT INTO `users` (`name`, `email`) VALUES (?, ?)
+
+    -- DELETE (với PK)
+    DELETE FROM `users` WHERE `id` = ? OR `id` = ?
+
+    -- DELETE (không có PK, khớp tất cả các cột)
+    DELETE FROM `users` WHERE `name` = ? AND `email` = ? LIMIT 1
+    ```
+  </Tab>
+  <Tab title="PostgreSQL">
+    ```sql
+    -- UPDATE với tham số vị trí
+    UPDATE "users" SET "name" = $1 WHERE "id" = $2
+
+    -- INSERT
+    INSERT INTO "users" ("name", "email") VALUES ($1, $2)
+
+    -- DELETE (với PK)
+    DELETE FROM "users" WHERE "id" = $1 OR "id" = $2
+    ```
+  </Tab>
+  <Tab title="SQLite">
+    ```sql
+    -- UPDATE
+    UPDATE "users" SET "name" = ? WHERE "id" = ?
+
+    -- INSERT
+    INSERT INTO "users" ("name", "email") VALUES (?, ?)
+
+    -- DELETE
+    DELETE FROM "users" WHERE "id" = ? OR "id" = ?
+    ```
+  </Tab>
+</Tabs>
+
+### SQL Schema (`SchemaStatementGenerator`)
+
+Các thay đổi schema tạo ra các câu lệnh ALTER TABLE với cú pháp cụ thể cho từng cơ sở dữ liệu:
+
+<Tabs>
+  <Tab title="MySQL/MariaDB">
+    ```sql
+    -- Thêm cột
+    ALTER TABLE `users` ADD COLUMN `phone` VARCHAR(20) NOT NULL
+
+    -- Sửa đổi cột
+    ALTER TABLE `users` MODIFY COLUMN `name` VARCHAR(200) NOT NULL
+
+    -- Xóa cột
+    ALTER TABLE `users` DROP COLUMN `phone`
+
+    -- Thêm index
+    CREATE INDEX `idx_email` ON `users` (`email`) USING BTREE
+
+    -- Xóa foreign key
+    ALTER TABLE `orders` DROP FOREIGN KEY `fk_orders_user`
+    ```
+  </Tab>
+  <Tab title="PostgreSQL">
+    ```sql
+    -- Thêm cột
+    ALTER TABLE "users" ADD COLUMN "phone" VARCHAR(20) NOT NULL
+
+    -- Sửa đổi cột (nhiều câu lệnh)
+    ALTER TABLE "users" RENAME COLUMN "name" TO "full_name";
+    ALTER TABLE "users" ALTER COLUMN "full_name" TYPE VARCHAR(200);
+    ALTER TABLE "users" ALTER COLUMN "full_name" SET NOT NULL
+
+    -- Xóa cột
+    ALTER TABLE "users" DROP COLUMN "phone"
+
+    -- Thêm index
+    CREATE INDEX "idx_email" ON "users" ("email")
+
+    -- Xóa constraint
+    ALTER TABLE "orders" DROP CONSTRAINT "fk_orders_user"
+    ```
+  </Tab>
+  <Tab title="SQLite">
+    ```sql
+    -- Thêm cột
+    ALTER TABLE "users" ADD COLUMN "phone" TEXT
+
+    -- Xóa cột
+    ALTER TABLE "users" DROP COLUMN "phone"
+
+    -- Thêm index
+    CREATE INDEX "idx_email" ON "users" ("email")
+    ```
+
+    <Warning>
+    SQLite có hỗ trợ ALTER TABLE hạn chế. Việc sửa đổi cột và xóa foreign key yêu cầu tái tạo bảng, hiện không được hỗ trợ trong trình chỉnh sửa trực quan. Sử dụng trình soạn thảo SQL cho các thao tác này.
+    </Warning>
+  </Tab>
+</Tabs>
+
+### Hỗ Trợ Hàm SQL
+
+Khi chỉnh sửa các ô, TablePro nhận ra các hàm SQL phổ biến và chèn chúng dưới dạng literal thay vì chuỗi được trích dẫn:
+
+| Hàm | Cơ Sở Dữ Liệu |
+|----------|----------|
+| `NOW()` | MySQL, MariaDB |
+| `CURRENT_TIMESTAMP` | Tất cả |
+| `CURDATE()` | MySQL, MariaDB |
+| `CURRENT_DATE` | Tất cả |
+| `SYSDATE()` | MySQL |
+| `UTC_TIMESTAMP()` | MySQL, MariaDB |
+
+### Sắp Xếp Theo Phụ Thuộc
+
+Các thay đổi schema được tự động sắp xếp theo thứ tự phụ thuộc trước khi thực thi:
+
+1. Xóa foreign key (phải đến trước để tránh vi phạm ràng buộc)
+2. Xóa index
+3. Xóa/sửa đổi cột
+4. Thêm cột
+5. Sửa đổi primary key
+6. Thêm index
+7. Thêm foreign key
+
+## Phím Tắt
+
+| Hành Động | Phím Tắt |
+|--------|----------|
+| Commit thay đổi | `Cmd+S` |
+| Hoàn tác | `Cmd+Z` |
+| Làm lại | `Cmd+Shift+Z` |
+| Xóa các hàng đã chọn | `Delete` hoặc `Cmd+Delete` |
+| Chỉnh sửa ô | `Enter` hoặc double-click |
+| Hủy chỉnh sửa | `Escape` |
+
+## Thực Hành Tốt Nhất
+
+### Xem Xét Trước Khi Commit
+
+Luôn xem xét các thay đổi đang chờ của bạn trước khi commit. Các chỉ báo trực quan trong data grid giúp dễ dàng phát hiện các chỉnh sửa không mong muốn.
+
+### Sử Dụng Hoàn Tác Thường Xuyên
+
+Ngăn xếp hoàn tác được xóa khi bạn commit, vì vậy hãy tận dụng nó trong khi chỉnh sửa. Nó không tốn chi phí gì để hoàn tác và làm lại trong khi bạn đang làm việc.
+
+### Commit Thường Xuyên
+
+Tránh tích lũy quá nhiều thay đổi trước khi commit. Các commit nhỏ hơn, thường xuyên hơn dễ xác minh hơn và ít rủi ro hơn nếu có sự cố xảy ra.
+
+### Xem Trước Thay Đổi Schema
+
+Luôn sử dụng xem trước SQL khi sửa đổi cấu trúc bảng. Điều này cho phép bạn xác minh các câu lệnh ALTER TABLE chính xác trước khi chúng thực thi.
+
+### Sao Lưu Trước Các Thay Đổi Phá Hủy
+
+Khi xóa cột hoặc thực hiện các thay đổi schema phá hủy khác, hãy xem xét sao lưu bảng của bạn trước:
+
+```sql
+CREATE TABLE users_backup AS SELECT * FROM users;
+```
+
+## Các Bước Tiếp Theo
+
+<CardGroup cols={2}>
+  <Card title="Bảng Dữ Liệu" icon="table" href="/vi/features/data-grid">
+    Xem và chỉnh sửa dữ liệu trong grid
+  </Card>
+  <Card title="Cấu Trúc Bảng" icon="table-columns" href="/vi/features/table-structure">
+    Sửa đổi schema bảng một cách trực quan
+  </Card>
+  <Card title="Trình Soạn Thảo SQL" icon="code" href="/vi/features/sql-editor">
+    Viết và thực thi SQL thuần
+  </Card>
+  <Card title="Phím Tắt" icon="keyboard" href="/vi/features/keyboard-shortcuts">
+    Tất cả phím tắt
+  </Card>
+</CardGroup>

@@ -1,0 +1,350 @@
+---
+title: Development Setup
+description: Set up your development environment to contribute to TablePro
+---
+
+# Development Setup
+
+This guide will help you set up a development environment to build and contribute to TablePro.
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+### Required Software
+
+| Software | Version | Purpose |
+|----------|---------|---------|
+| **macOS** | 14.0+ (Sonoma) | Target platform |
+| **Xcode** | 15.0+ | Development IDE |
+| **Git** | Latest | Version control |
+
+### Optional Tools
+
+| Tool | Purpose |
+|------|---------|
+| **SwiftLint** | Code linting |
+| **SwiftFormat** | Code formatting |
+| **Homebrew** | Package management |
+
+## Getting Started
+
+### Step 1: Clone the Repository
+
+```bash
+git clone https://github.com/datlechin/tablepro.git
+cd tablepro
+```
+
+### Step 2: Install Development Tools
+
+Install SwiftLint and SwiftFormat for code quality:
+
+```bash
+# Using Homebrew
+brew install swiftlint swiftformat
+```
+
+### Step 3: Open in Xcode
+
+```bash
+open TablePro.xcodeproj
+```
+
+Or open Xcode manually and select **File** > **Open** > navigate to `TablePro.xcodeproj`.
+
+### Step 4: Build and Run
+
+1. Select the **TablePro** scheme in Xcode
+2. Select **My Mac** as the destination
+3. Press `Cmd+R` to build and run
+
+{/* Screenshot: Xcode with scheme selected */}
+<Frame caption="Xcode project setup">
+  <img 
+    className="block dark:hidden" 
+    src="/images/xcode-setup.png" 
+    alt="Xcode setup" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/xcode-setup-dark.png" 
+    alt="Xcode setup" 
+  />
+</Frame>
+
+## Project Structure
+
+<Tree>
+  <Tree.Folder name="tablepro" defaultOpen>
+    <Tree.Folder name="TablePro" defaultOpen>
+      <Tree.Folder name="Models">
+        <Tree.File name="DatabaseConnection.swift" />
+        <Tree.File name="QueryResult.swift" />
+        <Tree.File name="TableInfo.swift" />
+        <Tree.File name="AppSettings.swift" />
+      </Tree.Folder>
+      <Tree.Folder name="Views">
+        <Tree.Folder name="Connection" />
+        <Tree.Folder name="Editor" />
+        <Tree.Folder name="Results" />
+        <Tree.Folder name="Structure" />
+        <Tree.Folder name="Settings" />
+      </Tree.Folder>
+      <Tree.Folder name="ViewModels">
+        <Tree.File name="DatabaseManager.swift" />
+      </Tree.Folder>
+      <Tree.Folder name="Core">
+        <Tree.Folder name="Database">
+          <Tree.File name="DatabaseDriver.swift" />
+          <Tree.File name="MySQLDriver.swift" />
+          <Tree.File name="PostgreSQLDriver.swift" />
+          <Tree.File name="SQLiteDriver.swift" />
+        </Tree.Folder>
+        <Tree.Folder name="Autocomplete">
+          <Tree.File name="CompletionEngine.swift" />
+          <Tree.File name="SQLContextAnalyzer.swift" />
+          <Tree.File name="SQLKeywords.swift" />
+        </Tree.Folder>
+        <Tree.Folder name="SSH">
+          <Tree.File name="SSHTunnelManager.swift" />
+        </Tree.Folder>
+      </Tree.Folder>
+      <Tree.Folder name="Extensions" />
+      <Tree.Folder name="Theme">
+        <Tree.File name="Theme.swift" />
+      </Tree.Folder>
+      <Tree.Folder name="Resources" />
+    </Tree.Folder>
+    <Tree.Folder name="TableProTests" />
+    <Tree.Folder name="Libs" />
+    <Tree.Folder name="scripts">
+      <Tree.File name="build-release.sh" />
+      <Tree.File name="create-dmg.sh" />
+    </Tree.Folder>
+    <Tree.File name=".swiftlint.yml" />
+    <Tree.File name=".swiftformat" />
+  </Tree.Folder>
+</Tree>
+
+## Building
+
+### Development Build
+
+For day-to-day development:
+
+```bash
+# Build for current architecture (Debug)
+xcodebuild -project TablePro.xcodeproj -scheme TablePro -configuration Debug build -skipPackagePluginValidation
+
+# Or use Xcode: Cmd+B
+```
+
+### Release Build
+
+For distribution-ready builds:
+
+```bash
+# Build for Apple Silicon
+scripts/build-release.sh arm64
+
+# Build for Intel
+scripts/build-release.sh x86_64
+
+# Build for both architectures
+scripts/build-release.sh both
+```
+
+See [Building](/development/building) for detailed build instructions.
+
+## Running Tests
+
+```bash
+# Run all tests
+xcodebuild -project TablePro.xcodeproj -scheme TablePro test -skipPackagePluginValidation
+
+# Run specific test class
+xcodebuild -project TablePro.xcodeproj -scheme TablePro test -skipPackagePluginValidation \
+    -only-testing:TableProTests/TestClassName
+
+# Run specific test method
+xcodebuild -project TablePro.xcodeproj -scheme TablePro test -skipPackagePluginValidation \
+    -only-testing:TableProTests/TestClassName/testMethodName
+```
+
+Or in Xcode: **Product** > **Test** (`Cmd+U`).
+
+## Code Quality
+
+### SwiftLint
+
+Run SwiftLint to check for code issues:
+
+```bash
+# Check for issues
+swiftlint lint
+
+# Auto-fix fixable issues
+swiftlint --fix
+```
+
+SwiftLint runs automatically during Xcode builds.
+
+### SwiftFormat
+
+Format code to match project style:
+
+```bash
+# Format all code
+swiftformat .
+
+# Check formatting without applying
+swiftformat --lint .
+```
+
+<Tip>
+Run SwiftFormat before committing to ensure consistent code style.
+</Tip>
+
+## Configuration Files
+
+### .swiftlint.yml
+
+SwiftLint rules and configuration:
+
+- Line length limits
+- Function complexity limits
+- Disabled rules
+- Custom rules
+
+### .swiftformat
+
+SwiftFormat options:
+
+- Indentation style
+- Brace placement
+- Import ordering
+- Other formatting rules
+
+## Development Workflow
+
+### Making Changes
+
+1. Create a feature branch:
+   ```bash
+   git checkout -b feature/my-feature
+   ```
+
+2. Make your changes
+
+3. Run linting:
+   ```bash
+   swiftlint lint
+   swiftformat --lint .
+   ```
+
+4. Run tests:
+   ```bash
+   xcodebuild -project TablePro.xcodeproj -scheme TablePro test -skipPackagePluginValidation
+   ```
+
+5. Commit your changes:
+   ```bash
+   git add .
+   git commit -m "Add my feature"
+   ```
+
+6. Push and create a pull request:
+   ```bash
+   git push origin feature/my-feature
+   ```
+
+### Debugging
+
+Use Xcode's debugging tools:
+
+1. Set breakpoints by clicking line numbers
+2. Use `po` in the debug console to print objects
+3. Use the Variables View to inspect state
+4. Use Console.app for system logs
+
+### Logging
+
+TablePro uses OSLog for debugging:
+
+```swift
+import os
+
+private static let logger = Logger(subsystem: "com.TablePro", category: "ComponentName")
+
+// Usage
+logger.debug("Connection established")
+logger.info("Query executed in \(duration)s")
+logger.error("Failed to connect: \(error.localizedDescription)")
+```
+
+## Common Tasks
+
+### Adding a New View
+
+1. Create the SwiftUI view in appropriate `Views/` subfolder
+2. Follow existing naming conventions (`FeatureNameView.swift`)
+3. Use `@Observable` or `@StateObject` for state management
+4. Add to navigation/routing as needed
+
+### Adding a Database Feature
+
+1. Implement in the appropriate driver (`MySQLDriver.swift`, etc.)
+2. Add to `DatabaseDriver` protocol if generic
+3. Add UI in relevant view components
+4. Add tests
+
+### Modifying Settings
+
+1. Add to appropriate settings struct in `AppSettings.swift`
+2. Update `SettingsView` to display the setting
+3. Use setting throughout the app via `@AppStorage` or settings manager
+
+## Troubleshooting
+
+### Build Fails
+
+1. Clean build folder: `Cmd+Shift+K`
+2. Delete derived data:
+   ```bash
+   rm -rf ~/Library/Developer/Xcode/DerivedData
+   ```
+3. Close and reopen Xcode
+4. Check for Xcode updates
+
+### SwiftLint Errors
+
+1. Read the error message carefully
+2. Check `.swiftlint.yml` for rule configuration
+3. Fix the issue or disable the rule if appropriate
+4. Run `swiftlint --fix` for auto-fixable issues
+
+### Missing Libraries
+
+If native libraries are missing:
+
+1. Check the `Libs/` directory
+2. Ensure `libmariadb_universal.a` exists
+3. Run `scripts/build-release.sh` to prepare libraries
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Architecture" icon="sitemap" href="/development/architecture">
+    Understand the codebase structure
+  </Card>
+  <Card title="Code Style" icon="code" href="/development/code-style">
+    Follow coding conventions
+  </Card>
+  <Card title="Building" icon="hammer" href="/development/building">
+    Build release versions
+  </Card>
+  <Card title="GitHub" icon="github" href="https://github.com/datlechin/tablepro">
+    View the source code
+  </Card>
+</CardGroup>

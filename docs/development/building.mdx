@@ -1,0 +1,384 @@
+---
+title: Building
+description: Build TablePro for development and release distribution
+---
+
+# Building TablePro
+
+This guide covers building TablePro for development, creating release builds, and packaging for distribution.
+
+## Development Builds
+
+### Using Xcode
+
+The quickest way to build during development:
+
+1. Open `TablePro.xcodeproj` in Xcode
+2. Select the **TablePro** scheme
+3. Select **My Mac** as the destination
+4. Press `Cmd+R` to build and run
+
+Or `Cmd+B` to build without running.
+
+### Using Command Line
+
+```bash
+# Build for current architecture (Debug)
+xcodebuild -project TablePro.xcodeproj \
+    -scheme TablePro \
+    -configuration Debug \
+    build \
+    -skipPackagePluginValidation
+
+# Build and run
+xcodebuild -project TablePro.xcodeproj \
+    -scheme TablePro \
+    -configuration Debug \
+    build \
+    -skipPackagePluginValidation && open build/Debug/TablePro.app
+```
+
+### Clean Build
+
+If you encounter build issues:
+
+```bash
+# Clean via xcodebuild
+xcodebuild -project TablePro.xcodeproj -scheme TablePro clean
+
+# Or clean derived data
+rm -rf ~/Library/Developer/Xcode/DerivedData
+
+# Or in Xcode: Cmd+Shift+K
+```
+
+## Release Builds
+
+### Using the Build Script
+
+TablePro includes a build script for creating release builds:
+
+```bash
+# Build for Apple Silicon (M1/M2/M3/M4/M5)
+scripts/build-release.sh arm64
+
+# Build for Intel
+scripts/build-release.sh x86_64
+
+# Build for both architectures
+scripts/build-release.sh both
+```
+
+### Build Script Details
+
+The `build-release.sh` script:
+
+1. **Prepares libraries**: Extracts the correct architecture from universal libraries
+2. **Builds the app**: Runs xcodebuild with Release configuration
+3. **Copies output**: Places the app in `build/Release/`
+4. **Restores icon**: Ensures the full app icon is included
+5. **Verifies architecture**: Confirms the binary matches the target architecture
+
+### Output Location
+
+After building, find the app at:
+
+```
+build/Release/TablePro-arm64.app   # Apple Silicon
+build/Release/TablePro-x86_64.app  # Intel
+```
+
+### Manual Release Build
+
+If you prefer manual building:
+
+```bash
+# Set architecture
+ARCH=arm64  # or x86_64
+
+# Build
+xcodebuild \
+    -project TablePro.xcodeproj \
+    -scheme TablePro \
+    -configuration Release \
+    -arch $ARCH \
+    ONLY_ACTIVE_ARCH=YES \
+    CODE_SIGN_IDENTITY="" \
+    CODE_SIGNING_REQUIRED=NO \
+    clean build
+```
+
+## Native Libraries
+
+TablePro uses native C libraries for database connectivity.
+
+### Library Files
+
+Located in `Libs/`:
+
+| File | Purpose |
+|------|---------|
+| `libmariadb_universal.a` | Universal (arm64 + x86_64) MariaDB library |
+| `libmariadb.a` | Architecture-specific (created during build) |
+
+### Library Setup
+
+The universal library must exist before building:
+
+```bash
+# Check if universal library exists
+ls -la Libs/libmariadb_universal.a
+
+# If missing, create from architecture-specific libraries
+lipo -create \
+    Libs/libmariadb_arm64.a \
+    Libs/libmariadb_x86_64.a \
+    -output Libs/libmariadb_universal.a
+```
+
+The build script automatically extracts the correct architecture slice.
+
+## Creating DMG
+
+### Using the DMG Script
+
+Create a distributable DMG file:
+
+```bash
+# First, build the release
+scripts/build-release.sh arm64
+
+# Then create DMG
+scripts/create-dmg.sh arm64
+```
+
+### DMG Contents
+
+The DMG includes:
+
+- TablePro.app
+- Applications folder shortcut
+- Background image (if configured)
+- License file (if included)
+
+### Output
+
+DMGs are created at:
+
+```
+build/Release/TablePro-arm64.dmg
+build/Release/TablePro-x86_64.dmg
+```
+
+## Code Signing
+
+### Development Builds
+
+Development builds are unsigned by default, which is fine for local testing.
+
+### Release Distribution
+
+For public distribution:
+
+<Warning>
+TablePro is currently distributed unsigned. macOS Gatekeeper will show a warning on first launch.
+</Warning>
+
+To sign the app (requires Apple Developer account):
+
+```bash
+# Sign the app
+codesign --force --deep --sign "Developer ID Application: Your Name (TEAM_ID)" \
+    build/Release/TablePro-arm64.app
+
+# Verify signature
+codesign --verify --verbose build/Release/TablePro-arm64.app
+```
+
+### Notarization
+
+For distribution outside the App Store:
+
+```bash
+# Create ZIP for notarization
+ditto -c -k --keepParent build/Release/TablePro-arm64.app TablePro.zip
+
+# Submit for notarization
+xcrun notarytool submit TablePro.zip \
+    --apple-id "your@email.com" \
+    --team-id "TEAM_ID" \
+    --password "app-specific-password" \
+    --wait
+
+# Staple the ticket
+xcrun stapler staple build/Release/TablePro-arm64.app
+```
+
+## Build Configuration
+
+### Build Settings
+
+Key build settings in Xcode:
+
+| Setting | Debug | Release |
+|---------|-------|---------|
+| Optimization | None (-O0) | Optimize for Speed (-O) |
+| Debug Information | Full | Stripped |
+| Assertions | Enabled | Disabled |
+| Code Signing | None | Developer ID (optional) |
+
+### Architecture Settings
+
+| Setting | Value |
+|---------|-------|
+| ARCHS | Standard (arm64, x86_64) |
+| ONLY_ACTIVE_ARCH | Yes (Debug), No (Release) |
+| VALID_ARCHS | arm64 x86_64 |
+
+## Troubleshooting
+
+### Build Failures
+
+**Missing library errors**:
+```
+ld: library not found for -lmariadb
+```
+
+Solution:
+1. Check `Libs/` directory exists
+2. Run `scripts/build-release.sh` to prepare libraries
+3. Verify `libmariadb.a` exists for target architecture
+
+**Code signing errors**:
+```
+Code signing is required for product type 'Application'
+```
+
+Solution: Build script disables code signing. If building manually, add:
+```
+CODE_SIGN_IDENTITY=""
+CODE_SIGNING_REQUIRED=NO
+```
+
+**Architecture mismatch**:
+```
+building for macOS-arm64 but attempting to link with file built for macOS-x86_64
+```
+
+Solution:
+1. Clean build folder
+2. Ensure libraries match target architecture
+3. Run build script which handles library architecture
+
+### Xcode Issues
+
+**Scheme not found**:
+1. Open Xcode
+2. Product > Scheme > Manage Schemes
+3. Ensure TablePro scheme is checked
+
+**Derived data issues**:
+```bash
+rm -rf ~/Library/Developer/Xcode/DerivedData
+```
+
+**Index issues**:
+```bash
+rm -rf ~/Library/Developer/Xcode/DerivedData/*/Index
+```
+
+## CI/CD
+
+### GitHub Actions
+
+Example workflow for automated builds:
+
+```yaml
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.0.app
+
+      - name: Build
+        run: |
+          xcodebuild -project TablePro.xcodeproj \
+            -scheme TablePro \
+            -configuration Debug \
+            build \
+            -skipPackagePluginValidation
+
+      - name: Test
+        run: |
+          xcodebuild -project TablePro.xcodeproj \
+            -scheme TablePro \
+            test \
+            -skipPackagePluginValidation
+```
+
+### Release Workflow
+
+For creating releases:
+
+```yaml
+release:
+  runs-on: macos-latest
+  steps:
+    - uses: actions/checkout@v4
+
+    - name: Build Release (arm64)
+      run: scripts/build-release.sh arm64
+
+    - name: Build Release (x86_64)
+      run: scripts/build-release.sh x86_64
+
+    - name: Create DMGs
+      run: |
+        scripts/create-dmg.sh arm64
+        scripts/create-dmg.sh x86_64
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: release-dmgs
+        path: build/Release/*.dmg
+```
+
+## Build Sizes
+
+Typical build sizes (v0.1.1):
+
+| Build | Size |
+|-------|------|
+| Debug app | ~15 MB |
+| Release app | ~10 MB |
+| DMG (arm64) | ~3.5 MB |
+| DMG (x86_64) | ~3.5 MB |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Setup" icon="wrench" href="/development/setup">
+    Development environment setup
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/development/architecture">
+    Codebase architecture
+  </Card>
+  <Card title="Code Style" icon="code" href="/development/code-style">
+    Coding conventions
+  </Card>
+  <Card title="GitHub" icon="github" href="https://github.com/datlechin/tablepro">
+    Source repository
+  </Card>
+</CardGroup>

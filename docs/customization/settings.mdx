@@ -1,0 +1,503 @@
+---
+title: Settings Overview
+description: Configure TablePro to match your workflow and preferences
+---
+
+# Settings Overview
+
+TablePro provides various settings to customize your experience. Access settings via **TablePro** > **Settings** or press `Cmd+,`.
+
+{/* Screenshot: Settings window showing all categories */}
+<Frame caption="TablePro settings">
+  <img 
+    className="block dark:hidden" 
+    src="/images/settings.png" 
+    alt="Settings window" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/settings-dark.png" 
+    alt="Settings window" 
+  />
+</Frame>
+
+## Settings Categories
+
+<CardGroup cols={2}>
+  <Card title="General" icon="gear">
+    Language, startup behavior, software updates, and basic preferences
+  </Card>
+  <Card title="Appearance" icon="palette" href="/customization/appearance">
+    Theme, colors, and visual options
+  </Card>
+  <Card title="Editor" icon="code" href="/customization/editor-settings">
+    SQL editor font, size, and behavior
+  </Card>
+  <Card title="Data Grid" icon="table">
+    Row height, date formats, and display
+  </Card>
+  <Card title="Tabs" icon="rectangle-on-rectangle">
+    Tab reuse behavior
+  </Card>
+  <Card title="Keyboard" icon="keyboard" href="/features/keyboard-shortcuts#customizing-shortcuts">
+    Customize keyboard shortcuts
+  </Card>
+  <Card title="AI" icon="sparkles" href="/features/ai-chat">
+    AI provider configuration and chat settings
+  </Card>
+  <Card title="History" icon="clock-rotate-left">
+    Query history retention settings
+  </Card>
+  <Card title="License" icon="key">
+    License activation and management
+  </Card>
+</CardGroup>
+
+## General Settings
+
+### Language
+
+Choose the display language for the TablePro interface:
+
+| Option | Description |
+|--------|-------------|
+| **System** | Follow macOS system language (default) |
+| **English** | English |
+| **Tiếng Việt** | Vietnamese |
+
+<Note>
+Changing the language requires restarting TablePro to take full effect.
+</Note>
+
+### Startup Behavior
+
+Control what happens when TablePro launches:
+
+| Option | Description |
+|--------|-------------|
+| **Show Welcome Screen** | Display the welcome screen with recent connections |
+| **Reopen Last Session** | Automatically reconnect to your last database |
+
+### Query Execution Timeout
+
+Set a maximum time for queries to run before being cancelled:
+
+| Setting | Default | Range | Description |
+|---------|---------|-------|-------------|
+| **Query timeout** | 60 seconds | 0 -- 600 | Maximum seconds to wait for a query. Set to 0 for no limit. |
+
+The timeout is enforced at the database level for maximum reliability:
+
+| Database | Mechanism |
+|----------|-----------|
+| PostgreSQL | `SET statement_timeout` (applies to all statements) |
+| MySQL | `SET SESSION max_execution_time` (applies to SELECT queries) |
+| MariaDB | `SET SESSION max_statement_time` (applies to SELECT queries) |
+| SQLite | `sqlite3_busy_timeout` (applies to lock contention) |
+
+<Note>
+The timeout is applied when a new connection is established. Changing the timeout value requires reconnecting to take effect.
+</Note>
+
+{/* Screenshot: Query timeout setting */}
+<Frame caption="Query execution timeout configuration">
+  <img
+    className="block dark:hidden"
+    src="/images/settings-query-timeout.png"
+    alt="Query timeout setting"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/settings-query-timeout-dark.png"
+    alt="Query timeout setting"
+  />
+</Frame>
+
+### Software Update
+
+Control how TablePro checks for and installs updates:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| **Automatically check for updates** | On | Periodically check for new versions in the background |
+| **Check for Updates...** | — | Manually check for updates now |
+
+TablePro uses [Sparkle](https://sparkle-project.org/) for secure, seamless updates. When an update is available, you'll see a dialog with release notes and the option to install.
+
+You can also check for updates from the **TablePro** menu > **Check for Updates...**.
+
+### Privacy
+
+Control anonymous usage data collection:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| **Share anonymous usage data** | On | Send anonymous usage statistics (OS version, architecture, locale, database types) every 24 hours |
+
+Data collected is fully anonymous — no personal information, queries, or database content is ever transmitted. You can opt out at any time by toggling this setting off.
+
+{/* Screenshot: General settings panel */}
+<Frame caption="General settings">
+  <img 
+    className="block dark:hidden" 
+    src="/images/settings-general.png" 
+    alt="General settings" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/settings-general-dark.png" 
+    alt="General settings" 
+  />
+</Frame>
+
+## Data Grid Settings
+
+Configure how data is displayed in the results grid.
+
+### Row Height
+
+| Option | Height | Best For |
+|--------|--------|----------|
+| **Compact** | 20px | Dense data, see more rows |
+| **Normal** | 24px | Balanced view (default) |
+| **Comfortable** | 28px | Better readability |
+| **Spacious** | 32px | Accessibility |
+
+### Date Format
+
+Choose how dates are displayed:
+
+| Format | Example |
+|--------|---------|
+| ISO 8601 | 2024-12-31 23:59:59 |
+| ISO Date | 2024-12-31 |
+| US Long | 12/31/2024 11:59:59 PM |
+| US Short | 12/31/2024 |
+| EU Long | 31/12/2024 23:59:59 |
+| EU Short | 31/12/2024 |
+
+<Tip>
+ISO 8601 format is recommended for consistency, especially when working with international teams.
+</Tip>
+
+### NULL Display
+
+Customize how NULL values appear:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| **NULL Display** | "NULL" | Text shown for NULL values |
+
+Valid values:
+- `NULL` - Standard database notation
+- `(null)` - Parenthesized
+- `∅` - Empty set symbol
+- Custom text (max 20 characters)
+
+### Page Size
+
+Set the default number of rows loaded per page:
+
+| Range | Minimum | Maximum | Default |
+|-------|---------|---------|---------|
+| Page Size | 10 | 100,000 | 1,000 |
+
+<Note>
+Larger page sizes use more memory but show more data at once.
+</Note>
+
+<Note>
+**Validation ranges:**
+- **Page Size**: 10 -- 100,000 rows (values outside this range are clamped)
+- **NULL Display**: Maximum 20 characters, no newlines or tabs allowed
+</Note>
+
+### Alternate Row Colors
+
+| Option | Description |
+|--------|-------------|
+| **On** | Zebra striping for easier scanning |
+| **Off** | Uniform background color |
+
+{/* Screenshot: Data Grid settings */}
+<Frame caption="Data Grid settings: row height, date format, NULL display">
+  <img
+    className="block dark:hidden"
+    src="/images/settings-data-grid.png"
+    alt="Data Grid settings"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/settings-data-grid-dark.png"
+    alt="Data Grid settings"
+  />
+</Frame>
+
+## Tab Settings
+
+Configure tab behavior when opening tables from the sidebar.
+
+### Reuse Clean Table Tab
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| **Reuse clean table tab** | Off | When enabled, clicking a new table in the sidebar replaces the current table tab instead of opening a new tab |
+
+A tab is considered "clean" when all of the following are true:
+
+- It is a table tab (not a query or create table tab)
+- It is not pinned
+- It has no unsaved changes
+- You haven't interacted with it (no sorting, filtering, selecting rows, etc.)
+
+When this setting is off (the default), every table click opens a new tab.
+
+<Tip>
+Enable this if you prefer a single-tab workflow when browsing tables, similar to TablePlus's default behavior.
+</Tip>
+
+{/* Screenshot: Tab settings */}
+<Frame caption="Tab settings: reuse behavior">
+  <img
+    className="block dark:hidden"
+    src="/images/settings-tabs.png"
+    alt="Tab settings"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/settings-tabs-dark.png"
+    alt="Tab settings"
+  />
+</Frame>
+
+## Keyboard Settings
+
+Customize keyboard shortcuts for menu actions. See [Keyboard Shortcuts](/features/keyboard-shortcuts#customizing-shortcuts) for full details.
+
+### Rebinding Shortcuts
+
+1. Open **Settings** > **Keyboard**
+2. Click the shortcut field next to any action
+3. Press the new key combination
+4. The shortcut updates immediately
+
+### Conflict Detection
+
+Assigning a shortcut already in use shows a dialog with **Cancel** or **Reassign** options. System-reserved shortcuts (`Cmd+Q`, `Cmd+H`, `Cmd+M`, `Cmd+,`) cannot be reassigned.
+
+### Reset to Defaults
+
+Click **Reset to Defaults** to restore all shortcuts to their original values.
+
+{/* Screenshot: Keyboard settings */}
+<Frame caption="Keyboard settings: shortcut customization">
+  <img
+    className="block dark:hidden"
+    src="/images/settings-keyboard.png"
+    alt="Keyboard settings"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/settings-keyboard-dark.png"
+    alt="Keyboard settings"
+  />
+</Frame>
+
+## History Settings
+
+Control query history retention.
+
+### Maximum Entries
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| **Max Entries** | 10,000 | Maximum queries to keep |
+
+Set to `0` for unlimited history.
+
+### Maximum Days
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| **Max Days** | 90 | Delete queries older than this |
+
+Set to `0` to keep history forever.
+
+### Auto Cleanup
+
+| Option | Description |
+|--------|-------------|
+| **On** | Automatically remove old entries (default) |
+| **Off** | Manual cleanup only |
+
+<Warning>
+Disabling auto cleanup with unlimited entries may cause the history database to grow very large over time.
+</Warning>
+
+### Clear History
+
+To clear all query history:
+
+1. Open Settings > History
+2. Click **Clear All History**
+3. Confirm the action
+
+{/* Screenshot: History settings */}
+<Frame caption="History settings: retention and cleanup">
+  <img
+    className="block dark:hidden"
+    src="/images/settings-history.png"
+    alt="History settings"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/settings-history-dark.png"
+    alt="History settings"
+  />
+</Frame>
+
+## License Settings
+
+Manage your TablePro license from the **License** tab in Settings.
+
+### Activating a License
+
+1. Open **Settings** (`Cmd+,`) and select the **License** tab
+2. Enter your license key in the text field
+3. Click **Activate**
+
+Once activated, the tab displays your registered email and license key.
+
+### Deactivating a License
+
+To remove the license from this machine:
+
+1. Open **Settings** > **License**
+2. Click **Deactivate...**
+3. Confirm the action
+
+<Note>
+Deactivating frees up the activation slot so you can use the license on a different machine.
+</Note>
+
+### Offline Use
+
+TablePro validates your license locally using a cryptographic signature. No internet connection is required for day-to-day use after activation. The app periodically re-validates with the server (every 7 days) to check for updates.
+
+{/* Screenshot: License settings */}
+<Frame caption="License activation and management">
+  <img
+    className="block dark:hidden"
+    src="/images/settings-license.png"
+    alt="License settings"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/settings-license-dark.png"
+    alt="License settings"
+  />
+</Frame>
+
+## Settings Storage
+
+Settings are stored in:
+
+```
+~/Library/Preferences/com.TablePro.plist
+```
+
+### Resetting Settings
+
+To reset all settings to defaults:
+
+```bash
+# Remove preferences file
+rm ~/Library/Preferences/com.TablePro.plist
+
+# Remove cached settings
+rm -rf ~/Library/Caches/com.TablePro
+```
+
+Then restart TablePro.
+
+<Warning>
+Resetting preferences will not affect your saved connections or query history.
+</Warning>
+
+## Settings by Feature
+
+### Connection-Related
+
+| Setting | Location | Description |
+|---------|----------|-------------|
+| Language | General | App display language |
+| Startup behavior | General | What to do on launch |
+| Query timeout | General | Maximum query execution time |
+| Auto-check updates | General | Check for updates automatically |
+| Share analytics | General | Share anonymous usage data |
+| Auto-reconnect | Connections | Reconnect on disconnect |
+
+### Editor-Related
+
+| Setting | Location | Description |
+|---------|----------|-------------|
+| Font family | Editor | Monospace font choice |
+| Font size | Editor | Text size (11--18 pt, clamped to range) |
+| Line numbers | Editor | Show/hide line numbers |
+| Word wrap | Editor | Wrap long lines |
+| Tab width | Editor | Spaces per tab (1--16) |
+
+See [Editor Settings](/customization/editor-settings) for details.
+
+### Display-Related
+
+| Setting | Location | Description |
+|---------|----------|-------------|
+| Theme | Appearance | Light/Dark/System |
+| Accent color | Appearance | UI accent color |
+| Row height | Data Grid | Grid row height |
+| Date format | Data Grid | Date display format |
+
+See [Appearance](/customization/appearance) for details.
+
+### Keyboard-Related
+
+| Setting | Location | Description |
+|---------|----------|-------------|
+| Shortcut bindings | Keyboard | Customize menu keyboard shortcuts |
+| Reset to Defaults | Keyboard | Restore all shortcuts to original values |
+
+### Filter-Related
+
+| Setting | Location | Description |
+|---------|----------|-------------|
+| Default column | Filters | Column pre-selected for new filters (Raw SQL, Primary Key, Any Column) |
+| Default operator | Filters | Operator pre-selected for new filters |
+| Panel state | Filters | Filter panel behavior on open (Hidden, Always Show, Restore Last) |
+
+See [Filtering](/features/filtering) for details.
+
+## Keyboard Shortcut
+
+Open settings quickly:
+
+| Action | Shortcut |
+|--------|----------|
+| Open Settings | `Cmd+,` |
+
+## Related Pages
+
+<CardGroup cols={2}>
+  <Card title="Appearance" icon="palette" href="/customization/appearance">
+    Theme and color settings
+  </Card>
+  <Card title="Editor Settings" icon="code" href="/customization/editor-settings">
+    SQL editor configuration
+  </Card>
+  <Card title="Query History" icon="clock-rotate-left" href="/features/query-history">
+    History feature details
+  </Card>
+  <Card title="Data Grid" icon="table" href="/features/data-grid">
+    Data grid features
+  </Card>
+</CardGroup>

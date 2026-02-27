@@ -1,0 +1,361 @@
+---
+title: AI Chat
+description: Hỗ trợ SQL bằng AI với nhiều nhà cung cấp
+---
+
+# AI Chat
+
+TablePro có tích hợp bảng chat AI giúp bạn viết, giải thích và sửa các câu truy vấn SQL. Hỗ trợ nhiều nhà cung cấp AI bao gồm Claude (Anthropic), OpenAI, Gemini (Google), OpenRouter, Ollama và các endpoint tùy chỉnh.
+
+## Mở bảng AI Chat
+
+Mở bảng AI chat bằng một trong các cách sau:
+
+| Phương thức | Thao tác |
+|-------------|----------|
+| Phím tắt | `Cmd+Shift+L` |
+| Thanh công cụ | Nhấp vào nút AI (biểu tượng sparkles) |
+| Menu | **View** > **Toggle AI Chat** |
+
+Bảng chat xuất hiện ở phía bên phải của trình soạn thảo, cạnh bảng data inspector.
+
+<Frame caption="Bảng AI chat">
+  <img
+    className="block dark:hidden"
+    src="/images/ai-chat-panel.png"
+    alt="AI chat panel"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/ai-chat-panel-dark.png"
+    alt="AI chat panel"
+  />
+</Frame>
+
+## Trò chuyện với AI
+
+1. Nhập câu hỏi hoặc yêu cầu của bạn vào ô nhập ở cuối
+2. Nhấn **Enter** hoặc nhấp nút gửi để gửi tin nhắn
+3. AI phản hồi với các gợi ý phù hợp với kết nối cơ sở dữ liệu hiện tại của bạn
+
+AI tự động nhận thông tin ngữ cảnh về:
+- Loại cơ sở dữ liệu của bạn (MySQL, PostgreSQL, SQLite)
+- Schema cơ sở dữ liệu (bảng, cột, kiểu dữ liệu, khóa ngoại)
+- Câu truy vấn hiện tại trong trình soạn thảo (khi được bật)
+
+<Tip>
+AI tạo ra SQL phù hợp với dialect cơ sở dữ liệu cụ thể của bạn, sử dụng dấu ngoặc kép định danh và cú pháp đúng.
+</Tip>
+
+### Phản hồi Markdown
+
+Phản hồi AI được hiển thị với đầy đủ hỗ trợ Markdown bao gồm:
+- **Văn bản định dạng** — tiêu đề, in đậm, in nghiêng, danh sách
+- **Khối code SQL** — với tô sáng cú pháp và các nút thao tác
+- **Code nội tuyến** — cho tên bảng, tên cột và từ khóa SQL
+
+## Khối code
+
+Khi AI phản hồi với các khối code SQL:
+
+- **Copy** — sao chép SQL vào clipboard của bạn
+- **Insert to Editor** — chèn SQL trực tiếp vào tab trình soạn thảo đang hoạt động
+
+<Frame caption="Phản hồi AI với các nút thao tác khối code">
+  <img
+    className="block dark:hidden"
+    src="/images/ai-chat-code-block.png"
+    alt="AI response with code block actions"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/ai-chat-code-block-dark.png"
+    alt="AI response with code block actions"
+  />
+</Frame>
+
+## Token Usage
+
+Sau mỗi phản hồi AI hoàn tất, số lượng token được hiển thị bên dưới bong bóng tin nhắn assistant:
+
+- **Input tokens** — token được gửi đến AI (tin nhắn của bạn + ngữ cảnh)
+- **Output tokens** — token được AI tạo ra
+
+Điều này giúp bạn theo dõi lượng sử dụng API và chi phí cho mỗi tin nhắn.
+
+<Frame caption="Hiển thị token usage">
+  <img
+    className="block dark:hidden"
+    src="/images/ai-chat-token-usage.png"
+    alt="Token usage display"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/ai-chat-token-usage-dark.png"
+    alt="Token usage display"
+  />
+</Frame>
+
+## Lịch sử hội thoại
+
+Các cuộc hội thoại AI được tự động lưu vào đĩa và khôi phục khi bạn khởi động lại TablePro. Quản lý hội thoại từ tiêu đề bảng chat:
+
+| Nút | Thao tác |
+|-----|----------|
+| **Lịch sử** (biểu tượng đồng hồ) | Duyệt và chuyển đổi giữa các hội thoại trước |
+| **Chat mới** (biểu tượng bút chì) | Bắt đầu một hội thoại mới |
+| **Xóa** (biểu tượng thùng rác) | Xóa hội thoại hiện tại |
+
+Các hội thoại được lưu dưới dạng tệp JSON trong `~/Library/Application Support/TablePro/ai_chats/`.
+
+<Tip>
+Các hội thoại được tự động đặt tiêu đề dựa trên tin nhắn đầu tiên bạn gửi, giúp dễ dàng tìm lại sau này.
+</Tip>
+
+<Frame caption="Lịch sử hội thoại">
+  <img
+    className="block dark:hidden"
+    src="/images/ai-chat-conversation-history.png"
+    alt="Conversation history"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/ai-chat-conversation-history-dark.png"
+    alt="Conversation history"
+  />
+</Frame>
+
+## Thử lại và Tái tạo
+
+Khi có sự cố xảy ra hoặc bạn muốn phản hồi khác:
+
+- **Retry** — nếu AI tạo phản hồi thất bại (lỗi mạng, giới hạn tốc độ, v.v.), nút "Retry" nội tuyến xuất hiện bên dưới tin nhắn người dùng cuối cùng. Nhấp vào để gửi lại cùng một yêu cầu.
+- **Regenerate** — sau một phản hồi thành công, nút "Regenerate" xuất hiện bên dưới tin nhắn assistant. Nhấp vào để xóa phản hồi và phát lại phản hồi mới.
+
+## Streaming
+
+Phản hồi AI được phát trực tiếp theo thời gian thực khi được tạo ra. Bạn có thể:
+- Xem phản hồi được xây dựng từng token một — chỉ báo ba chấm đang gõ hiển thị trong khi chờ token đầu tiên
+- Nhấp **Stop** để hủy phản hồi đang phát trực tiếp bất kỳ lúc nào
+- Cuộn lên để đọc các tin nhắn trước mà không bị kéo về cuối — tự động cuộn chỉ kích hoạt khi bạn đang xem nội dung mới nhất
+- Bắt đầu tin nhắn mới trong khi xem các phản hồi trước
+
+<Frame caption="Phản hồi streaming">
+  <img
+    className="block dark:hidden"
+    src="/images/ai-chat-streaming.png"
+    alt="Streaming response"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/ai-chat-streaming-dark.png"
+    alt="Streaming response"
+  />
+</Frame>
+
+## Các nhà cung cấp được hỗ trợ
+
+TablePro hỗ trợ sáu loại nhà cung cấp AI:
+
+| Nhà cung cấp | Endpoint | Yêu cầu API Key |
+|--------------|----------|-----------------|
+| **Claude** (Anthropic) | `https://api.anthropic.com` | Có |
+| **OpenAI** | `https://api.openai.com` | Có |
+| **OpenRouter** | `https://openrouter.ai/api` | Có |
+| **Gemini** (Google) | `https://generativelanguage.googleapis.com` | Có |
+| **Ollama** | `http://localhost:11434` | Không |
+| **Custom** | Bất kỳ endpoint tương thích OpenAI | Tùy chọn |
+
+<Tip>
+**Tự động phát hiện Ollama**: Nếu Ollama đang chạy cục bộ khi TablePro khởi động, nó sẽ được tự động phát hiện và đăng ký làm nhà cung cấp AI với model khả dụng đầu tiên. Bạn không cần cấu hình thủ công.
+</Tip>
+
+<Note>
+Bạn có thể cấu hình nhiều nhà cung cấp đồng thời và định tuyến các tính năng AI khác nhau đến các nhà cung cấp khác nhau.
+</Note>
+
+## Cấu hình nhà cung cấp AI
+
+Thiết lập nhà cung cấp AI trong **Settings** (`Cmd+,`) > **AI**:
+
+### Thêm nhà cung cấp
+
+1. Nhấp **Add Provider** trong phần Providers
+2. Chọn loại nhà cung cấp (Claude, OpenAI, Gemini, OpenRouter, Ollama, hoặc Custom)
+3. Nhập API key của bạn (endpoint được điền sẵn dựa trên loại nhà cung cấp)
+4. Chỉ định tên model — hoặc nhấp **Fetch** để lấy danh sách model khả dụng từ nhà cung cấp. Model được tự động tải khi bạn thay đổi cài đặt nhà cung cấp.
+5. Nhấp **Test** để xác minh kết nối
+
+<Frame caption="Cài đặt AI - cấu hình nhà cung cấp">
+  <img
+    className="block dark:hidden"
+    src="/images/ai-chat-settings-provider.png"
+    alt="AI settings - provider configuration"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/ai-chat-settings-provider-dark.png"
+    alt="AI settings - provider configuration"
+  />
+</Frame>
+
+### Bảo mật API Key
+
+API key được lưu trữ an toàn trong macOS Keychain của bạn — chúng không bao giờ được lưu dưới dạng văn bản thuần hoặc trong các tệp cấu hình.
+
+### Định tuyến tính năng
+
+Định tuyến các tính năng AI cụ thể đến các nhà cung cấp khác nhau:
+
+| Tính năng | Mô tả |
+|-----------|-------|
+| **Chat** | Các cuộc trò chuyện AI tổng quát |
+| **Explain Query** | Yêu cầu giải thích câu truy vấn |
+| **Optimize Query** | Đề xuất tối ưu hiệu năng câu truy vấn |
+| **Fix Error** | Chẩn đoán lỗi và đề xuất sửa lỗi |
+| **Inline Suggestions** | Gợi ý code nội tuyến |
+
+Mỗi tính năng có thể sử dụng một nhà cung cấp cụ thể hoặc sử dụng nhà cung cấp mặc định (nhà cung cấp đầu tiên được bật).
+
+<Frame caption="Cấu hình định tuyến tính năng">
+  <img
+    className="block dark:hidden"
+    src="/images/ai-chat-feature-routing.png"
+    alt="Feature routing configuration"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/ai-chat-feature-routing-dark.png"
+    alt="Feature routing configuration"
+  />
+</Frame>
+
+## Cài đặt ngữ cảnh
+
+Kiểm soát thông tin ngữ cảnh cơ sở dữ liệu nào được gửi đến AI:
+
+| Cài đặt | Mặc định | Mô tả |
+|---------|----------|-------|
+| **Include database schema** | Bật | Gửi định nghĩa bảng và cột |
+| **Include current query** | Bật | Gửi câu truy vấn từ tab trình soạn thảo đang hoạt động |
+| **Include query results** | Tắt | Gửi kết quả truy vấn gần đây |
+| **Max schema tables** | 20 | Số bảng tối đa được đưa vào ngữ cảnh |
+
+<Frame caption="Cài đặt ngữ cảnh">
+  <img
+    className="block dark:hidden"
+    src="/images/ai-chat-context-settings.png"
+    alt="Context settings"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/ai-chat-context-settings-dark.png"
+    alt="Context settings"
+  />
+</Frame>
+
+<Warning>
+Bao gồm nhiều ngữ cảnh hơn giúp AI đưa ra câu trả lời tốt hơn nhưng gửi nhiều dữ liệu hơn đến nhà cung cấp AI. Hãy xem chính sách bảo mật của nhà cung cấp trước khi bật chia sẻ schema và câu truy vấn.
+</Warning>
+
+## Chính sách AI theo kết nối
+
+Kiểm soát quyền truy cập AI theo từng kết nối từ form kết nối:
+
+| Chính sách | Mô tả |
+|------------|-------|
+| **Use Default** | Tuân theo chính sách mặc định toàn cục từ cài đặt AI |
+| **Always Allow** | Các tính năng AI luôn khả dụng cho kết nối này |
+| **Ask Each Time** | Nhắc nhở trước khi gửi dữ liệu đến AI |
+| **Never** | Tắt hoàn toàn các tính năng AI cho kết nối này |
+
+Điều này hữu ích để hạn chế AI trên các kết nối đến cơ sở dữ liệu sản xuất nhạy cảm.
+
+<Frame caption="Chính sách AI theo kết nối">
+  <img
+    className="block dark:hidden"
+    src="/images/ai-chat-connection-policy.png"
+    alt="Per-connection AI policy"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/ai-chat-connection-policy-dark.png"
+    alt="Per-connection AI policy"
+  />
+</Frame>
+
+## Tích hợp trình soạn thảo
+
+Các tính năng AI được tích hợp chặt chẽ vào quy trình soạn thảo SQL:
+
+### Menu ngữ cảnh
+
+Click chuột phải vào SQL đã chọn trong trình soạn thảo để truy cập các tính năng AI:
+
+- **Explain with AI** — gửi SQL đã chọn đến AI để giải thích chi tiết
+- **Optimize with AI** — yêu cầu AI đề xuất cải thiện hiệu năng
+
+<Frame caption="Menu ngữ cảnh SQL editor với các mục AI">
+  <img
+    className="block dark:hidden"
+    src="/images/ai-chat-context-menu.png"
+    alt="SQL editor context menu with AI items"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/ai-chat-context-menu-dark.png"
+    alt="SQL editor context menu with AI items"
+  />
+</Frame>
+
+### Phím tắt
+
+| Thao tác | Phím tắt | Mô tả |
+|----------|----------|-------|
+| Bật/tắt AI Chat | `Cmd+Shift+L` | Mở hoặc đóng bảng AI chat |
+| Giải thích với AI | `Cmd+L` | Giải thích SQL đã chọn (hoặc query hiện tại) |
+| Tối ưu với AI | `Cmd+Option+L` | Tối ưu SQL đã chọn (hoặc query hiện tại) |
+
+Tất cả phím tắt AI có thể tùy chỉnh trong **Settings** > **Keyboard** ở danh mục **AI**.
+
+<Tip>
+Khi không có văn bản nào được chọn, `Cmd+L` và `Cmd+Option+L` sẽ sử dụng toàn bộ query từ tab trình soạn thảo đang hoạt động.
+</Tip>
+
+### Yêu cầu AI sửa lỗi
+
+Khi thực thi query thất bại, hộp thoại lỗi bao gồm nút **Ask AI to Fix**. Nhấp vào nó sẽ:
+
+1. Mở bảng AI chat (nếu chưa mở)
+2. Gửi cả query lỗi và thông báo lỗi đến AI
+3. AI phân tích lỗi và đề xuất query đã sửa
+
+<Frame caption="Hộp thoại lỗi query với nút Ask AI to Fix">
+  <img
+    className="block dark:hidden"
+    src="/images/ai-chat-fix-error.png"
+    alt="Query error dialog with Ask AI to Fix button"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/ai-chat-fix-error-dark.png"
+    alt="Query error dialog with Ask AI to Fix button"
+  />
+</Frame>
+
+## Các trang liên quan
+
+<CardGroup cols={2}>
+  <Card title="SQL Editor" icon="code" href="/vi/features/sql-editor">
+    Viết và thực thi câu truy vấn SQL
+  </Card>
+  <Card title="Cài đặt" icon="gear" href="/vi/customization/settings">
+    Cấu hình tất cả các cài đặt TablePro
+  </Card>
+  <Card title="Phím tắt" icon="keyboard" href="/vi/features/keyboard-shortcuts">
+    Tất cả phím tắt bàn phím
+  </Card>
+  <Card title="Lịch sử truy vấn" icon="clock-rotate-left" href="/vi/features/query-history">
+    Duyệt các truy vấn trước đây
+  </Card>
+</CardGroup>

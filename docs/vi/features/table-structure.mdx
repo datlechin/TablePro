@@ -1,0 +1,536 @@
+---
+title: Cấu trúc bảng
+description: Xem và chỉnh sửa schema bảng, cột, index và foreign key
+---
+
+# Cấu trúc Bảng
+
+TablePro cung cấp giao diện trực quan để khám phá và sửa đổi cấu trúc bảng database. Xem định nghĩa cột, index, foreign key và DDL (câu lệnh CREATE TABLE) cho bất kỳ bảng nào.
+
+{/* Screenshot: Table structure view showing columns tab */}
+<Frame caption="Xem cấu trúc bảng">
+  <img
+    className="block dark:hidden"
+    src="/images/table-structure.png"
+    alt="Table Structure"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/table-structure-dark.png"
+    alt="Table Structure"
+  />
+</Frame>
+
+## Truy Cập Cấu Trúc Bảng
+
+Để xem cấu trúc của bảng:
+
+<Steps>
+  <Step title="Chọn Bảng">
+    Click vào tên bảng trong sidebar
+  </Step>
+  <Step title="Mở Tab Structure">
+    Click tab **Structure** (bên dưới data grid)
+  </Step>
+  <Step title="Khám Phá">
+    Điều hướng giữa các tab Columns, Indexes, Foreign Keys và DDL
+  </Step>
+</Steps>
+
+Hoặc click chuột phải vào bảng và chọn **Show Structure**.
+
+## Tab Columns
+
+Tab Columns hiển thị tất cả định nghĩa cột:
+
+{/* Screenshot: Columns tab with column list */}
+<Frame caption="Định nghĩa cột">
+  <img
+    className="block dark:hidden"
+    src="/images/structure-columns.png"
+    alt="Columns tab"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/structure-columns-dark.png"
+    alt="Columns tab"
+  />
+</Frame>
+
+### Thông Tin Cột
+
+| Thuộc tính | Mô tả |
+|----------|-------------|
+| **Name** | Tên cột |
+| **Type** | Kiểu dữ liệu (VARCHAR, INT, v.v.) |
+| **Nullable** | Có cho phép giá trị NULL không |
+| **Default** | Giá trị mặc định nếu không chỉ định |
+| **Extra** | Thuộc tính bổ sung (AUTO_INCREMENT, v.v.) |
+| **Key** | Primary key (PRI), Foreign key (FOR), v.v. |
+
+### Sao Chép Dạng TSV
+
+Click chuột phải vào structure grid để sao chép định nghĩa cột dạng TSV (giá trị phân tách bằng tab). Điều này hữu ích để dán vào bảng tính hoặc công cụ tài liệu.
+
+### Kiểu Dữ Liệu Theo Database
+
+<Tabs>
+  <Tab title="MySQL/MariaDB">
+    Kiểu dữ liệu MySQL phổ biến:
+
+    | Danh mục | Loại |
+    |----------|-------|
+    | Số | INT, BIGINT, DECIMAL, FLOAT, DOUBLE |
+    | Chuỗi | VARCHAR, TEXT, CHAR, ENUM |
+    | Ngày/Giờ | DATE, DATETIME, TIMESTAMP, TIME |
+    | Nhị phân | BLOB, BINARY, VARBINARY |
+    | JSON | JSON |
+  </Tab>
+  <Tab title="PostgreSQL">
+    Kiểu dữ liệu PostgreSQL phổ biến:
+
+    | Danh mục | Loại |
+    |----------|-------|
+    | Số | INTEGER, BIGINT, NUMERIC, REAL |
+    | Chuỗi | VARCHAR, TEXT, CHAR |
+    | Ngày/Giờ | DATE, TIMESTAMP, TIMESTAMPTZ, TIME |
+    | Nhị phân | BYTEA |
+    | Đặc biệt | JSON, JSONB, ARRAY, UUID, INET |
+  </Tab>
+  <Tab title="SQLite">
+    Type affinity của SQLite:
+
+    | Affinity | Mô tả |
+    |----------|-------------|
+    | TEXT | Dữ liệu chuỗi |
+    | INTEGER | Số nguyên có dấu |
+    | REAL | Số thực dấu phẩy động |
+    | NUMERIC | Số hoặc văn bản |
+    | BLOB | Dữ liệu nhị phân |
+  </Tab>
+</Tabs>
+
+## Tab Indexes
+
+Xem tất cả index được định nghĩa trên bảng:
+
+{/* Screenshot: Indexes tab showing index list */}
+<Frame caption="Index của bảng">
+  <img
+    className="block dark:hidden"
+    src="/images/structure-indexes.png"
+    alt="Indexes tab"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/structure-indexes-dark.png"
+    alt="Indexes tab"
+  />
+</Frame>
+
+### Thông Tin Index
+
+| Thuộc tính | Mô tả |
+|----------|-------------|
+| **Name** | Tên index |
+| **Columns** | Các cột được bao gồm trong index |
+| **Type** | BTREE, HASH, FULLTEXT, v.v. |
+| **Unique** | Index có ép buộc tính duy nhất không |
+| **Primary** | Đây có phải là primary key không |
+
+### Loại Index
+
+| Loại | Sử dụng |
+|------|-------|
+| **PRIMARY** | Ràng buộc primary key |
+| **UNIQUE** | Ràng buộc/index unique |
+| **INDEX** | Index thông thường để tăng hiệu suất |
+| **FULLTEXT** | Tìm kiếm full-text (MySQL) |
+| **SPATIAL** | Dữ liệu không gian địa lý (PostGIS) |
+
+## Tab Foreign Keys
+
+Xem quan hệ foreign key:
+
+{/* Screenshot: Foreign keys tab */}
+<Frame caption="Quan hệ foreign key">
+  <img
+    className="block dark:hidden"
+    src="/images/structure-fk.png"
+    alt="Foreign Keys tab"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/structure-fk-dark.png"
+    alt="Foreign Keys tab"
+  />
+</Frame>
+
+### Thông Tin Foreign Key
+
+| Thuộc tính | Mô tả |
+|----------|-------------|
+| **Name** | Tên ràng buộc |
+| **Column** | Cột cục bộ |
+| **References** | Bảng và cột đích |
+| **On Delete** | Hành động khi hàng được tham chiếu bị xóa |
+| **On Update** | Hành động khi hàng được tham chiếu bị cập nhật |
+
+### Hành Động Tham Chiếu
+
+| Hành động | Mô tả |
+|--------|-------------|
+| **RESTRICT** | Ngăn delete/update nếu được tham chiếu |
+| **CASCADE** | Delete/update các hàng tham chiếu |
+| **SET NULL** | Đặt cột tham chiếu thành NULL |
+| **SET DEFAULT** | Đặt thành giá trị mặc định |
+| **NO ACTION** | Tương tự RESTRICT (kiểm tra hoãn lại) |
+
+## Tab DDL
+
+Xem câu lệnh CREATE TABLE cho bảng:
+
+{/* Screenshot: DDL tab showing CREATE TABLE statement */}
+<Frame caption="Câu lệnh DDL (CREATE TABLE)">
+  <img
+    className="block dark:hidden"
+    src="/images/structure-ddl.png"
+    alt="DDL tab"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/structure-ddl-dark.png"
+    alt="DDL tab"
+  />
+</Frame>
+
+### Sao Chép DDL
+
+1. Mở tab DDL
+2. Chọn tất cả (`Cmd+A`)
+3. Sao chép (`Cmd+C`)
+
+Sử dụng DDL cho:
+
+- Tạo lại bảng trong database khác
+- Version control cho thay đổi schema
+- Tài liệu
+- Tạo bảng tương tự
+
+### Ví Dụ DDL
+
+<Tabs>
+  <Tab title="MySQL">
+    ```sql
+    CREATE TABLE `users` (
+      `id` int NOT NULL AUTO_INCREMENT,
+      `email` varchar(255) NOT NULL,
+      `name` varchar(100) DEFAULT NULL,
+      `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      `updated_at` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (`id`),
+      UNIQUE KEY `email` (`email`),
+      KEY `created_at` (`created_at`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ```
+  </Tab>
+  <Tab title="PostgreSQL">
+    ```sql
+    CREATE TABLE users (
+      id SERIAL PRIMARY KEY,
+      email VARCHAR(255) NOT NULL UNIQUE,
+      name VARCHAR(100),
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE
+    );
+
+    CREATE INDEX idx_users_created_at ON users(created_at);
+    ```
+  </Tab>
+  <Tab title="SQLite">
+    ```sql
+    CREATE TABLE users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT NOT NULL UNIQUE,
+      name TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT
+    );
+
+    CREATE INDEX idx_users_created_at ON users(created_at);
+    ```
+  </Tab>
+</Tabs>
+
+## Metadata Bảng
+
+Thông tin bổ sung về bảng có thể được hiển thị:
+
+| Thuộc tính | Mô tả |
+|----------|-------------|
+| **Engine** | Storage engine (MySQL: InnoDB, MyISAM) |
+| **Collation** | Character collation |
+| **Row Count** | Số hàng ước tính |
+| **Data Size** | Kích thước dữ liệu bảng |
+| **Index Size** | Kích thước dữ liệu index |
+| **Comment** | Comment/mô tả bảng |
+
+## Sửa Đổi Cấu Trúc
+
+<Warning>
+Sửa đổi cấu trúc thay đổi schema database của bạn. Luôn sao lưu dữ liệu quan trọng trước khi thực hiện thay đổi.
+</Warning>
+
+### Trình Soạn Thảo Cấu Trúc Trực Quan
+
+TablePro cung cấp giao diện trực quan để sửa đổi cấu trúc bảng trực tiếp -- không cần SQL:
+
+#### Thêm Cột
+
+1. Mở tab **Structure** > **Columns**
+2. Click nút **+** để thêm cột mới
+3. Đặt thuộc tính cột: tên, loại, nullable, mặc định, auto-increment, comment
+   - Click ô **Type** để mở popover chọn kiểu dữ liệu — duyệt các kiểu dữ liệu theo danh mục hoặc tìm kiếm theo tên
+   - Với kiểu có tham số (ví dụ: `VARCHAR(255)`, `DECIMAL(10,2)`), nhập trực tiếp vào ô nhập liệu tự do
+4. Click **Apply** để xem trước và thực thi các thay đổi
+
+{/* Screenshot: Thêm cột mới trong trình chỉnh sửa Structure */}
+<Frame caption="Thêm cột mới trong trình chỉnh sửa Structure">
+  <img
+    className="block dark:hidden"
+    src="/images/structure-add-column.png"
+    alt="Thêm cột mới trong trình chỉnh sửa Structure"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/structure-add-column-dark.png"
+    alt="Thêm cột mới trong trình chỉnh sửa Structure"
+  />
+</Frame>
+
+#### Sửa Đổi Cột
+
+1. Click vào cột trong tab Columns
+2. Chỉnh sửa thuộc tính trong panel chi tiết
+3. Các thay đổi được theo dõi với hỗ trợ undo/redo
+4. Click **Apply** để xem trước SQL ALTER TABLE
+
+#### Xóa Cột
+
+1. Chọn cột cần xóa
+2. Click nút **-** hoặc nhấn Delete
+3. Xác nhận việc xóa
+4. Apply các thay đổi
+
+#### Bộ Chọn Kiểu Dữ Liệu
+
+Khi chỉnh sửa cột **Type**, một popover có tìm kiếm sẽ xuất hiện với các kiểu dữ liệu theo database, được tổ chức theo danh mục:
+
+| Danh mục | Ví dụ |
+|----------|-------|
+| **Số** | INT, BIGINT, DECIMAL, FLOAT, DOUBLE |
+| **Chuỗi** | VARCHAR, TEXT, CHAR, ENUM |
+| **Ngày & Giờ** | DATE, DATETIME, TIMESTAMP, TIME |
+| **Nhị phân** | BLOB, BINARY, BYTEA |
+| **Khác** | JSON, JSONB, UUID, BOOLEAN |
+
+Các kiểu dữ liệu khả dụng được tùy chỉnh theo database đang kết nối (MySQL, PostgreSQL hoặc SQLite). Bạn cũng có thể nhập kiểu tùy chỉnh trực tiếp, hữu ích cho các kiểu có tham số như `VARCHAR(255)` hoặc `NUMERIC(10,2)`.
+
+{/* Screenshot: Popover chọn kiểu dữ liệu trong trình chỉnh sửa Structure */}
+<Frame caption="Popover chọn kiểu dữ liệu với tìm kiếm và phân loại">
+  <img
+    className="block dark:hidden"
+    src="/images/structure-type-picker.png"
+    alt="Popover chọn kiểu dữ liệu"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/structure-type-picker-dark.png"
+    alt="Popover chọn kiểu dữ liệu"
+  />
+</Frame>
+
+### Xem Trước Thay Đổi Schema
+
+Trước khi áp dụng các thay đổi cấu trúc, TablePro hiển thị xem trước SQL ALTER TABLE được tạo. Điều này cho phép bạn:
+
+- Xem lại SQL chính xác sẽ được thực thi
+- Xác minh các thay đổi phù hợp với ý định của bạn
+- Hủy nếu các thay đổi không như mong đợi
+
+{/* Screenshot: Xem trước thay đổi schema với các câu lệnh ALTER TABLE */}
+<Frame caption="Xem trước thay đổi schema với các câu lệnh ALTER TABLE">
+  <img
+    className="block dark:hidden"
+    src="/images/schema-change-preview.png"
+    alt="Xem trước thay đổi schema với các câu lệnh ALTER TABLE"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/schema-change-preview-dark.png"
+    alt="Xem trước thay đổi schema với các câu lệnh ALTER TABLE"
+  />
+</Frame>
+
+### Undo/Redo
+
+Các thay đổi cấu trúc hỗ trợ undo/redo đầy đủ:
+
+- Nhấn `Cmd+Z` để undo thay đổi
+- Nhấn `Cmd+Shift+Z` để redo thay đổi
+- Các thay đổi được theo dõi cho đến khi áp dụng vào database
+- Xem [Change Tracking](/features/change-tracking) để biết chi tiết
+
+{/* Screenshot: Undo và redo cho các thay đổi cấu trúc */}
+<Frame caption="Undo và redo cho các thay đổi cấu trúc">
+  <img
+    className="block dark:hidden"
+    src="/images/structure-undo-redo.png"
+    alt="Undo và redo cho các thay đổi cấu trúc"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/structure-undo-redo-dark.png"
+    alt="Undo và redo cho các thay đổi cấu trúc"
+  />
+</Frame>
+
+### Thêm Cột qua SQL
+
+Bạn cũng có thể thêm cột trực tiếp bằng SQL:
+
+```sql
+-- MySQL
+ALTER TABLE users ADD COLUMN phone VARCHAR(20) AFTER email;
+
+-- PostgreSQL
+ALTER TABLE users ADD COLUMN phone VARCHAR(20);
+
+-- SQLite (ALTER TABLE bị giới hạn)
+ALTER TABLE users ADD COLUMN phone TEXT;
+```
+
+### Sửa Đổi Cột qua SQL
+
+```sql
+-- MySQL
+ALTER TABLE users MODIFY COLUMN name VARCHAR(200) NOT NULL;
+
+-- PostgreSQL
+ALTER TABLE users ALTER COLUMN name TYPE VARCHAR(200);
+ALTER TABLE users ALTER COLUMN name SET NOT NULL;
+
+-- SQLite (yêu cầu tạo lại bảng)
+-- Xem tài liệu SQLite để biết cách giải quyết
+```
+
+### Xóa Cột qua SQL
+
+```sql
+-- MySQL/PostgreSQL
+ALTER TABLE users DROP COLUMN phone;
+
+-- SQLite (yêu cầu tạo lại bảng)
+```
+
+### Quản Lý Index
+
+```sql
+-- Tạo index
+CREATE INDEX idx_users_email ON users(email);
+
+-- Tạo unique index
+CREATE UNIQUE INDEX idx_users_username ON users(username);
+
+-- Xóa index
+DROP INDEX idx_users_email ON users;  -- MySQL
+DROP INDEX idx_users_email;  -- PostgreSQL
+```
+
+### Quản Lý Foreign Key
+
+```sql
+-- Thêm foreign key
+ALTER TABLE orders
+ADD CONSTRAINT fk_orders_user
+FOREIGN KEY (user_id) REFERENCES users(id)
+ON DELETE CASCADE;
+
+-- Xóa foreign key
+ALTER TABLE orders DROP FOREIGN KEY fk_orders_user;  -- MySQL
+ALTER TABLE orders DROP CONSTRAINT fk_orders_user;  -- PostgreSQL
+```
+
+## Làm Mới Cấu Trúc
+
+Sau khi thực hiện thay đổi schema:
+
+1. **Qua sidebar**: Click chuột phải vào bảng > Refresh
+2. **Qua menu**: View > Refresh
+3. **Tự động**: Thay đổi được thực hiện trong TablePro tự động làm mới
+
+## Thực Hành Tốt Nhất
+
+### Thiết Kế Schema
+
+1. **Sử dụng kiểu dữ liệu phù hợp**: Chọn loại nhỏ nhất phù hợp với dữ liệu của bạn
+2. **Thêm index cho query**: Index các cột được sử dụng trong WHERE và JOIN
+3. **Định nghĩa foreign key**: Duy trì tính toàn vẹn tham chiếu
+4. **Sử dụng NOT NULL**: Khi cột phải luôn có giá trị
+5. **Thêm giá trị mặc định**: Cung cấp giá trị mặc định hợp lý cho cột tùy chọn
+
+### Quy Ước Đặt Tên
+
+| Phần tử | Quy ước | Ví dụ |
+|---------|------------|---------|
+| Bảng | Số nhiều, snake_case | `users`, `order_items` |
+| Cột | Số ít, snake_case | `user_id`, `created_at` |
+| Index | `idx_table_columns` | `idx_users_email` |
+| Foreign Key | `fk_table_reference` | `fk_orders_user` |
+| Primary Key | `id` hoặc `table_id` | `id`, `user_id` |
+
+### Cân Nhắc Hiệu Suất
+
+1. **Primary key**: Mọi bảng nên có primary key
+2. **Index foreign key**: Index các cột foreign key
+3. **Index tổng hợp**: Sắp xếp cột theo tính chọn lọc
+4. **Tránh over-indexing**: Index làm chậm ghi
+
+## Khắc Phục Sự Cố
+
+### Cấu Trúc Không Tải
+
+1. Kiểm tra kết nối database
+2. Xác minh người dùng có quyền xem schema
+3. Làm mới kết nối
+
+### Thiếu Cột
+
+1. Làm mới cấu trúc bảng
+2. Kiểm tra xem cột có được thêm trong transaction chưa commit không
+3. Xác minh bạn đang xem đúng database/schema
+
+### Lỗi Cú Pháp DDL
+
+Khi sao chép DDL sang database khác:
+
+1. Kiểm tra sự khác biệt cú pháp cụ thể theo database
+2. Điều chỉnh kiểu dữ liệu cho database đích
+3. Xóa tính năng không được hỗ trợ (ví dụ: MySQL ENGINE cho PostgreSQL)
+
+## Các Bước Tiếp Theo
+
+<CardGroup cols={2}>
+  <Card title="Trình soạn thảo SQL" icon="code" href="/vi/features/sql-editor">
+    Viết query ALTER TABLE
+  </Card>
+  <Card title="Bảng Dữ liệu" icon="table" href="/vi/features/data-grid">
+    Xem dữ liệu bảng
+  </Card>
+  <Card title="Nhập & Xuất" icon="file-import" href="/vi/features/import-export">
+    Export schema và dữ liệu
+  </Card>
+  <Card title="Quản lý Kết nối" icon="plug" href="/vi/databases/overview">
+    Quản lý kết nối database
+  </Card>
+</CardGroup>

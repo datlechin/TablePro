@@ -117,7 +117,6 @@ struct ContentView: View {
                         tables: sessionTablesBinding,
                         selectedTables: $localSelectedTables,
                         activeTableName: windowTitle,
-                        onTablePro: { _ in },
                         onShowAllTables: {
                             showAllTablesMetadata()
                         },

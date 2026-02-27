@@ -1,0 +1,526 @@
+---
+title: SQL Editor
+description: Write and execute SQL queries with syntax highlighting and autocomplete
+---
+
+# SQL Editor
+
+The SQL editor is the heart of TablePro, providing a powerful environment for writing and executing SQL queries with syntax highlighting, intelligent autocomplete, and multi-query support.
+
+{/* Screenshot: SQL editor with syntax highlighting and autocomplete popup */}
+<Frame caption="SQL Editor with syntax highlighting">
+  <img 
+    className="block dark:hidden" 
+    src="/images/sql-editor.png" 
+    alt="SQL Editor" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/sql-editor-dark.png" 
+    alt="SQL Editor" 
+  />
+</Frame>
+
+## Editor Features
+
+### Syntax Highlighting
+
+The editor provides real-time syntax highlighting for:
+
+- **Keywords**: `SELECT`, `FROM`, `WHERE`, `JOIN`, etc. (pink)
+- **Strings**: Single and double-quoted strings (green)
+- **Numbers**: Numeric literals (blue)
+- **Comments**: Single-line (`--`) and multi-line (`/* */`) comments (gray)
+- **Functions**: Built-in SQL functions
+- **Identifiers**: Table and column names
+
+### Line Numbers
+
+Line numbers are displayed by default, making it easy to:
+
+- Reference specific lines in error messages
+- Navigate large queries
+- Communicate about code with others
+
+<Tip>
+Toggle line numbers in **Settings** > **Editor** > **Show Line Numbers**.
+</Tip>
+
+### Current Line Highlighting
+
+The current line is subtly highlighted to help you track your cursor position, especially useful in long queries.
+
+## Writing Queries
+
+### Single Query
+
+Write and execute a single query:
+
+```sql
+SELECT * FROM users WHERE active = true;
+```
+
+Press `Cmd+Enter` to execute.
+
+### Multiple Queries
+
+Write multiple queries separated by semicolons:
+
+```sql
+SELECT * FROM users LIMIT 10;
+SELECT COUNT(*) FROM orders;
+SELECT name, email FROM customers WHERE country = 'US';
+```
+
+Place your cursor in any statement and press `Cmd+Enter` to execute just that statement.
+
+### Selecting and Executing
+
+Select text in the editor and press `Cmd+Enter` to execute only the selection.
+
+If your selection contains **multiple statements** (separated by semicolons), they are executed sequentially within a transaction:
+
+- Statements run in order, one at a time
+- If any statement fails, execution stops and all changes are rolled back
+- The error message indicates which statement failed (e.g. "Statement 3/5 failed: ...")
+- Results from the last `SELECT` statement are displayed in the data grid
+- Each statement is recorded individually in query history
+
+This is useful for running SQL dumps, migrations, or batches of related statements:
+
+```sql
+DROP TABLE IF EXISTS users;
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100));
+INSERT INTO users VALUES (1, 'Alice'), (2, 'Bob');
+SELECT * FROM users;
+```
+
+{/* Screenshot: Multiple queries in editor with execution results */}
+<Frame caption="Executing multiple SQL statements">
+  <img
+    className="block dark:hidden"
+    src="/images/multi-statement-execution.png"
+    alt="Multi-statement execution"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/multi-statement-execution-dark.png"
+    alt="Multi-statement execution"
+  />
+</Frame>
+
+## Autocomplete
+
+TablePro provides intelligent SQL autocomplete that understands your database schema.
+
+### Triggering Autocomplete
+
+Autocomplete appears automatically as you type, or you can trigger it manually:
+
+- Start typing a keyword, table name, or column name
+- Press `Escape` to dismiss the popup
+- Use arrow keys to navigate suggestions
+- Press `Enter` or `Tab` to accept a suggestion
+
+{/* Screenshot: Autocomplete popup showing table and column suggestions */}
+<Frame caption="SQL autocomplete">
+  <img 
+    className="block dark:hidden" 
+    src="/images/autocomplete-popup.png" 
+    alt="Autocomplete" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/autocomplete-popup-dark.png" 
+    alt="Autocomplete" 
+  />
+</Frame>
+
+### What Gets Suggested
+
+| Context | Suggestions |
+|---------|-------------|
+| After `SELECT` | Column names, `*`, functions |
+| After `FROM` | Table names, schema names |
+| After `JOIN` | Table names |
+| After `WHERE` | Column names from selected tables |
+| After `.` (dot) | Columns from the specified table |
+| Start of statement | SQL keywords |
+
+### Schema-Aware Completion
+
+Autocomplete is context-aware and understands your schema:
+
+```sql
+SELECT u.  -- Shows columns from 'users' table aliased as 'u'
+FROM users u
+JOIN orders o ON u.id = o.  -- Shows columns from 'orders' table
+```
+
+### SQL Keywords
+
+Common SQL keywords are suggested based on context:
+
+- After `SELECT`: `DISTINCT`, `TOP`, `ALL`
+- After `FROM`: `JOIN`, `LEFT JOIN`, `INNER JOIN`, `WHERE`
+- After `WHERE`: `AND`, `OR`, `NOT`, `IN`, `LIKE`, `BETWEEN`
+
+## Query Execution
+
+### Running Queries
+
+| Action | Shortcut | Description |
+|--------|----------|-------------|
+| Execute query | `Cmd+Enter` | Runs query at cursor, or all selected statements |
+| Explain query | `Option+Cmd+E` | Show the execution plan for the query at cursor |
+| Format query | `Option+Cmd+F` | Format the current query for readability |
+
+### Query Results
+
+Results appear in the data grid below the editor:
+
+- Row count and execution time are shown
+- Results are paginated for large datasets
+- Click column headers to sort
+
+### Explain Query
+
+Use the **Explain Query** feature to view the execution plan for your query, helping you understand how the database will execute it and identify performance bottlenecks.
+
+To explain a query:
+
+- Click the **Explain** button in the editor toolbar, or
+- Press `Option+Cmd+E`, or
+- Use the menu: **Query** > **Explain Query**
+
+TablePro automatically uses the correct syntax for your database:
+
+| Database | Syntax Used |
+|----------|-------------|
+| MySQL / MariaDB | `EXPLAIN <query>` |
+| PostgreSQL | `EXPLAIN <query>` |
+| SQLite | `EXPLAIN QUERY PLAN <query>` |
+
+The execution plan results appear in the data grid below the editor, showing index usage, join strategies, and estimated row counts.
+
+<Tip>
+Run Explain before executing expensive queries to verify they use the expected indexes and join strategies.
+</Tip>
+
+{/* Screenshot: EXPLAIN output displayed in data grid */}
+<Frame caption="EXPLAIN query execution plan">
+  <img
+    className="block dark:hidden"
+    src="/images/explain-query-result.png"
+    alt="EXPLAIN query execution plan"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/explain-query-result-dark.png"
+    alt="EXPLAIN query execution plan"
+  />
+</Frame>
+
+## SQL Formatting
+
+TablePro includes a built-in SQL formatter that automatically restructures your queries for readability. The formatter is dialect-aware and adapts its output to your connected database.
+
+### Format Query
+
+To format the current query:
+
+- Press `Option+Cmd+F`, or
+- Click the **Format** button in the editor toolbar, or
+- Use the menu: **Query** > **Format Query**
+
+The formatter applies the following transformations:
+
+| Transformation | Description |
+|----------------|-------------|
+| **Keyword capitalization** | SQL keywords are uppercased (`select` becomes `SELECT`) |
+| **Smart indentation** | Clauses are indented logically with consistent spacing |
+| **Line breaks** | Each major clause (`SELECT`, `FROM`, `WHERE`, `JOIN`, etc.) starts on a new line |
+| **Cursor preservation** | Your cursor position is preserved after formatting |
+| **Comment preservation** | Single-line (`--`) and multi-line (`/* */`) comments are kept intact |
+| **String preservation** | String literals are never modified |
+
+### Dialect-Aware Formatting
+
+The formatter automatically detects your connected database and applies dialect-specific rules:
+
+| Database | Formatting Behavior |
+|----------|---------------------|
+| MySQL / MariaDB | Backtick-quoted identifiers preserved, MySQL-specific syntax handled |
+| PostgreSQL | Double-quoted identifiers preserved, PostgreSQL-specific syntax handled |
+| SQLite | SQLite-specific keywords and syntax handled |
+
+### Before & After Example
+
+**Before** (unformatted):
+
+```sql
+select u.id,u.name,u.email,count(o.id) as order_count from users u left join orders o on u.id=o.user_id where u.created_at>'2024-01-01' and u.status='active' group by u.id,u.name,u.email having count(o.id)>5 order by order_count desc limit 100;
+```
+
+**After** (`Option+Cmd+F`):
+
+```sql
+SELECT
+    u.id,
+    u.name,
+    u.email,
+    COUNT(o.id) AS order_count
+FROM users u
+LEFT JOIN orders o ON u.id = o.user_id
+WHERE u.created_at > '2024-01-01'
+    AND u.status = 'active'
+GROUP BY u.id, u.name, u.email
+HAVING COUNT(o.id) > 5
+ORDER BY order_count DESC
+LIMIT 100;
+```
+
+<Tip>
+Format your queries before sharing them with teammates or saving them as templates for consistent, readable SQL.
+</Tip>
+
+{/* Screenshot: SQL query before and after formatting */}
+<Frame caption="SQL query before and after formatting">
+  <img
+    className="block dark:hidden"
+    src="/images/sql-format-result.png"
+    alt="SQL query before and after formatting"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/sql-format-result-dark.png"
+    alt="SQL query before and after formatting"
+  />
+</Frame>
+
+### Error Handling
+
+When a query fails:
+
+1. The error message appears below the editor
+2. Line numbers may be highlighted if the error references a specific line
+3. Read the error message for details on what went wrong
+
+{/* Screenshot: Query error message display */}
+<Frame caption="Query error message">
+  <img 
+    className="block dark:hidden" 
+    src="/images/query-error.png" 
+    alt="Query error" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/query-error-dark.png" 
+    alt="Query error" 
+  />
+</Frame>
+
+## Editor Settings
+
+Customize the editor in **Settings** > **Editor**:
+
+### Font Settings
+
+| Setting | Options | Default |
+|---------|---------|---------|
+| **Font Family** | System Mono, SF Mono, Menlo, Monaco, Courier New | System Mono |
+| **Font Size** | 11-18 pt | 13 pt |
+
+### Display Settings
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| **Show Line Numbers** | Display line numbers | On |
+| **Highlight Current Line** | Subtle highlight on cursor line | On |
+| **Word Wrap** | Wrap long lines | Off |
+
+### Indentation Settings
+
+| Setting | Options | Default |
+|---------|---------|---------|
+| **Tab Width** | 2, 4, 8 spaces | 4 |
+| **Auto Indent** | Automatic indentation | On |
+
+{/* Screenshot: Editor settings panel in Preferences */}
+<Frame caption="Editor settings in Preferences">
+  <img
+    className="block dark:hidden"
+    src="/images/editor-settings-panel.png"
+    alt="Editor settings in Preferences"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/editor-settings-panel-dark.png"
+    alt="Editor settings in Preferences"
+  />
+</Frame>
+
+## Tips and Tricks
+
+### AI Assistance
+
+The SQL editor integrates with TablePro's AI chat for writing and debugging queries:
+
+- **Explain with AI** (`Cmd+L`) — get a detailed explanation of your query
+- **Optimize with AI** (`Cmd+Option+L`) — get performance improvement suggestions
+- **Ask AI to Fix** — when a query fails, click "Ask AI to Fix" in the error dialog
+
+See [AI Chat](/features/ai-chat) for full details on configuring AI providers and features.
+
+### Using Comments
+
+Add comments to document your queries:
+
+```sql
+-- Get active users with recent orders
+SELECT u.name, COUNT(o.id) as orders
+FROM users u
+JOIN orders o ON u.id = o.user_id
+WHERE u.active = true
+    AND o.created_at > CURRENT_DATE - INTERVAL '30 days'
+GROUP BY u.name;
+
+/*
+ * Multi-line comment
+ * Useful for longer explanations
+ */
+```
+
+### Quick Table Exploration
+
+To quickly explore a table's structure and data:
+
+```sql
+-- View table structure (MySQL)
+DESCRIBE users;
+
+-- View table structure (PostgreSQL)
+\d users
+
+-- Sample data
+SELECT * FROM users LIMIT 10;
+
+-- Row count
+SELECT COUNT(*) FROM users;
+```
+
+### Using Aliases
+
+Use table aliases for cleaner, more readable queries:
+
+```sql
+-- Without aliases (verbose)
+SELECT users.name, orders.total
+FROM users
+JOIN orders ON users.id = orders.user_id;
+
+-- With aliases (cleaner)
+SELECT u.name, o.total
+FROM users u
+JOIN orders o ON u.id = o.user_id;
+```
+
+## Opening SQL Files
+
+TablePro can open `.sql` files directly from Finder, making it easy to work with saved queries, migrations, and SQL scripts.
+
+### Opening from Finder
+
+There are two ways to open `.sql` files in TablePro:
+
+- **Double-click** a `.sql` file in Finder (if TablePro is set as the default app)
+- **Right-click** a `.sql` file > **Open With** > **TablePro**
+
+### Connection Behavior
+
+| State | Behavior |
+|-------|----------|
+| **Connected** to a database | The file opens immediately in a new editor tab |
+| **Not connected** | The file is queued and opens automatically after you connect to a database |
+
+### Multiple Files
+
+Opening multiple `.sql` files creates a separate tab for each file, allowing you to work with several scripts at once.
+
+<Note>
+The file contents are loaded into the editor tab. Changes you make in the editor do not modify the original `.sql` file on disk.
+</Note>
+
+## Keyboard Shortcuts
+
+| Action | Shortcut |
+|--------|----------|
+| Execute query | `Cmd+Enter` |
+| Explain query | `Option+Cmd+E` |
+| Format query | `Option+Cmd+F` |
+| Select all | `Cmd+A` |
+| Cut | `Cmd+X` |
+| Copy | `Cmd+C` |
+| Paste | `Cmd+V` |
+| Undo | `Cmd+Z` |
+| Redo | `Cmd+Shift+Z` |
+| Find | `Cmd+F` |
+| Find and Replace | `Cmd+Option+F` |
+
+## Best Practices
+
+### Always Use LIMIT
+
+When exploring data, always use `LIMIT` to avoid loading millions of rows:
+
+```sql
+SELECT * FROM large_table LIMIT 100;
+```
+
+### Test DELETE/UPDATE with SELECT First
+
+Before running destructive queries, verify with SELECT:
+
+```sql
+-- First, verify what will be affected
+SELECT * FROM users WHERE last_login < '2023-01-01';
+
+-- Then run the actual delete
+DELETE FROM users WHERE last_login < '2023-01-01';
+```
+
+### Use Transactions for Safety
+
+Wrap dangerous operations in transactions:
+
+```sql
+BEGIN;
+
+DELETE FROM important_table WHERE condition;
+
+-- Verify the results
+SELECT COUNT(*) FROM important_table;
+
+-- If correct:
+COMMIT;
+
+-- If wrong:
+ROLLBACK;
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Autocomplete" icon="wand-magic-sparkles" href="/features/autocomplete">
+    Deep dive into autocomplete features
+  </Card>
+  <Card title="Data Grid" icon="table" href="/features/data-grid">
+    View and edit query results
+  </Card>
+  <Card title="Query History" icon="clock-rotate-left" href="/features/query-history">
+    Access previous queries
+  </Card>
+  <Card title="Keyboard Shortcuts" icon="keyboard" href="/features/keyboard-shortcuts">
+    All keyboard shortcuts
+  </Card>
+</CardGroup>

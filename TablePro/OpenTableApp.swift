@@ -467,6 +467,7 @@ extension Notification.Name {
     static let newQueryTab = Notification.Name("newQueryTab")
 
     // Sidebar operations (still posted by SidebarView / ConnectionStatusView)
+    static let sidebarShouldFocus = Notification.Name("sidebarShouldFocus")
     static let copyTableNames = Notification.Name("copyTableNames")
     static let truncateTables = Notification.Name("truncateTables")
     static let exportTables = Notification.Name("exportTables")

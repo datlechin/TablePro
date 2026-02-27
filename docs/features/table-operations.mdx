@@ -1,0 +1,721 @@
+---
+title: Table Operations
+description: Create, modify, and manage database tables
+---
+
+# Table Operations
+
+TablePro provides a full suite of tools for creating, modifying, and managing database tables through a visual interface. Design new tables with a column editor, manage constraints and indexes, and perform common operations like drop, truncate, and duplicate — all without writing SQL by hand.
+
+{/* Screenshot: Create Table view with column editor and detail panel */}
+<Frame caption="Visual table designer">
+  <img 
+    className="block dark:hidden" 
+    src="/images/create-table.png" 
+    alt="Create Table" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/create-table-dark.png" 
+    alt="Create Table" 
+  />
+</Frame>
+
+## Create Table
+
+### Opening the Table Designer
+
+To create a new table:
+
+<Steps>
+  <Step title="Open the Designer">
+    Right-click in the sidebar and select **Create New Table...**, or press `Cmd+Shift+N`
+  </Step>
+  <Step title="Name Your Table">
+    Enter a table name and verify the target database/schema
+  </Step>
+  <Step title="Add Columns">
+    Define columns using the column editor or column templates
+  </Step>
+  <Step title="Set Constraints">
+    Configure primary key, foreign keys, indexes, and check constraints
+  </Step>
+  <Step title="Review SQL">
+    Expand the SQL Preview section to verify the generated DDL
+  </Step>
+  <Step title="Create">
+    Click **Create Table** (or press `Cmd+Return`) to execute
+  </Step>
+</Steps>
+
+### Column Editor
+
+The column editor displays all columns in a table-style layout. Each column shows its name, data type, and key properties at a glance.
+
+{/* Screenshot: Column editor table showing multiple columns */}
+<Frame caption="Column editor with inline properties">
+  <img 
+    className="block dark:hidden" 
+    src="/images/column-editor.png" 
+    alt="Column editor" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/column-editor-dark.png" 
+    alt="Column editor" 
+  />
+</Frame>
+
+#### Adding Columns
+
+Add columns in two ways:
+
+- **Manual**: Click the **+** button to add a blank column
+- **From Template**: Click the **Template** menu to insert a pre-configured column
+
+Available column templates:
+
+| Template | Column Name | Type | Notes |
+|----------|-------------|------|-------|
+| ID (Auto Increment) | `id` | INT | NOT NULL, AUTO_INCREMENT |
+| UUID | `id` | UUID / VARCHAR(36) | NOT NULL, database-specific |
+| Name (VARCHAR) | `name` | VARCHAR(255) | NOT NULL, default `''` |
+| Email | `email` | VARCHAR(255) | NOT NULL |
+| Description (TEXT) | `description` | TEXT | Nullable |
+| Created At | `created_at` | TIMESTAMP | NOT NULL, default NOW() |
+| Updated At | `updated_at` | TIMESTAMP | NOT NULL, default NOW() |
+| Is Active (BOOLEAN) | `is_active` | BOOLEAN / TINYINT(1) | NOT NULL, default TRUE |
+
+{/* Screenshot: Column templates dropdown */}
+<Frame caption="Column templates dropdown">
+  <img
+    className="block dark:hidden"
+    src="/images/column-templates-menu.png"
+    alt="Column templates dropdown"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/column-templates-menu-dark.png"
+    alt="Column templates dropdown"
+  />
+</Frame>
+
+#### Column Detail Panel
+
+Click any column to open the detail panel on the right side. The detail panel lets you configure every property of a column:
+
+| Property | Description |
+|----------|-------------|
+| **Name** | Column name |
+| **Data Type** | Type with categorized picker (Numeric, String, Date/Time, Binary, Other) |
+| **Length** | Character or display length (for VARCHAR, CHAR, etc.) |
+| **Precision** | Decimal precision (for DECIMAL, NUMERIC) |
+| **Not Null** | Whether NULL values are disallowed |
+| **Default** | Default value expression |
+| **Auto Increment** | Auto-incrementing integer (integer types only) |
+| **Unsigned** | Unsigned number (MySQL/MariaDB only) |
+| **Comment** | Column comment/description |
+
+<Tip>
+Press `Escape` to close the detail panel and return focus to the column list.
+</Tip>
+
+{/* Screenshot: Column detail panel with properties */}
+<Frame caption="Column detail panel with properties">
+  <img
+    className="block dark:hidden"
+    src="/images/column-detail-panel.png"
+    alt="Column detail panel with properties"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/column-detail-panel-dark.png"
+    alt="Column detail panel with properties"
+  />
+</Frame>
+
+#### Reordering and Removing Columns
+
+- **Move up/down**: Use the arrow buttons on each column row
+- **Delete**: Click the delete button to remove a column
+
+### Data Types by Database
+
+The type picker shows only the data types available for your connected database.
+
+<Tabs>
+  <Tab title="MySQL/MariaDB">
+    | Category | Types |
+    |----------|-------|
+    | Numeric | INT, BIGINT, SMALLINT, TINYINT, MEDIUMINT, DECIMAL, FLOAT, DOUBLE |
+    | String | VARCHAR, CHAR, TEXT, MEDIUMTEXT, LONGTEXT, TINYTEXT |
+    | Date/Time | DATE, TIME, DATETIME, TIMESTAMP, YEAR |
+    | Binary | BLOB, BINARY, VARBINARY |
+    | Other | BOOLEAN, JSON, ENUM, SET |
+  </Tab>
+  <Tab title="PostgreSQL">
+    | Category | Types |
+    |----------|-------|
+    | Numeric | INT, BIGINT, SMALLINT, SERIAL, BIGSERIAL, DECIMAL, FLOAT, DOUBLE |
+    | String | VARCHAR, CHAR, TEXT |
+    | Date/Time | DATE, TIME, DATETIME, TIMESTAMP |
+    | Binary | BLOB, BINARY, VARBINARY |
+    | Other | BOOLEAN, JSON, JSONB, UUID |
+  </Tab>
+  <Tab title="SQLite">
+    | Category | Types |
+    |----------|-------|
+    | Numeric | INT, BIGINT, SMALLINT, DECIMAL, FLOAT, DOUBLE |
+    | String | VARCHAR, CHAR, TEXT |
+    | Date/Time | DATE, TIME, DATETIME, TIMESTAMP |
+    | Binary | BLOB, BINARY, VARBINARY |
+    | Other | BOOLEAN, JSON |
+  </Tab>
+</Tabs>
+
+### Constraints
+
+#### Primary Key
+
+Select one or more columns as the primary key using the checkboxes in the Primary Key section. A warning appears if no primary key is selected.
+
+<Warning>
+Tables without a primary key are not recommended. Always define a primary key for data integrity and query performance.
+</Warning>
+
+{/* Screenshot: Primary key column selection */}
+<Frame caption="Primary key column selection">
+  <img
+    className="block dark:hidden"
+    src="/images/primary-key-editor.png"
+    alt="Primary key column selection"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/primary-key-editor-dark.png"
+    alt="Primary key column selection"
+  />
+</Frame>
+
+#### Foreign Keys
+
+Add foreign key constraints that reference other tables:
+
+| Property | Description |
+|----------|-------------|
+| **Name** | Constraint name (auto-generated if left empty) |
+| **Columns** | Local column(s) |
+| **Referenced Table** | Target table |
+| **Referenced Columns** | Target column(s) |
+| **On Delete** | NO ACTION, CASCADE, SET NULL, SET DEFAULT, RESTRICT |
+| **On Update** | NO ACTION, CASCADE, SET NULL, SET DEFAULT, RESTRICT |
+
+{/* Screenshot: Foreign key constraint editor */}
+<Frame caption="Foreign key constraint editor">
+  <img
+    className="block dark:hidden"
+    src="/images/fk-constraint-editor.png"
+    alt="Foreign key constraint editor"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/fk-constraint-editor-dark.png"
+    alt="Foreign key constraint editor"
+  />
+</Frame>
+
+#### Indexes
+
+Create indexes during table creation:
+
+| Property | Description |
+|----------|-------------|
+| **Name** | Index name |
+| **Columns** | Columns included in the index |
+| **Unique** | Whether the index enforces uniqueness |
+| **Type** | BTREE, HASH, GIST (PostgreSQL), GIN (PostgreSQL) |
+
+{/* Screenshot: Index editor with column selection */}
+<Frame caption="Index editor with column selection">
+  <img
+    className="block dark:hidden"
+    src="/images/index-editor.png"
+    alt="Index editor with column selection"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/index-editor-dark.png"
+    alt="Index editor with column selection"
+  />
+</Frame>
+
+#### Check Constraints
+
+Available for PostgreSQL and SQLite. Define named check constraints with SQL expressions:
+
+| Property | Description |
+|----------|-------------|
+| **Name** | Constraint name |
+| **Expression** | SQL expression (e.g., `age >= 0`) |
+
+### Advanced Options
+
+Expand the Advanced Options section to configure database-specific settings:
+
+<Tabs>
+  <Tab title="MySQL/MariaDB">
+    | Option | Default | Description |
+    |--------|---------|-------------|
+    | **Engine** | InnoDB | Storage engine |
+    | **Charset** | utf8mb4 | Character set |
+    | **Collation** | utf8mb4_unicode_ci | Collation |
+    | **Comment** | — | Table comment |
+  </Tab>
+  <Tab title="PostgreSQL">
+    | Option | Default | Description |
+    |--------|---------|-------------|
+    | **Tablespace** | — | PostgreSQL tablespace |
+    | **Comment** | — | Table comment |
+  </Tab>
+  <Tab title="SQLite">
+    | Option | Default | Description |
+    |--------|---------|-------------|
+    | **Comment** | — | Table comment |
+  </Tab>
+</Tabs>
+
+{/* Screenshot: Advanced table options: Engine, Charset, Collation */}
+<Frame caption="Advanced table options: Engine, Charset, Collation">
+  <img
+    className="block dark:hidden"
+    src="/images/table-advanced-options.png"
+    alt="Advanced table options: Engine, Charset, Collation"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/table-advanced-options-dark.png"
+    alt="Advanced table options: Engine, Charset, Collation"
+  />
+</Frame>
+
+### SQL Preview
+
+Expand the SQL Preview section to see the exact CREATE TABLE statement that will be executed. You can copy it to the clipboard using the copy button.
+
+{/* Screenshot: SQL preview section showing generated DDL */}
+<Frame caption="SQL preview of the CREATE TABLE statement">
+  <img 
+    className="block dark:hidden" 
+    src="/images/create-table-sql-preview.png" 
+    alt="SQL Preview" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/create-table-sql-preview-dark.png" 
+    alt="SQL Preview" 
+  />
+</Frame>
+
+### Import DDL
+
+Already have a CREATE TABLE statement? Click the **Import** button in the toolbar to paste existing DDL. TablePro parses the statement and populates the column editor automatically.
+
+<Steps>
+  <Step title="Click Import">
+    Click the **Import** button (square-and-arrow-up icon) in the table designer toolbar
+  </Step>
+  <Step title="Paste DDL">
+    Paste your CREATE TABLE statement into the text editor
+  </Step>
+  <Step title="Import">
+    Click **Import** to parse and populate the designer
+  </Step>
+</Steps>
+
+{/* Screenshot: Import DDL dialog */}
+<Frame caption="Import DDL dialog">
+  <img
+    className="block dark:hidden"
+    src="/images/import-ddl-dialog.png"
+    alt="Import DDL dialog"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/import-ddl-dialog-dark.png"
+    alt="Import DDL dialog"
+  />
+</Frame>
+
+### Duplicate from Existing Table
+
+Copy the structure of an existing table into the designer:
+
+1. Click the **Duplicate** button in the toolbar
+2. Select a table from the list of existing tables
+3. Click **Duplicate** to load its columns and primary keys
+4. The new table name defaults to `original_name_copy`
+
+<Note>
+Duplicating a table copies its column definitions and primary key. Foreign keys, indexes, and advanced options are not copied automatically.
+</Note>
+
+## Table Templates
+
+Save frequently used table structures as templates for quick reuse.
+
+### Saving a Template
+
+1. Design your table with columns, types, and constraints
+2. Click the **Save** button (square-and-arrow-down icon) in the toolbar
+3. Enter a template name
+4. Click **Save**
+
+Templates are stored in `~/Library/Application Support/TablePro/table_templates.json`.
+
+### Loading a Template
+
+1. Click the **Load** button (folder icon) in the toolbar
+2. Select a template from the list
+3. Click **Load** to populate the designer
+
+<Tip>
+Loading a template preserves your current table name and database. Only column definitions and constraints are replaced.
+</Tip>
+
+### Managing Templates
+
+- **Delete**: Click the trash icon next to a template in the Load dialog
+- Templates persist across sessions and connections
+
+{/* Screenshot: Table template management */}
+<Frame caption="Table template management">
+  <img
+    className="block dark:hidden"
+    src="/images/table-template-manager.png"
+    alt="Table template management"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/table-template-manager-dark.png"
+    alt="Table template management"
+  />
+</Frame>
+
+## Table Operations
+
+Right-click a table in the sidebar to access these operations.
+
+### Drop Table
+
+Permanently deletes a table and all its data.
+
+1. Right-click the table (or select multiple tables)
+2. Select **Delete**
+3. Configure options in the confirmation dialog
+4. Click **OK** to execute
+
+{/* Screenshot: Drop table confirmation dialog */}
+<Frame caption="Drop table confirmation with options">
+  <img 
+    className="block dark:hidden" 
+    src="/images/drop-table-dialog.png" 
+    alt="Drop table dialog" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/drop-table-dialog-dark.png" 
+    alt="Drop table dialog" 
+  />
+</Frame>
+
+**Options by database:**
+
+<Tabs>
+  <Tab title="MySQL/MariaDB">
+    | Option | Description |
+    |--------|-------------|
+    | **Ignore foreign key checks** | Temporarily disables foreign key validation |
+    | **Cascade** | Not supported |
+  </Tab>
+  <Tab title="PostgreSQL">
+    | Option | Description |
+    |--------|-------------|
+    | **Ignore foreign key checks** | Not supported (use CASCADE instead) |
+    | **Cascade** | Drop all dependent objects (views, foreign keys) |
+  </Tab>
+  <Tab title="SQLite">
+    | Option | Description |
+    |--------|-------------|
+    | **Ignore foreign key checks** | Temporarily disables foreign key validation |
+    | **Cascade** | Not supported |
+  </Tab>
+</Tabs>
+
+<Warning>
+Dropping a table is irreversible. Always backup important data before dropping tables.
+</Warning>
+
+### Truncate Table
+
+Removes all rows from a table while keeping the table structure.
+
+1. Right-click the table (or select multiple tables)
+2. Select **Truncate**
+3. Configure options in the confirmation dialog
+4. Click **OK** to execute
+
+**Options by database:**
+
+<Tabs>
+  <Tab title="MySQL/MariaDB">
+    | Option | Description |
+    |--------|-------------|
+    | **Ignore foreign key checks** | Temporarily disables foreign key validation |
+    | **Cascade** | Not supported for TRUNCATE |
+  </Tab>
+  <Tab title="PostgreSQL">
+    | Option | Description |
+    |--------|-------------|
+    | **Ignore foreign key checks** | Not supported (use CASCADE instead) |
+    | **Cascade** | Truncate all tables linked by foreign keys |
+  </Tab>
+  <Tab title="SQLite">
+    | Option | Description |
+    |--------|-------------|
+    | **Ignore foreign key checks** | Temporarily disables foreign key validation |
+    | **Cascade** | Not supported |
+  </Tab>
+</Tabs>
+
+<Note>
+Truncate is faster than `DELETE FROM table` because it does not generate individual row delete logs. However, it resets auto-increment counters.
+</Note>
+
+{/* Screenshot: Truncate table confirmation with options */}
+<Frame caption="Truncate table confirmation with options">
+  <img
+    className="block dark:hidden"
+    src="/images/truncate-table-dialog.png"
+    alt="Truncate table confirmation with options"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/truncate-table-dialog-dark.png"
+    alt="Truncate table confirmation with options"
+  />
+</Frame>
+
+### Batch Operations
+
+You can select multiple tables in the sidebar and apply Drop or Truncate to all of them at once. The same options are applied to every selected table.
+
+1. Hold `Cmd` and click to select multiple tables
+2. Right-click and choose **Delete** or **Truncate**
+3. Configure options once in the dialog
+4. All selected tables are processed
+
+## View Management
+
+Database views are virtual tables defined by SQL queries. TablePro displays views in the sidebar with a distinctive eye icon and purple color.
+
+### Create View
+
+Create a new view by opening a SQL editor tab with a template:
+
+1. Right-click in the sidebar and select **Create New View...**
+2. Or go to **File** > **New View...**
+3. A new SQL editor tab opens with a CREATE VIEW template
+4. Modify the view name and SELECT query
+5. Execute the query to create the view
+
+The template adapts to your database type:
+
+<Tabs>
+  <Tab title="MySQL/MariaDB">
+    ```sql
+    CREATE VIEW view_name AS
+    SELECT column1, column2
+    FROM table_name
+    WHERE condition;
+    ```
+  </Tab>
+  <Tab title="PostgreSQL">
+    ```sql
+    CREATE OR REPLACE VIEW view_name AS
+    SELECT column1, column2
+    FROM table_name
+    WHERE condition;
+    ```
+  </Tab>
+  <Tab title="SQLite">
+    ```sql
+    CREATE VIEW IF NOT EXISTS view_name AS
+    SELECT column1, column2
+    FROM table_name
+    WHERE condition;
+    ```
+  </Tab>
+</Tabs>
+
+{/* Screenshot: Create View with SQL template */}
+<Frame caption="Create View with SQL template">
+  <img
+    className="block dark:hidden"
+    src="/images/create-view-editor.png"
+    alt="Create View with SQL template"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/create-view-editor-dark.png"
+    alt="Create View with SQL template"
+  />
+</Frame>
+
+### Edit View Definition
+
+Modify an existing view's SQL definition:
+
+1. Right-click the view in the sidebar
+2. Select **Edit View Definition**
+3. The current view definition is fetched and opened in a new SQL editor tab
+4. Modify the query and execute to update the view
+
+<Note>
+For MySQL/MariaDB, you can use `ALTER VIEW` to modify a view. For PostgreSQL, use `CREATE OR REPLACE VIEW`. SQLite does not support ALTER VIEW — you must drop and recreate the view.
+</Note>
+
+### Drop View
+
+Remove a view from the database:
+
+1. Right-click the view in the sidebar
+2. Select **Drop View**
+3. Confirm the deletion
+
+<Tip>
+Views don't store data themselves, so dropping a view only removes the view definition — the underlying table data remains intact.
+</Tip>
+
+### Context Menu Differences
+
+The sidebar context menu adapts when you right-click a view:
+
+| Action | Tables | Views |
+|--------|--------|-------|
+| Show Structure | Yes | Yes |
+| Export | Yes | Yes |
+| Import | Yes | No |
+| Truncate | Yes | No |
+| Edit Definition | No | Yes |
+| Delete / Drop | Yes | Yes |
+
+{/* Screenshot: View-specific context menu options */}
+<Frame caption="View-specific context menu options">
+  <img
+    className="block dark:hidden"
+    src="/images/view-context-menu.png"
+    alt="View-specific context menu options"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/view-context-menu-dark.png"
+    alt="View-specific context menu options"
+  />
+</Frame>
+
+## Database Operations
+
+### Create Database
+
+Create a new database directly from the UI (MySQL/MariaDB):
+
+<Steps>
+  <Step title="Open Database Switcher">
+    Click the database name in the toolbar or press `Cmd+K` to open the database switcher
+  </Step>
+  <Step title="Click Create">
+    Click the **Create** button in the database switcher toolbar
+  </Step>
+  <Step title="Configure">
+    Enter a name, select character set and collation
+  </Step>
+  <Step title="Create">
+    Click **Create** to execute
+  </Step>
+</Steps>
+
+{/* Screenshot: Create database dialog */}
+<Frame caption="Create database dialog">
+  <img 
+    className="block dark:hidden" 
+    src="/images/create-database.png" 
+    alt="Create Database" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/create-database-dark.png" 
+    alt="Create Database" 
+  />
+</Frame>
+
+Available character sets and collations:
+
+| Charset | Collations |
+|---------|------------|
+| **utf8mb4** | utf8mb4_unicode_ci, utf8mb4_general_ci, utf8mb4_bin |
+| **utf8** | utf8_unicode_ci, utf8_general_ci, utf8_bin |
+| **latin1** | latin1_swedish_ci, latin1_general_ci, latin1_bin |
+| **ascii** | ascii_general_ci, ascii_bin |
+
+### Database Switcher
+
+Quickly switch between databases on the same connection:
+
+1. Click the database name in the toolbar
+2. Browse the list of available databases with metadata
+3. Search by name to filter
+4. Double-click or select and click **Open** to switch
+
+The database switcher shows recent databases for quick access and supports refreshing the database list.
+
+{/* Screenshot: Database switcher with search and recent databases */}
+<Frame caption="Database switcher with search and recent databases">
+  <img
+    className="block dark:hidden"
+    src="/images/database-switcher.png"
+    alt="Database switcher with search and recent databases"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/database-switcher-dark.png"
+    alt="Database switcher with search and recent databases"
+  />
+</Frame>
+
+## Keyboard Shortcuts
+
+| Action | Shortcut |
+|--------|----------|
+| Create new table | `Cmd+Shift+N` |
+| Confirm create table | `Cmd+Return` |
+| Delete selected table(s) | `Cmd+Delete` |
+| Copy table name | `Cmd+C` (in sidebar) |
+| Export table | `Cmd+E` (in sidebar) |
+| Import data | `Cmd+I` (in sidebar) |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Table Structure" icon="table-columns" href="/features/table-structure">
+    View and modify existing table schemas
+  </Card>
+  <Card title="Data Grid" icon="table" href="/features/data-grid">
+    View and edit table data
+  </Card>
+  <Card title="SQL Editor" icon="code" href="/features/sql-editor">
+    Write DDL and DML queries
+  </Card>
+  <Card title="Import & Export" icon="file-import" href="/features/import-export">
+    Import and export table data
+  </Card>
+</CardGroup>

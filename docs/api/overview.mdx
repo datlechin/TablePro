@@ -1,0 +1,124 @@
+---
+title: Overview
+description: The TablePro License API manages license activations, validations, and deactivations for the TablePro macOS app.
+---
+
+## Base URL
+
+All API requests are made to the following base URL:
+
+```
+https://api.tablepro.app/v1
+```
+
+## Endpoints
+
+The API provides three endpoints for license lifecycle management:
+
+| Method | Endpoint | Description |
+| ------ | -------- | ----------- |
+| `POST` | `/license/activate` | Activate a license on a machine |
+| `POST` | `/license/validate` | Validate an active license |
+| `POST` | `/license/deactivate` | Deactivate a license from a machine |
+
+## Request Format
+
+All requests must be sent as JSON with the `Content-Type: application/json` header.
+
+### Common Parameters
+
+| Parameter | Type | Description |
+| --------- | ---- | ----------- |
+| `license_key` | `string` | License key in `XXXXX-XXXXX-XXXXX-XXXXX-XXXXX` format (alphanumeric) |
+| `machine_id` | `string` | SHA-256 hash of machine identifier (64 hex characters) |
+
+## Response Format
+
+Successful activation and validation responses return signed license data:
+
+```json
+{
+  "data": {
+    "email": "john@example.com",
+    "expires_at": "2027-02-11T00:00:00+00:00",
+    "issued_at": "2026-02-12T10:30:00+00:00",
+    "license_key": "ABCDE-12345-FGHIJ-67890-KLMNO",
+    "status": "active"
+  },
+  "signature": "base64-encoded-signature"
+}
+```
+
+The `signature` field contains an RSA-SHA256 cryptographic signature of the `data` object, which can be verified client-side using the public key to ensure response integrity.
+
+## Response Signing
+
+All successful activate and validate responses are cryptographically signed:
+
+1. The `data` object fields are sorted alphabetically by key
+2. The sorted object is JSON-encoded
+3. The JSON string is signed using RSA with SHA-256
+4. The signature is returned as a Base64-encoded string
+
+This allows the client to verify that the license data has not been tampered with.
+
+## Rate Limiting
+
+All endpoints are rate-limited. Rate limit information is included in response headers:
+
+| Header | Description |
+| ------ | ----------- |
+| `X-RateLimit-Limit` | Maximum number of requests allowed in the current window |
+| `X-RateLimit-Remaining` | Number of requests remaining in the current window |
+| `X-RateLimit-Reset` | Unix timestamp when the rate limit window resets |
+
+When the rate limit is exceeded, the API returns a `429` status code:
+
+```json
+{
+  "message": "Too many requests.",
+  "retry_after": 60
+}
+```
+
+## Error Handling
+
+Error responses follow a consistent format:
+
+```json
+{
+  "message": "Human-readable error message."
+}
+```
+
+### Status Codes
+
+| Code | Description |
+| ---- | ----------- |
+| `200` | Success |
+| `403` | License suspended, expired, or machine not activated |
+| `404` | License key not found |
+| `409` | Activation limit reached |
+| `422` | Validation error (invalid request parameters) |
+| `429` | Rate limit exceeded |
+
+### Validation Errors
+
+Validation errors (`422`) include field-level details:
+
+```json
+{
+  "message": "The given data was invalid.",
+  "errors": {
+    "license_key": ["The license key field is required."],
+    "machine_id": ["The machine id must be 64 characters."]
+  }
+}
+```
+
+## License Statuses
+
+| Status | Description |
+| ------ | ----------- |
+| `active` | License is valid and can be used |
+| `suspended` | License has been suspended and cannot be activated or validated |

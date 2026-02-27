@@ -1,0 +1,721 @@
+---
+title: Thao tác với Bảng
+description: Tạo, chỉnh sửa và quản lý các bảng trong cơ sở dữ liệu
+---
+
+# Thao tác với Bảng
+
+TablePro cung cấp bộ công cụ đầy đủ để tạo, chỉnh sửa và quản lý các bảng cơ sở dữ liệu thông qua giao diện trực quan. Thiết kế bảng mới với trình chỉnh sửa cột, quản lý ràng buộc và index, và thực hiện các thao tác phổ biến như xóa, truncate và sao chép — tất cả mà không cần viết SQL thủ công.
+
+{/* Screenshot: Create Table view with column editor and detail panel */}
+<Frame caption="Trình thiết kế bảng trực quan">
+  <img
+    className="block dark:hidden"
+    src="/images/create-table.png"
+    alt="Create Table"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/create-table-dark.png"
+    alt="Create Table"
+  />
+</Frame>
+
+## Tạo Bảng
+
+### Mở Trình Thiết Kế Bảng
+
+Để tạo bảng mới:
+
+<Steps>
+  <Step title="Mở Trình Thiết Kế">
+    Click chuột phải trong sidebar và chọn **Create New Table...**, hoặc nhấn `Cmd+Shift+N`
+  </Step>
+  <Step title="Đặt Tên Bảng">
+    Nhập tên bảng và xác minh database/schema đích
+  </Step>
+  <Step title="Thêm Cột">
+    Định nghĩa các cột bằng trình chỉnh sửa cột hoặc template cột
+  </Step>
+  <Step title="Thiết Lập Ràng Buộc">
+    Cấu hình primary key, foreign keys, indexes và check constraints
+  </Step>
+  <Step title="Xem Lại SQL">
+    Mở rộng phần SQL Preview để xác minh DDL được tạo
+  </Step>
+  <Step title="Tạo">
+    Click **Create Table** (hoặc nhấn `Cmd+Return`) để thực thi
+  </Step>
+</Steps>
+
+### Trình Chỉnh Sửa Cột
+
+Trình chỉnh sửa cột hiển thị tất cả các cột trong layout dạng bảng. Mỗi cột hiển thị tên, kiểu dữ liệu và các thuộc tính chính trong một cái nhìn.
+
+{/* Screenshot: Column editor table showing multiple columns */}
+<Frame caption="Trình chỉnh sửa cột với các thuộc tính inline">
+  <img
+    className="block dark:hidden"
+    src="/images/column-editor.png"
+    alt="Column editor"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/column-editor-dark.png"
+    alt="Column editor"
+  />
+</Frame>
+
+#### Thêm Cột
+
+Thêm cột theo hai cách:
+
+- **Thủ công**: Click nút **+** để thêm cột trống
+- **Từ Template**: Click menu **Template** để chèn cột đã được cấu hình sẵn
+
+Các template cột có sẵn:
+
+| Template | Tên Cột | Kiểu | Ghi chú |
+|----------|---------|------|---------|
+| ID (Auto Increment) | `id` | INT | NOT NULL, AUTO_INCREMENT |
+| UUID | `id` | UUID / VARCHAR(36) | NOT NULL, tùy thuộc database |
+| Name (VARCHAR) | `name` | VARCHAR(255) | NOT NULL, mặc định `''` |
+| Email | `email` | VARCHAR(255) | NOT NULL |
+| Description (TEXT) | `description` | TEXT | Nullable |
+| Created At | `created_at` | TIMESTAMP | NOT NULL, mặc định NOW() |
+| Updated At | `updated_at` | TIMESTAMP | NOT NULL, mặc định NOW() |
+| Is Active (BOOLEAN) | `is_active` | BOOLEAN / TINYINT(1) | NOT NULL, mặc định TRUE |
+
+{/* Screenshot: Menu dropdown template cột */}
+<Frame caption="Menu dropdown template cột">
+  <img
+    className="block dark:hidden"
+    src="/images/column-templates-menu.png"
+    alt="Menu dropdown template cột"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/column-templates-menu-dark.png"
+    alt="Menu dropdown template cột"
+  />
+</Frame>
+
+#### Panel Chi Tiết Cột
+
+Click vào bất kỳ cột nào để mở panel chi tiết ở bên phải. Panel chi tiết cho phép bạn cấu hình mọi thuộc tính của cột:
+
+| Thuộc tính | Mô tả |
+|------------|-------|
+| **Name** | Tên cột |
+| **Data Type** | Kiểu dữ liệu với trình chọn được phân loại (Numeric, String, Date/Time, Binary, Other) |
+| **Length** | Độ dài ký tự hoặc độ dài hiển thị (cho VARCHAR, CHAR, v.v.) |
+| **Precision** | Độ chính xác thập phân (cho DECIMAL, NUMERIC) |
+| **Not Null** | Có không cho phép giá trị NULL không |
+| **Default** | Biểu thức giá trị mặc định |
+| **Auto Increment** | Số nguyên tự động tăng (chỉ dành cho kiểu số nguyên) |
+| **Unsigned** | Số không dấu (chỉ MySQL/MariaDB) |
+| **Comment** | Chú thích/mô tả cột |
+
+<Tip>
+Nhấn `Escape` để đóng panel chi tiết và trả lại focus cho danh sách cột.
+</Tip>
+
+{/* Screenshot: Panel chi tiết cột với các thuộc tính */}
+<Frame caption="Panel chi tiết cột với các thuộc tính">
+  <img
+    className="block dark:hidden"
+    src="/images/column-detail-panel.png"
+    alt="Panel chi tiết cột với các thuộc tính"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/column-detail-panel-dark.png"
+    alt="Panel chi tiết cột với các thuộc tính"
+  />
+</Frame>
+
+#### Sắp Xếp Lại và Xóa Cột
+
+- **Di chuyển lên/xuống**: Sử dụng các nút mũi tên trên mỗi hàng cột
+- **Xóa**: Click nút xóa để loại bỏ một cột
+
+### Các Kiểu Dữ Liệu theo Database
+
+Trình chọn kiểu chỉ hiển thị các kiểu dữ liệu có sẵn cho database bạn đang kết nối.
+
+<Tabs>
+  <Tab title="MySQL/MariaDB">
+    | Danh mục | Kiểu |
+    |----------|------|
+    | Numeric | INT, BIGINT, SMALLINT, TINYINT, MEDIUMINT, DECIMAL, FLOAT, DOUBLE |
+    | String | VARCHAR, CHAR, TEXT, MEDIUMTEXT, LONGTEXT, TINYTEXT |
+    | Date/Time | DATE, TIME, DATETIME, TIMESTAMP, YEAR |
+    | Binary | BLOB, BINARY, VARBINARY |
+    | Other | BOOLEAN, JSON, ENUM, SET |
+  </Tab>
+  <Tab title="PostgreSQL">
+    | Danh mục | Kiểu |
+    |----------|------|
+    | Numeric | INT, BIGINT, SMALLINT, SERIAL, BIGSERIAL, DECIMAL, FLOAT, DOUBLE |
+    | String | VARCHAR, CHAR, TEXT |
+    | Date/Time | DATE, TIME, DATETIME, TIMESTAMP |
+    | Binary | BLOB, BINARY, VARBINARY |
+    | Other | BOOLEAN, JSON, JSONB, UUID |
+  </Tab>
+  <Tab title="SQLite">
+    | Danh mục | Kiểu |
+    |----------|------|
+    | Numeric | INT, BIGINT, SMALLINT, DECIMAL, FLOAT, DOUBLE |
+    | String | VARCHAR, CHAR, TEXT |
+    | Date/Time | DATE, TIME, DATETIME, TIMESTAMP |
+    | Binary | BLOB, BINARY, VARBINARY |
+    | Other | BOOLEAN, JSON |
+  </Tab>
+</Tabs>
+
+### Ràng Buộc
+
+#### Primary Key
+
+Chọn một hoặc nhiều cột làm primary key bằng các checkbox trong phần Primary Key. Một cảnh báo xuất hiện nếu không có primary key nào được chọn.
+
+<Warning>
+Bảng không có primary key không được khuyến khích. Luôn định nghĩa primary key để đảm bảo tính toàn vẹn dữ liệu và hiệu suất query.
+</Warning>
+
+{/* Screenshot: Chọn cột primary key */}
+<Frame caption="Chọn cột primary key">
+  <img
+    className="block dark:hidden"
+    src="/images/primary-key-editor.png"
+    alt="Chọn cột primary key"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/primary-key-editor-dark.png"
+    alt="Chọn cột primary key"
+  />
+</Frame>
+
+#### Foreign Keys
+
+Thêm các ràng buộc foreign key tham chiếu đến bảng khác:
+
+| Thuộc tính | Mô tả |
+|------------|-------|
+| **Name** | Tên ràng buộc (tự động tạo nếu để trống) |
+| **Columns** | Cột nội bộ |
+| **Referenced Table** | Bảng đích |
+| **Referenced Columns** | Cột đích |
+| **On Delete** | NO ACTION, CASCADE, SET NULL, SET DEFAULT, RESTRICT |
+| **On Update** | NO ACTION, CASCADE, SET NULL, SET DEFAULT, RESTRICT |
+
+{/* Screenshot: Trình chỉnh sửa ràng buộc foreign key */}
+<Frame caption="Trình chỉnh sửa ràng buộc foreign key">
+  <img
+    className="block dark:hidden"
+    src="/images/fk-constraint-editor.png"
+    alt="Trình chỉnh sửa ràng buộc foreign key"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/fk-constraint-editor-dark.png"
+    alt="Trình chỉnh sửa ràng buộc foreign key"
+  />
+</Frame>
+
+#### Indexes
+
+Tạo indexes trong quá trình tạo bảng:
+
+| Thuộc tính | Mô tả |
+|------------|-------|
+| **Name** | Tên index |
+| **Columns** | Các cột được bao gồm trong index |
+| **Unique** | Index có áp dụng tính duy nhất không |
+| **Type** | BTREE, HASH, GIST (PostgreSQL), GIN (PostgreSQL) |
+
+{/* Screenshot: Trình chỉnh sửa index với lựa chọn cột */}
+<Frame caption="Trình chỉnh sửa index với lựa chọn cột">
+  <img
+    className="block dark:hidden"
+    src="/images/index-editor.png"
+    alt="Trình chỉnh sửa index với lựa chọn cột"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/index-editor-dark.png"
+    alt="Trình chỉnh sửa index với lựa chọn cột"
+  />
+</Frame>
+
+#### Check Constraints
+
+Có sẵn cho PostgreSQL và SQLite. Định nghĩa các ràng buộc check có tên với biểu thức SQL:
+
+| Thuộc tính | Mô tả |
+|------------|-------|
+| **Name** | Tên ràng buộc |
+| **Expression** | Biểu thức SQL (ví dụ: `age >= 0`) |
+
+### Tùy Chọn Nâng Cao
+
+Mở rộng phần Advanced Options để cấu hình các thiết lập đặc thù database:
+
+<Tabs>
+  <Tab title="MySQL/MariaDB">
+    | Tùy chọn | Mặc định | Mô tả |
+    |----------|----------|-------|
+    | **Engine** | InnoDB | Storage engine |
+    | **Charset** | utf8mb4 | Character set |
+    | **Collation** | utf8mb4_unicode_ci | Collation |
+    | **Comment** | — | Chú thích bảng |
+  </Tab>
+  <Tab title="PostgreSQL">
+    | Tùy chọn | Mặc định | Mô tả |
+    |----------|----------|-------|
+    | **Tablespace** | — | PostgreSQL tablespace |
+    | **Comment** | — | Chú thích bảng |
+  </Tab>
+  <Tab title="SQLite">
+    | Tùy chọn | Mặc định | Mô tả |
+    |----------|----------|-------|
+    | **Comment** | — | Chú thích bảng |
+  </Tab>
+</Tabs>
+
+{/* Screenshot: Tùy chọn nâng cao: Engine, Charset, Collation */}
+<Frame caption="Tùy chọn nâng cao: Engine, Charset, Collation">
+  <img
+    className="block dark:hidden"
+    src="/images/table-advanced-options.png"
+    alt="Tùy chọn nâng cao: Engine, Charset, Collation"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/table-advanced-options-dark.png"
+    alt="Tùy chọn nâng cao: Engine, Charset, Collation"
+  />
+</Frame>
+
+### SQL Preview
+
+Mở rộng phần SQL Preview để xem câu lệnh CREATE TABLE chính xác sẽ được thực thi. Bạn có thể sao chép nó vào clipboard bằng nút copy.
+
+{/* Screenshot: SQL preview section showing generated DDL */}
+<Frame caption="SQL preview của câu lệnh CREATE TABLE">
+  <img
+    className="block dark:hidden"
+    src="/images/create-table-sql-preview.png"
+    alt="SQL Preview"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/create-table-sql-preview-dark.png"
+    alt="SQL Preview"
+  />
+</Frame>
+
+### Import DDL
+
+Đã có sẵn câu lệnh CREATE TABLE? Click nút **Import** trong thanh công cụ để dán DDL hiện có. TablePro phân tích câu lệnh và tự động điền vào trình chỉnh sửa cột.
+
+<Steps>
+  <Step title="Click Import">
+    Click nút **Import** (biểu tượng vuông-và-mũi-tên-lên) trong thanh công cụ của table designer
+  </Step>
+  <Step title="Dán DDL">
+    Dán câu lệnh CREATE TABLE của bạn vào trình chỉnh sửa văn bản
+  </Step>
+  <Step title="Import">
+    Click **Import** để phân tích và điền vào designer
+  </Step>
+</Steps>
+
+{/* Screenshot: Hộp thoại Import DDL */}
+<Frame caption="Hộp thoại Import DDL">
+  <img
+    className="block dark:hidden"
+    src="/images/import-ddl-dialog.png"
+    alt="Hộp thoại Import DDL"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/import-ddl-dialog-dark.png"
+    alt="Hộp thoại Import DDL"
+  />
+</Frame>
+
+### Sao Chép từ Bảng Hiện Có
+
+Sao chép cấu trúc của bảng hiện có vào designer:
+
+1. Click nút **Duplicate** trong thanh công cụ
+2. Chọn một bảng từ danh sách các bảng hiện có
+3. Click **Duplicate** để tải các cột và primary keys của nó
+4. Tên bảng mới mặc định là `tên_gốc_copy`
+
+<Note>
+Sao chép một bảng chỉ sao chép định nghĩa cột và primary key. Foreign keys, indexes và các tùy chọn nâng cao không được sao chép tự động.
+</Note>
+
+## Template Bảng
+
+Lưu các cấu trúc bảng thường dùng dưới dạng template để sử dụng lại nhanh chóng.
+
+### Lưu Template
+
+1. Thiết kế bảng của bạn với các cột, kiểu và ràng buộc
+2. Click nút **Save** (biểu tượng vuông-và-mũi-tên-xuống) trong thanh công cụ
+3. Nhập tên template
+4. Click **Save**
+
+Templates được lưu trong `~/Library/Application Support/TablePro/table_templates.json`.
+
+### Tải Template
+
+1. Click nút **Load** (biểu tượng folder) trong thanh công cụ
+2. Chọn một template từ danh sách
+3. Click **Load** để điền vào designer
+
+<Tip>
+Tải template giữ nguyên tên bảng và database hiện tại của bạn. Chỉ định nghĩa cột và ràng buộc được thay thế.
+</Tip>
+
+### Quản Lý Templates
+
+- **Xóa**: Click biểu tượng thùng rác bên cạnh template trong hộp thoại Load
+- Templates tồn tại qua các phiên và kết nối
+
+{/* Screenshot: Quản lý template bảng */}
+<Frame caption="Quản lý template bảng">
+  <img
+    className="block dark:hidden"
+    src="/images/table-template-manager.png"
+    alt="Quản lý template bảng"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/table-template-manager-dark.png"
+    alt="Quản lý template bảng"
+  />
+</Frame>
+
+## Các Thao Tác với Bảng
+
+Click chuột phải vào bảng trong sidebar để truy cập các thao tác này.
+
+### Xóa Bảng (Drop Table)
+
+Xóa vĩnh viễn một bảng và toàn bộ dữ liệu của nó.
+
+1. Click chuột phải vào bảng (hoặc chọn nhiều bảng)
+2. Chọn **Delete**
+3. Cấu hình các tùy chọn trong hộp thoại xác nhận
+4. Click **OK** để thực thi
+
+{/* Screenshot: Drop table confirmation dialog */}
+<Frame caption="Xác nhận xóa bảng với các tùy chọn">
+  <img
+    className="block dark:hidden"
+    src="/images/drop-table-dialog.png"
+    alt="Drop table dialog"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/drop-table-dialog-dark.png"
+    alt="Drop table dialog"
+  />
+</Frame>
+
+**Các tùy chọn theo database:**
+
+<Tabs>
+  <Tab title="MySQL/MariaDB">
+    | Tùy chọn | Mô tả |
+    |----------|-------|
+    | **Ignore foreign key checks** | Tạm thời vô hiệu hóa kiểm tra foreign key |
+    | **Cascade** | Không được hỗ trợ |
+  </Tab>
+  <Tab title="PostgreSQL">
+    | Tùy chọn | Mô tả |
+    |----------|-------|
+    | **Ignore foreign key checks** | Không được hỗ trợ (sử dụng CASCADE thay thế) |
+    | **Cascade** | Xóa tất cả các đối tượng phụ thuộc (views, foreign keys) |
+  </Tab>
+  <Tab title="SQLite">
+    | Tùy chọn | Mô tả |
+    |----------|-------|
+    | **Ignore foreign key checks** | Tạm thời vô hiệu hóa kiểm tra foreign key |
+    | **Cascade** | Không được hỗ trợ |
+  </Tab>
+</Tabs>
+
+<Warning>
+Xóa bảng là không thể hoàn tác. Luôn sao lưu dữ liệu quan trọng trước khi xóa bảng.
+</Warning>
+
+### Truncate Bảng
+
+Xóa tất cả các hàng khỏi bảng trong khi vẫn giữ cấu trúc bảng.
+
+1. Click chuột phải vào bảng (hoặc chọn nhiều bảng)
+2. Chọn **Truncate**
+3. Cấu hình các tùy chọn trong hộp thoại xác nhận
+4. Click **OK** để thực thi
+
+**Các tùy chọn theo database:**
+
+<Tabs>
+  <Tab title="MySQL/MariaDB">
+    | Tùy chọn | Mô tả |
+    |----------|-------|
+    | **Ignore foreign key checks** | Tạm thời vô hiệu hóa kiểm tra foreign key |
+    | **Cascade** | Không được hỗ trợ cho TRUNCATE |
+  </Tab>
+  <Tab title="PostgreSQL">
+    | Tùy chọn | Mô tả |
+    |----------|-------|
+    | **Ignore foreign key checks** | Không được hỗ trợ (sử dụng CASCADE thay thế) |
+    | **Cascade** | Truncate tất cả các bảng được liên kết bởi foreign keys |
+  </Tab>
+  <Tab title="SQLite">
+    | Tùy chọn | Mô tả |
+    |----------|-------|
+    | **Ignore foreign key checks** | Tạm thời vô hiệu hóa kiểm tra foreign key |
+    | **Cascade** | Không được hỗ trợ |
+  </Tab>
+</Tabs>
+
+<Note>
+Truncate nhanh hơn `DELETE FROM table` vì nó không tạo các log xóa từng hàng riêng lẻ. Tuy nhiên, nó reset các bộ đếm auto-increment.
+</Note>
+
+{/* Screenshot: Xác nhận truncate bảng với các tùy chọn */}
+<Frame caption="Xác nhận truncate bảng với các tùy chọn">
+  <img
+    className="block dark:hidden"
+    src="/images/truncate-table-dialog.png"
+    alt="Xác nhận truncate bảng với các tùy chọn"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/truncate-table-dialog-dark.png"
+    alt="Xác nhận truncate bảng với các tùy chọn"
+  />
+</Frame>
+
+### Thao Tác Hàng Loạt
+
+Bạn có thể chọn nhiều bảng trong sidebar và áp dụng Drop hoặc Truncate cho tất cả cùng một lúc. Các tùy chọn giống nhau được áp dụng cho mọi bảng được chọn.
+
+1. Giữ `Cmd` và click để chọn nhiều bảng
+2. Click chuột phải và chọn **Delete** hoặc **Truncate**
+3. Cấu hình các tùy chọn một lần trong hộp thoại
+4. Tất cả các bảng được chọn sẽ được xử lý
+
+## Quản Lý View
+
+Database view là các bảng ảo được định nghĩa bởi câu lệnh SQL. TablePro hiển thị view trong sidebar với biểu tượng mắt và màu tím.
+
+### Tạo View
+
+Tạo view mới bằng cách mở tab SQL editor với template:
+
+1. Click chuột phải trong sidebar và chọn **Create New View...**
+2. Hoặc vào **File** > **New View...**
+3. Tab SQL editor mới mở với template CREATE VIEW
+4. Sửa tên view và câu lệnh SELECT
+5. Thực thi query để tạo view
+
+Template tự động thích ứng với loại database:
+
+<Tabs>
+  <Tab title="MySQL/MariaDB">
+    ```sql
+    CREATE VIEW view_name AS
+    SELECT column1, column2
+    FROM table_name
+    WHERE condition;
+    ```
+  </Tab>
+  <Tab title="PostgreSQL">
+    ```sql
+    CREATE OR REPLACE VIEW view_name AS
+    SELECT column1, column2
+    FROM table_name
+    WHERE condition;
+    ```
+  </Tab>
+  <Tab title="SQLite">
+    ```sql
+    CREATE VIEW IF NOT EXISTS view_name AS
+    SELECT column1, column2
+    FROM table_name
+    WHERE condition;
+    ```
+  </Tab>
+</Tabs>
+
+{/* Screenshot: Tạo View với template SQL */}
+<Frame caption="Tạo View với template SQL">
+  <img
+    className="block dark:hidden"
+    src="/images/create-view-editor.png"
+    alt="Tạo View với template SQL"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/create-view-editor-dark.png"
+    alt="Tạo View với template SQL"
+  />
+</Frame>
+
+### Chỉnh Sửa Định Nghĩa View
+
+Sửa đổi định nghĩa SQL của view hiện có:
+
+1. Click chuột phải vào view trong sidebar
+2. Chọn **Edit View Definition**
+3. Định nghĩa view hiện tại được tải và mở trong tab SQL editor mới
+4. Sửa đổi query và thực thi để cập nhật view
+
+<Note>
+Với MySQL/MariaDB, bạn có thể dùng `ALTER VIEW` để sửa view. Với PostgreSQL, dùng `CREATE OR REPLACE VIEW`. SQLite không hỗ trợ ALTER VIEW — bạn phải drop và tạo lại view.
+</Note>
+
+### Xóa View
+
+Xóa view khỏi database:
+
+1. Click chuột phải vào view trong sidebar
+2. Chọn **Drop View**
+3. Xác nhận xóa
+
+<Tip>
+View không lưu trữ dữ liệu, nên xóa view chỉ xóa định nghĩa view — dữ liệu bảng gốc vẫn nguyên vẹn.
+</Tip>
+
+### Khác Biệt Context Menu
+
+Context menu sidebar thay đổi khi bạn click chuột phải vào view:
+
+| Hành động | Bảng | View |
+|--------|--------|-------|
+| Show Structure | Có | Có |
+| Export | Có | Có |
+| Import | Có | Không |
+| Truncate | Có | Không |
+| Edit Definition | Không | Có |
+| Delete / Drop | Có | Có |
+
+{/* Screenshot: Tùy chọn context menu riêng cho View */}
+<Frame caption="Tùy chọn context menu riêng cho View">
+  <img
+    className="block dark:hidden"
+    src="/images/view-context-menu.png"
+    alt="Tùy chọn context menu riêng cho View"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/view-context-menu-dark.png"
+    alt="Tùy chọn context menu riêng cho View"
+  />
+</Frame>
+
+## Thao Tác với Database
+
+### Tạo Database
+
+Tạo database mới trực tiếp từ UI (MySQL/MariaDB):
+
+<Steps>
+  <Step title="Mở Database Switcher">
+    Click tên database trong thanh công cụ hoặc nhấn `Cmd+K` để mở database switcher
+  </Step>
+  <Step title="Click Create">
+    Click nút **Create** trong thanh công cụ của database switcher
+  </Step>
+  <Step title="Cấu hình">
+    Nhập tên, chọn character set và collation
+  </Step>
+  <Step title="Tạo">
+    Click **Create** để thực thi
+  </Step>
+</Steps>
+
+{/* Screenshot: Create database dialog */}
+<Frame caption="Hộp thoại tạo database">
+  <img
+    className="block dark:hidden"
+    src="/images/create-database.png"
+    alt="Create Database"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/create-database-dark.png"
+    alt="Create Database"
+  />
+</Frame>
+
+Các character sets và collations có sẵn:
+
+| Charset | Collations |
+|---------|------------|
+| **utf8mb4** | utf8mb4_unicode_ci, utf8mb4_general_ci, utf8mb4_bin |
+| **utf8** | utf8_unicode_ci, utf8_general_ci, utf8_bin |
+| **latin1** | latin1_swedish_ci, latin1_general_ci, latin1_bin |
+| **ascii** | ascii_general_ci, ascii_bin |
+
+### Database Switcher
+
+Chuyển đổi nhanh giữa các database trên cùng một kết nối:
+
+1. Click tên database trong thanh công cụ
+2. Duyệt danh sách các database có sẵn với metadata
+3. Tìm kiếm theo tên để lọc
+4. Double-click hoặc chọn và click **Open** để chuyển
+
+Database switcher hiển thị các database gần đây để truy cập nhanh và hỗ trợ làm mới danh sách database.
+
+{/* Screenshot: Bộ chuyển đổi database với tìm kiếm và database gần đây */}
+<Frame caption="Bộ chuyển đổi database với tìm kiếm và database gần đây">
+  <img
+    className="block dark:hidden"
+    src="/images/database-switcher.png"
+    alt="Bộ chuyển đổi database với tìm kiếm và database gần đây"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/database-switcher-dark.png"
+    alt="Bộ chuyển đổi database với tìm kiếm và database gần đây"
+  />
+</Frame>
+
+## Phím Tắt
+
+| Thao tác | Phím tắt |
+|----------|----------|
+| Tạo bảng mới | `Cmd+N` |
+| Xác nhận tạo bảng | `Cmd+Return` |
+| Xóa bảng đã chọn | `Cmd+Delete` |
+| Copy tên bảng | `Cmd+C` (trong sidebar) |
+| Export bảng | `Cmd+E` (trong sidebar) |
+| Import dữ liệu | `Cmd+I` (trong sidebar) |
+
+## Bước Tiếp Theo
+
+<CardGroup cols={2}>
+  <Card title="Cấu trúc Bảng" icon="table-columns" href="/vi/features/table-structure">
+    Xem và chỉnh sửa schema của bảng hiện có
+  </Card>
+  <Card title="Bảng Dữ Liệu" icon="table" href="/vi/features/data-grid">
+    Xem và chỉnh sửa dữ liệu bảng
+  </Card>
+  <Card title="Trình soạn thảo SQL" icon="code" href="/vi/features/sql-editor">
+    Viết các truy vấn DDL và DML
+  </Card>
+  <Card title="Import & Export" icon="file-import" href="/vi/features/import-export">
+    Import và export dữ liệu bảng
+  </Card>
+</CardGroup>

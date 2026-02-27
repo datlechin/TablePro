@@ -11,40 +11,49 @@ import SwiftUI
 
 /// Sidebar view displaying list of database tables
 struct SidebarView: View {
+    @StateObject private var viewModel: SidebarViewModel
+
+    // Keep @Binding on the view for SwiftUI change tracking.
+    // The ViewModel stores the same bindings for write access.
     @Binding var tables: [TableInfo]
     @Binding var selectedTables: Set<TableInfo>
-    var activeTableName: String?
-    var onTablePro: ((String) -> Void)?
-    var onShowAllTables: (() -> Void)?
-
-    // Pending table operations
     @Binding var pendingTruncates: Set<String>
     @Binding var pendingDeletes: Set<String>
-    @Binding var tableOperationOptions: [String: TableOperationOptions]
-    let databaseType: DatabaseType
 
-    @State private var isLoading = false
-    @State private var errorMessage: String?
-    @State private var searchText = ""
+    var activeTableName: String?
+    var onShowAllTables: (() -> Void)?
 
-    /// Prevents selection callback during programmatic updates (e.g., refresh)
-    @State private var isRestoringSelection = false
-
-    /// Tracks previous selection for onChange diff
-    @State private var previousSelectedTables: Set<TableInfo> = []
-
-    /// Whether the tables section is expanded
-    @State private var isTablesExpanded = true
-
-    /// State for table operation confirmation dialog
-    @State private var showOperationDialog = false
-    @State private var pendingOperationType: TableOperationType?
-    @State private var pendingOperationTables: [String] = []
-
-    /// Filtered tables based on search text
+    /// Computed on the view (not ViewModel) so SwiftUI tracks both
+    /// `@Binding var tables` and `@Published var searchText` as dependencies.
     private var filteredTables: [TableInfo] {
-        guard !searchText.isEmpty else { return tables }
-        return tables.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+        guard !viewModel.searchText.isEmpty else { return tables }
+        return tables.filter { $0.name.localizedCaseInsensitiveContains(viewModel.searchText) }
+    }
+
+    init(
+        tables: Binding<[TableInfo]>,
+        selectedTables: Binding<Set<TableInfo>>,
+        activeTableName: String? = nil,
+        onShowAllTables: (() -> Void)? = nil,
+        pendingTruncates: Binding<Set<String>>,
+        pendingDeletes: Binding<Set<String>>,
+        tableOperationOptions: Binding<[String: TableOperationOptions]>,
+        databaseType: DatabaseType
+    ) {
+        _tables = tables
+        _selectedTables = selectedTables
+        _pendingTruncates = pendingTruncates
+        _pendingDeletes = pendingDeletes
+        _viewModel = StateObject(wrappedValue: SidebarViewModel(
+            tables: tables,
+            selectedTables: selectedTables,
+            pendingTruncates: pendingTruncates,
+            pendingDeletes: pendingDeletes,
+            tableOperationOptions: tableOperationOptions,
+            databaseType: databaseType
+        ))
+        self.activeTableName = activeTableName
+        self.onShowAllTables = onShowAllTables
     }
 
     // MARK: - Body
@@ -57,72 +66,30 @@ struct SidebarView: View {
             content
         }
         .frame(minWidth: 280)
-        .onChange(of: selectedTables) { _, newTables in
-            guard !isRestoringSelection else { return }
-            let added = newTables.subtracting(previousSelectedTables)
-            if let table = added.first {
-                Task { @MainActor in
-                    onTablePro?(table.name)
-                }
-            }
-            previousSelectedTables = newTables
-        }
         .onChange(of: tables) { _, newTables in
-            if newTables.isEmpty && DatabaseManager.shared.status != .disconnected && !isLoading {
-                loadTables()
+            if newTables.isEmpty && DatabaseManager.shared.status != .disconnected && !viewModel.isLoading {
+                viewModel.loadTables()
             }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .databaseDidConnect)) { _ in
-            Task { @MainActor in
-                loadTables()
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .refreshData)) { _ in
-            Task { @MainActor in
-                loadTables()
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .refreshAll)) { _ in
-            Task { @MainActor in
-                loadTables()
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .copyTableNames)) { _ in
-            guard !selectedTables.isEmpty else { return }
-            let names = selectedTables.map { $0.name }.sorted()
-            ClipboardService.shared.writeText(names.joined(separator: ","))
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .truncateTables)) { _ in
-            guard !selectedTables.isEmpty else { return }
-            batchToggleTruncate()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .clearSelection)) { _ in
-            selectedTables.removeAll()
         }
         .onAppear {
-            guard tables.isEmpty else { return }
-            // Defer state changes to avoid publishing during view update
-            Task { @MainActor in
-                if DatabaseManager.shared.activeDriver != nil {
-                    loadTables()
-                }
-            }
+            viewModel.setupNotifications()
+            viewModel.onAppear()
         }
-        .sheet(isPresented: $showOperationDialog) {
-            if let operationType = pendingOperationType {
-                let tables = pendingOperationTables
-                if let firstTable = tables.first {
+        .sheet(isPresented: $viewModel.showOperationDialog) {
+            if let operationType = viewModel.pendingOperationType {
+                let dialogTables = viewModel.pendingOperationTables
+                if let firstTable = dialogTables.first {
                     let tableName =
-                        tables.count > 1
-                        ? String(localized: "\(tables.count) tables")
+                        dialogTables.count > 1
+                        ? String(localized: "\(dialogTables.count) tables")
                         : firstTable
                     TableOperationDialog(
-                        isPresented: $showOperationDialog,
+                        isPresented: $viewModel.showOperationDialog,
                         tableName: tableName,
                         operationType: operationType,
-                        databaseType: databaseType
+                        databaseType: viewModel.databaseType
                     ) { options in
-                        confirmOperation(options: options)
+                        viewModel.confirmOperation(options: options)
                     }
                 }
             }
@@ -137,12 +104,12 @@ struct SidebarView: View {
                 .foregroundStyle(.secondary)
                 .font(.system(size: DesignConstants.FontSize.medium))
 
-            TextField("Filter", text: $searchText)
+            TextField("Filter", text: $viewModel.searchText)
                 .textFieldStyle(.plain)
                 .font(.system(size: DesignConstants.FontSize.body))
 
-            if !searchText.isEmpty {
-                Button(action: { searchText = "" }) {
+            if !viewModel.searchText.isEmpty {
+                Button(action: { viewModel.searchText = "" }) {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(.secondary)
                         .font(.system(size: DesignConstants.FontSize.medium))
@@ -164,9 +131,9 @@ struct SidebarView: View {
 
     @ViewBuilder
     private var content: some View {
-        if let error = errorMessage {
+        if let error = viewModel.errorMessage {
             errorState(message: error)
-        } else if tables.isEmpty && isLoading {
+        } else if tables.isEmpty && viewModel.isLoading {
             loadingState
         } else if tables.isEmpty {
             emptyState
@@ -229,7 +196,7 @@ struct SidebarView: View {
 
     private var tableList: some View {
         List(selection: $selectedTables) {
-            Section(isExpanded: $isTablesExpanded) {
+            Section(isExpanded: $viewModel.isTablesExpanded) {
                 ForEach(filteredTables) { table in
                     TableRow(
                         table: table,
@@ -239,7 +206,13 @@ struct SidebarView: View {
                     )
                     .tag(table)
                     .contextMenu {
-                        tableContextMenu(clickedTable: table)
+                        SidebarContextMenu(
+                            clickedTable: table,
+                            selectedTables: $selectedTables,
+                            isReadOnly: AppState.shared.isReadOnly,
+                            onBatchToggleTruncate: { viewModel.batchToggleTruncate() },
+                            onBatchToggleDelete: { viewModel.batchToggleDelete() }
+                        )
                     }
                 }
             } header: {
@@ -255,342 +228,17 @@ struct SidebarView: View {
         .listStyle(.sidebar)
         .scrollContentBackground(.hidden)
         .contextMenu {
-            tableContextMenu()
+            SidebarContextMenu(
+                clickedTable: nil,
+                selectedTables: $selectedTables,
+                isReadOnly: AppState.shared.isReadOnly,
+                onBatchToggleTruncate: { viewModel.batchToggleTruncate() },
+                onBatchToggleDelete: { viewModel.batchToggleDelete() }
+            )
         }
         .onExitCommand {
             selectedTables.removeAll()
         }
-    }
-
-    /// Unified context menu for sidebar - used for both table rows and empty space
-    /// - Parameter clickedTable: The table that was right-clicked, nil if clicking empty space
-    @ViewBuilder
-    private func tableContextMenu(clickedTable: TableInfo? = nil) -> some View {
-        let hasSelection = !selectedTables.isEmpty || clickedTable != nil
-        let isView = clickedTable?.type == .view
-        let isReadOnly = AppState.shared.isReadOnly
-
-        Button("Create New Table...") {
-            NotificationCenter.default.post(name: .createTable, object: nil)
-        }
-        .keyboardShortcut("n", modifiers: .command)
-        .disabled(isReadOnly)
-
-        Button("Create New View...") {
-            NotificationCenter.default.post(name: .createView, object: nil)
-        }
-        .disabled(isReadOnly)
-
-        Divider()
-
-        if isView {
-            Button("Edit View Definition") {
-                if let viewName = clickedTable?.name {
-                    NotificationCenter.default.post(
-                        name: .editViewDefinition,
-                        object: viewName
-                    )
-                }
-            }
-            .disabled(isReadOnly)
-        }
-
-        Button("Show Structure") {
-            if let tableName = clickedTable?.name {
-                NotificationCenter.default.post(
-                    name: .showTableStructure,
-                    object: tableName
-                )
-            }
-        }
-        .disabled(clickedTable == nil)
-
-        Button("Copy Name") {
-            let names: [String]
-            if selectedTables.isEmpty, let table = clickedTable {
-                names = [table.name]
-            } else {
-                names = selectedTables.map { $0.name }.sorted()
-            }
-            ClipboardService.shared.writeText(names.joined(separator: ","))
-        }
-        .keyboardShortcut("c", modifiers: .command)
-        .disabled(!hasSelection)
-
-        Button("Export...") {
-            if selectedTables.isEmpty, let table = clickedTable {
-                selectedTables.insert(table)
-            }
-            NotificationCenter.default.post(name: .exportTables, object: nil)
-        }
-        .keyboardShortcut("e", modifiers: [.command, .shift])
-        .disabled(!hasSelection)
-
-        if !isView {
-            Button("Import...") {
-                NotificationCenter.default.post(name: .importTables, object: nil)
-            }
-            .keyboardShortcut("i", modifiers: [.command, .shift])
-            .disabled(isReadOnly)
-        }
-
-        Divider()
-
-        if !isView {
-            Button("Truncate") {
-                if selectedTables.isEmpty, let table = clickedTable {
-                    selectedTables.insert(table)
-                }
-                batchToggleTruncate()
-            }
-            .disabled(!hasSelection || isReadOnly)
-        }
-
-        Button(
-            isView ? String(localized: "Drop View") : String(localized: "Delete"),
-            role: .destructive
-        ) {
-            if selectedTables.isEmpty, let table = clickedTable {
-                selectedTables.insert(table)
-            }
-            batchToggleDelete()
-        }
-        .keyboardShortcut(.delete, modifiers: .command)
-        .disabled(!hasSelection || isReadOnly)
-    }
-
-    /// Batch toggle truncate for all selected tables
-    private func batchToggleTruncate() {
-        let tablesToToggle = selectedTables.isEmpty ? [] : Array(selectedTables.map { $0.name })
-        guard !tablesToToggle.isEmpty else { return }
-
-        // Check if all tables are already pending truncate - if so, remove them
-        // Cancellation doesn't require confirmation since it's a safe operation that
-        // simply removes the pending state. The stored options are intentionally discarded.
-        let allAlreadyPending = tablesToToggle.allSatisfy { pendingTruncates.contains($0) }
-        if allAlreadyPending {
-            var updated = pendingTruncates
-            for name in tablesToToggle {
-                updated.remove(name)
-                tableOperationOptions.removeValue(forKey: name)
-            }
-            pendingTruncates = updated
-        } else {
-            // Show dialog to confirm operation
-            pendingOperationType = .truncate
-            pendingOperationTables = tablesToToggle
-            showOperationDialog = true
-        }
-    }
-
-    /// Batch toggle delete for all selected tables
-    private func batchToggleDelete() {
-        let tablesToToggle = selectedTables.isEmpty ? [] : Array(selectedTables.map { $0.name })
-        guard !tablesToToggle.isEmpty else { return }
-
-        // Check if all tables are already pending delete - if so, remove them
-        // Cancellation doesn't require confirmation since it's a safe operation that
-        // simply removes the pending state. The stored options are intentionally discarded.
-        let allAlreadyPending = tablesToToggle.allSatisfy { pendingDeletes.contains($0) }
-        if allAlreadyPending {
-            var updated = pendingDeletes
-            for name in tablesToToggle {
-                updated.remove(name)
-                tableOperationOptions.removeValue(forKey: name)
-            }
-            pendingDeletes = updated
-        } else {
-            // Show dialog to confirm operation
-            pendingOperationType = .drop
-            pendingOperationTables = tablesToToggle
-            showOperationDialog = true
-        }
-    }
-
-    /// Confirm the pending operation with the given options
-    private func confirmOperation(options: TableOperationOptions) {
-        guard let operationType = pendingOperationType else { return }
-
-        var updatedTruncates = pendingTruncates
-        var updatedDeletes = pendingDeletes
-        var updatedOptions = tableOperationOptions
-
-        for tableName in pendingOperationTables {
-            // Remove from opposite set if present
-            if operationType == .truncate {
-                updatedDeletes.remove(tableName)
-                updatedTruncates.insert(tableName)
-            } else {
-                updatedTruncates.remove(tableName)
-                updatedDeletes.insert(tableName)
-            }
-
-            // Store options for this table
-            updatedOptions[tableName] = options
-        }
-
-        pendingTruncates = updatedTruncates
-        pendingDeletes = updatedDeletes
-        tableOperationOptions = updatedOptions
-
-        // Reset dialog state
-        pendingOperationType = nil
-        pendingOperationTables = []
-    }
-
-    // MARK: - Actions
-
-    private func loadTables() {
-        guard !isLoading else { return }
-        isLoading = true
-        errorMessage = nil
-        Task {
-            await loadTablesAsync()
-        }
-    }
-
-    private func loadTablesAsync() async {
-        let previousSelectedName = selectedTables.first?.name
-
-        guard let driver = DatabaseManager.shared.activeDriver else {
-            await MainActor.run { isLoading = false }
-            return
-        }
-
-        do {
-            let fetchedTables = try await driver.fetchTables()
-            await MainActor.run {
-                tables = fetchedTables
-
-                // Clean up stale entries for tables that no longer exist
-                let fetchedNames = Set(fetchedTables.map(\.name))
-
-                let staleSelections = selectedTables.filter { !fetchedNames.contains($0.name) }
-                if !staleSelections.isEmpty {
-                    isRestoringSelection = true
-                    selectedTables.subtract(staleSelections)
-                    isRestoringSelection = false
-                }
-
-                let stalePendingDeletes = pendingDeletes.subtracting(fetchedNames)
-                let stalePendingTruncates = pendingTruncates.subtracting(fetchedNames)
-                if !stalePendingDeletes.isEmpty {
-                    pendingDeletes.subtract(stalePendingDeletes)
-                    for name in stalePendingDeletes {
-                        tableOperationOptions.removeValue(forKey: name)
-                    }
-                }
-                if !stalePendingTruncates.isEmpty {
-                    pendingTruncates.subtract(stalePendingTruncates)
-                    for name in stalePendingTruncates {
-                        tableOperationOptions.removeValue(forKey: name)
-                    }
-                }
-
-                // Only restore selection if it was cleared (prevent reopening tabs)
-                if let name = previousSelectedName {
-                    let currentNames = Set(selectedTables.map { $0.name })
-                    if !currentNames.contains(name) {
-                        // Selection was cleared, restore it without triggering callback
-                        isRestoringSelection = true
-                        if let restored = fetchedTables.first(where: { $0.name == name }) {
-                            selectedTables = [restored]
-                        }
-                        isRestoringSelection = false
-                    }
-                }
-                isLoading = false
-            }
-        } catch {
-            await MainActor.run {
-                errorMessage = error.localizedDescription
-                isLoading = false
-            }
-        }
-    }
-
-    private func toggleTruncate(_ tableName: String) {
-        pendingDeletes.remove(tableName)
-        if pendingTruncates.contains(tableName) {
-            pendingTruncates.remove(tableName)
-        } else {
-            pendingTruncates.insert(tableName)
-        }
-    }
-
-    private func toggleDelete(_ tableName: String) {
-        pendingTruncates.remove(tableName)
-        if pendingDeletes.contains(tableName) {
-            pendingDeletes.remove(tableName)
-        } else {
-            pendingDeletes.insert(tableName)
-        }
-    }
-}
-
-// MARK: - TableRow
-
-/// Row view for a single table
-struct TableRow: View {
-    let table: TableInfo
-    let isActive: Bool
-    let isPendingTruncate: Bool
-    let isPendingDelete: Bool
-
-    var body: some View {
-        HStack(spacing: 8) {
-            // Icon with status indicator
-            ZStack(alignment: .bottomTrailing) {
-                Image(systemName: table.type == .view ? "eye" : "tablecells")
-                    .foregroundStyle(iconColor)
-                    .frame(width: DesignConstants.IconSize.default)
-
-                // Pending operation indicator
-                if isPendingDelete {
-                    Image(systemName: "minus.circle.fill")
-                        .font(.system(size: DesignConstants.FontSize.caption))
-                        .foregroundStyle(.red)
-                        .offset(x: 4, y: 4)
-                } else if isPendingTruncate {
-                    Image(systemName: "exclamationmark.circle.fill")
-                        .font(.system(size: DesignConstants.FontSize.caption))
-                        .foregroundStyle(.orange)
-                        .offset(x: 4, y: 4)
-                }
-            }
-
-            Text(table.name)
-                .font(.system(size: DesignConstants.FontSize.medium, design: .monospaced))
-                .lineLimit(1)
-                .foregroundStyle(textColor)
-        }
-        .padding(.vertical, DesignConstants.Spacing.xxs)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(tableAccessibilityLabel)
-    }
-
-    private var tableAccessibilityLabel: String {
-        var label = table.type == .view
-            ? String(localized: "View: \(table.name)")
-            : String(localized: "Table: \(table.name)")
-        if isPendingDelete {
-            label += ", " + String(localized: "pending delete")
-        } else if isPendingTruncate {
-            label += ", " + String(localized: "pending truncate")
-        }
-        return label
-    }
-
-    private var iconColor: Color {
-        if isPendingDelete { return .red }
-        if isPendingTruncate { return .orange }
-        return table.type == .view ? .purple : .blue
-    }
-
-    private var textColor: Color {
-        if isPendingDelete { return .red }
-        if isPendingTruncate { return .orange }
-        return .primary
     }
 }
 

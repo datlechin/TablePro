@@ -1,0 +1,246 @@
+---
+title: Installation
+description: Detailed installation instructions and system requirements for TablePro
+---
+
+# Installation
+
+This guide covers detailed installation instructions, system requirements, and troubleshooting common installation issues.
+
+## System Requirements
+
+### Minimum Requirements
+
+| Requirement | Specification |
+|-------------|---------------|
+| **macOS Version** | macOS 14.0 (Sonoma) or later |
+| **Processor** | Apple Silicon (M1/M2/M3/M4/M5) or Intel x86_64 |
+| **Memory** | 4 GB RAM minimum |
+| **Storage** | ~50 MB free disk space |
+
+### Recommended
+
+- **macOS**: Latest version for best performance
+- **Memory**: 8 GB RAM or more for large databases
+- **Storage**: SSD for optimal performance
+
+<Note>
+TablePro is built using native Apple frameworks and does not require any additional runtime environments like Java or .NET.
+</Note>
+
+## Download
+
+### From GitHub Releases
+
+1. Navigate to the [TablePro Releases](https://github.com/datlechin/tablepro/releases) page
+2. Find the latest release
+3. Download the appropriate DMG for your Mac:
+
+| Architecture | File | For Macs with |
+|--------------|------|---------------|
+| Apple Silicon | `TablePro-arm64.dmg` | M1, M2, M3, M4, M5 chips |
+| Intel | `TablePro-x86_64.dmg` | Intel processors |
+
+### Checking Your Mac's Architecture
+
+1. Click the **Apple menu** () in the menu bar
+2. Select **About This Mac**
+3. Look for:
+   - **Chip**: Apple M1/M2/M3/M4/M5 = Apple Silicon
+   - **Processor**: Intel = x86_64
+
+## Installation Steps
+
+### Standard Installation
+
+1. **Open the DMG file**
+   - Double-click the downloaded `.dmg` file
+   - A new Finder window will appear
+
+2. **Drag to Applications**
+   - Drag the TablePro icon to the Applications folder shortcut
+   - Wait for the copy to complete
+
+{/* Screenshot: DMG window with drag-to-Applications illustration */}
+<Frame caption="Drag TablePro to Applications">
+  <img 
+    className="block dark:hidden" 
+    src="/images/install-dmg.png" 
+    alt="Drag to Applications" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/install-dmg-dark.png" 
+    alt="Drag to Applications" 
+  />
+</Frame>
+
+3. **Eject the DMG**
+   - Right-click the mounted DMG in Finder sidebar
+   - Select **Eject**
+
+4. **Launch TablePro**
+   - Open **Finder** > **Applications**
+   - Double-click **TablePro**
+
+### First Launch Security
+
+Since TablePro is not signed with an Apple Developer certificate, macOS Gatekeeper may prevent it from opening on first launch.
+
+<Warning>
+This is expected behavior for unsigned applications. TablePro is safe to use - the source code is fully open source and available for inspection.
+</Warning>
+
+#### To open an unsigned application:
+
+<Steps>
+  <Step title="Locate the app">
+    Open **Finder** and navigate to **Applications**
+  </Step>
+  <Step title="Right-click to open">
+    Right-click (or Control-click) on **TablePro**
+  </Step>
+  <Step title="Select Open">
+    Choose **Open** from the context menu
+  </Step>
+  <Step title="Confirm">
+    In the dialog that appears, click **Open**
+  </Step>
+</Steps>
+
+You only need to do this once. Subsequent launches will work normally.
+
+#### Alternative: System Settings
+
+If the right-click method doesn't work:
+
+1. Open **System Settings** > **Privacy & Security**
+2. Scroll down to the **Security** section
+3. You should see a message about TablePro being blocked
+4. Click **Open Anyway**
+5. Enter your password if prompted
+
+## Updating TablePro
+
+### Automatic Updates
+
+TablePro includes built-in automatic updates powered by [Sparkle](https://sparkle-project.org/). The app periodically checks for new versions in the background and notifies you when an update is available.
+
+### Manual Update Check
+
+To manually check for updates:
+
+1. Open **TablePro** menu in the menu bar
+2. Click **Check for Updates...**
+
+### Update Settings
+
+You can configure update behavior in **Settings** > **General** > **Software Update**:
+
+- Enable or disable automatic update checks
+- Choose how often to check for updates
+
+<Tip>
+Your connections and settings are stored separately from the application and will be preserved when updating.
+</Tip>
+
+### Data Storage Locations
+
+TablePro stores data in the following locations:
+
+| Data | Location | Storage Type |
+|------|----------|--------------|
+| **Connections** | `~/Library/Preferences/com.TablePro.plist` | UserDefaults |
+| **Settings** | `~/Library/Preferences/com.TablePro.plist` | UserDefaults |
+| **Passwords** | macOS Keychain (secure storage) | Keychain |
+| **Query History** | `~/Library/Application Support/TablePro/query_history.db` | SQLite |
+
+## Uninstallation
+
+### Remove the Application
+
+1. Quit TablePro if it's running
+2. Open **Finder** > **Applications**
+3. Drag **TablePro** to the Trash
+
+### Remove Application Data (Optional)
+
+To completely remove all TablePro data:
+
+```bash
+# Remove application support data
+rm -rf ~/Library/Application\ Support/TablePro
+
+# Remove preferences
+rm ~/Library/Preferences/com.TablePro.plist
+
+# Remove Keychain items (via Keychain Access app)
+# Search for "TablePro" and delete related items
+```
+
+<Warning>
+Removing application data will delete all your saved connections and query history. Make sure to export any important data first.
+</Warning>
+
+## Troubleshooting
+
+### "TablePro is damaged and can't be opened"
+
+This error can occur if macOS quarantine attributes weren't removed properly:
+
+```bash
+xattr -cr /Applications/TablePro.app
+```
+
+Then try opening the application again.
+
+### "TablePro can't be opened because it is from an unidentified developer"
+
+Follow the [First Launch Security](#first-launch-security) instructions above.
+
+### Application crashes on launch
+
+1. Check that you downloaded the correct architecture version
+2. Ensure you're running macOS 14.0 or later
+3. Try removing and reinstalling the application
+4. Check Console.app for crash logs
+
+### Connection issues after installation
+
+If TablePro opens but can't connect to databases:
+
+1. Verify your database server is running
+2. Check firewall settings (System Settings > Network > Firewall)
+3. Ensure the database server allows connections from localhost
+
+## Building from Source
+
+For developers who want to build TablePro from source:
+
+1. Clone the repository:
+```bash
+git clone https://github.com/datlechin/tablepro.git
+cd tablepro
+```
+
+2. Open the Xcode project:
+```bash
+open TablePro.xcodeproj
+```
+
+3. Build and run:
+   - Select the **TablePro** scheme
+   - Press `Cmd+R` to build and run
+
+See the [Development Setup](/development/setup) guide for detailed instructions.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Connect to your first database
+  </Card>
+  <Card title="Database Connections" icon="database" href="/databases/overview">
+    Learn about connection management
+  </Card>
+</CardGroup>

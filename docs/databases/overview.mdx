@@ -1,0 +1,458 @@
+---
+title: Connection Management
+description: Create, organize, and manage your database connections in TablePro
+---
+
+# Connection Management
+
+TablePro provides a streamlined interface for managing all your database connections. This guide covers creating, organizing, and managing connections across different database types.
+
+## Supported Databases
+
+TablePro supports four database systems:
+
+<CardGroup cols={2}>
+  <Card title="MySQL" icon="database">
+    Full support including MySQL 5.7+ and MySQL 8.0+. Default port: 3306
+  </Card>
+  <Card title="MariaDB" icon="database">
+    Compatible with MariaDB 10.x and later. Default port: 3306
+  </Card>
+  <Card title="PostgreSQL" icon="database">
+    PostgreSQL 12+ with full feature support. Default port: 5432
+  </Card>
+  <Card title="SQLite" icon="file">
+    File-based databases, no server required
+  </Card>
+</CardGroup>
+
+## Creating a Connection
+
+### From the Welcome Screen
+
+When you first launch TablePro or have no active connections, the Welcome screen provides quick access to create new connections.
+
+1. Click **New Connection**
+2. Fill in the connection details
+3. Click **Test Connection** to verify
+4. Click **Create** to save and connect
+
+{/* Screenshot: Welcome screen with New Connection button highlighted */}
+<Frame caption="Welcome screen">
+  <img 
+    className="block dark:hidden" 
+    src="/images/welcome-screen.png" 
+    alt="Welcome screen" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/welcome-screen-dark.png" 
+    alt="Welcome screen" 
+  />
+</Frame>
+
+### From the Menu Bar
+
+You can create a new connection at any time:
+
+- **File** > **New Connection** (`Cmd+N`)
+
+### Connection Form Fields
+
+#### General Section
+
+| Field | Description |
+|-------|-------------|
+| **Name** | A friendly name to identify this connection |
+| **Type** | Database type: MySQL, MariaDB, PostgreSQL, or SQLite |
+
+#### Appearance Section
+
+| Field | Description |
+|-------|-------------|
+| **Color** | Color-code your connection for easy identification |
+| **Tag** | Organize connections with custom tags |
+| **Read-Only** | Toggle to prevent all write operations on this connection |
+
+<Tip>
+Use colors to visually distinguish between environments (e.g., red for production, green for development). Enable **Read-Only** mode for production databases to prevent accidental writes.
+</Tip>
+
+#### Connection Section
+
+| Field | Description |
+|-------|-------------|
+| **Host** | Server address (default: `localhost`) |
+| **Port** | Server port (auto-filled based on database type) |
+| **Database** | Default database to connect to (optional for MySQL/MariaDB) |
+
+For SQLite, this section shows a file browser instead:
+
+| Field | Description |
+|-------|-------------|
+| **File Path** | Path to the SQLite database file |
+
+#### Authentication Section
+
+For MySQL, MariaDB, and PostgreSQL:
+
+| Field | Description |
+|-------|-------------|
+| **Username** | Database username (default: `root` for MySQL) |
+| **Password** | Database password (stored securely in Keychain) |
+
+<Note>
+SQLite databases don't require authentication.
+</Note>
+
+{/* Screenshot: Connection form */}
+<Frame caption="Connection form with all configuration fields">
+  <img
+    className="block dark:hidden"
+    src="/images/connection-form-fields.png"
+    alt="Connection form fields"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/connection-form-fields-dark.png"
+    alt="Connection form fields"
+  />
+</Frame>
+
+#### SSL/TLS Section
+
+For MySQL, MariaDB, and PostgreSQL connections, you can configure SSL/TLS encryption:
+
+| Field | Description |
+|-------|-------------|
+| **SSL Mode** | Encryption mode (see table below) |
+| **CA Certificate** | Path to Certificate Authority file (for Verify CA/Verify Identity modes) |
+| **Client Certificate** | Path to client certificate file (optional) |
+| **Client Key** | Path to client private key file (optional) |
+
+**Available SSL Modes:**
+
+| Mode | Description |
+|------|-------------|
+| **Disabled** | No SSL encryption (default) |
+| **Preferred** | Use SSL if available, fall back to unencrypted |
+| **Required** | Require SSL encryption, but don't verify certificates |
+| **Verify CA** | Require SSL and verify the server certificate against a CA |
+| **Verify Identity** | Require SSL, verify CA, and verify the server hostname matches the certificate |
+
+<Tip>
+For production databases, use **Verify CA** or **Verify Identity** mode for maximum security. For development servers, **Required** provides encryption without needing certificate files.
+</Tip>
+
+<Note>
+SSL/TLS is not available for SQLite connections (file-based, no network involved).
+</Note>
+
+{/* Screenshot: SSL/TLS settings */}
+<Frame caption="SSL/TLS connection settings">
+  <img
+    className="block dark:hidden"
+    src="/images/connection-ssl-settings.png"
+    alt="SSL/TLS connection settings"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/connection-ssl-settings-dark.png"
+    alt="SSL/TLS connection settings"
+  />
+</Frame>
+
+## Connection Colors
+
+TablePro allows you to assign colors to connections for visual organization:
+
+| Color | Suggested Use |
+|-------|---------------|
+| None | Default, neutral connections |
+| Red | Production databases |
+| Orange | Staging environments |
+| Yellow | Testing databases |
+| Green | Development/local |
+| Blue | Shared databases |
+| Purple | Special purpose |
+| Pink | Personal projects |
+
+{/* Screenshot: Connection form showing color picker */}
+<Frame caption="Connection color picker">
+  <img 
+    className="block dark:hidden" 
+    src="/images/connection-colors.png" 
+    alt="Color picker" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/connection-colors-dark.png" 
+    alt="Color picker" 
+  />
+</Frame>
+
+## Connection Tags
+
+Tags help organize connections into logical groups:
+
+1. In the connection form, click the **Tag** field
+2. Select an existing tag or create a new one
+3. Tags appear in the sidebar for easy filtering
+
+Common tag examples:
+- "Work"
+- "Personal"
+- "Client Projects"
+- "Archive"
+
+{/* Screenshot: Connection tags */}
+<Frame caption="Connection tags for organization">
+  <img
+    className="block dark:hidden"
+    src="/images/connection-tags.png"
+    alt="Connection tags"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/connection-tags-dark.png"
+    alt="Connection tags"
+  />
+</Frame>
+
+## Quick Connection Switching
+
+Switch between active or saved connections directly from the toolbar without returning to the Welcome screen:
+
+1. Click the **connection name** button in the toolbar
+2. A popover appears showing your active sessions and saved connections
+3. Click any connection to switch to it immediately
+4. Click **Manage Connections...** to open the full connection manager
+
+<Tip>
+The connection switcher popover is the fastest way to jump between databases during development. If the popover is already open, clicking the connection button again will dismiss it.
+</Tip>
+
+## Switching Databases
+
+To switch between databases on the same connection:
+
+1. Click the database name in the toolbar (next to the connection name)
+2. Select a different database from the dropdown
+3. The sidebar updates to show the new database's tables
+
+This is faster than creating separate connections for each database on the same server.
+
+{/* Screenshot: Database switcher */}
+<Frame caption="Database switcher in toolbar">
+  <img
+    className="block dark:hidden"
+    src="/images/database-switcher-toolbar.png"
+    alt="Database switcher in toolbar"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/database-switcher-toolbar-dark.png"
+    alt="Database switcher in toolbar"
+  />
+</Frame>
+
+## Dock Menu Quick Connect
+
+You can quickly open a saved connection directly from the macOS Dock without navigating through the Welcome screen.
+
+Right-click the TablePro icon in the Dock to access the Dock menu, which includes:
+
+| Menu Item | Description |
+|-----------|-------------|
+| **Show Welcome Window** | Opens the Welcome screen |
+| **Open Connection** | Submenu listing all saved connections with database type icons |
+
+### How to Quick Connect from the Dock
+
+1. Right-click the TablePro icon in the Dock
+2. Hover over **Open Connection**
+3. Click a connection name from the submenu
+4. TablePro opens and connects automatically
+
+If the connection fails (e.g., the server is unreachable), TablePro falls back to the Welcome screen so you can review or edit the connection settings.
+
+<Tip>
+Each connection in the Dock menu displays its database type icon (MySQL, MariaDB, PostgreSQL, or SQLite), making it easy to identify the right connection at a glance.
+</Tip>
+
+## Creating Databases
+
+To create a new database:
+
+1. Right-click on the connection in the sidebar
+2. Select **Create Database**
+3. Enter the database name
+4. Choose charset and collation (MySQL/MariaDB)
+5. Click **Create**
+
+<Note>
+Database creation requires appropriate user privileges on the server.
+</Note>
+
+## Testing Connections
+
+Before saving a connection, always test it:
+
+1. Fill in all required connection details
+2. Click **Test Connection**
+3. Wait for the result:
+   - **Green checkmark**: Connection successful
+   - **Red X**: Connection failed (see error message)
+
+{/* Screenshot: Successful connection test */}
+<Frame caption="Connection test results">
+  <img 
+    className="block dark:hidden" 
+    src="/images/connection-test.png" 
+    alt="Connection test" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/connection-test-dark.png" 
+    alt="Connection test" 
+  />
+</Frame>
+
+### Common Test Failures
+
+| Error | Possible Cause | Solution |
+|-------|----------------|----------|
+| "Connection refused" | Server not running | Start your database server |
+| "Authentication failed" | Wrong credentials | Verify username/password |
+| "Host not found" | Invalid server address | Check hostname/IP |
+| "Connection timed out" | Network/firewall issue | Check network connectivity |
+
+## Connection Health Monitoring
+
+TablePro continuously monitors your database connections and automatically recovers from interruptions.
+
+### Automatic Health Checks
+
+For MySQL, MariaDB, and PostgreSQL connections, TablePro sends a lightweight ping (`SELECT 1`) every **30 seconds** to verify the connection is alive. SQLite connections are file-based and don't require health monitoring.
+
+### Auto-Reconnect
+
+When a health check detects a lost connection, TablePro automatically attempts to reconnect:
+
+1. **Attempt 1** — waits 2 seconds, then reconnects
+2. **Attempt 2** — waits 4 seconds, then reconnects
+3. **Attempt 3** — waits 8 seconds, then reconnects
+
+If all three attempts fail, the connection enters an error state and you'll see a **Reconnect** button in the toolbar.
+
+SSH tunnels have their own independent health monitoring and are automatically re-established if the tunnel process dies.
+
+### Manual Reconnect
+
+If auto-reconnect fails, click the **Reconnect** button (↻) in the toolbar to manually re-establish the connection. For SSH connections, this also recreates the SSH tunnel.
+
+<Tip>
+The toolbar status indicator shows the current connection state: green for connected, orange for reconnecting, and red for error/disconnected.
+</Tip>
+
+<Note>
+SQLite connections are file-based and don't require health monitoring or auto-reconnect.
+</Note>
+
+{/* Screenshot: Connection health status */}
+<Frame caption="Connection health status indicator">
+  <img
+    className="block dark:hidden"
+    src="/images/connection-health-status.png"
+    alt="Connection health status"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/connection-health-status-dark.png"
+    alt="Connection health status"
+  />
+</Frame>
+
+## Editing Connections
+
+To modify an existing connection:
+
+1. Right-click the connection in the sidebar
+2. Select **Edit Connection**
+3. Make your changes
+4. Click **Save**
+
+<Warning>
+Changes to connection settings take effect the next time you connect. If currently connected, you'll need to disconnect and reconnect.
+</Warning>
+
+## Deleting Connections
+
+To remove a connection:
+
+1. Right-click the connection in the sidebar
+2. Select **Delete Connection**
+3. Confirm the deletion
+
+<Note>
+Deleting a connection removes the saved settings and credentials but does not affect your actual database.
+</Note>
+
+## Connection Storage
+
+### Where Connections are Stored
+
+| Data | Location | Storage Type |
+|------|----------|--------------|
+| Connection settings | `~/Library/Preferences/com.TablePro.plist` | UserDefaults |
+| All app settings | `~/Library/Preferences/com.TablePro.plist` | UserDefaults |
+| Passwords | macOS Keychain | Encrypted |
+| SSH keys | Referenced by path | Not copied |
+
+### Backup and Restore
+
+To backup your connections and settings:
+
+```bash
+# Backup connections and all settings
+cp ~/Library/Preferences/com.TablePro.plist ~/Desktop/tablepro-backup.plist
+```
+
+To restore:
+
+```bash
+# Close TablePro first, then restore
+cp ~/Desktop/tablepro-backup.plist ~/Library/Preferences/com.TablePro.plist
+```
+
+<Warning>
+The backup file does not include passwords (stored in Keychain) or SSH private keys. You'll need to re-enter passwords after restoring.
+</Warning>
+
+## Default Ports
+
+TablePro automatically sets the default port when you select a database type:
+
+| Database | Default Port |
+|----------|-------------|
+| MySQL | 3306 |
+| MariaDB | 3306 |
+| PostgreSQL | 5432 |
+| SQLite | N/A (file-based) |
+
+## Related Guides
+
+<CardGroup cols={2}>
+  <Card title="MySQL/MariaDB" icon="database" href="/databases/mysql">
+    Detailed MySQL and MariaDB connection guide
+  </Card>
+  <Card title="PostgreSQL" icon="database" href="/databases/postgresql">
+    PostgreSQL-specific connection options
+  </Card>
+  <Card title="SQLite" icon="file" href="/databases/sqlite">
+    Working with SQLite databases
+  </Card>
+  <Card title="SSH Tunneling" icon="lock" href="/databases/ssh-tunneling">
+    Secure connections through SSH
+  </Card>
+</CardGroup>

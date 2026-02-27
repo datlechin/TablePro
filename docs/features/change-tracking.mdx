@@ -1,0 +1,491 @@
+---
+title: Change Tracking
+description: Track, review, and apply data and schema changes with full undo/redo support
+---
+
+# Change Tracking
+
+TablePro uses a queue-based change tracking system that lets you make multiple edits before committing them to the database. All changes are staged locally, giving you a chance to review, undo, or discard before anything touches your data.
+
+{/* Screenshot: Data grid with pending changes highlighted */}
+<Frame caption="Data grid with pending changes highlighted">
+  <img 
+    className="block dark:hidden" 
+    src="/images/change-tracking.png" 
+    alt="Change Tracking" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/change-tracking-dark.png" 
+    alt="Change Tracking" 
+  />
+</Frame>
+
+## Overview
+
+When you edit data or modify table structure in TablePro, changes are not applied immediately. Instead, they are queued in memory and visually highlighted in the data grid. You can then commit all changes at once or discard them entirely.
+
+This approach prevents accidental data loss and gives you full control over when modifications reach the database.
+
+<Tip>
+Change tracking works per-tab. Each tab maintains its own independent set of pending changes, so switching between tabs preserves your edits.
+</Tip>
+
+## Data Changes
+
+TablePro tracks three types of data changes: cell edits (updates), row insertions, and row deletions. All lookups are O(1) using optimized hash-based data structures, so performance remains fast even with many pending changes.
+
+### Editing Cells
+
+To edit an existing cell:
+
+1. Double-click the cell you want to modify
+2. Enter the new value
+3. Press `Enter` to confirm or `Escape` to cancel
+
+Modified cells are visually highlighted in the data grid so you can see exactly what has changed.
+
+{/* Screenshot: Modified cell highlighted in the data grid */}
+<Frame caption="Modified cells are highlighted">
+  <img 
+    className="block dark:hidden" 
+    src="/images/change-tracking-modified.png" 
+    alt="Modified cells" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/change-tracking-modified-dark.png" 
+    alt="Modified cells" 
+  />
+</Frame>
+
+<Note>
+If you change a value back to its original, the change is automatically removed from the queue. TablePro detects when edits cancel each other out.
+</Note>
+
+### Adding Rows
+
+To insert a new row:
+
+1. Click the **+** button in the toolbar or use the keyboard shortcut
+2. A new row appears at the bottom of the data grid, marked with an insertion indicator
+3. Fill in the values for each column
+4. Columns with default values are pre-filled with `DEFAULT`
+
+New rows are tracked separately from updates. You can edit cells in a newly inserted row, and those edits are folded into the insertion rather than creating separate update records.
+
+{/* Screenshot: Newly added row with insertion indicator */}
+<Frame caption="Newly added row with insertion indicator">
+  <img
+    className="block dark:hidden"
+    src="/images/change-new-row.png"
+    alt="Newly added row with insertion indicator"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/change-new-row-dark.png"
+    alt="Newly added row with insertion indicator"
+  />
+</Frame>
+
+### Deleting Rows
+
+To delete rows:
+
+1. Select one or more rows in the data grid
+2. Press the `Delete` key or click the delete button
+3. Deleted rows are marked with a deletion indicator (strikethrough style)
+
+Deleted rows remain visible in the grid until you commit or discard, so you can undo the deletion if needed.
+
+{/* Screenshot: Deleted row with deletion indicator */}
+<Frame caption="Deleted row with deletion indicator">
+  <img
+    className="block dark:hidden"
+    src="/images/change-deleted-row.png"
+    alt="Deleted row with deletion indicator"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/change-deleted-row-dark.png"
+    alt="Deleted row with deletion indicator"
+  />
+</Frame>
+
+<Warning>
+Batch deletion of multiple rows is tracked as a single undo action. Undoing a batch deletion restores all rows at once.
+</Warning>
+
+## Commit & Discard
+
+Once you have staged your changes, you can either commit them to the database or discard them.
+
+### Committing Changes
+
+To apply all pending changes:
+
+1. Click the **Commit** button in the toolbar, or press `Cmd+S`
+2. TablePro generates parameterized SQL statements for all queued changes
+3. The statements are executed against the database
+4. On success, the change queue is cleared and the grid refreshes
+
+The commit operation generates:
+
+| Change Type | SQL Generated |
+|-------------|--------------|
+| Cell edit | `UPDATE ... SET column = ? WHERE pk = ?` |
+| Row insertion | `INSERT INTO ... (columns) VALUES (?)` |
+| Row deletion | `DELETE FROM ... WHERE pk = ?` |
+
+<Note>
+UPDATE statements require a primary key on the table. If no primary key is defined, TablePro will show an error when you try to commit updates. DELETE statements can work without a primary key by matching all column values.
+</Note>
+
+### Discarding Changes
+
+To revert all pending changes:
+
+1. Click the **Discard** button in the toolbar
+2. All queued changes are removed
+3. Modified cells revert to their original values
+4. Inserted rows are removed from the grid
+5. Deleted rows are unmarked
+
+Discard also clears the undo/redo stack for the current tab.
+
+### Previewing Data SQL
+
+Before committing, you can preview the exact SQL statements that will be executed:
+
+1. Make changes to data in the grid (edit cells, insert/delete rows)
+2. Click the **Preview SQL** button (eye icon) in the toolbar, or press `Cmd+Shift+P`
+3. A popover displays all pending SQL with syntax highlighting
+4. Use **Copy All** to copy the SQL to clipboard
+
+{/* Screenshot: SQL Preview popover showing pending statements */}
+
+<Tip>
+The preview shows the actual SQL with parameter values inlined, making it easy to review exactly what will be executed. Destructive operations (DROP, TRUNCATE, DELETE) are highlighted with a warning banner.
+</Tip>
+
+{/* Screenshot: Commit and Discard buttons with pending changes count */}
+<Frame caption="Commit and Discard buttons with pending changes count">
+  <img
+    className="block dark:hidden"
+    src="/images/commit-discard-buttons.png"
+    alt="Commit and Discard buttons with pending changes count"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/commit-discard-buttons-dark.png"
+    alt="Commit and Discard buttons with pending changes count"
+  />
+</Frame>
+
+## Undo & Redo
+
+TablePro provides a full undo/redo stack for data edits, allowing you to step backward and forward through your changes before committing.
+
+### How It Works
+
+Every data change is pushed onto an undo stack:
+
+- **Cell edits**: Store the previous and new value
+- **Row insertions**: Store the row index
+- **Row deletions**: Store the row index and original row data
+- **Batch deletions**: Store all affected rows as a single action
+
+When you undo, the action is moved to the redo stack. When you redo, it moves back to the undo stack.
+
+### Using Undo & Redo
+
+| Action | Shortcut |
+|--------|----------|
+| Undo | `Cmd+Z` |
+| Redo | `Cmd+Shift+Z` |
+
+<Tip>
+Undo and redo are context-aware. When the SQL editor is focused, `Cmd+Z` undoes text edits. When the data grid is focused, it undoes data changes.
+</Tip>
+
+### Stack Behavior
+
+- The undo/redo stacks are maintained per-tab
+- Committing or discarding changes clears both stacks
+- New changes after an undo clear the redo stack (standard undo behavior)
+
+## Schema Changes
+
+TablePro also tracks changes to table structure (columns, indexes, and foreign keys) using the same queue-based approach.
+
+### Tracked Schema Operations
+
+| Operation | What Is Tracked |
+|-----------|----------------|
+| **Add column** | New column definition (name, type, nullable, default, etc.) |
+| **Modify column** | Old and new column definitions |
+| **Delete column** | Column marked for removal |
+| **Add index** | New index definition (name, columns, type, uniqueness) |
+| **Modify index** | Old and new index definitions |
+| **Delete index** | Index marked for removal |
+| **Add foreign key** | New FK definition (columns, references, actions) |
+| **Modify foreign key** | Old and new FK definitions |
+| **Delete foreign key** | FK marked for removal |
+| **Modify primary key** | Old and new primary key columns |
+
+### Visual Indicators
+
+In the Structure tab, pending changes are shown with visual indicators:
+
+- **New items** (columns, indexes, foreign keys) are highlighted with an insertion color
+- **Modified items** show which fields have changed
+- **Deleted items** are marked with a deletion indicator
+
+{/* Screenshot: Schema changes highlighted in Structure tab */}
+<Frame caption="Schema changes highlighted in Structure tab">
+  <img
+    className="block dark:hidden"
+    src="/images/schema-change-indicators.png"
+    alt="Schema changes highlighted in Structure tab"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/schema-change-indicators-dark.png"
+    alt="Schema changes highlighted in Structure tab"
+  />
+</Frame>
+
+### Schema Undo & Redo
+
+Schema changes have their own undo/redo stack (separate from data changes):
+
+- Up to 100 undo levels
+- New actions clear the redo stack
+- Supports all schema operation types
+
+### Previewing Schema SQL
+
+Before applying schema changes, you can preview the generated SQL:
+
+<Steps>
+  <Step title="Make Changes">
+    Add, modify, or delete columns, indexes, or foreign keys in the Structure tab
+  </Step>
+  <Step title="Click Commit">
+    Click the Commit button or press `Cmd+S`
+  </Step>
+  <Step title="Review SQL">
+    A preview sheet shows all ALTER TABLE statements that will be executed
+  </Step>
+  <Step title="Apply or Cancel">
+    Click **Apply Changes** to execute, or **Cancel** to go back and adjust
+  </Step>
+</Steps>
+
+{/* Screenshot: Schema preview sheet showing ALTER TABLE statements */}
+<Frame caption="Schema change preview with generated SQL">
+  <img 
+    className="block dark:hidden" 
+    src="/images/schema-preview.png" 
+    alt="Schema Preview" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/schema-preview-dark.png" 
+    alt="Schema Preview" 
+  />
+</Frame>
+
+<Tip>
+You can copy individual SQL statements from the preview sheet using the copy button next to each statement.
+</Tip>
+
+## SQL Generation
+
+TablePro generates database-specific SQL for both data and schema changes.
+
+### Data SQL (`SQLStatementGenerator`)
+
+Data changes produce parameterized statements to prevent SQL injection:
+
+<Tabs>
+  <Tab title="MySQL/MariaDB">
+    ```sql
+    -- UPDATE with LIMIT 1 for safety
+    UPDATE `users` SET `name` = ? WHERE `id` = ? LIMIT 1
+
+    -- INSERT
+    INSERT INTO `users` (`name`, `email`) VALUES (?, ?)
+
+    -- DELETE (with PK)
+    DELETE FROM `users` WHERE `id` = ? OR `id` = ?
+
+    -- DELETE (without PK, matches all columns)
+    DELETE FROM `users` WHERE `name` = ? AND `email` = ? LIMIT 1
+    ```
+  </Tab>
+  <Tab title="PostgreSQL">
+    ```sql
+    -- UPDATE with positional parameters
+    UPDATE "users" SET "name" = $1 WHERE "id" = $2
+
+    -- INSERT
+    INSERT INTO "users" ("name", "email") VALUES ($1, $2)
+
+    -- DELETE (with PK)
+    DELETE FROM "users" WHERE "id" = $1 OR "id" = $2
+    ```
+  </Tab>
+  <Tab title="SQLite">
+    ```sql
+    -- UPDATE
+    UPDATE "users" SET "name" = ? WHERE "id" = ?
+
+    -- INSERT
+    INSERT INTO "users" ("name", "email") VALUES (?, ?)
+
+    -- DELETE
+    DELETE FROM "users" WHERE "id" = ? OR "id" = ?
+    ```
+  </Tab>
+</Tabs>
+
+### Schema SQL (`SchemaStatementGenerator`)
+
+Schema changes produce ALTER TABLE statements with database-specific syntax:
+
+<Tabs>
+  <Tab title="MySQL/MariaDB">
+    ```sql
+    -- Add column
+    ALTER TABLE `users` ADD COLUMN `phone` VARCHAR(20) NOT NULL
+
+    -- Modify column
+    ALTER TABLE `users` MODIFY COLUMN `name` VARCHAR(200) NOT NULL
+
+    -- Drop column
+    ALTER TABLE `users` DROP COLUMN `phone`
+
+    -- Add index
+    CREATE INDEX `idx_email` ON `users` (`email`) USING BTREE
+
+    -- Drop foreign key
+    ALTER TABLE `orders` DROP FOREIGN KEY `fk_orders_user`
+    ```
+  </Tab>
+  <Tab title="PostgreSQL">
+    ```sql
+    -- Add column
+    ALTER TABLE "users" ADD COLUMN "phone" VARCHAR(20) NOT NULL
+
+    -- Modify column (multiple statements)
+    ALTER TABLE "users" RENAME COLUMN "name" TO "full_name";
+    ALTER TABLE "users" ALTER COLUMN "full_name" TYPE VARCHAR(200);
+    ALTER TABLE "users" ALTER COLUMN "full_name" SET NOT NULL
+
+    -- Drop column
+    ALTER TABLE "users" DROP COLUMN "phone"
+
+    -- Add index
+    CREATE INDEX "idx_email" ON "users" ("email")
+
+    -- Drop constraint
+    ALTER TABLE "orders" DROP CONSTRAINT "fk_orders_user"
+    ```
+  </Tab>
+  <Tab title="SQLite">
+    ```sql
+    -- Add column
+    ALTER TABLE "users" ADD COLUMN "phone" TEXT
+
+    -- Drop column
+    ALTER TABLE "users" DROP COLUMN "phone"
+
+    -- Add index
+    CREATE INDEX "idx_email" ON "users" ("email")
+    ```
+
+    <Warning>
+    SQLite has limited ALTER TABLE support. Modifying columns and dropping foreign keys require table recreation, which is not currently supported in the visual editor. Use the SQL editor for these operations.
+    </Warning>
+  </Tab>
+</Tabs>
+
+### SQL Function Support
+
+When editing cells, TablePro recognizes common SQL functions and inserts them as literals rather than quoted strings:
+
+| Function | Database |
+|----------|----------|
+| `NOW()` | MySQL, MariaDB |
+| `CURRENT_TIMESTAMP` | All |
+| `CURDATE()` | MySQL, MariaDB |
+| `CURRENT_DATE` | All |
+| `SYSDATE()` | MySQL |
+| `UTC_TIMESTAMP()` | MySQL, MariaDB |
+
+### Dependency Ordering
+
+Schema changes are automatically sorted by dependency order before execution:
+
+1. Drop foreign keys (must come first to avoid constraint violations)
+2. Drop indexes
+3. Drop/modify columns
+4. Add columns
+5. Modify primary key
+6. Add indexes
+7. Add foreign keys
+
+## Keyboard Shortcuts
+
+| Action | Shortcut |
+|--------|----------|
+| Commit changes | `Cmd+S` |
+| Undo | `Cmd+Z` |
+| Redo | `Cmd+Shift+Z` |
+| Delete selected rows | `Delete` or `Cmd+Delete` |
+| Edit cell | `Enter` or double-click |
+| Cancel edit | `Escape` |
+
+## Best Practices
+
+### Review Before Committing
+
+Always review your pending changes before committing. The visual indicators in the data grid make it easy to spot unintended edits.
+
+### Use Undo Liberally
+
+The undo stack is cleared when you commit, so take advantage of it while editing. It costs nothing to undo and redo while you are working.
+
+### Commit Frequently
+
+Avoid accumulating too many changes before committing. Smaller, more frequent commits are easier to verify and less risky if something goes wrong.
+
+### Preview Schema Changes
+
+Always use the SQL preview when modifying table structure. This lets you verify the exact ALTER TABLE statements before they execute.
+
+### Backup Before Destructive Changes
+
+When dropping columns or making other destructive schema changes, consider backing up your table first:
+
+```sql
+CREATE TABLE users_backup AS SELECT * FROM users;
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Data Grid" icon="table" href="/features/data-grid">
+    View and edit data in the grid
+  </Card>
+  <Card title="Table Structure" icon="table-columns" href="/features/table-structure">
+    Modify table schemas visually
+  </Card>
+  <Card title="SQL Editor" icon="code" href="/features/sql-editor">
+    Write and execute raw SQL
+  </Card>
+  <Card title="Keyboard Shortcuts" icon="keyboard" href="/features/keyboard-shortcuts">
+    All keyboard shortcuts
+  </Card>
+</CardGroup>

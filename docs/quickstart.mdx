@@ -1,0 +1,183 @@
+---
+title: Quick Start
+description: Get up and running with TablePro in minutes
+---
+
+# Quick Start Guide
+
+This guide will help you download TablePro, install it, and connect to your first database.
+
+## Step 1: Download TablePro
+
+1. Visit the [GitHub Releases page](https://github.com/datlechin/tablepro/releases)
+2. Download the DMG file for your Mac:
+   - **Apple Silicon** (M1/M2/M3/M4/M5): `TablePro-arm64.dmg`
+   - **Intel**: `TablePro-x86_64.dmg`
+
+<Note>
+Not sure which chip your Mac has? Click the Apple menu and select **About This Mac**. Look for "Chip" (Apple Silicon) or "Processor" (Intel).
+</Note>
+
+## Step 2: Install TablePro
+
+1. Open the downloaded DMG file
+2. Drag **TablePro** to your **Applications** folder
+3. Eject the DMG
+4. Open TablePro from your Applications folder
+
+{/* Screenshot: DMG installation window showing drag to Applications */}
+<Frame caption="Drag TablePro to Applications">
+  <img 
+    className="block dark:hidden" 
+    src="/images/install-dmg.png" 
+    alt="Installation dialog" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/install-dmg-dark.png" 
+    alt="Installation dialog" 
+  />
+</Frame>
+
+<Warning>
+On first launch, macOS may show a security warning since TablePro is not signed with an Apple Developer certificate. To open it:
+1. Right-click (or Control-click) on TablePro in Applications
+2. Select **Open** from the context menu
+3. Click **Open** in the dialog that appears
+
+You only need to do this once.
+</Warning>
+
+## Step 3: Create Your First Connection
+
+When TablePro launches, you'll see the Welcome screen. Let's create a new database connection.
+
+### For MySQL/MariaDB
+
+1. Click **New Connection**
+2. Select **MySQL** or **MariaDB** as the database type
+3. Fill in the connection details:
+   - **Name**: A friendly name for this connection (e.g., "Local MySQL")
+   - **Host**: `localhost` (or your server address)
+   - **Port**: `3306` (default)
+   - **Username**: Your database username (e.g., `root`)
+   - **Password**: Your database password
+   - **Database**: (Optional) Default database to connect to
+
+{/* Screenshot: Connection form with MySQL selected and fields filled in */}
+<Frame caption="Creating a MySQL connection">
+  <img 
+    className="block dark:hidden" 
+    src="/images/mysql-connection.png" 
+    alt="MySQL connection form" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/mysql-connection-dark.png" 
+    alt="MySQL connection form" 
+  />
+</Frame>
+
+### For PostgreSQL
+
+1. Click **New Connection**
+2. Select **PostgreSQL** as the database type
+3. Fill in the connection details:
+   - **Name**: A friendly name (e.g., "Local PostgreSQL")
+   - **Host**: `localhost` (or your server address)
+   - **Port**: `5432` (default)
+   - **Username**: Your database username (e.g., `postgres`)
+   - **Password**: Your database password
+   - **Database**: The database name to connect to
+
+### For SQLite
+
+1. Click **New Connection**
+2. Select **SQLite** as the database type
+3. Click **Browse** to select your SQLite database file
+4. Give your connection a name
+
+<Tip>
+SQLite databases don't require authentication - just select the `.sqlite` or `.db` file on your Mac.
+</Tip>
+
+## Step 4: Test and Connect
+
+1. Click **Test Connection** to verify your settings
+2. If successful, you'll see a green checkmark
+3. Click **Create** to save the connection and connect
+
+{/* Screenshot: Successful connection test showing green checkmark */}
+<Frame caption="Successful connection test">
+  <img 
+    className="block dark:hidden" 
+    src="/images/connection-test.png" 
+    alt="Connection test success" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/connection-test-dark.png" 
+    alt="Connection test success" 
+  />
+</Frame>
+
+## Step 5: Explore Your Database
+
+Once connected, you'll see the main interface with:
+
+- **Sidebar**: Your databases and tables
+- **SQL Editor**: Write and execute SQL queries
+- **Data Grid**: View and edit query results
+
+{/* Screenshot: Main interface after connecting, showing sidebar with tables */}
+<Frame caption="TablePro main interface">
+  <img 
+    className="block dark:hidden" 
+    src="/images/main-interface.png" 
+    alt="Main interface" 
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/main-interface-dark.png" 
+    alt="Main interface" 
+  />
+</Frame>
+
+### Try Your First Query
+
+1. Click on a table in the sidebar to view its contents
+2. Or type a query in the SQL editor:
+
+```sql
+SELECT * FROM users LIMIT 10;
+```
+
+3. Press `Cmd+Enter` to execute the query
+4. View the results in the data grid below
+
+## Next Steps
+
+Congratulations! You've successfully set up TablePro. Here's what to explore next:
+
+<CardGroup cols={2}>
+  <Card title="Database Connections" icon="plug" href="/databases/overview">
+    Learn more about managing and organizing your connections.
+  </Card>
+  <Card title="SQL Editor" icon="code" href="/features/sql-editor">
+    Master the SQL editor with syntax highlighting and autocomplete.
+  </Card>
+  <Card title="SSH Tunneling" icon="lock" href="/databases/ssh-tunneling">
+    Connect securely to remote databases through SSH.
+  </Card>
+  <Card title="Keyboard Shortcuts" icon="keyboard" href="/features/keyboard-shortcuts">
+    Speed up your workflow with keyboard shortcuts.
+  </Card>
+</CardGroup>
+
+## Need Help?
+
+If you encounter any issues:
+
+- Check the [Installation guide](/installation) for detailed system requirements
+- Review the database-specific guides for connection troubleshooting
+- [Open an issue](https://github.com/datlechin/tablepro/issues) on GitHub

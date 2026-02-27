@@ -1,0 +1,254 @@
+---
+title: "Lịch sử thay đổi"
+description: "Cập nhật sản phẩm và thông báo cho TablePro"
+rss: true
+---
+
+<Update label="23 tháng 2, 2026" description="v0.6.4">
+  ### Sửa lỗi
+
+  - **Xuất SQL PostgreSQL**: Sửa lỗi xuất DDL thất bại cho tất cả bảng PostgreSQL với thông báo "Failed to fetch DDL"
+</Update>
+
+<Update label="23 tháng 2, 2026" description="v0.6.3">
+  ### Cải tiến
+
+  - Cửa sổ chào mừng sử dụng hiệu ứng kính mờ macOS gốc
+  - Cải thiện hiệu suất chuyển tab bằng cách cache row provider và change manager giữa các chu kỳ render
+
+  ### Sửa lỗi
+
+  - **Timeout MySQL/MariaDB**: Tự động nhận diện loại server để dùng đúng biến timeout (`max_execution_time` cho MySQL, `max_statement_time` cho MariaDB)
+  - **Cuộn DataGrid**: Tái sử dụng row view, kiểm tra độ dài chuỗi O(1), cache font, giảm chi phí compositing, hoãn nhãn trợ năng
+  - Loại bỏ vòng lặp đồng bộ lựa chọn gây cập nhật thừa khi chuyển tab
+  - Giảm chuỗi render lại SwiftUI bằng cách gộp thay đổi trạng thái khi chuyển tab
+</Update>
+
+<Update label="23 tháng 2, 2026" description="v0.6.2">
+  ### Cải tiến
+
+  - Thay thế màu SwiftUI chung bằng màu hệ thống macOS gốc để hỗ trợ đúng chế độ tối, vibrancy và trợ năng
+  - Sử dụng màu nhãn ngữ nghĩa (`quaternaryLabelColor`, `tertiaryLabelColor`) thay vì opacity cố định
+  - Sử dụng `shadowColor` gốc thay vì `Color.black` cho bóng đổ
+  - Thay thế huy hiệu Capsule kiểu iOS bằng RoundedRectangle cho giao diện macOS gốc
+</Update>
+
+<Update label="23 tháng 2, 2026" description="v0.6.1">
+  ### Hiệu suất
+
+  - **45 bản sửa hiệu suất** trên toàn bộ mã nguồn, bao gồm bộ nhớ, CPU, xử lý dữ liệu, mạng và I/O:
+    - **Bộ nhớ**: Bộ đệm hàng dạng tham chiếu, bộ nhớ đệm sắp xếp theo chỉ mục, xuất XLSX dạng streaming, giới hạn hàng cấp driver (tối đa 100K), loại bỏ sao chép chuỗi thừa, tham chiếu yếu trong schema provider, giới hạn ngăn xếp undo, thay đổi chờ dạng dictionary, weak self trong Task, xóa dữ liệu cache khi ngắt kết nối, giới hạn tin nhắn AI
+    - **CPU**: Loại bỏ thao tác Unicode tốn kém trong driver cơ sở dữ liệu, cache 100+ mẫu regex trong SQL formatter, đọc Keychain async, cache mẫu regex thường dùng, tra cứu thay đổi O(1)
+    - **Dữ liệu**: Tự động thêm LIMIT cho truy vấn không bảo vệ, giới hạn hàng cho tất cả driver, truy xuất cột hàng loạt qua INFORMATION_SCHEMA, cache sắp xếp hoán vị chỉ mục, cache row provider, giới hạn clipboard 50K hàng, ID hàng dạng Int thay UUID
+    - **Mạng**: Cache metadata giai đoạn 2, timeout kết nối PostgreSQL, hủy truy vấn qua mysql_kill/PQcancel/sqlite3_interrupt, bảo vệ tải thanh bên, tái sử dụng schema cache cho AI
+    - **I/O**: Dọn dẹp lịch sử có giới hạn tốc độ, di chuyển lưu trữ lịch sử async, gộp trình xử lý onChange
+</Update>
+
+<Update label="22 tháng 2, 2026" description="v0.6.0">
+  ### Tính năng mới
+
+  - **Gợi ý AI Nội tuyến**: Gợi ý văn bản mờ trong trình soạn thảo SQL — tự động kích hoạt khi dừng gõ, nhấn Tab để chấp nhận hoặc Escape để bỏ qua
+  - **Gợi ý Nhận biết Schema**: Gợi ý nội tuyến sử dụng tên bảng và cột thực từ cơ sở dữ liệu đang kết nối (cache 30 giây)
+  - **Hỗ trợ VoiceOver**: Thêm nhãn trợ năng cho bảng dữ liệu, bảng bộ lọc, nút thanh công cụ, thanh tab trình soạn thảo và điều khiển thanh bên
+
+  ### Cải tiến
+
+  - Di chuyển trình quan sát thông báo sang chuỗi async cho Swift concurrency hiện đại
+  - Di chuyển lưu trữ trạng thái tab từ UserDefaults sang lưu trữ tệp trong Application Support để khởi động ứng dụng nhanh hơn
+  - Tái cấu trúc lệnh menu và thanh công cụ sang mẫu `@FocusedObject` — gọi phương thức trực tiếp thay vì thông báo toàn cục
+  - Thiết kế lại biểu mẫu kết nối với bố cục tab (Chung / SSH Tunnel / SSL/TLS / Nâng cao)
+  - Nâng cấp giao diện biểu mẫu kết nối sang kiểu form nhóm macOS gốc với căn chỉnh nhãn tự động
+  - Kết nối SQLite chỉ hiển thị tab liên quan (Chung và Nâng cao)
+  - Thêm phương thức async/await cho lưu trữ lịch sử truy vấn
+
+  ### Sửa lỗi
+
+  - Sửa lỗi xung đột luồng trong trình điều khiển SQLite — tuần tự hóa truy cập handle bằng actor chuyên dụng
+  - Sửa lỗi hiển thị sheet SwiftUI — gộp nhiều modifier `.sheet` thành một `.sheet(item:)` duy nhất
+  - Sửa lỗi thiết lập SSH tunnel chặn giao diện — thay thế chờ đồng bộ bằng kiểm tra cổng async
+  - Sửa lỗi deadlock tiềm ẩn trong dọn dẹp kết nối MySQL và PostgreSQL
+  - Trình soạn thảo SQL giờ tôn trọng cỡ chữ trợ năng macOS với cập nhật trực tiếp
+  - Sửa lỗi retain cycle trong trình cập nhật và rò rỉ observer trong trình soạn thảo SQL
+  - Loại bỏ độ trễ chuyển tab — giữ NSView sống qua các lần chuyển, chuyển I/O sang luồng nền
+  - Giảm CPU spike khi chuyển tab từ 40-60% xuống ~10-20% bằng cách loại bỏ reload bảng dữ liệu thừa
+  - Mở bảng giờ hiển thị dữ liệu ngay lập tức — metadata tải nền không chặn bảng dữ liệu
+  - Loại bỏ overhead 20-80ms khi nhấp vào bảng đã mở trên thanh bên
+  - Sửa lỗi ghi Keychain âm thầm thất bại — giá trị trả về giờ được kiểm tra và ghi log
+  - Thêm định danh dịch vụ cho tất cả truy vấn Keychain để tránh xung đột với ứng dụng khác
+  - Sửa lỗi rò rỉ task async trong hộp thoại nhập và cài đặt nhà cung cấp AI
+</Update>
+
+<Update label="19 tháng 2, 2026" description="v0.5.0">
+  ### Tính năng mới
+
+  - **Bảng Chat AI**: Bảng bên phải hỗ trợ truy vấn SQL với AI đa nhà cung cấp (Claude, OpenAI, OpenRouter, Ollama, endpoint tùy chỉnh) — bao gồm ngữ cảnh schema, hiển thị markdown, và khối mã với nút Sao chép/Chèn vào Trình soạn thảo
+  - **Cài đặt Nhà cung cấp AI**: Cấu hình nhiều nhà cung cấp AI trong Settings > AI với quản lý API key, cấu hình endpoint, chọn model, và kiểm tra kết nối
+  - **Định tuyến Tính năng AI**: Gán các tính năng AI (Chat, Giải thích Truy vấn, Sửa Lỗi, Gợi ý Nội tuyến) cho nhà cung cấp và model cụ thể
+  - **Chính sách AI theo Kết nối**: Kiểm soát quyền truy cập AI theo kết nối (Luôn Cho phép, Hỏi Mỗi Lần, Không bao giờ) trong biểu mẫu kết nối
+  - **Tùy chỉnh Phím tắt**: Gán lại bất kỳ phím tắt menu nào trong Settings > Keyboard với giao diện nhấn-để-ghi, phát hiện xung đột và "Đặt lại Mặc định"
+  - **Hoàn tác/Làm lại Cấu trúc**: Hỗ trợ hoàn tác/làm lại đầy đủ (⌘Z / ⇧⌘Z) cho tất cả thao tác cột, chỉ mục và khóa ngoại trong trình soạn thảo cấu trúc
+  - **Bộ chọn Kiểu Cấu trúc**: Popover chọn kiểu dữ liệu theo cơ sở dữ liệu — tìm kiếm được, nhóm theo danh mục, hỗ trợ nhập tự do cho kiểu tham số như `VARCHAR(255)`
+  - **Menu Dropdown Cấu trúc**: Menu dropdown CÓ/KHÔNG cho cột Nullable, Auto Inc và Unique
+  - **Tùy chọn Tái sử dụng Tab**: Tùy chọn trong Settings > Tabs để tái sử dụng tab bảng trống khi nhấp vào bảng mới trên thanh bên
+  - **Phím tắt Chuyển Kết nối**: ⌘⌥C để mở nhanh popover chuyển đổi kết nối
+  - **Cải tiến Tự động hoàn thành SQL**: Kiểu mệnh đề mới (RETURNING, UNION, OVER/PARTITION BY), gợi ý chuyển tiếp mệnh đề thông minh, gợi ý cột đủ điều kiện trong JOIN, từ khóa kết hợp, metadata cột phong phú hơn
+
+  ### Cải tiến
+
+  - Di chuyển 5 bộ điều khiển NSPopover sang SwiftUI với tiện ích `PopoverPresenter` dùng chung
+  - Thay thế bảng lịch sử AppKit (5 tệp) bằng `HistoryPanelView` SwiftUI thuần
+  - Thay thế `ExportTableOutlineView` (757 dòng) bằng SwiftUI `ExportTableTreeView` (~146 dòng)
+  - Cải thiện kiến trúc bố cục — loại bỏ hack KVO và duyệt cây view đệ quy
+  - Cột bảng cấu trúc tự động điều chỉnh kích thước phù hợp nội dung
+  - Tự động hoàn thành SQL sử dụng debounce 50ms và khớp mờ tối ưu
+
+  ### Sửa lỗi
+
+  - Sửa lỗi hoàn tác/làm lại cấu trúc không hoạt động — hoàn tác xóa không còn nhân đôi hàng
+  - Sửa lỗi nút lưu cấu trúc vẫn bật khi có lỗi xác thực
+  - Sửa lỗi xử lý sai khóa ngoại nhiều cột và đổi tên cột trên MySQL/MariaDB
+  - Sửa lỗi tab DDL PostgreSQL thiếu ràng buộc và phát hiện khóa chính
+  - Sửa lỗ hổng SQL injection trong truy vấn schema với ký tự đặc biệt
+  - Sửa lỗi hoàn tác/làm lại trình soạn thảo SQL (⌘Z / ⇧⌘Z) bị chặn bởi chuỗi phản hồi
+  - Sửa nhiều lỗi tự động hoàn thành SQL: phát hiện mệnh đề truy vấn con, xử lý chú thích khối, kiểu dữ liệu riêng, gợi ý schema sau CREATE TABLE
+  - Sửa lỗi thứ tự cột bảng dữ liệu nhấp nháy khi sắp xếp
+  - Sửa lỗi "Sao chép Tên Cột" sao chép cả chỉ số sắp xếp
+  - Sửa lỗi chính sách AI "Hỏi Mỗi Lần" tự động chuyển thành "Luôn Cho phép"
+</Update>
+
+<Update label="16 tháng 2, 2026" description="v0.4.0">
+  ### Tính năng mới
+
+  - **Xem trước SQL**: Nút Xem trước SQL (biểu tượng mắt) trên thanh công cụ để xem lại tất cả câu lệnh SQL đang chờ trước khi xác nhận thay đổi (⌘⇧P)
+  - **Sắp xếp Nhiều Cột**: Shift+click tiêu đề cột để thêm cột vào danh sách sắp xếp; click thường thay thế bằng sắp xếp đơn. Chỉ số ưu tiên sắp xếp (1▲, 2▼) hiển thị trên tiêu đề cột
+  - **Sao chép với Tiêu đề**: Tính năng "Sao chép với Tiêu đề" (Shift+Cmd+C) để sao chép các hàng đã chọn kèm tiêu đề cột dưới dạng dòng TSV đầu tiên, cũng có sẵn qua menu ngữ cảnh
+  - **Lưu giữ Độ rộng Cột**: Độ rộng cột được thay đổi sẽ giữ nguyên trong phiên tab khi phân trang, sắp xếp và tải lại bộ lọc
+  - **Xác nhận Truy vấn Nguy hiểm**: Hộp thoại xác nhận cho câu lệnh `DELETE`/`UPDATE` không có mệnh đề `WHERE`
+  - **Cuộn ngang Trình soạn thảo SQL**: Cuộn ngang cho dòng dài không xuống dòng tự động
+  - **Điều hướng Tìm kiếm**: Điều hướng cuộn đến kết quả khớp trong bảng tìm kiếm của trình soạn thảo SQL
+
+  ### Cải tiến
+
+  - Nâng phiên bản macOS tối thiểu từ 13.5 (Ventura) lên 14.0 (Sonoma)
+  - Cải thiện trình phân tích câu lệnh SQL để xử lý ký tự thoát dấu gạch chéo ngược trong chuỗi ký tự
+
+  ### Sửa lỗi
+
+  - Sửa lỗi trình soạn thảo SQL không cập nhật màu sắc khi chuyển đổi giữa chế độ sáng và tối
+</Update>
+
+<Update label="14 tháng 2, 2026" description="v0.3.2">
+  ### Sửa lỗi
+
+  - Sửa lỗi crash khi khởi động trên macOS 13 (Ventura) x86_64 do truy cập `NSApp.appearance` trước khi `NSApplication` được khởi tạo
+</Update>
+
+<Update label="14 tháng 2, 2026" description="v0.3.1">
+  ### Sửa lỗi
+
+  - Sửa lỗi tô sáng cú pháp không áp dụng sau khi dán trong trình soạn thảo SQL
+  - Sửa lỗi bảng dữ liệu không làm mới sau khi chèn hàng mới
+</Update>
+
+<Update label="13 tháng 2, 2026" description="v0.3.0">
+  ### Tính năng mới
+
+  - **Cài đặt Ngôn ngữ**: Chọn giữa Hệ thống, English hoặc Tiếng Việt trong Settings > General với bản địa hóa Tiếng Việt đầy đủ
+  - **Trình soạn thảo Cột ENUM/SET**: Nhấp đúp vào cột ENUM để chọn từ dropdown tìm kiếm, cột SET hiển thị hộp kiểm đa lựa chọn
+  - **Giám sát Sức khỏe Kết nối**: Kiểm tra sức khỏe tự động mỗi 30 giây cho MySQL/MariaDB/PostgreSQL với tự động kết nối lại theo hàm mũ (3 lần thử) và nút Reconnect trên thanh công cụ để phục hồi thủ công
+  - **Phân tích Sử dụng Ẩn danh**: Phân tích sử dụng ẩn danh với tùy chọn tắt trong Settings > General > Privacy
+  - **Hỗ trợ Kiểu ENUM Tùy chỉnh PostgreSQL**: Hỗ trợ kiểu enum do người dùng định nghĩa trong PostgreSQL
+  - **Phát hiện Pseudo-enum SQLite**: Phát hiện ràng buộc CHECK pseudo-enum trong SQLite
+
+  ### Cải tiến
+
+  - Di chuyển thư viện tĩnh sang Git LFS
+  - Thay thế mẫu filter/count bằng `count(where:)`
+
+  ### Sửa lỗi
+
+  - Sửa lỗi crash khi khởi động trên macOS 13 do thiếu ký hiệu `asyncAndWait`
+  - Thoát dấu nháy đơn trong truy vấn PostgreSQL/SQLite để ngăn chặn SQL injection
+  - Phát hiện nullable cột ENUM giờ sử dụng metadata schema thực tế
+  - Sửa đổi khóa chính PostgreSQL giờ truy vấn tên ràng buộc thực tế
+</Update>
+
+<Update label="11 tháng 2, 2026" description="v0.2.0">
+  ### Tính năng mới
+
+  - **Hỗ trợ Kết nối SSL/TLS**: Kết nối an toàn cho MySQL/MariaDB và PostgreSQL với các chế độ cấu hình (Tắt, Ưu tiên, Bắt buộc, Xác minh CA, Xác minh Danh tính) và đường dẫn chứng chỉ tùy chỉnh
+  - **Dán CSV từ Clipboard**: Trình phân tích CSV tuân thủ RFC 4180 với tự động phát hiện định dạng CSV vs TSV khi dán từ clipboard
+  - **Giải thích Truy vấn**: Nút mới trên thanh công cụ trình soạn thảo SQL và mục menu (⌥⌘E) để xem kế hoạch thực thi truy vấn
+  - **Chuyển đổi Kết nối**: Popover chuyển đổi nhanh giữa các kết nối đang hoạt động và đã lưu trực tiếp từ thanh công cụ
+  - **Bộ chọn Ngày/Giờ**: Popover chọn ngày chuyên dụng để chỉnh sửa cột date, datetime, timestamp và time trong bảng dữ liệu
+  - **Chế độ Chỉ đọc**: Bật/tắt chỉ đọc ở cấp kết nối với huy hiệu thanh công cụ và thực thi toàn bộ giao diện — vô hiệu hóa chỉnh sửa, thao tác hàng và lưu thay đổi
+  - **Thời gian chờ Truy vấn**: Thời gian chờ thực thi cấu hình trong Settings > General (mặc định 60 giây, 0 = không giới hạn) với thực thi theo từng driver qua `statement_timeout` (PostgreSQL), `max_execution_time` (MySQL), `max_statement_time` (MariaDB) và `sqlite3_busy_timeout` (SQLite)
+  - **Tra cứu Khóa ngoại**: Dropdown tìm kiếm cho cột FK hiển thị giá trị từ bảng tham chiếu với cả ID và cột hiển thị mô tả
+  - **Trình soạn thảo Cột JSON**: Popover soạn thảo cho cột JSON/JSONB với định dạng đẹp, chế độ thu gọn, xác thực thời gian thực và nút lưu/hủy rõ ràng
+  - **Xuất Excel**: Xuất sang định dạng `.xlsx` với trình ghi OOXML Swift thuần nhẹ — hỗ trợ khử trùng lặp chuỗi chia sẻ, tiêu đề in đậm, phát hiện kiểu số và xuất nhiều bảng sang các worksheet riêng biệt
+  - **Quản lý View**: Tạo View (mở trình soạn thảo SQL với mẫu), Chỉnh sửa Định nghĩa View (lấy định nghĩa hiện tại) và Xóa View từ menu ngữ cảnh thanh bên
+
+  ### Sửa lỗi
+
+  - Sửa lỗi crash khi khởi động trên macOS 13 (Ventura) do thiếu ký hiệu runtime Swift
+  - Sửa chức năng redo trong bảng dữ liệu (⌘⇧Z giờ hoạt động chính xác)
+  - Sửa lỗi ngăn xếp redo không được xóa khi thực hiện thay đổi mới
+  - Sửa `canRedo()` luôn trả về false trong coordinator bảng dữ liệu
+  - Kết nối callback undo/redo trực tiếp với bảng dữ liệu để xác thực chuỗi responder đúng
+  - Sửa lỗi kết nối MariaDB 1193 "Unknown system variable 'max_execution_time'" bằng cách sử dụng biến `max_statement_time` đúng
+  - Lỗi timeout truy vấn không còn ngăn cản việc thiết lập kết nối cơ sở dữ liệu
+
+  ### Cải tiến
+
+  - Thay thế tất cả câu lệnh `print()` bằng `Logger` OSLog có cấu trúc trên 25 file để gỡ lỗi tốt hơn qua Console.app
+</Update>
+
+<Update label="9 tháng 2, 2026" description="v0.1.1">
+  ### Tính năng mới
+
+  - **Chuyển đổi CodeEditSourceEditor**: Trình soạn thảo SQL giờ được hỗ trợ bởi tree-sitter qua CodeEditSourceEditor để cải thiện tô sáng cú pháp và hiệu suất
+  - **Thực thi Nhiều Câu lệnh**: Thực thi nhiều câu lệnh SQL trong một lần chạy
+  - **Xem Cấu trúc**: Nhấp chuột phải vào bất kỳ bảng nào trong thanh bên để xem nhanh cấu trúc
+  - **Cải thiện Bảng Lọc**: Thiết kế lại giao diện bộ lọc cho trải nghiệm tốt hơn
+  - **Thanh Tab SwiftUI**: Thanh tab trình soạn thảo SwiftUI thuần mới thay thế phiên bản AppKit
+  - **Giấy phép GPL v3**: Dự án giờ được cấp phép theo GNU General Public License v3
+  - **Tự động Cập nhật**: Cập nhật trong ứng dụng liền mạch qua Sparkle 2 với ký EdDSA — kiểm tra cập nhật từ menu TablePro hoặc Settings > General
+
+  ### Sửa lỗi
+
+  - Sửa lỗi kết nối MySQL 8+ thất bại với lỗi plugin `caching_sha2_password` bằng cách biên dịch lại libmariadb với plugin xác thực tích hợp tĩnh
+  - Sửa lỗi phím Delete trên hàng bảng dữ liệu đánh dấu nhầm bảng là đã xóa
+  - Hạ cấp tất cả API để hỗ trợ macOS 13.5 (Ventura)
+
+  ### Bảo trì
+
+  - Ghi chú phát hành CI giờ đọc từ CHANGELOG.md thay vì tự động tạo từ commit
+  - Loại bỏ job CI `prepare-libs` dư thừa, tăng tốc pipeline build khoảng 5 phút
+  - Thêm SPM Package.resolved cho các dependency CodeEditSourceEditor
+  - Cập nhật lệnh build và test với `-skipPackagePluginValidation`
+</Update>
+
+<Update label="8 tháng 2, 2026" description="v0.1.0">
+  Bản phát hành công khai đầu tiên của TablePro — ứng dụng quản lý cơ sở dữ liệu macOS gốc được xây dựng bằng SwiftUI và AppKit.
+
+  ### Tính năng
+
+  - **Hỗ trợ Nhiều Cơ sở dữ liệu**: Kết nối với MySQL, PostgreSQL và SQLite
+  - **Trình soạn thảo SQL**: Trình soạn thảo đầy đủ tính năng với tô sáng cú pháp, tự động hoàn thành và số dòng
+  - **Bảng dữ liệu**: Duyệt và chỉnh sửa dữ liệu bảng với sắp xếp, lọc và phân trang
+  - **SSH Tunneling**: Kết nối cơ sở dữ liệu an toàn qua SSH tunnel
+  - **Lịch sử Truy vấn**: Theo dõi và phát lại các truy vấn SQL của bạn
+  - **Cấu trúc Bảng**: Xem và sửa đổi schema, chỉ mục và ràng buộc của bảng
+  - **Nhập/Xuất**: Nhập file SQL và xuất dữ liệu ở định dạng CSV, JSON và SQL
+  - **Phím tắt**: Điều hướng bàn phím toàn diện cho người dùng chuyên nghiệp
+  - **Thanh Tab Gốc**: Thanh tab AppKit với hỗ trợ kéo thả để sắp xếp lại
+  - **Menu Dock**: Truy cập nhanh màn hình chào mừng và kết nối gần đây
+  - **Kích hoạt Giấy phép**: Xác minh giấy phép ký RSA với hỗ trợ ngoại tuyến
+
+  ### Hiệu suất
+
+  - Tối ưu trình soạn thảo SQL cho file lớn với tô sáng cú pháp theo viewport
+  - Thanh tab AppKit gốc cho quản lý tab nhẹ
+  - Kết xuất bảng dữ liệu hiệu quả cho tập kết quả lớn
+  - Lượng bộ nhớ nhẹ với các framework gốc của Apple
+</Update>

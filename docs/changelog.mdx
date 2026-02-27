@@ -1,0 +1,260 @@
+---
+title: "Changelog"
+description: "Product updates and announcements for TablePro"
+rss: true
+---
+
+<Update label="February 23, 2026" description="v0.6.4">
+  ### Bug Fixes
+
+  - **PostgreSQL SQL Export**: Fixed DDL export failing for all PostgreSQL tables with "Failed to fetch DDL" error
+</Update>
+
+<Update label="February 23, 2026" description="v0.6.3">
+  ### Improvements
+
+  - Welcome window now uses native macOS frosted glass translucency
+  - Improved tab switching performance by caching row providers and change managers across render cycles
+
+  ### Bug Fixes
+
+  - **MySQL/MariaDB Timeout**: Auto-detect server type to use the correct timeout variable (`max_execution_time` for MySQL, `max_statement_time` for MariaDB)
+  - **DataGrid Scrolling**: Row view recycling, O(1) string length checks, cached fonts, reduced compositing overhead, deferred accessibility labels
+  - Eliminated selection sync feedback loop causing redundant updates during tab switch
+  - Reduced SwiftUI re-render cascades by batching state mutations during tab switch
+</Update>
+
+<Update label="February 23, 2026" description="v0.6.2">
+  ### Improvements
+
+  - Replaced generic SwiftUI colors with native macOS system colors for proper dark mode, vibrancy, and accessibility adaptation
+  - Use semantic label colors (`quaternaryLabelColor`, `tertiaryLabelColor`) instead of hardcoded opacity
+  - Use native `shadowColor` instead of `Color.black` for shadows
+  - Replaced iOS-style Capsule badges with RoundedRectangle for native macOS look
+</Update>
+
+<Update label="February 23, 2026" description="v0.6.1">
+  ### Performance
+
+  - **45 performance fixes** across the entire codebase, covering memory, CPU, data handling, network, and I/O:
+    - **Memory**: Reference-based row buffers, index-based sort cache, streaming XLSX export, driver-level row limits (100K cap), removed redundant string copies, weak references in schema provider, undo stack depth cap, dictionary-based pending changes, weak self in Task captures, clear cached data on disconnect, AI chat message cap
+    - **CPU**: Removed expensive Unicode operations in database drivers, cached 100+ regex patterns in SQL formatter, async Keychain reads, cached frequently-used regex patterns, O(1) change lookup index
+    - **Data**: Auto-append LIMIT for unprotected queries, row limit caps for all drivers, batch column fetching via INFORMATION_SCHEMA, index permutation sort cache, cached row provider, clipboard 50K row cap, Int-based row IDs replacing UUID
+    - **Network**: Phase 2 metadata cache, connect timeout for PostgreSQL, query cancellation via mysql_kill/PQcancel/sqlite3_interrupt, loading guard for sidebar, reuse cached schema for AI
+    - **I/O**: Throttled history cleanup, async history storage migration, consolidated onChange handlers
+</Update>
+
+<Update label="February 22, 2026" description="v0.6.0">
+  ### New Features
+
+  - **Inline AI Suggestions**: Ghost text completions in the SQL editor — triggers automatically on typing pause, Tab to accept, Escape to dismiss
+  - **Schema-Aware Completions**: Inline suggestions use actual table and column names from your connected database (cached with 30s TTL)
+  - **VoiceOver Accessibility**: Added accessibility labels to data grid, filter panel, toolbar buttons, editor tab bar, and sidebar controls
+
+  ### Improvements
+
+  - Migrated notification observers to async sequences for modern Swift concurrency
+  - Migrated tab state persistence from UserDefaults to file-based storage in Application Support for faster app launch
+  - Refactored menu and toolbar commands to `@FocusedObject` pattern — direct method calls instead of global notifications
+  - Redesigned connection form with tab-based layout (General / SSH Tunnel / SSL/TLS / Advanced)
+  - Revamped connection form UI to native macOS grouped form style with automatic label alignment
+  - SQLite connections now only show relevant tabs (General and Advanced)
+  - Added async/await wrapper methods to query history storage
+
+  ### Bug Fixes
+
+  - Fixed thread safety race condition in SQLite driver — serialized all handle access with a dedicated actor
+  - Fixed SwiftUI sheet presentation reliability — consolidated multiple `.sheet` modifiers into a single `.sheet(item:)`
+  - Fixed SSH tunnel setup blocking the UI — replaced synchronous process waiting with async port probing
+  - Fixed potential deadlocks in MySQL and PostgreSQL connection cleanup
+  - SQL editor now respects the macOS accessibility text size preference with live updates
+  - Fixed retain cycle in update checker and leaked observer in SQL editor coordinator
+  - Eliminated tab switching delay — kept NSViews alive across switches, moved I/O to background threads
+  - Reduced tab-switch CPU spikes from 40-60% to ~10-20% by eliminating redundant data grid reloads
+  - Table open now shows data instantly — metadata loads in the background without blocking the grid
+  - Eliminated 20-80ms overhead when clicking an already-open table in the sidebar
+  - Fixed Keychain writes silently failing — return values are now checked and logged
+  - Added proper service identifiers to all Keychain queries to prevent collisions with other apps
+  - Fixed leaked async tasks in import dialog and AI provider settings
+</Update>
+
+<Update label="February 19, 2026" description="v0.5.0">
+  ### New Features
+
+  - **AI Chat Panel**: Right-side panel for AI-assisted SQL queries with multi-provider support (Claude, OpenAI, OpenRouter, Ollama, custom endpoints) — includes schema-aware context, markdown rendering, and code blocks with Copy/Insert to Editor buttons
+  - **AI Provider Settings**: Configure multiple AI providers in Settings > AI with API key management, endpoint configuration, model selection, and connection testing
+  - **AI Feature Routing**: Map AI features (Chat, Explain Query, Fix Error, Inline Suggestions) to specific providers and models
+  - **Per-Connection AI Policy**: Control AI access per connection (Always Allow, Ask Each Time, Never) in the connection form
+  - **Keyboard Shortcut Customization**: Rebind any menu shortcut in Settings > Keyboard via press-to-record UI with conflict detection and "Reset to Defaults"
+  - **Structure View Undo/Redo**: Full undo/redo support (⌘Z / ⇧⌘Z) for all column, index, and foreign key operations in the structure editor
+  - **Structure View Type Picker**: Database-specific type picker popover — searchable, grouped by category, supports freeform input for parametric types like `VARCHAR(255)`
+  - **Structure View Dropdowns**: YES/NO dropdown menus for Nullable, Auto Inc, and Unique columns
+  - **Tab Reuse Setting**: Opt-in option in Settings > Tabs to reuse clean table tabs when clicking a new table in the sidebar
+  - **Switch Connection Shortcut**: ⌘⌥C to quickly open the connection switcher popover
+  - **SQL Autocomplete Enhancements**: New clause types (RETURNING, UNION, OVER/PARTITION BY), smart clause transitions, qualified column suggestions in JOINs, compound keywords, richer column metadata, keyword documentation, and expanded function/keyword coverage
+
+  ### Improvements
+
+  - Migrated 5 NSPopover controllers (Enum, Set, TypePicker, JSONEditor, ForeignKey) to SwiftUI with shared `PopoverPresenter` utility
+  - Replaced AppKit history panel (5 files) with single pure SwiftUI `HistoryPanelView`
+  - Replaced `ExportTableOutlineView` (757 lines) with SwiftUI `ExportTableTreeView` (~146 lines)
+  - Replaced `KeyEventHandler` NSViewRepresentable with native `.onKeyPress()` modifiers
+  - Improved layout architecture — eliminated KVO observation hacks and recursive view tree traversal
+  - Structure tab grid columns now auto-size to fit content on data load
+  - SQL autocomplete now uses 50ms debounce and optimized fuzzy matching
+
+  ### Bug Fixes
+
+  - Fixed structure view undo/redo not working — undo-delete no longer duplicates rows, and undoing deletion of unsaved items works correctly
+  - Fixed structure view save button remaining enabled when validation errors exist
+  - Fixed structure view incorrectly handling multi-column foreign keys and column renames on MySQL/MariaDB
+  - Fixed PostgreSQL DDL tab missing constraints and primary key detection in structure grid
+  - Fixed SQL injection vulnerability in driver schema queries with special characters in table/database names
+  - Fixed SQL editor undo/redo (⌘Z / ⇧⌘Z) being blocked by responder chain mismatch
+  - Fixed SQL autocomplete issues: subquery clause detection, block comment handling, database-specific types, schema suggestions after CREATE TABLE, function completion inserting incomplete parentheses
+  - Fixed data grid column order flashing/swapping when sorting
+  - Fixed "Copy Column Name" and "Filter with column" context menu copying sort indicators
+  - Fixed AI chat "Ask Each Time" policy silently falling through to "Always Allow"
+</Update>
+
+<Update label="February 16, 2026" description="v0.4.0">
+  ### New Features
+
+  - **SQL Preview**: Review all pending SQL statements before committing changes with a new toolbar button (eye icon) or shortcut (⌘⇧P)
+  - **Multi-Column Sorting**: Shift+click column headers to add columns to the sort list; regular click replaces with single sort. Priority indicators (1▲, 2▼) shown in headers
+  - **Copy with Headers**: Copy selected rows with column headers as the first TSV line via ⇧⌘C or the data grid context menu
+  - **Column Width Persistence**: Resized columns retain their width across pagination, sorting, and filtering reloads within a tab session
+  - **Dangerous Query Confirmation**: DELETE/UPDATE statements without a WHERE clause now prompt a confirmation dialog summarizing affected queries
+  - **SQL Editor Horizontal Scrolling**: Long lines scroll horizontally without word wrapping
+  - **Find Panel Scroll-to-Match**: SQL editor find panel now scrolls to each match during navigation
+
+  ### Improvements
+
+  - Raised minimum macOS version from 13.5 (Ventura) to 14.0 (Sonoma)
+  - Changed Export/Import keyboard shortcuts from ⌘E/⌘I to ⇧⌘E/⇧⌘I to avoid conflicts with standard text editing shortcuts
+  - URLSession now waits for network connectivity in analytics and license services
+  - Improved SQL statement parser to handle backslash escapes within string literals, preventing false positives in dangerous query detection
+
+  ### Bug Fixes
+
+  - Fixed SQL editor not updating colors when switching between light and dark mode
+  - Fixed sidebar retaining stale table selections and pending operations for tables removed since the last refresh
+</Update>
+
+<Update label="February 14, 2026" description="v0.3.2">
+  ### Bug Fixes
+
+  - Fixed launch crash on macOS 13 (Ventura) x86_64 caused by accessing `NSApp.appearance` before `NSApplication` is initialized during settings singleton setup
+</Update>
+
+<Update label="February 14, 2026" description="v0.3.1">
+  ### Bug Fixes
+
+  - Fixed syntax highlighting not applying after paste in SQL editor by deferring frame-change notification so the visible range recalculates after layout
+  - Fixed data grid not refreshing after inserting a new row
+</Update>
+
+<Update label="February 13, 2026" description="v0.3.0">
+  ### New Features
+
+  - **Language Setting**: Choose between System, English, or Vietnamese in Settings > General with full Vietnamese localization (637 strings)
+  - **ENUM/SET Column Editor**: Double-click ENUM columns for a searchable dropdown, SET columns show multi-select checkboxes with OK/Cancel buttons
+  - **PostgreSQL Enum Support**: User-defined enum types resolved via `pg_enum` catalog lookup
+  - **SQLite Pseudo-Enum Detection**: CHECK constraint-based enum detection for SQLite columns
+  - **Connection Health Monitoring**: Automatic 30-second health checks with exponential backoff auto-reconnect (3 retries)
+  - **Anonymous Usage Analytics**: Opt-out toggle available in Settings > General > Privacy
+
+  ### Improvements
+
+  - Migrated `Libs/*.a` static libraries to Git LFS tracking to reduce repository clone size
+  - Replaced `filter { }.count` with `count(where:)` across 7 files
+  - Replaced `print()` with `Logger` in documentation examples
+  - Aligned Xcode `SWIFT_VERSION` build setting from 5.0 to 5.9
+
+  ### Bug Fixes
+
+  - Fixed launch crash on macOS 13 caused by missing `asyncAndWait` symbol in CodeEditSourceEditor 0.15.2
+  - Fixed SQL injection vulnerability in PostgreSQL `pg_enum` lookup and SQLite `sqlite_master` queries by escaping single quotes
+  - Fixed ENUM column nullable detection to use actual schema metadata instead of heuristic `rawType` check
+  - Fixed PostgreSQL primary key modification to query actual constraint name from `pg_constraint`
+</Update>
+
+<Update label="February 11, 2026" description="v0.2.0">
+  ### New Features
+
+  - **SSL/TLS Connection Support**: Secure connections for MySQL/MariaDB and PostgreSQL with configurable modes (Disabled, Preferred, Required, Verify CA, Verify Identity) and custom certificate file paths
+  - **CSV Clipboard Paste**: RFC 4180-compliant CSV parser with auto-detection of CSV vs TSV format when pasting from clipboard
+  - **Explain Query**: New button in the SQL editor toolbar and menu item (⌥⌘E) for viewing query execution plans
+  - **Connection Switcher**: Quick-switch popover for active and saved connections directly from the toolbar
+  - **Date/Time Picker**: Dedicated date picker popover for editing date, datetime, timestamp, and time columns in the data grid
+  - **Read-Only Mode**: Connection-level read-only toggle with toolbar badge and full UI enforcement — disables editing, row operations, and save changes
+  - **Query Timeout**: Configurable execution timeout in Settings > General (default 60s, 0 = no limit) with per-driver enforcement via `statement_timeout` (PostgreSQL), `max_execution_time` (MySQL), `max_statement_time` (MariaDB), and `sqlite3_busy_timeout` (SQLite)
+  - **Foreign Key Lookup**: Searchable dropdown for FK columns showing values from the referenced table with both ID and descriptive display column
+  - **JSON Column Editor**: Popover editor for JSON/JSONB columns with pretty-print formatting, compact mode, real-time validation, and explicit save/cancel buttons
+  - **Excel Export**: Export to `.xlsx` format with a lightweight pure-Swift OOXML writer — supports shared strings deduplication, bold headers, numeric type detection, and multi-table export to separate worksheets
+  - **View Management**: Create View (opens SQL editor with template), Edit View Definition (fetches existing definition), and Drop View from sidebar context menu
+
+  ### Bug Fixes
+
+  - Fixed crash on launch on macOS 13 (Ventura) caused by missing Swift runtime symbol
+  - Fixed redo functionality in data grid (⌘⇧Z now works correctly)
+  - Fixed redo stack not being cleared when new changes are made
+  - Fixed `canRedo()` always returning false in data grid coordinator
+  - Wired undo/redo callbacks directly to data grid for proper responder chain validation
+  - Fixed MariaDB connection error 1193 "Unknown system variable 'max_execution_time'" by using the correct `max_statement_time` variable
+  - Query timeout errors no longer prevent database connections from being established
+
+  ### Improvements
+
+  - Replaced all `print()` statements with structured OSLog `Logger` across 25 files for better debugging via Console.app
+</Update>
+
+<Update label="February 9, 2026" description="v0.1.1">
+  ### New Features
+
+  - **CodeEditSourceEditor Migration**: SQL editor now powered by tree-sitter via CodeEditSourceEditor for improved syntax highlighting and performance
+  - **Multi-Statement Execution**: Execute multiple SQL statements in a single run
+  - **Show Structure**: Right-click any table in the sidebar to quickly view its structure
+  - **Improved Filter Panel**: Redesigned filter UI for a better experience
+  - **SwiftUI Tab Bar**: New pure SwiftUI editor tab bar replacing the AppKit implementation
+  - **GPL v3 License**: Project is now licensed under the GNU General Public License v3
+  - **Auto-Update**: Seamless in-app updates via Sparkle 2 with EdDSA signing — check for updates from the TablePro menu or Settings > General
+
+  ### Bug Fixes
+
+  - Fixed MySQL 8+ connections failing with `caching_sha2_password` plugin error by rebuilding libmariadb with the auth plugin compiled statically
+  - Fixed Delete key on data grid rows incorrectly marking the table as deleted
+  - Downgraded all APIs to support macOS 13.5 (Ventura)
+
+  ### Maintenance
+
+  - CI release notes now read from curated CHANGELOG.md instead of auto-generating from commits
+  - Removed redundant `prepare-libs` CI job, speeding up the build pipeline by ~5 minutes
+  - Added SPM Package.resolved for CodeEditSourceEditor dependencies
+  - Updated build and test commands with `-skipPackagePluginValidation`
+</Update>
+
+<Update label="February 8, 2026" description="v0.1.0">
+  The first public release of TablePro — a native macOS database client built with SwiftUI and AppKit.
+
+  ### Features
+
+  - **Multi-Database Support**: Connect to MySQL, PostgreSQL, and SQLite databases
+  - **SQL Editor**: Full-featured editor with syntax highlighting, autocomplete, and line numbers
+  - **Data Grid**: Browse and edit table data with sorting, filtering, and pagination
+  - **SSH Tunneling**: Secure database connections via SSH tunnels
+  - **Query History**: Track and replay your SQL queries
+  - **Table Structure**: View and modify table schemas, indexes, and constraints
+  - **Import/Export**: Import SQL files and export data in CSV, JSON, and SQL formats
+  - **Keyboard Shortcuts**: Comprehensive keyboard navigation for power users
+  - **Native Tab Bar**: AppKit-powered tab bar with drag-to-reorder support
+  - **Dock Menu**: Quick access to welcome window and recent connections
+  - **License Activation**: RSA-signed license verification with offline support
+
+  ### Performance
+
+  - Optimized SQL editor for large files with viewport-only syntax highlighting
+  - Native AppKit tab bar for lightweight tab management
+  - Efficient data grid rendering for large result sets
+  - Lightweight memory footprint with native Apple frameworks
+</Update>
