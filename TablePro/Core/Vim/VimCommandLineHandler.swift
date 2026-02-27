@@ -12,6 +12,9 @@ struct VimCommandLineHandler {
     /// Callback to execute the current query (:w)
     var onExecuteQuery: (() -> Void)?
 
+    /// Callback to close the current tab (:q)
+    var onCloseTab: (() -> Void)?
+
     /// Process a command string (without the leading : or /)
     func handle(_ command: String) {
         let trimmed = command.trimmingCharacters(in: .whitespaces)
@@ -20,10 +23,10 @@ struct VimCommandLineHandler {
         case "w":
             onExecuteQuery?()
         case "q":
-            // Close tab — optional, no-op for now
-            break
+            onCloseTab?()
         case "wq":
             onExecuteQuery?()
+            onCloseTab?()
         default:
             break // Unknown commands are silently ignored
         }

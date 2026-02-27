@@ -10,10 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Vim keybindings for SQL editor (Normal/Insert/Visual modes, motions, operators, :w/:q commands) with toggle in Editor Settings
+- `^` and `_` motions (first non-blank character) in Vim normal, visual, and operator-pending modes
+- `:q` command to close current tab and `:wq` to execute query then close tab in Vim command-line mode
 - PostgreSQL schema switching via ⌘K database switcher (browse and switch between schemas like `public`, `auth`, custom schemas)
 
 ### Fixed
 
+- Vim Escape key not exiting Insert/Visual mode when autocomplete popup is visible (popup's event monitor consumed the key)
+- Copy (Cmd+C) and Cut (Cmd+X) not working in SQL editor — clipboard retained old value due to CodeEditTextView's copy: silently failing
+- Vim yank/delete operations not syncing to system clipboard (register only stored text internally)
+- Vim word motions (`w`, `b`, `e`) using two-class word boundary detection instead of correct three-class (word chars, punctuation, whitespace)
 - Vim visual mode selection now correctly includes cursor character (inclusive selection matching real Vim behavior)
 - Arrow keys now work in Vim visual/normal mode (mapped to h/j/k/l instead of bypassing the Vim engine)
 - Vim block cursor now follows the moving end of the selection in visual mode instead of staying at the anchor

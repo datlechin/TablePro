@@ -990,6 +990,59 @@ final class VimEngineTests: XCTestCase {
         XCTAssertEqual(buffer.text, "hello world\nthird line\nsecond line\n",
             "dd must overwrite the yy register; linewise paste goes after current line")
     }
+
+    // MARK: - First Non-Blank Motions (^, _)
+
+    func testCaretMovesToFirstNonBlank() {
+        // Buffer with leading spaces: "   hello world\n..."
+        buffer = VimTextBufferMock(text: "   hello world\nsecond line\nthird line\n")
+        engine = VimEngine(buffer: buffer)
+        buffer.setSelectedRange(NSRange(location: 10, length: 0))
+        keys("^")
+        XCTAssertEqual(cursorPos, 3, "^ should move to first non-blank character")
+    }
+
+    func testUnderscoreMovesToFirstNonBlank() {
+        buffer = VimTextBufferMock(text: "   hello world\nsecond line\nthird line\n")
+        engine = VimEngine(buffer: buffer)
+        buffer.setSelectedRange(NSRange(location: 10, length: 0))
+        keys("_")
+        XCTAssertEqual(cursorPos, 3, "_ should move to first non-blank character")
+    }
+
+    func testCaretOnLineWithNoLeadingSpace() {
+        // No leading whitespace: ^ should go to position 0
+        buffer.setSelectedRange(NSRange(location: 5, length: 0))
+        keys("^")
+        XCTAssertEqual(cursorPos, 0, "^ on line with no leading space should go to col 0")
+    }
+
+    func testCaretOnLineWithTabs() {
+        buffer = VimTextBufferMock(text: "\t\thello\n")
+        engine = VimEngine(buffer: buffer)
+        buffer.setSelectedRange(NSRange(location: 5, length: 0))
+        keys("^")
+        XCTAssertEqual(cursorPos, 2, "^ should skip tabs to reach 'h'")
+    }
+
+    func testDeleteToFirstNonBlank() {
+        buffer = VimTextBufferMock(text: "   hello world\n")
+        engine = VimEngine(buffer: buffer)
+        buffer.setSelectedRange(NSRange(location: 8, length: 0))
+        keys("d^")
+        // d^ from pos 8: motion moves to first non-blank at 3, deletes range [3,8) = "hello"
+        XCTAssertEqual(buffer.text, "    world\n")
+    }
+
+    func testVisualCaretExtendsSelection() {
+        buffer = VimTextBufferMock(text: "   hello world\n")
+        engine = VimEngine(buffer: buffer)
+        buffer.setSelectedRange(NSRange(location: 10, length: 0))
+        keys("v^")
+        let sel = buffer.selectedRange()
+        XCTAssertEqual(sel.location, 3)
+        XCTAssertEqual(sel.length, 8)
+    }
 }
 
 // swiftlint:enable file_length type_body_length

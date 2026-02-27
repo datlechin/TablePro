@@ -20,6 +20,7 @@ struct SQLEditorView: View {
     var schemaProvider: SQLSchemaProvider?
     var databaseType: DatabaseType?
     @Binding var vimMode: VimMode
+    var onCloseTab: (() -> Void)?
 
     @State private var editorState = SourceEditorState()
     @State private var completionAdapter: SQLCompletionAdapter?
@@ -86,6 +87,7 @@ struct SQLEditorView: View {
                     completionAdapter = SQLCompletionAdapter(schemaProvider: schemaProvider, databaseType: databaseType)
                 }
                 coordinator.schemaProvider = schemaProvider
+                coordinator.onCloseTab = onCloseTab
             }
         } else {
             Color(nsColor: .textBackgroundColor)
@@ -94,6 +96,7 @@ struct SQLEditorView: View {
                         completionAdapter = SQLCompletionAdapter(schemaProvider: schemaProvider, databaseType: databaseType)
                     }
                     coordinator.schemaProvider = schemaProvider
+                    coordinator.onCloseTab = onCloseTab
                     editorReady = true
                 }
             }

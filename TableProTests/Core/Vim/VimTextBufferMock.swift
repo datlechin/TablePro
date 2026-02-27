@@ -101,14 +101,30 @@ final class VimTextBufferMock: VimTextBuffer {
         guard nsString.length > 0 else { return 0 }
         if forward {
             var pos = min(offset, nsString.length - 1)
-            while pos < nsString.length && isWordChar(nsString.character(at: pos)) { pos += 1 }
-            while pos < nsString.length && !isWordChar(nsString.character(at: pos)) { pos += 1 }
+            let startClass = charClass(nsString.character(at: pos))
+            if startClass == .whitespace {
+                while pos < nsString.length && charClass(nsString.character(at: pos)) == .whitespace {
+                    pos += 1
+                }
+            } else {
+                while pos < nsString.length && charClass(nsString.character(at: pos)) == startClass {
+                    pos += 1
+                }
+                while pos < nsString.length && charClass(nsString.character(at: pos)) == .whitespace {
+                    pos += 1
+                }
+            }
             return min(pos, nsString.length)
         } else {
             var pos = min(offset, nsString.length)
             if pos > 0 { pos -= 1 }
-            while pos > 0 && !isWordChar(nsString.character(at: pos)) { pos -= 1 }
-            while pos > 0 && isWordChar(nsString.character(at: pos - 1)) { pos -= 1 }
+            while pos > 0 && charClass(nsString.character(at: pos)) == .whitespace {
+                pos -= 1
+            }
+            let cls = charClass(nsString.character(at: pos))
+            while pos > 0 && charClass(nsString.character(at: pos - 1)) == cls {
+                pos -= 1
+            }
             return max(0, pos)
         }
     }
@@ -117,8 +133,14 @@ final class VimTextBufferMock: VimTextBuffer {
         let nsString = text as NSString
         guard nsString.length > 0 else { return 0 }
         var pos = min(offset + 1, nsString.length - 1)
-        while pos < nsString.length && !isWordChar(nsString.character(at: pos)) { pos += 1 }
-        while pos < nsString.length - 1 && isWordChar(nsString.character(at: pos + 1)) { pos += 1 }
+        while pos < nsString.length && charClass(nsString.character(at: pos)) == .whitespace {
+            pos += 1
+        }
+        guard pos < nsString.length else { return nsString.length - 1 }
+        let cls = charClass(nsString.character(at: pos))
+        while pos < nsString.length - 1 && charClass(nsString.character(at: pos + 1)) == cls {
+            pos += 1
+        }
         return min(pos, nsString.length - 1)
     }
 
@@ -158,8 +180,18 @@ final class VimTextBufferMock: VimTextBuffer {
     func undo() { undoCallCount += 1 }
     func redo() { redoCallCount += 1 }
 
-    private func isWordChar(_ char: unichar) -> Bool {
-        guard let scalar = UnicodeScalar(char) else { return false }
-        return CharacterSet.alphanumerics.contains(scalar) || char == 0x5F
+    private enum CharClass {
+        case word, punctuation, whitespace
+    }
+
+    private func charClass(_ char: unichar) -> CharClass {
+        if char == 0x20 || char == 0x09 || char == 0x0A || char == 0x0D {
+            return .whitespace
+        }
+        guard let scalar = UnicodeScalar(char) else { return .punctuation }
+        if CharacterSet.alphanumerics.contains(scalar) || char == 0x5F {
+            return .word
+        }
+        return .punctuation
     }
 }

@@ -122,24 +122,33 @@ final class VimTextBufferAdapter: VimTextBuffer {
 
         if forward {
             var pos = min(offset, nsString.length - 1)
-            // Skip current word characters
-            while pos < nsString.length && isWordChar(nsString.character(at: pos)) {
-                pos += 1
-            }
-            // Skip whitespace/non-word characters
-            while pos < nsString.length && !isWordChar(nsString.character(at: pos)) {
-                pos += 1
+            let startClass = charClass(nsString.character(at: pos))
+            if startClass == .whitespace {
+                // Skip whitespace, then stop at start of next word/punctuation
+                while pos < nsString.length && charClass(nsString.character(at: pos)) == .whitespace {
+                    pos += 1
+                }
+            } else {
+                // Skip same-class characters
+                while pos < nsString.length && charClass(nsString.character(at: pos)) == startClass {
+                    pos += 1
+                }
+                // Skip whitespace between words
+                while pos < nsString.length && charClass(nsString.character(at: pos)) == .whitespace {
+                    pos += 1
+                }
             }
             return min(pos, nsString.length)
         } else {
             var pos = min(offset, nsString.length)
             if pos > 0 { pos -= 1 }
-            // Skip whitespace/non-word characters backward
-            while pos > 0 && !isWordChar(nsString.character(at: pos)) {
+            // Skip whitespace backward
+            while pos > 0 && charClass(nsString.character(at: pos)) == .whitespace {
                 pos -= 1
             }
-            // Skip word characters backward
-            while pos > 0 && isWordChar(nsString.character(at: pos - 1)) {
+            // Skip same-class characters backward
+            let cls = charClass(nsString.character(at: pos))
+            while pos > 0 && charClass(nsString.character(at: pos - 1)) == cls {
                 pos -= 1
             }
             return max(0, pos)
@@ -153,11 +162,13 @@ final class VimTextBufferAdapter: VimTextBuffer {
 
         var pos = min(offset + 1, nsString.length - 1)
         // Skip whitespace
-        while pos < nsString.length && !isWordChar(nsString.character(at: pos)) {
+        while pos < nsString.length && charClass(nsString.character(at: pos)) == .whitespace {
             pos += 1
         }
-        // Go to end of word
-        while pos < nsString.length - 1 && isWordChar(nsString.character(at: pos + 1)) {
+        guard pos < nsString.length else { return nsString.length - 1 }
+        // Go to end of same-class run
+        let cls = charClass(nsString.character(at: pos))
+        while pos < nsString.length - 1 && charClass(nsString.character(at: pos + 1)) == cls {
             pos += 1
         }
         return min(pos, nsString.length - 1)
@@ -211,9 +222,18 @@ final class VimTextBufferAdapter: VimTextBuffer {
 
     // MARK: - Helpers
 
-    private func isWordChar(_ char: unichar) -> Bool {
-        // Word characters: alphanumeric + underscore (Vim's 'iskeyword' default)
-        guard let scalar = UnicodeScalar(char) else { return false }
-        return CharacterSet.alphanumerics.contains(scalar) || char == 0x5F // underscore
+    private enum CharClass {
+        case word, punctuation, whitespace
+    }
+
+    private func charClass(_ char: unichar) -> CharClass {
+        if char == 0x20 || char == 0x09 || char == 0x0A || char == 0x0D {
+            return .whitespace
+        }
+        guard let scalar = UnicodeScalar(char) else { return .punctuation }
+        if CharacterSet.alphanumerics.contains(scalar) || char == 0x5F {
+            return .word
+        }
+        return .punctuation
     }
 }

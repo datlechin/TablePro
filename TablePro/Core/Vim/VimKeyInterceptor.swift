@@ -15,6 +15,7 @@ final class VimKeyInterceptor {
     private weak var inlineSuggestionManager: InlineSuggestionManager?
     private var monitor: Any?
     private weak var controller: TextViewController?
+    private nonisolated(unsafe) var popupCloseObserver: NSObjectProtocol?
 
     init(engine: VimEngine, inlineSuggestionManager: InlineSuggestionManager?) {
         self.engine = engine
@@ -30,6 +31,30 @@ final class VimKeyInterceptor {
             guard let self else { return event }
             return self.handleKeyEvent(event)
         }
+
+        // Observe autocomplete popup close. When SuggestionController's popup
+        // consumes Escape (closes itself), we also need to exit Insert/Visual mode.
+        // queue: nil → handler runs synchronously during close(), so NSApp.currentEvent
+        // is still the Escape keyDown event.
+        popupCloseObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.willCloseNotification,
+            object: nil,
+            queue: nil
+        ) { [weak self] notification in
+            MainActor.assumeIsolated {
+                guard let self,
+                      let closingWindow = notification.object as? NSWindow,
+                      closingWindow.windowController is SuggestionController,
+                      let currentEvent = NSApp.currentEvent,
+                      currentEvent.type == .keyDown,
+                      currentEvent.keyCode == 53,
+                      self.engine.mode != .normal else {
+                    return
+                }
+                self.inlineSuggestionManager?.dismissSuggestion()
+                _ = self.engine.process("\u{1B}", shift: false)
+            }
+        }
     }
 
     /// Remove the key event monitor
@@ -38,6 +63,10 @@ final class VimKeyInterceptor {
             NSEvent.removeMonitor(monitor)
         }
         monitor = nil
+        if let popupCloseObserver {
+            NotificationCenter.default.removeObserver(popupCloseObserver)
+        }
+        popupCloseObserver = nil
     }
 
     /// Arrow key Unicode scalars → Vim motion characters
@@ -89,10 +118,11 @@ final class VimKeyInterceptor {
             return event // Pass through non-arrow function keys and insert-mode arrows
         }
 
-        // In insert mode, Escape should always exit to Normal mode.
-        // Also dismiss any active inline suggestion in the same keypress.
-        if engine.mode.isInsert && char == "\u{1B}" {
+        // In non-normal modes, Escape should exit to Normal mode.
+        // Also dismiss any active inline suggestion and close autocomplete popup.
+        if engine.mode != .normal && char == "\u{1B}" {
             inlineSuggestionManager?.dismissSuggestion()
+            closeSuggestionPopup()
         }
 
         // Feed to Vim engine
@@ -100,5 +130,14 @@ final class VimKeyInterceptor {
         let consumed = engine.process(char, shift: shift)
 
         return consumed ? nil : event
+    }
+
+    private func closeSuggestionPopup() {
+        guard let window = controller?.textView.window else { return }
+        for childWindow in window.childWindows ?? [] {
+            if childWindow.windowController is SuggestionController {
+                childWindow.windowController?.close()
+            }
+        }
     }
 }
