@@ -108,11 +108,13 @@ final class InlineSuggestionManager {
 
         guard isEnabled() else { return }
 
-        debounceTimer = Timer.scheduledTimer(withTimeInterval: debounceInterval, repeats: false) { [weak self] _ in
+        let timer = Timer(timeInterval: debounceInterval, repeats: false) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.requestSuggestion()
             }
         }
+        RunLoop.main.add(timer, forMode: .common)
+        debounceTimer = timer
     }
 
     private func isEnabled() -> Bool {

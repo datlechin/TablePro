@@ -60,20 +60,11 @@ actor SSHTunnelManager {
     private var healthCheckTask: Task<Void, Never>?
 
     private init() {
-        // Start health monitoring in unstructured task
-        Task {
-            await startHealthMonitoring()
-        }
-    }
-
-    /// Start monitoring tunnel health
-    private func startHealthMonitoring() {
-        healthCheckTask = Task {
+        healthCheckTask = Task { [weak self] in
             while !Task.isCancelled {
-                // Wait 30 seconds between checks
-                try? await Task.sleep(nanoseconds: 30_000_000_000)
-
-                await checkTunnelHealth()
+                try? await Task.sleep(for: .seconds(30))
+                guard !Task.isCancelled else { break }
+                await self?.checkTunnelHealth()
             }
         }
     }

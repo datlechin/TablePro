@@ -89,9 +89,8 @@ final class MainContentCoordinator: ObservableObject {
 
     /// Remove sort cache entries for tabs that no longer exist
     func cleanupSortCache(openTabIds: Set<UUID>) {
-        let filteredSort = querySortCache.filter { openTabIds.contains($0.key) }
-        if filteredSort.count != querySortCache.count {
-            querySortCache = filteredSort
+        if querySortCache.keys.contains(where: { !openTabIds.contains($0) }) {
+            querySortCache = querySortCache.filter { openTabIds.contains($0.key) }
         }
         for (tabId, task) in activeSortTasks where !openTabIds.contains(tabId) {
             task.cancel()
@@ -128,7 +127,21 @@ final class MainContentCoordinator: ObservableObject {
         Self.retainSchemaProvider(for: connection.id)
     }
 
+    /// Explicit cleanup called from `onDisappear`. Releases schema provider
+    /// synchronously on MainActor so we don't depend on deinit + Task scheduling.
+    func teardown() {
+        currentQueryTask?.cancel()
+        currentQueryTask = nil
+        changeManagerUpdateTask?.cancel()
+        changeManagerUpdateTask = nil
+        for task in activeSortTasks.values { task.cancel() }
+        activeSortTasks.removeAll()
+
+        Self.releaseSchemaProvider(for: connection.id)
+    }
+
     deinit {
+        // Safety net: if teardown() was not called, schedule cleanup.
         let connectionId = connection.id
         Task { @MainActor in
             MainContentCoordinator.releaseSchemaProvider(for: connectionId)

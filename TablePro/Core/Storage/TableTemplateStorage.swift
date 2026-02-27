@@ -24,6 +24,12 @@ final class TableTemplateStorage {
 
     private let templatesKey = "saved_table_templates"
     private let fileManager = FileManager.default
+    private let encoder: JSONEncoder = {
+        let enc = JSONEncoder()
+        enc.outputFormatting = .prettyPrinted
+        return enc
+    }()
+    private let decoder = JSONDecoder()
 
     private let templatesURL: URL?
 
@@ -52,8 +58,6 @@ final class TableTemplateStorage {
         var templates = try loadTemplates()
         templates[name] = options
 
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = .prettyPrinted
         let data = try encoder.encode(templates)
         guard let url = templatesURL else { throw StorageError.directoryUnavailable }
         try data.write(to: url)
@@ -66,7 +70,6 @@ final class TableTemplateStorage {
         }
 
         let data = try Data(contentsOf: url)
-        let decoder = JSONDecoder()
         return try decoder.decode([String: TableCreationOptions].self, from: data)
     }
 
@@ -75,8 +78,6 @@ final class TableTemplateStorage {
         var templates = try loadTemplates()
         templates.removeValue(forKey: name)
 
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = .prettyPrinted
         let data = try encoder.encode(templates)
         guard let url = templatesURL else { throw StorageError.directoryUnavailable }
         try data.write(to: url)

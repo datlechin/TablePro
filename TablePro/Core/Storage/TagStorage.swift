@@ -15,6 +15,8 @@ final class TagStorage {
 
     private let tagsKey = "com.TablePro.tags"
     private let defaults = UserDefaults.standard
+    private let encoder = JSONEncoder()
+    private let decoder = JSONDecoder()
 
     private init() {
         // Initialize with presets on first launch
@@ -32,7 +34,6 @@ final class TagStorage {
         }
 
         do {
-            let decoder = JSONDecoder()
             let tags = try decoder.decode([ConnectionTag].self, from: data)
             return tags
         } catch {
@@ -44,7 +45,6 @@ final class TagStorage {
     /// Save all tags
     func saveTags(_ tags: [ConnectionTag]) {
         do {
-            let encoder = JSONEncoder()
             let data = try encoder.encode(tags)
             defaults.set(data, forKey: tagsKey)
         } catch {

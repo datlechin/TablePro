@@ -64,8 +64,6 @@ struct DataGridView: NSViewRepresentable {
     @Binding var editingCell: CellPosition?
     @Binding var columnLayout: ColumnLayoutState
 
-    private let cellFactory = DataGridCellFactory()
-
     // MARK: - NSViewRepresentable
 
     func makeNSView(context: Context) -> NSScrollView {
@@ -118,7 +116,7 @@ struct DataGridView: NSViewRepresentable {
                 String(localized: "Column: \(columnName)")
             )
             // Use optimal width calculation based on both header and cell content
-            column.width = cellFactory.calculateOptimalColumnWidth(
+            column.width = context.coordinator.cellFactory.calculateOptimalColumnWidth(
                 for: columnName,
                 columnIndex: index,
                 rowProvider: rowProvider
@@ -157,7 +155,6 @@ struct DataGridView: NSViewRepresentable {
 
         scrollView.documentView = tableView
         context.coordinator.tableView = tableView
-        context.coordinator.cellFactory = cellFactory
 
         return scrollView
     }
@@ -299,7 +296,7 @@ struct DataGridView: NSViewRepresentable {
                     if let savedWidth = columnLayout.columnWidths[columnName] {
                         column.width = savedWidth
                     } else {
-                        column.width = cellFactory.calculateOptimalColumnWidth(
+                        column.width = coordinator.cellFactory.calculateOptimalColumnWidth(
                             for: columnName,
                             columnIndex: index,
                             rowProvider: rowProvider
@@ -321,7 +318,7 @@ struct DataGridView: NSViewRepresentable {
                     if let savedWidth = columnLayout.columnWidths[columnName] {
                         column.width = savedWidth
                     } else {
-                        column.width = cellFactory.calculateOptimalColumnWidth(
+                        column.width = coordinator.cellFactory.calculateOptimalColumnWidth(
                             for: columnName,
                             columnIndex: colIndex,
                             rowProvider: rowProvider
@@ -605,7 +602,7 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
     }
 
     weak var tableView: NSTableView?
-    var cellFactory: DataGridCellFactory?
+    let cellFactory = DataGridCellFactory()
     private(set) var overlayEditor: CellOverlayEditor?
 
     // Settings observer for real-time updates
@@ -833,7 +830,7 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
         let columnId = column.identifier.rawValue
 
         if columnId == "__rowNumber__" {
-            return cellFactory?.makeRowNumberCell(
+            return cellFactory.makeRowNumberCell(
                 tableView: tableView,
                 row: row,
                 cachedRowCount: cachedRowCount,
@@ -875,7 +872,7 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
             return rowProvider.columnForeignKeys[columnName] != nil
         }()
 
-        return cellFactory?.makeDataCell(
+        return cellFactory.makeDataCell(
             tableView: tableView,
             row: row,
             columnIndex: columnIndex,

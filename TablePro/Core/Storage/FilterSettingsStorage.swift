@@ -113,6 +113,9 @@ final class FilterSettingsStorage {
         }
     }
 
+    private let encoder = JSONEncoder()
+    private let decoder = JSONDecoder()
+
     private init() {}
 
     // MARK: - Settings
@@ -128,7 +131,7 @@ final class FilterSettingsStorage {
         }
 
         do {
-            let decoded = try JSONDecoder().decode(FilterSettings.self, from: data)
+            let decoded = try decoder.decode(FilterSettings.self, from: data)
             cachedSettings = decoded
             return decoded
         } catch {
@@ -143,7 +146,7 @@ final class FilterSettingsStorage {
     func saveSettings(_ settings: FilterSettings) {
         cachedSettings = settings
         do {
-            let data = try JSONEncoder().encode(settings)
+            let data = try encoder.encode(settings)
             defaults.set(data, forKey: settingsKey)
         } catch {
             Self.logger.error("Failed to encode filter settings: \(error)")
@@ -161,7 +164,7 @@ final class FilterSettingsStorage {
         }
 
         do {
-            return try JSONDecoder().decode([TableFilter].self, from: data)
+            return try decoder.decode([TableFilter].self, from: data)
         } catch {
             Self.logger.error("Failed to decode last filters for \(tableName): \(error)")
             return []
@@ -180,7 +183,7 @@ final class FilterSettingsStorage {
         }
 
         do {
-            let data = try JSONEncoder().encode(filters)
+            let data = try encoder.encode(filters)
             defaults.set(data, forKey: key)
             trackKey(key)
         } catch {

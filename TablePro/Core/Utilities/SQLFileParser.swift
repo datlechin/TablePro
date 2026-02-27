@@ -103,6 +103,10 @@ final class SQLFileParser: Sendable {
                     let chunkSize = 65_536
 
                     while true {
+                        guard !Task.isCancelled else {
+                            continuation.finish()
+                            return
+                        }
                         let data = fileHandle.readData(ofLength: chunkSize)
                         if data.isEmpty { break }
 

@@ -228,6 +228,7 @@ struct MainContentView: View {
             }
             .onDisappear {
                 NativeTabRegistry.shared.unregister(windowId: windowId)
+                coordinator.teardown()
             }
             .onChange(of: pendingChangeTrigger) {
                 updateToolbarPendingState()

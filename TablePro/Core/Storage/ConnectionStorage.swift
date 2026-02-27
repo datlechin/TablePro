@@ -16,6 +16,8 @@ final class ConnectionStorage {
 
     private let connectionsKey = "com.TablePro.connections"
     private let defaults = UserDefaults.standard
+    private let encoder = JSONEncoder()
+    private let decoder = JSONDecoder()
 
     /// In-memory cache to avoid re-decoding JSON from UserDefaults on every access
     private var cachedConnections: [DatabaseConnection]?
@@ -33,7 +35,6 @@ final class ConnectionStorage {
         }
 
         do {
-            let decoder = JSONDecoder()
             let storedConnections = try decoder.decode([StoredConnection].self, from: data)
 
             let connections = storedConnections.map { stored in
@@ -54,7 +55,6 @@ final class ConnectionStorage {
         let storedConnections = connections.map { StoredConnection(from: $0) }
 
         do {
-            let encoder = JSONEncoder()
             let data = try encoder.encode(storedConnections)
             defaults.set(data, forKey: connectionsKey)
         } catch {

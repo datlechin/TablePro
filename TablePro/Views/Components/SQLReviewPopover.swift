@@ -37,7 +37,9 @@ struct SQLReviewPopover: View {
         let lineCount: Int = {
             guard !statements.isEmpty else { return 1 }
             let statementsLineCount = statements.reduce(0) { total, stmt in
-                total + stmt.components(separatedBy: "\n").count
+                var newlines = 0
+                for scalar in stmt.unicodeScalars where scalar == "\n" { newlines += 1 }
+                return total + newlines + 1
             }
             // Add separator lines: each separator "\n\n" adds 2 newlines between statements
             let separatorLines = (statements.count - 1) * 2
