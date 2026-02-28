@@ -367,6 +367,7 @@ struct MainEditorContentView: View {
             onNavigateFK: { [coordinator] value, fkInfo in
                 coordinator.navigateToFKReference(value: value, fkInfo: fkInfo)
             },
+            databaseType: connection.type,
             selectedRowIndices: $selectedRowIndices,
             sortState: sortStateBinding(for: tab),
             editingCell: $editingCell,

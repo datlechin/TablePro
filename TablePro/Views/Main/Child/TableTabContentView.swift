@@ -114,6 +114,7 @@ struct TableTabContentView: View {
                     onAddRow: onAddRow,
                     onUndoInsert: onUndoInsert,
                     onFilterColumn: onFilterColumn,
+                    databaseType: connection.type,
                     selectedRowIndices: $selectedRowIndices,
                     sortState: $sortState,
                     editingCell: $editingCell,
