@@ -111,6 +111,8 @@ struct MongoDBStatementGenerator {
             if cellChange.columnName == "_id" { continue }
             if let val = cellChange.newValue {
                 setDoc[cellChange.columnName] = val
+            } else {
+                setDoc[cellChange.columnName] = "null"
             }
         }
 
@@ -158,7 +160,7 @@ struct MongoDBStatementGenerator {
     /// Handles ObjectId format: if the value looks like a 24-char hex string, wrap in ObjectId()
     private func buildIdFilter(_ idValue: String) -> String {
         if isObjectIdString(idValue) {
-            return "{\"_id\": ObjectId(\"\(idValue)\")}"
+            return "{\"_id\": {\"$oid\": \"\(idValue)\"}}"
         }
         // Try as number
         if Int64(idValue) != nil {

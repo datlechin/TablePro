@@ -98,9 +98,11 @@ final class MongoDBConnection: @unchecked Sendable {
         // Capture the handle and queue to clean up asynchronously.
         // By the time deinit runs, no other references exist, so the
         // dispatched block is the sole owner of the pointer.
+        stateLock.lock()
         let handle = client
-        let cleanupQueue = queue
         client = nil
+        stateLock.unlock()
+        let cleanupQueue = queue
         if let handle = handle {
             cleanupQueue.async {
                 mongoc_client_destroy(handle)
@@ -196,13 +198,14 @@ final class MongoDBConnection: @unchecked Sendable {
                 }
 
                 self.client = newClient
-                self._cachedServerVersion = self.fetchServerVersionSync()
+                let versionString = self.fetchServerVersionSync()
 
                 self.stateLock.lock()
+                self._cachedServerVersion = versionString
                 self._isConnected = true
                 self.stateLock.unlock()
 
-                logger.info("Connected to MongoDB \(self._cachedServerVersion ?? "unknown")")
+                logger.info("Connected to MongoDB \(versionString ?? "unknown")")
                 continuation.resume()
             }
         }
@@ -214,15 +217,14 @@ final class MongoDBConnection: @unchecked Sendable {
     func disconnect() {
         isShuttingDown = true
 
+        stateLock.lock()
         #if canImport(CLibMongoc)
         let handle = client
         client = nil
         #endif
-
-        stateLock.lock()
         _isConnected = false
-        stateLock.unlock()
         _cachedServerVersion = nil
+        stateLock.unlock()
 
         #if canImport(CLibMongoc)
         if let handle = handle {
@@ -272,7 +274,11 @@ final class MongoDBConnection: @unchecked Sendable {
 
     // MARK: - Server Information
 
-    func serverVersion() -> String? { _cachedServerVersion }
+    func serverVersion() -> String? {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return _cachedServerVersion
+    }
     func currentDatabase() -> String { database }
 
     // MARK: - Command Execution

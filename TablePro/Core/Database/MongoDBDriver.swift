@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import os
+import OSLog
 
 /// MongoDB database driver implementing the DatabaseDriver protocol.
 /// Parses mongo shell syntax (db.collection.find/insert/update/delete)
@@ -637,9 +637,14 @@ private extension MongoDBDriver {
             )
 
         case .replaceOne(let collection, let filter, let replacement):
-            let modified = try await conn.updateOne(
-                database: db, collection: collection, filter: filter, update: replacement
-            )
+            let cmd = """
+                {"update": "\(escapeJsonString(collection))", \
+                "updates": [{"q": \(filter), "u": \(replacement), "multi": false}]}
+                """
+            let result = try await conn.runCommand(cmd, database: db)
+            let modified = (result.first?["nModified"] as? Int64)
+                ?? (result.first?["nModified"] as? Int).map(Int64.init)
+                ?? 0
             return QueryResult(
                 columns: ["modifiedCount"],
                 columnTypes: [.integer(rawType: "Int64")],
