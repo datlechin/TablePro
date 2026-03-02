@@ -47,6 +47,10 @@ final class MainContentCoordinator: ObservableObject {
     /// Delayed removal tasks — cancelled if a new coordinator claims the provider within the grace period
     private static var schemaProviderRemovalTasks: [UUID: Task<Void, Never>] = [:]
 
+    static func schemaProvider(for connectionId: UUID) -> SQLSchemaProvider? {
+        sharedSchemaProviders[connectionId]
+    }
+
     // MARK: - Dependencies
 
     nonisolated(unsafe) let connection: DatabaseConnection
@@ -432,15 +436,21 @@ final class MainContentCoordinator: ObservableObject {
                 guard let queryDriver = DatabaseManager.shared.driver(for: connectionId) else {
                     throw DatabaseError.notConnected
                 }
-                let result = try await queryDriver.execute(query: effectiveSQL)
-
-                let safeColumns = result.columns
-                let safeColumnTypes = result.columnTypes
-                let safeRows = result.rows.enumerated().map { index, row in
-                    QueryResultRow(id: index, values: row)
+                let safeColumns: [String]
+                let safeColumnTypes: [ColumnType]
+                let safeRows: [QueryResultRow]
+                let safeExecutionTime: TimeInterval
+                let safeRowsAffected: Int
+                do {
+                    let result = try await queryDriver.execute(query: effectiveSQL)
+                    safeColumns = result.columns
+                    safeColumnTypes = result.columnTypes
+                    safeRows = result.rows.enumerated().map { index, row in
+                        QueryResultRow(id: index, values: row)
+                    }
+                    safeExecutionTime = result.executionTime
+                    safeRowsAffected = result.rowsAffected
                 }
-                let safeExecutionTime = result.executionTime
-                let safeRowsAffected = result.rowsAffected
 
                 guard !Task.isCancelled else {
                     parallelSchemaTask?.cancel()
@@ -1345,6 +1355,7 @@ private extension MainContentCoordinator {
         let quotedTable = connectionType.quoteIdentifier(tableName)
         Task { [weak self] in
             guard let self else { return }
+            try? await Task.sleep(nanoseconds: 200_000_000)
             guard let mainDriver = DatabaseManager.shared.driver(for: connectionId) else { return }
             let countResult = try? await mainDriver.execute(
                 query: "SELECT COUNT(*) FROM \(quotedTable)"
@@ -1371,6 +1382,7 @@ private extension MainContentCoordinator {
 
         Task { [weak self] in
             guard let self else { return }
+            try? await Task.sleep(nanoseconds: 200_000_000)
             let columnEnumValues = await self.fetchEnumValues(
                 columnInfo: schema.columnInfo,
                 tableName: tableName,

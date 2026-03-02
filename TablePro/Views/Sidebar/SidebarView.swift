@@ -40,7 +40,8 @@ struct SidebarView: View {
         pendingDeletes: Binding<Set<String>>,
         tableOperationOptions: Binding<[String: TableOperationOptions]>,
         databaseType: DatabaseType,
-        connectionId: UUID
+        connectionId: UUID,
+        schemaProvider: SQLSchemaProvider? = nil
     ) {
         _tables = tables
         _selectedTables = selectedTables
@@ -53,7 +54,8 @@ struct SidebarView: View {
             pendingDeletes: pendingDeletes,
             tableOperationOptions: tableOperationOptions,
             databaseType: databaseType,
-            connectionId: connectionId
+            connectionId: connectionId,
+            schemaProvider: schemaProvider
         ))
         self.activeTableName = activeTableName
         self.onShowAllTables = onShowAllTables

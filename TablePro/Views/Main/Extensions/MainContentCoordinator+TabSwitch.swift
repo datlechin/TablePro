@@ -18,10 +18,9 @@ extension MainContentCoordinator {
         isHandlingTabSwitch = true
         defer { isHandlingTabSwitch = false }
 
-        // Evict oldest inactive tab's data if we have many tabs open
-        // (only evict table tabs that have been executed and have data)
-        if tabManager.tabs.count > 3, let oldId = oldTabId {
-            evictOldestInactiveTab(excluding: oldId)
+        if tabManager.tabs.count > 2 {
+            let activeIds: Set<UUID> = Set([oldTabId, newTabId].compactMap { $0 })
+            evictInactiveTabs(excluding: activeIds)
         }
 
         if let newId = newTabId,
@@ -113,24 +112,26 @@ extension MainContentCoordinator {
         }
     }
 
-    /// Evict the oldest inactive tab's row data to free memory.
-    /// Skips the tab being switched away from (it may be switched back to quickly).
-    private func evictOldestInactiveTab(excluding currentTabId: UUID) {
-        // Find table tabs with data that aren't the current tab
+    private func evictInactiveTabs(excluding activeTabIds: Set<UUID>) {
         let candidates = tabManager.tabs.filter {
-            $0.id != currentTabId
-                && $0.tabType == .table
+            !activeTabIds.contains($0.id)
                 && !$0.rowBuffer.isEvicted
                 && !$0.resultRows.isEmpty
                 && $0.lastExecutedAt != nil
+                && !$0.pendingChanges.hasChanges
         }
 
-        // Evict the one with the oldest execution time
-        guard let oldest = candidates.min(by: {
+        let sorted = candidates.sorted {
             ($0.lastExecutedAt ?? .distantFuture) < ($1.lastExecutedAt ?? .distantFuture)
-        }) else { return }
+        }
 
-        oldest.rowBuffer.sourceQuery = oldest.query
-        oldest.rowBuffer.evict()
+        let maxInactiveLoaded = 2
+        guard sorted.count > maxInactiveLoaded else { return }
+        let toEvict = sorted.dropLast(maxInactiveLoaded)
+
+        for tab in toEvict {
+            tab.rowBuffer.sourceQuery = tab.query
+            tab.rowBuffer.evict()
+        }
     }
 }

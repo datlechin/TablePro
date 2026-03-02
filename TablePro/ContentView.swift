@@ -177,7 +177,8 @@ struct ContentView: View {
                         pendingDeletes: sessionPendingDeletesBinding,
                         tableOperationOptions: sessionTableOperationOptionsBinding,
                         databaseType: currentSession.connection.type,
-                        connectionId: currentSession.connection.id
+                        connectionId: currentSession.connection.id,
+                        schemaProvider: MainContentCoordinator.schemaProvider(for: currentSession.connection.id)
                     )
                 }
                 .navigationSplitViewColumnWidth(min: 200, ideal: 250, max: 600)

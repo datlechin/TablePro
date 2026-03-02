@@ -17,11 +17,23 @@ protocol TableFetcher: Sendable {
     func fetchTables() async throws -> [TableInfo]
 }
 
-/// Production implementation that uses DatabaseManager
+/// Production implementation that uses DatabaseManager, with optional schema provider cache
 struct LiveTableFetcher: TableFetcher {
     let connectionId: UUID
+    let schemaProvider: SQLSchemaProvider?
+
+    init(connectionId: UUID, schemaProvider: SQLSchemaProvider? = nil) {
+        self.connectionId = connectionId
+        self.schemaProvider = schemaProvider
+    }
 
     func fetchTables() async throws -> [TableInfo] {
+        if let provider = schemaProvider {
+            let cached = await provider.getTables()
+            if !cached.isEmpty {
+                return cached
+            }
+        }
         guard let driver = await DatabaseManager.shared.driver(for: connectionId) else { return [] }
         return try await driver.fetchTables()
     }
@@ -108,6 +120,7 @@ final class SidebarViewModel: ObservableObject {
         tableOperationOptions: Binding<[String: TableOperationOptions]>,
         databaseType: DatabaseType,
         connectionId: UUID,
+        schemaProvider: SQLSchemaProvider? = nil,
         tableFetcher: TableFetcher? = nil
     ) {
         self.tablesBinding = tables
@@ -117,7 +130,7 @@ final class SidebarViewModel: ObservableObject {
         self.tableOperationOptionsBinding = tableOperationOptions
         self.databaseType = databaseType
         self.connectionId = connectionId
-        self.tableFetcher = tableFetcher ?? LiveTableFetcher(connectionId: connectionId)
+        self.tableFetcher = tableFetcher ?? LiveTableFetcher(connectionId: connectionId, schemaProvider: schemaProvider)
 
         $searchText
             .debounce(for: .milliseconds(150), scheduler: RunLoop.main)

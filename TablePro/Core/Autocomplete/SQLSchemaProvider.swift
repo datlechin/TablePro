@@ -13,6 +13,8 @@ actor SQLSchemaProvider {
 
     private var tables: [TableInfo] = []
     private var columnCache: [String: [ColumnInfo]] = [:]
+    private var columnAccessOrder: [String] = []
+    private let maxCachedTables = 50
     private var isLoading = false
     private var lastLoadError: Error?
 
@@ -35,17 +37,7 @@ actor SQLSchemaProvider {
         lastLoadError = nil
 
         do {
-            // Fetch all tables
             tables = try await driver.fetchTables()
-
-            // Bulk-fetch columns for all tables in a single query when supported
-            // (DAT-4: avoids N+1 queries — 1 query for tables + 1 for all columns
-            //  instead of 1 + N where N = table count).
-            let allColumns = try await driver.fetchAllColumns()
-            for (tableName, columns) in allColumns {
-                columnCache[tableName.lowercased()] = columns
-            }
-
             isLoading = false
         } catch {
             lastLoadError = error
@@ -58,24 +50,35 @@ actor SQLSchemaProvider {
         tables
     }
 
-    /// Get columns for a specific table (with caching)
+    /// Get columns for a specific table (with LRU caching)
     func getColumns(for tableName: String) async -> [ColumnInfo] {
-        // Check cache first
-        if let cached = columnCache[tableName.lowercased()] {
+        let key = tableName.lowercased()
+
+        if let cached = columnCache[key] {
+            columnAccessOrder.removeAll { $0 == key }
+            columnAccessOrder.append(key)
             return cached
         }
 
-        // Use the cached driver from loadSchema() to ensure we're querying the correct connection
         guard let driver = cachedDriver else {
             return []
         }
 
         do {
             let columns = try await driver.fetchColumns(table: tableName)
-            columnCache[tableName.lowercased()] = columns
+            columnCache[key] = columns
+            columnAccessOrder.append(key)
+            evictIfNeeded()
             return columns
         } catch {
             return []
+        }
+    }
+
+    private func evictIfNeeded() {
+        while columnAccessOrder.count > maxCachedTables {
+            let evicted = columnAccessOrder.removeFirst()
+            columnCache.removeValue(forKey: evicted)
         }
     }
 
@@ -93,6 +96,7 @@ actor SQLSchemaProvider {
     func invalidateCache() {
         tables.removeAll()
         columnCache.removeAll()
+        columnAccessOrder.removeAll()
         cachedDriver = nil
     }
 
@@ -124,16 +128,22 @@ actor SQLSchemaProvider {
 
     // MARK: - AI Schema Context
 
-    /// Build schema context string for AI prompts using cached data.
-    /// Returns nil if no schema is loaded or settings disable schema inclusion.
-    func buildSchemaContextForAI(settings: AISettings) -> String? {
+    func buildSchemaContextForAI(settings: AISettings) async -> String? {
         guard !tables.isEmpty, let connection = connectionInfo else { return nil }
+
+        var columnsByTable: [String: [ColumnInfo]] = [:]
+        for table in tables {
+            let columns = await getColumns(for: table.name)
+            if !columns.isEmpty {
+                columnsByTable[table.name.lowercased()] = columns
+            }
+        }
 
         return AISchemaContext.buildSystemPrompt(
             databaseType: connection.type,
             databaseName: connection.database,
             tables: tables,
-            columnsByTable: columnCache,
+            columnsByTable: columnsByTable,
             foreignKeys: [:],
             currentQuery: nil,
             queryResults: nil,
