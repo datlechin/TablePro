@@ -253,6 +253,8 @@ struct DatabaseConnection: Identifiable, Hashable {
     var aiPolicy: AIConnectionPolicy?
     var mongoReadPreference: String?
     var mongoWriteConcern: String?
+    var groupId: UUID?
+    var sortOrder: Int
 
     init(
         id: UUID = UUID(),
@@ -270,7 +272,9 @@ struct DatabaseConnection: Identifiable, Hashable {
         isReadOnly: Bool = false,
         aiPolicy: AIConnectionPolicy? = nil,
         mongoReadPreference: String? = nil,
-        mongoWriteConcern: String? = nil
+        mongoWriteConcern: String? = nil,
+        groupId: UUID? = nil,
+        sortOrder: Int = 0
     ) {
         self.id = id
         self.name = name
@@ -288,6 +292,8 @@ struct DatabaseConnection: Identifiable, Hashable {
         self.aiPolicy = aiPolicy
         self.mongoReadPreference = mongoReadPreference
         self.mongoWriteConcern = mongoWriteConcern
+        self.groupId = groupId
+        self.sortOrder = sortOrder
     }
 
     /// Returns the display color (custom color or database type color)

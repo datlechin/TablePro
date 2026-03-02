@@ -52,7 +52,7 @@ struct ConnectionFormView: View {
     @State private var sslClientCertPath: String = ""
     @State private var sslClientKeyPath: String = ""
 
-    // Color and Tag
+    // Color, Tag, and Group
     @State private var connectionColor: ConnectionColor = .none
     @State private var selectedTagId: UUID?
     @State private var selectedGroupId: UUID?
@@ -224,7 +224,7 @@ struct ConnectionFormView: View {
                     ConnectionTagEditor(selectedTagId: $selectedTagId)
                 }
                 LabeledContent(String(localized: "Group")) {
-                    ConnectionGroupPicker(selectedGroupId: $selectedGroupId)
+                    ConnectionGroupEditor(selectedGroupId: $selectedGroupId)
                 }
                 Toggle(String(localized: "Read-Only"), isOn: $isReadOnly)
                     .help("Prevent write operations (INSERT, UPDATE, DELETE, DROP, etc.)")
@@ -636,11 +636,11 @@ struct ConnectionFormView: View {
             sslConfig: sslConfig,
             color: connectionColor,
             tagId: selectedTagId,
-            groupId: selectedGroupId,
             isReadOnly: isReadOnly,
             aiPolicy: aiPolicy,
             mongoReadPreference: mongoReadPreference.isEmpty ? nil : mongoReadPreference,
-            mongoWriteConcern: mongoWriteConcern.isEmpty ? nil : mongoWriteConcern
+            mongoWriteConcern: mongoWriteConcern.isEmpty ? nil : mongoWriteConcern,
+            groupId: selectedGroupId
         )
 
         // Save passwords to Keychain
@@ -735,9 +735,9 @@ struct ConnectionFormView: View {
             sslConfig: sslConfig,
             color: connectionColor,
             tagId: selectedTagId,
-            groupId: selectedGroupId,
             mongoReadPreference: mongoReadPreference.isEmpty ? nil : mongoReadPreference,
-            mongoWriteConcern: mongoWriteConcern.isEmpty ? nil : mongoWriteConcern
+            mongoWriteConcern: mongoWriteConcern.isEmpty ? nil : mongoWriteConcern,
+            groupId: selectedGroupId
         )
 
         Task {

@@ -15,7 +15,6 @@ import SwiftUI
 struct WelcomeWindowView: View {
     private static let logger = Logger(subsystem: "com.TablePro", category: "WelcomeWindowView")
     private let storage = ConnectionStorage.shared
-    private let groupStorage = GroupStorage.shared
     @ObservedObject private var dbManager = DatabaseManager.shared
 
     @State private var connections: [DatabaseConnection] = []
@@ -28,12 +27,17 @@ struct WelcomeWindowView: View {
     @State private var hoveredConnectionId: UUID?
     @State private var selectedConnectionId: UUID?  // For keyboard navigation
     @State private var showOnboarding = !AppSettingsStorage.shared.hasCompletedOnboarding()
+
+    // Group state
     @State private var groups: [ConnectionGroup] = []
-    @State private var collapsedGroupIds: Set<UUID> = {
-        let strings = UserDefaults.standard.stringArray(forKey: "com.TablePro.collapsedGroupIds") ?? []
-        return Set(strings.compactMap { UUID(uuidString: $0) })
-    }()
+    @State private var expandedGroups: Set<UUID> = []
     @State private var showNewGroupSheet = false
+    @State private var groupToEdit: ConnectionGroup?
+    @State private var groupToDelete: ConnectionGroup?
+    @State private var showDeleteGroupConfirmation = false
+    @State private var newGroupParentId: UUID?
+
+    private let groupStorage = GroupStorage.shared
 
     @Environment(\.openWindow) private var openWindow
 
@@ -45,26 +49,7 @@ struct WelcomeWindowView: View {
             connection.name.localizedCaseInsensitiveContains(searchText)
                 || connection.host.localizedCaseInsensitiveContains(searchText)
                 || connection.database.localizedCaseInsensitiveContains(searchText)
-                || groupName(for: connection.groupId)?.localizedCaseInsensitiveContains(searchText) == true
         }
-    }
-
-    private func groupName(for groupId: UUID?) -> String? {
-        guard let groupId else { return nil }
-        return groups.first { $0.id == groupId }?.name
-    }
-
-    private var ungroupedConnections: [DatabaseConnection] {
-        filteredConnections.filter { $0.groupId == nil }
-    }
-
-    private var activeGroups: [ConnectionGroup] {
-        let groupIds = Set(filteredConnections.compactMap(\.groupId))
-        return groups.filter { groupIds.contains($0.id) }
-    }
-
-    private func connections(in group: ConnectionGroup) -> [DatabaseConnection] {
-        filteredConnections.filter { $0.groupId == group.id }
     }
 
     var body: some View {
@@ -105,11 +90,33 @@ struct WelcomeWindowView: View {
         .onReceive(NotificationCenter.default.publisher(for: .connectionUpdated)) { _ in
             loadConnections()
         }
+        .confirmationDialog(
+            "Delete Group",
+            isPresented: $showDeleteGroupConfirmation,
+            presenting: groupToDelete
+        ) { group in
+            Button("Delete", role: .destructive) {
+                deleteGroup(group)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: { group in
+            Text("Are you sure you want to delete \"\(group.name)\"? Connections will be ungrouped.")
+        }
         .sheet(isPresented: $showNewGroupSheet) {
-            CreateGroupSheet { name, color in
-                let group = ConnectionGroup(name: name, color: color)
-                groupStorage.addGroup(group)
-                groups = groupStorage.loadGroups()
+            ConnectionGroupFormSheet(
+                group: groupToEdit,
+                parentGroupId: newGroupParentId
+            ) { group in
+                if groupToEdit != nil {
+                    groupStorage.updateGroup(group)
+                } else {
+                    groupStorage.addGroup(group)
+                    expandedGroups.insert(group.id)
+                    groupStorage.saveExpandedGroupIds(expandedGroups)
+                }
+                groupToEdit = nil
+                newGroupParentId = nil
+                loadConnections()
             }
         }
     }
@@ -201,22 +208,6 @@ struct WelcomeWindowView: View {
                 .buttonStyle(.plain)
                 .help("New Connection (⌘N)")
 
-                Button(action: { showNewGroupSheet = true }) {
-                    Image(systemName: "folder.badge.plus")
-                        .font(.system(size: DesignConstants.FontSize.medium, weight: .medium))
-                        .foregroundStyle(.secondary)
-                        .frame(
-                            width: DesignConstants.IconSize.extraLarge,
-                            height: DesignConstants.IconSize.extraLarge
-                        )
-                        .background(
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(Color(nsColor: .quaternaryLabelColor))
-                        )
-                }
-                .buttonStyle(.plain)
-                .help(String(localized: "New Group"))
-
                 HStack(spacing: 6) {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: DesignConstants.FontSize.medium))
@@ -255,40 +246,50 @@ struct WelcomeWindowView: View {
         Button(action: { openWindow(id: "connection-form") }) {
             Label("New Connection...", systemImage: "plus")
         }
+        Button(action: {
+            groupToEdit = nil
+            newGroupParentId = nil
+            showNewGroupSheet = true
+        }) {
+            Label("New Group...", systemImage: "folder.badge.plus")
+        }
     }
 
     // MARK: - Connection List
 
-    /// Connection list that behaves like native NSTableView:
-    /// - Single click: selects row (handled by List's selection binding)
-    /// - Double click: connects to database (via simultaneousGesture in ConnectionRow)
-    /// - Return key: connects to selected row
-    /// - Arrow keys: native keyboard navigation
+    /// Connection list with group hierarchy support.
+    /// When searching: flat filtered list. Otherwise: grouped with DisclosureGroups.
     private var connectionList: some View {
         List(selection: $selectedConnectionId) {
-            ForEach(ungroupedConnections) { connection in
-                connectionRow(for: connection)
-            }
-            .onMove { from, to in
-                guard searchText.isEmpty else { return }
-                moveUngroupedConnections(from: from, to: to)
-            }
+            if !searchText.isEmpty {
+                // Flat filtered list during search
+                ForEach(filteredConnections) { connection in
+                    connectionRow(for: connection)
+                }
+            } else {
+                // Grouped hierarchical view
+                ForEach(rootGroups) { group in
+                    groupSection(for: group)
+                }
+                .onMove { from, to in
+                    moveRootGroups(from: from, to: to)
+                }
 
-            ForEach(activeGroups) { group in
-                Section {
-                    if !collapsedGroupIds.contains(group.id) {
-                        ForEach(connections(in: group)) { connection in
-                            connectionRow(for: connection)
-                        }
-                    }
-                } header: {
-                    groupHeader(for: group)
+                // Ungrouped connections
+                ForEach(ungroupedConnections) { connection in
+                    connectionRow(for: connection)
+                }
+                .onMove { from, to in
+                    moveUngroupedConnections(from: from, to: to)
                 }
             }
         }
         .listStyle(.inset)
         .scrollContentBackground(.hidden)
         .environment(\.defaultMinListRowHeight, 44)
+        .dropDestination(for: String.self) { items, _ in
+            handleDropOnGroup(items: items, targetGroupId: nil)
+        }
         .onKeyPress(.return) {
             if let id = selectedConnectionId,
                 let connection = connections.first(where: { $0.id == id })
@@ -299,9 +300,128 @@ struct WelcomeWindowView: View {
         }
     }
 
+    // MARK: - Group Hierarchy
+
+    private var rootGroups: [ConnectionGroup] {
+        groups.filter { $0.parentGroupId == nil }
+            .sorted { $0.sortOrder < $1.sortOrder }
+    }
+
+    private var ungroupedConnections: [DatabaseConnection] {
+        connections.filter { $0.groupId == nil }
+            .sorted { $0.sortOrder < $1.sortOrder }
+    }
+
+    private func childGroups(of parentId: UUID) -> [ConnectionGroup] {
+        groups.filter { $0.parentGroupId == parentId }
+            .sorted { $0.sortOrder < $1.sortOrder }
+    }
+
+    private func connectionsInGroup(_ groupId: UUID) -> [DatabaseConnection] {
+        connections.filter { $0.groupId == groupId }
+            .sorted { $0.sortOrder < $1.sortOrder }
+    }
+
+    private func totalConnectionCount(in group: ConnectionGroup) -> Int {
+        let direct = connections.filter { $0.groupId == group.id }.count
+        let children = childGroups(of: group.id)
+        let nested = children.reduce(0) { $0 + totalConnectionCount(in: $1) }
+        return direct + nested
+    }
+
+    private func expandedBinding(_ groupId: UUID) -> Binding<Bool> {
+        Binding(
+            get: { expandedGroups.contains(groupId) },
+            set: { isExpanded in
+                if isExpanded {
+                    expandedGroups.insert(groupId)
+                } else {
+                    expandedGroups.remove(groupId)
+                }
+                groupStorage.saveExpandedGroupIds(expandedGroups)
+            }
+        )
+    }
+
+    private func groupSection(for group: ConnectionGroup) -> AnyView {
+        AnyView(
+            DisclosureGroup(isExpanded: expandedBinding(group.id)) {
+                ForEach(childGroups(of: group.id)) { child in
+                    groupSection(for: child)
+                }
+                ForEach(connectionsInGroup(group.id)) { connection in
+                    connectionRow(for: connection)
+                }
+            } label: {
+                groupRowLabel(group)
+            }
+        )
+    }
+
+    private func groupRowLabel(_ group: ConnectionGroup) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "folder.fill")
+                .foregroundStyle(group.color.isDefault ? .secondary : group.color.color)
+                .font(.system(size: DesignConstants.FontSize.body))
+
+            Text(group.name)
+                .font(.system(size: DesignConstants.FontSize.body, weight: .medium))
+                .foregroundStyle(.primary)
+
+            Text("\(totalConnectionCount(in: group))")
+                .font(.system(size: DesignConstants.FontSize.small))
+                .foregroundStyle(.tertiary)
+
+            Spacer()
+        }
+        .contentShape(Rectangle())
+        .overlay(
+            DoubleClickView {
+                if expandedGroups.contains(group.id) {
+                    expandedGroups.remove(group.id)
+                } else {
+                    expandedGroups.insert(group.id)
+                }
+                groupStorage.saveExpandedGroupIds(expandedGroups)
+            }
+        )
+        .dropDestination(for: String.self) { items, _ in
+            handleDropOnGroup(items: items, targetGroupId: group.id)
+        }
+        .contextMenu {
+            Button(action: { openWindow(id: "connection-form") }) {
+                Label("New Connection...", systemImage: "plus")
+            }
+            Button(action: {
+                groupToEdit = nil
+                newGroupParentId = group.id
+                showNewGroupSheet = true
+            }) {
+                Label("New Subgroup...", systemImage: "folder.badge.plus")
+            }
+            Divider()
+            Button(action: {
+                groupToEdit = group
+                newGroupParentId = group.parentGroupId
+                showNewGroupSheet = true
+            }) {
+                Label("Edit Group...", systemImage: "pencil")
+            }
+            Divider()
+            Button(role: .destructive) {
+                groupToDelete = group
+                showDeleteGroupConfirmation = true
+            } label: {
+                Label("Delete Group", systemImage: "trash")
+            }
+        }
+    }
+
+    @ViewBuilder
     private func connectionRow(for connection: DatabaseConnection) -> some View {
         ConnectionRow(
             connection: connection,
+            groups: groups,
             onConnect: { connectToDatabase(connection) },
             onEdit: {
                 openWindow(id: "connection-form", value: connection.id as UUID?)
@@ -313,88 +433,15 @@ struct WelcomeWindowView: View {
             onDelete: {
                 connectionToDelete = connection
                 showDeleteConfirmation = true
+            },
+            onMoveToGroup: { groupId in
+                moveConnectionToGroup(connection, groupId: groupId)
             }
         )
         .tag(connection.id)
         .listRowInsets(DesignConstants.swiftUIListRowInsets)
         .listRowSeparator(.hidden)
-    }
-
-    private func groupHeader(for group: ConnectionGroup) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: collapsedGroupIds.contains(group.id) ? "chevron.right" : "chevron.down")
-                .font(.system(size: DesignConstants.FontSize.small, weight: .medium))
-                .foregroundStyle(.tertiary)
-                .frame(width: 12)
-
-            if !group.color.isDefault {
-                Circle()
-                    .fill(group.color.color)
-                    .frame(width: 8, height: 8)
-            }
-
-            Text(group.name)
-                .font(.system(size: DesignConstants.FontSize.small, weight: .semibold))
-                .foregroundStyle(.secondary)
-
-            Text("\(connections(in: group).count)")
-                .font(.system(size: DesignConstants.FontSize.tiny))
-                .foregroundStyle(.tertiary)
-
-            Spacer()
-        }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                if collapsedGroupIds.contains(group.id) {
-                    collapsedGroupIds.remove(group.id)
-                } else {
-                    collapsedGroupIds.insert(group.id)
-                }
-                UserDefaults.standard.set(
-                    Array(collapsedGroupIds.map(\.uuidString)),
-                    forKey: "com.TablePro.collapsedGroupIds"
-                )
-            }
-        }
-        .contextMenu {
-            Button {
-                renameGroup(group)
-            } label: {
-                Label(String(localized: "Rename"), systemImage: "pencil")
-            }
-
-            Menu(String(localized: "Change Color")) {
-                ForEach(ConnectionColor.allCases) { color in
-                    Button {
-                        var updated = group
-                        updated.color = color
-                        groupStorage.updateGroup(updated)
-                        groups = groupStorage.loadGroups()
-                    } label: {
-                        HStack {
-                            if color != .none {
-                                Image(systemName: "circle.fill")
-                                    .foregroundStyle(color.color)
-                            }
-                            Text(color.displayName)
-                            if group.color == color {
-                                Spacer()
-                                Image(systemName: "checkmark")
-                            }
-                        }
-                    }
-                }
-            }
-
-            Divider()
-
-            Button(role: .destructive) {
-                deleteGroup(group)
-            } label: {
-                Label(String(localized: "Delete Group"), systemImage: "trash")
-            }
-        }
+        .draggable(connection.id.uuidString)
     }
 
     // MARK: - Empty State
@@ -436,7 +483,10 @@ struct WelcomeWindowView: View {
         } else {
             connections = saved
         }
-        loadGroups()
+        groups = groupStorage.loadGroups()
+        let savedExpanded = groupStorage.loadExpandedGroupIds()
+        // Auto-expand new groups
+        expandedGroups = savedExpanded.union(Set(groups.map(\.id)))
     }
 
     private func connectToDatabase(_ connection: DatabaseConnection) {
@@ -482,61 +532,6 @@ struct WelcomeWindowView: View {
         focusConnectionFormWindow()
     }
 
-    private func loadGroups() {
-        groups = groupStorage.loadGroups()
-    }
-
-    private func deleteGroup(_ group: ConnectionGroup) {
-        for i in connections.indices where connections[i].groupId == group.id {
-            connections[i].groupId = nil
-        }
-        storage.saveConnections(connections)
-        groupStorage.deleteGroup(group)
-        groups = groupStorage.loadGroups()
-    }
-
-    private func renameGroup(_ group: ConnectionGroup) {
-        let alert = NSAlert()
-        alert.messageText = String(localized: "Rename Group")
-        alert.informativeText = String(localized: "Enter a new name for the group.")
-        alert.addButton(withTitle: String(localized: "Rename"))
-        alert.addButton(withTitle: String(localized: "Cancel"))
-
-        let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
-        textField.stringValue = group.name
-        alert.accessoryView = textField
-
-        if alert.runModal() == .alertFirstButtonReturn {
-            let newName = textField.stringValue.trimmingCharacters(in: .whitespaces)
-            guard !newName.isEmpty else { return }
-            let isDuplicate = groups.contains {
-                $0.id != group.id && $0.name.lowercased() == newName.lowercased()
-            }
-            guard !isDuplicate else { return }
-            var updated = group
-            updated.name = newName
-            groupStorage.updateGroup(updated)
-            groups = groupStorage.loadGroups()
-        }
-    }
-
-    private func moveUngroupedConnections(from source: IndexSet, to destination: Int) {
-        let ungroupedIndices = connections.indices.filter { connections[$0].groupId == nil }
-
-        let globalSource = IndexSet(source.map { ungroupedIndices[$0] })
-        let globalDestination: Int
-        if destination < ungroupedIndices.count {
-            globalDestination = ungroupedIndices[destination]
-        } else if let last = ungroupedIndices.last {
-            globalDestination = last + 1
-        } else {
-            globalDestination = 0
-        }
-
-        connections.move(fromOffsets: globalSource, toOffset: globalDestination)
-        storage.saveConnections(connections)
-    }
-
     /// Focus the connection form window as soon as it's available
     private func focusConnectionFormWindow() {
         // Poll rapidly until window is found (much faster than fixed delay)
@@ -561,16 +556,71 @@ struct WelcomeWindowView: View {
             attemptFocus()
         }
     }
+
+    private func deleteGroup(_ group: ConnectionGroup) {
+        groupStorage.deleteGroup(group)
+        expandedGroups.remove(group.id)
+        groupStorage.saveExpandedGroupIds(expandedGroups)
+        loadConnections()
+    }
+
+    private func moveConnectionToGroup(_ connection: DatabaseConnection, groupId: UUID?) {
+        var updated = connection
+        updated.groupId = groupId
+        storage.updateConnection(updated)
+        loadConnections()
+    }
+
+    private func moveUngroupedConnections(from: IndexSet, to: Int) {
+        var ungrouped = connections.filter { $0.groupId == nil }
+            .sorted { $0.sortOrder < $1.sortOrder }
+        ungrouped.move(fromOffsets: from, toOffset: to)
+        for (index, var conn) in ungrouped.enumerated() {
+            conn.sortOrder = index
+            storage.updateConnection(conn)
+        }
+        loadConnections()
+    }
+
+    private func moveRootGroups(from: IndexSet, to: Int) {
+        var roots = groups.filter { $0.parentGroupId == nil }
+            .sorted { $0.sortOrder < $1.sortOrder }
+        roots.move(fromOffsets: from, toOffset: to)
+        for (index, var group) in roots.enumerated() {
+            group.sortOrder = index
+            groupStorage.updateGroup(group)
+        }
+        loadConnections()
+    }
+
+    private func handleDropOnGroup(items: [String], targetGroupId: UUID?) -> Bool {
+        var changed = false
+        for item in items {
+            guard let uuid = UUID(uuidString: item) else { continue }
+            if var conn = connections.first(where: { $0.id == uuid }) {
+                guard conn.groupId != targetGroupId else { continue }
+                conn.groupId = targetGroupId
+                storage.updateConnection(conn)
+                changed = true
+            }
+        }
+        if changed {
+            loadConnections()
+        }
+        return changed
+    }
 }
 
 // MARK: - ConnectionRow
 
 private struct ConnectionRow: View {
     let connection: DatabaseConnection
+    var groups: [ConnectionGroup] = []
     var onConnect: (() -> Void)?
     var onEdit: (() -> Void)?
     var onDuplicate: (() -> Void)?
     var onDelete: (() -> Void)?
+    var onMoveToGroup: ((UUID?) -> Void)?
 
     private var displayTag: ConnectionTag? {
         guard let tagId = connection.tagId else { return nil }
@@ -637,6 +687,38 @@ private struct ConnectionRow: View {
             if let onDuplicate = onDuplicate {
                 Button(action: onDuplicate) {
                     Label("Duplicate", systemImage: "doc.on.doc")
+                }
+            }
+
+            if !groups.isEmpty, let onMoveToGroup = onMoveToGroup {
+                Divider()
+                Menu("Move to Group") {
+                    Button {
+                        onMoveToGroup(nil)
+                    } label: {
+                        HStack {
+                            Text("None")
+                            if connection.groupId == nil {
+                                Spacer()
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+                    Divider()
+                    ForEach(groups.filter { $0.parentGroupId == nil }.sorted { $0.sortOrder < $1.sortOrder }) { group in
+                        Button {
+                            onMoveToGroup(group.id)
+                        } label: {
+                            HStack {
+                                Image(systemName: "folder.fill")
+                                Text(group.name)
+                                if connection.groupId == group.id {
+                                    Spacer()
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -763,7 +845,7 @@ private class PassThroughDoubleClickView: NSView {
     var onDoubleClick: (() -> Void)?
 
     override func mouseDown(with event: NSEvent) {
-        if event.clickCount == 2 {
+        if event.clickCount >= 2, event.clickCount % 2 == 0 {
             onDoubleClick?()
         }
         // Always forward to next responder for List selection
