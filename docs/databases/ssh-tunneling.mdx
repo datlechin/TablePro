@@ -259,6 +259,42 @@ chmod 644 ~/.ssh/id_*.pub
 chmod 644 ~/.ssh/config
 ```
 
+## Import from URL
+
+You can import SSH tunnel connections from a URL instead of filling in each field manually. TablePro supports `+ssh` URL schemes that encode both SSH and database credentials in a single string.
+
+**Format:**
+
+```
+scheme+ssh://ssh_user@ssh_host:ssh_port/db_user:db_password@db_host/db_name?name=MyConnection&usePrivateKey=true
+```
+
+**Supported schemes:** `mysql+ssh`, `postgresql+ssh`, `postgres+ssh`, `mariadb+ssh`
+
+**Example:**
+
+```
+mysql+ssh://root@123.123.123.123:1234/database_user:database_password@127.0.0.1/database_name?name=FlashPanel&usePrivateKey=true
+```
+
+This fills in:
+- **SSH Host**: `123.123.123.123`, **SSH Port**: `1234`, **SSH User**: `root`
+- **Database Host**: `127.0.0.1`, **Database User**: `database_user`, **Database**: `database_name`
+- **Connection Name**: `FlashPanel`, **Auth Method**: Private Key
+
+**Query parameters:**
+
+| Parameter | Description |
+|-----------|-------------|
+| `name` | Sets the connection name |
+| `usePrivateKey` | Set to `true` to select Private Key authentication |
+
+To import, open **New Connection**, click **Import from URL**, and paste the URL.
+
+<Tip>
+This format is compatible with TablePlus SSH connection URLs, so you can paste URLs directly when migrating.
+</Tip>
+
 ## Troubleshooting
 
 ### Connection Refused

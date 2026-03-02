@@ -80,10 +80,17 @@ If you have a database connection string (commonly provided by hosting platforms
 | MariaDB | `mariadb://user:pass@host:3306/dbname` |
 | SQLite | `sqlite:///path/to/database.db` |
 | MongoDB | `mongodb://user:pass@host:27017/dbname` |
+| MySQL (SSH) | `mysql+ssh://ssh_user@ssh_host:22/db_user:pass@db_host/dbname` |
+| PostgreSQL (SSH) | `postgresql+ssh://ssh_user@ssh_host:22/db_user:pass@db_host/dbname` |
+| MariaDB (SSH) | `mariadb+ssh://ssh_user@ssh_host:22/db_user:pass@db_host/dbname` |
 
 <Tip>
 Connection URLs with special characters in the password (like `@`, `#`, or `%`) should use percent-encoding. For example, `p@ssword` becomes `p%40ssword`.
 </Tip>
+
+<Note>
+SSH tunnel URLs use the format `scheme+ssh://ssh_user@ssh_host:ssh_port/db_user:db_password@db_host/db_name`. Query parameters `name` (connection name) and `usePrivateKey=true` (use key-based auth) are also supported.
+</Note>
 
 ### Connection Form Fields
 

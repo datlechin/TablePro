@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Import database connections from SSH tunnel URLs (e.g., `mysql+ssh://`, `postgresql+ssh://`)
+
 ### Fixed
 
 - Toolbar briefly showing "MySQL" and missing version (e.g., "MongoDB" instead of "MongoDB 8.2.5") when opening a new tab

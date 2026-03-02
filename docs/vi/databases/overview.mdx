@@ -80,10 +80,17 @@ Nếu bạn có chuỗi kết nối cơ sở dữ liệu (thường được cun
 | MariaDB | `mariadb://user:pass@host:3306/dbname` |
 | SQLite | `sqlite:///path/to/database.db` |
 | MongoDB | `mongodb://user:pass@host:27017/dbname` |
+| MySQL (SSH) | `mysql+ssh://ssh_user@ssh_host:22/db_user:pass@db_host/dbname` |
+| PostgreSQL (SSH) | `postgresql+ssh://ssh_user@ssh_host:22/db_user:pass@db_host/dbname` |
+| MariaDB (SSH) | `mariadb+ssh://ssh_user@ssh_host:22/db_user:pass@db_host/dbname` |
 
 <Tip>
 URL kết nối có ký tự đặc biệt trong mật khẩu (như `@`, `#` hoặc `%`) cần sử dụng percent-encoding. Ví dụ: `p@ssword` trở thành `p%40ssword`.
 </Tip>
+
+<Note>
+URL SSH tunnel sử dụng định dạng `scheme+ssh://ssh_user@ssh_host:ssh_port/db_user:db_password@db_host/db_name`. Tham số query `name` (tên kết nối) và `usePrivateKey=true` (sử dụng xác thực key) cũng được hỗ trợ.
+</Note>
 
 ### Các trường Biểu mẫu Kết nối
 

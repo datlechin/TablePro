@@ -259,6 +259,42 @@ chmod 644 ~/.ssh/id_*.pub
 chmod 644 ~/.ssh/config
 ```
 
+## Nhập từ URL
+
+Bạn có thể nhập kết nối SSH tunnel từ URL thay vì điền từng trường thủ công. TablePro hỗ trợ scheme URL `+ssh` mã hóa cả thông tin SSH và database trong một chuỗi duy nhất.
+
+**Định dạng:**
+
+```
+scheme+ssh://ssh_user@ssh_host:ssh_port/db_user:db_password@db_host/db_name?name=MyConnection&usePrivateKey=true
+```
+
+**Các scheme được hỗ trợ:** `mysql+ssh`, `postgresql+ssh`, `postgres+ssh`, `mariadb+ssh`
+
+**Ví dụ:**
+
+```
+mysql+ssh://root@123.123.123.123:1234/database_user:database_password@127.0.0.1/database_name?name=FlashPanel&usePrivateKey=true
+```
+
+Kết quả điền:
+- **SSH Host**: `123.123.123.123`, **SSH Port**: `1234`, **SSH User**: `root`
+- **Database Host**: `127.0.0.1`, **Database User**: `database_user`, **Database**: `database_name`
+- **Tên kết nối**: `FlashPanel`, **Phương thức xác thực**: Private Key
+
+**Tham số query:**
+
+| Tham số | Mô tả |
+|-----------|-------------|
+| `name` | Đặt tên kết nối |
+| `usePrivateKey` | Đặt `true` để chọn xác thực Private Key |
+
+Để nhập, mở **New Connection**, nhấp **Import from URL**, và dán URL.
+
+<Tip>
+Định dạng này tương thích với URL kết nối SSH của TablePlus, vì vậy bạn có thể dán URL trực tiếp khi di chuyển.
+</Tip>
+
 ## Khắc Phục Sự Cố
 
 ### Từ Chối Kết Nối

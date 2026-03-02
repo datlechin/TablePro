@@ -817,7 +817,18 @@ struct ConnectionFormView: View {
             username = parsed.username
             password = parsed.password
             sslMode = parsed.sslMode ?? .disabled
-            if name.isEmpty {
+            if let sshHostValue = parsed.sshHost {
+                sshEnabled = true
+                sshHost = sshHostValue
+                sshPort = parsed.sshPort.map(String.init) ?? "22"
+                sshUsername = parsed.sshUsername ?? ""
+                if parsed.usePrivateKey == true {
+                    sshAuthMethod = .privateKey
+                }
+            }
+            if let connectionName = parsed.connectionName, !connectionName.isEmpty {
+                name = connectionName
+            } else if name.isEmpty {
                 name = parsed.suggestedName
             }
         case .failure(let error):

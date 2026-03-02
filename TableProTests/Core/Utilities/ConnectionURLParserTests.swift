@@ -312,4 +312,118 @@ struct ConnectionURLParserTests {
         }
         #expect(parsed.sslMode == .required)
     }
+
+    // MARK: - SSH Tunnel URLs
+
+    @Test("Full mysql+ssh URL")
+    func testFullMySQLSSHURL() {
+        let result = ConnectionURLParser.parse("mysql+ssh://root@123.123.123.123:1234/database_user:database_password@127.0.0.1/database_name?name=FlashPanel&usePrivateKey=true&env=production")
+        guard case .success(let parsed) = result else {
+            Issue.record("Expected success"); return
+        }
+        #expect(parsed.type == .mysql)
+        #expect(parsed.host == "127.0.0.1")
+        #expect(parsed.port == nil)
+        #expect(parsed.database == "database_name")
+        #expect(parsed.username == "database_user")
+        #expect(parsed.password == "database_password")
+        #expect(parsed.sshHost == "123.123.123.123")
+        #expect(parsed.sshPort == 1234)
+        #expect(parsed.sshUsername == "root")
+        #expect(parsed.usePrivateKey == true)
+        #expect(parsed.connectionName == "FlashPanel")
+    }
+
+    @Test("PostgreSQL SSH URL")
+    func testPostgreSQLSSHURL() {
+        let result = ConnectionURLParser.parse("postgresql+ssh://deploy@db.example.com:22/admin:secret@10.0.0.5/mydb")
+        guard case .success(let parsed) = result else {
+            Issue.record("Expected success"); return
+        }
+        #expect(parsed.type == .postgresql)
+        #expect(parsed.host == "10.0.0.5")
+        #expect(parsed.database == "mydb")
+        #expect(parsed.username == "admin")
+        #expect(parsed.password == "secret")
+        #expect(parsed.sshHost == "db.example.com")
+        #expect(parsed.sshPort == 22)
+        #expect(parsed.sshUsername == "deploy")
+    }
+
+    @Test("Postgres SSH scheme alias")
+    func testPostgresSSHAlias() {
+        let result = ConnectionURLParser.parse("postgres+ssh://user@host:22/dbuser:pass@localhost/db")
+        guard case .success(let parsed) = result else {
+            Issue.record("Expected success"); return
+        }
+        #expect(parsed.type == .postgresql)
+        #expect(parsed.sshHost == "host")
+    }
+
+    @Test("MariaDB SSH URL")
+    func testMariaDBSSHURL() {
+        let result = ConnectionURLParser.parse("mariadb+ssh://admin@192.168.1.1:2222/root:pass@127.0.0.1/production")
+        guard case .success(let parsed) = result else {
+            Issue.record("Expected success"); return
+        }
+        #expect(parsed.type == .mariadb)
+        #expect(parsed.sshHost == "192.168.1.1")
+        #expect(parsed.sshPort == 2222)
+        #expect(parsed.sshUsername == "admin")
+        #expect(parsed.host == "127.0.0.1")
+        #expect(parsed.database == "production")
+    }
+
+    @Test("SSH URL without SSH port")
+    func testSSHURLWithoutSSHPort() {
+        let result = ConnectionURLParser.parse("mysql+ssh://root@myserver/dbuser:pass@localhost/db")
+        guard case .success(let parsed) = result else {
+            Issue.record("Expected success"); return
+        }
+        #expect(parsed.sshHost == "myserver")
+        #expect(parsed.sshPort == nil)
+        #expect(parsed.sshUsername == "root")
+    }
+
+    @Test("SSH URL with connection name")
+    func testSSHURLWithConnectionName() {
+        let result = ConnectionURLParser.parse("mysql+ssh://root@host:22/user:pass@localhost/db?name=My+Server")
+        guard case .success(let parsed) = result else {
+            Issue.record("Expected success"); return
+        }
+        #expect(parsed.connectionName == "My Server")
+        #expect(parsed.suggestedName == "My Server")
+    }
+
+    @Test("SSH URL with usePrivateKey")
+    func testSSHURLWithUsePrivateKey() {
+        let result = ConnectionURLParser.parse("mysql+ssh://root@host:22/user:pass@localhost/db?usePrivateKey=true")
+        guard case .success(let parsed) = result else {
+            Issue.record("Expected success"); return
+        }
+        #expect(parsed.usePrivateKey == true)
+    }
+
+    @Test("Non-SSH URL has nil SSH fields")
+    func testNonSSHURLHasNilSSHFields() {
+        let result = ConnectionURLParser.parse("mysql://root:pass@localhost:3306/db")
+        guard case .success(let parsed) = result else {
+            Issue.record("Expected success"); return
+        }
+        #expect(parsed.sshHost == nil)
+        #expect(parsed.sshPort == nil)
+        #expect(parsed.sshUsername == nil)
+        #expect(parsed.usePrivateKey == nil)
+        #expect(parsed.connectionName == nil)
+    }
+
+    @Test("Case-insensitive SSH scheme")
+    func testCaseInsensitiveSSHScheme() {
+        let result = ConnectionURLParser.parse("MYSQL+SSH://root@host:22/user:pass@localhost/db")
+        guard case .success(let parsed) = result else {
+            Issue.record("Expected success"); return
+        }
+        #expect(parsed.type == .mysql)
+        #expect(parsed.sshHost == "host")
+    }
 }
