@@ -232,7 +232,7 @@ final class PostgreSQLDriver: DatabaseDriver {
                 LEFT JOIN pg_catalog.pg_description pgd
                     ON pgd.objoid = st.relid
                     AND pgd.objsubid = c.ordinal_position
-                WHERE c.table_schema = '\(escapedSchema)' AND c.table_name = '\(SQLEscaping.escapeStringLiteral(table))'
+                WHERE c.table_schema = '\(escapedSchema)' AND c.table_name = '\(SQLEscaping.escapeStringLiteral(table, databaseType: .postgresql))'
                 ORDER BY c.ordinal_position
             """
 
@@ -369,7 +369,7 @@ final class PostgreSQLDriver: DatabaseDriver {
             SELECT e.enumlabel
             FROM pg_enum e
             JOIN pg_type t ON e.enumtypid = t.oid
-            WHERE t.typname = '\(SQLEscaping.escapeStringLiteral(typeName))'
+            WHERE t.typname = '\(SQLEscaping.escapeStringLiteral(typeName, databaseType: .postgresql))'
             ORDER BY e.enumsortorder
         """
         let result = try await execute(query: query)
@@ -379,7 +379,7 @@ final class PostgreSQLDriver: DatabaseDriver {
     /// Fetch enum type definitions used by columns in the given table.
     /// Returns array of (typeName, enumLabels) tuples.
     func fetchEnumTypesForTable(_ table: String) async throws -> [(name: String, labels: [String])] {
-        let safeTable = SQLEscaping.escapeStringLiteral(table)
+        let safeTable = SQLEscaping.escapeStringLiteral(table, databaseType: .postgresql)
         let query = """
             SELECT DISTINCT t.typname,
                    array_agg(e.enumlabel ORDER BY e.enumsortorder)
@@ -459,7 +459,7 @@ final class PostgreSQLDriver: DatabaseDriver {
             JOIN pg_class t ON t.oid = ix.indrelid
             JOIN pg_am am ON am.oid = i.relam
             JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey)
-            WHERE t.relname = '\(SQLEscaping.escapeStringLiteral(table))'
+            WHERE t.relname = '\(SQLEscaping.escapeStringLiteral(table, databaseType: .postgresql))'
             GROUP BY i.relname, ix.indisunique, ix.indisprimary, am.amname
             ORDER BY ix.indisprimary DESC, i.relname
             """
@@ -506,7 +506,7 @@ final class PostgreSQLDriver: DatabaseDriver {
                 ON tc.constraint_name = rc.constraint_name
             JOIN information_schema.constraint_column_usage ccu
                 ON rc.unique_constraint_name = ccu.constraint_name
-            WHERE tc.table_name = '\(SQLEscaping.escapeStringLiteral(table))'
+            WHERE tc.table_name = '\(SQLEscaping.escapeStringLiteral(table, databaseType: .postgresql))'
                 AND tc.constraint_type = 'FOREIGN KEY'
             ORDER BY tc.constraint_name
             """
@@ -538,7 +538,7 @@ final class PostgreSQLDriver: DatabaseDriver {
         let query = """
             SELECT reltuples::bigint
             FROM pg_class
-            WHERE relname = '\(SQLEscaping.escapeStringLiteral(table))'
+            WHERE relname = '\(SQLEscaping.escapeStringLiteral(table, databaseType: .postgresql))'
               AND relnamespace = (
                   SELECT oid FROM pg_namespace WHERE nspname = current_schema()
               )
@@ -649,7 +649,7 @@ final class PostgreSQLDriver: DatabaseDriver {
         let query = """
             SELECT 'CREATE OR REPLACE VIEW ' || quote_ident(schemaname) || '.' || quote_ident(viewname) || ' AS ' || E'\\n' || definition AS ddl
             FROM pg_views
-            WHERE viewname = '\(SQLEscaping.escapeStringLiteral(view))'
+            WHERE viewname = '\(SQLEscaping.escapeStringLiteral(view, databaseType: .postgresql))'
               AND schemaname = '\(escapedSchema)'
             """
 
@@ -692,7 +692,7 @@ final class PostgreSQLDriver: DatabaseDriver {
                 obj_description(c.oid, 'pg_class') AS comment
             FROM pg_class c
             JOIN pg_namespace n ON n.oid = c.relnamespace
-            WHERE c.relname = '\(SQLEscaping.escapeStringLiteral(tableName))'
+            WHERE c.relname = '\(SQLEscaping.escapeStringLiteral(tableName, databaseType: .postgresql))'
               AND n.nspname = '\(escapedSchema)'
             """
 
@@ -779,7 +779,7 @@ final class PostgreSQLDriver: DatabaseDriver {
     /// Fetch metadata for a specific database
     func fetchDatabaseMetadata(_ database: String) async throws -> DatabaseMetadata {
         // Escape database name for use as a SQL string literal
-        let escapedDbLiteral = SQLEscaping.escapeStringLiteral(database)
+        let escapedDbLiteral = SQLEscaping.escapeStringLiteral(database, databaseType: .postgresql)
 
         // Single query for both table count and database size
         let query = """
