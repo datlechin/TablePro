@@ -1263,9 +1263,14 @@ private extension MainContentCoordinator {
               tab.primaryKeyColumn != nil else {
             return false
         }
-        // If tab has enum/set columns but no enum values loaded, not fully cached
-        let hasEnumColumns = tab.columnTypes.contains { $0.isEnumType || $0.isSetType }
-        if hasEnumColumns && tab.columnEnumValues.isEmpty {
+        // Ensure every ENUM/SET column has its allowed values loaded
+        let enumSetColumnNames: [String] = tab.resultColumns.enumerated().compactMap { i, name in
+            guard i < tab.columnTypes.count,
+                  tab.columnTypes[i].isEnumType || tab.columnTypes[i].isSetType else { return nil }
+            return name
+        }
+        if !enumSetColumnNames.isEmpty,
+           !enumSetColumnNames.allSatisfy({ tab.columnEnumValues[$0] != nil }) {
             return false
         }
         return true

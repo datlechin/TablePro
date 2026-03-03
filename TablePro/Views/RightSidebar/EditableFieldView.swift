@@ -27,6 +27,7 @@ struct EditableFieldView: View {
 
     @FocusState private var isFocused: Bool
     @State private var isHovered = false
+    @State private var isSetPopoverPresented = false
 
     private var placeholderText: String {
         if hasMultipleValues {
@@ -78,14 +79,17 @@ struct EditableFieldView: View {
 
     @ViewBuilder
     private var typeAwareEditor: some View {
-        if (columnTypeEnum.isEnumType || columnTypeEnum.isSetType),
-           let values = columnTypeEnum.enumValues, !values.isEmpty {
-            enumPicker(values: values)
-        } else if isPendingNull || isPendingDefault {
+        if isPendingNull || isPendingDefault {
             TextField(isPendingNull ? "NULL" : "DEFAULT", text: .constant(""))
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: DesignConstants.FontSize.small))
                 .disabled(true)
+        } else if columnTypeEnum.isEnumType,
+                  let values = columnTypeEnum.enumValues, !values.isEmpty {
+            enumPicker(values: values)
+        } else if columnTypeEnum.isSetType,
+                  let values = columnTypeEnum.enumValues, !values.isEmpty {
+            setPicker(values: values)
         } else if columnTypeEnum.isBooleanType {
             booleanPicker
         } else if isLongText || columnTypeEnum.isJsonType {
@@ -103,20 +107,49 @@ struct EditableFieldView: View {
     }
 
     private func enumPicker(values: [String]) -> some View {
-        let label: String = if isPendingNull {
-            "NULL"
-        } else if isPendingDefault {
-            "DEFAULT"
-        } else if value.isEmpty {
-            values.first ?? ""
-        } else {
-            value
-        }
+        let label = value.isEmpty ? (values.first ?? "") : value
         return dropdownField(label: label) {
             ForEach(values, id: \.self) { val in
                 Button(val) { value = val }
             }
         }
+    }
+
+    private func setPicker(values: [String]) -> some View {
+        let displayLabel = value.isEmpty ? String(localized: "No selection") : value
+        return Button {
+            isSetPopoverPresented = true
+        } label: {
+            Text(displayLabel)
+                .font(.system(size: DesignConstants.FontSize.small))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 4)
+        .frame(maxWidth: .infinity, minHeight: 22, alignment: .leading)
+        .background(.quinary, in: RoundedRectangle(cornerRadius: 5))
+        .popover(isPresented: $isSetPopoverPresented) {
+            SetPopoverContentView(
+                allowedValues: values,
+                initialSelections: parseSetSelections(from: value, allowed: values),
+                onCommit: { result in
+                    value = result ?? ""
+                },
+                onDismiss: {
+                    isSetPopoverPresented = false
+                }
+            )
+        }
+    }
+
+    private func parseSetSelections(from value: String, allowed: [String]) -> [String: Bool] {
+        let selected = Set(value.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) })
+        var dict: [String: Bool] = [:]
+        for val in allowed {
+            dict[val] = selected.contains(val)
+        }
+        return dict
     }
 
     private func dropdownField<Content: View>(
