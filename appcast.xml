@@ -3,48 +3,40 @@
     <channel>
         <title>TablePro</title>
         <item>
-            <title>0.12.0</title>
-            <pubDate>Tue, 03 Mar 2026 14:50:32 +0000</pubDate>
-            <sparkle:version>24</sparkle:version>
-            <sparkle:shortVersionString>0.12.0</sparkle:shortVersionString>
+            <title>0.13.0</title>
+            <pubDate>Wed, 04 Mar 2026 12:03:40 +0000</pubDate>
+            <sparkle:version>25</sparkle:version>
+            <sparkle:shortVersionString>0.13.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <description><![CDATA[<body style="font-family: -apple-system, sans-serif; font-size: 13px; padding: 8px;"><h3>Added</h3>
 <ul>
-<li>Amazon Redshift database support</li>
-<li>Deep link support via `tablepro://` URL scheme for opening connections, tables, queries, and importing connections</li>
-<li>"Copy as URL" context menu action on connections to copy connection details as a URL string (e.g., `mysql://user:pass@host/db`)</li>
-<li>Auto-show inspector option: automatically open the right sidebar when selecting a row (Settings > Data Grid)</li>
-<li>ENUM and SET columns now open their picker on single click with a chevron indicator, matching boolean column behavior</li>
-<li>Homebrew Cask installation via `brew install datlechin/tap/tablepro`</li>
+<li>Redis database support with key-value browsing, database-level sidebar (db0–db15), TTL management, and interactive CLI</li>
+<li>TablePlus-compatible database URL handling: `open -a TablePro "postgresql://user@host/db"` with support for schema switching, table opening, filters, color, and environment tags</li>
 </ul>
 <h3>Fixed</h3>
 <ul>
-<li>"Table not found" error when switching databases within the same connection (Cmd+K) while a table tab is open</li>
-<li>Right sidebar state now persists across native window-tabs instead of resetting to closed</li>
+<li>Fix sidebar search field and main content area background colors to blend with macOS vibrancy</li>
+<li>Fix POINT and geometry columns showing blank values in MySQL and wrong type label in sidebar</li>
 </ul></body>]]></description>
-            <enclosure url="https://github.com/datlechin/TablePro/releases/download/v0.12.0/TablePro-0.12.0-arm64.zip" length="22052432" type="application/octet-stream" sparkle:edSignature="ku/Uje6ZQyxKOJKEh8Io7/JffVEnBWoFsN+M+gPiG6HPZjleCYxH6t/htZsKI5KXhelDZ55lOSvvHy5ZtLCjAQ==" sparkle:architectures="arm64"/>
+            <enclosure url="https://github.com/datlechin/TablePro/releases/download/v0.13.0/TablePro-0.13.0-arm64.zip" length="22215385" type="application/octet-stream" sparkle:edSignature="f+ezhszehKdLQMwFiwWt6ThUJuEDBbGBeWtcM+J+2lBW5GDxxxy0C9+tnIxAfJ97vnQntrc/v9VKGRNfSOaGBQ==" sparkle:architectures="arm64"/>
         </item>
         <item>
-            <title>0.12.0</title>
-            <pubDate>Tue, 03 Mar 2026 14:50:32 +0000</pubDate>
-            <sparkle:version>24</sparkle:version>
-            <sparkle:shortVersionString>0.12.0</sparkle:shortVersionString>
+            <title>0.13.0</title>
+            <pubDate>Wed, 04 Mar 2026 12:03:40 +0000</pubDate>
+            <sparkle:version>25</sparkle:version>
+            <sparkle:shortVersionString>0.13.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <description><![CDATA[<body style="font-family: -apple-system, sans-serif; font-size: 13px; padding: 8px;"><h3>Added</h3>
 <ul>
-<li>Amazon Redshift database support</li>
-<li>Deep link support via `tablepro://` URL scheme for opening connections, tables, queries, and importing connections</li>
-<li>"Copy as URL" context menu action on connections to copy connection details as a URL string (e.g., `mysql://user:pass@host/db`)</li>
-<li>Auto-show inspector option: automatically open the right sidebar when selecting a row (Settings > Data Grid)</li>
-<li>ENUM and SET columns now open their picker on single click with a chevron indicator, matching boolean column behavior</li>
-<li>Homebrew Cask installation via `brew install datlechin/tap/tablepro`</li>
+<li>Redis database support with key-value browsing, database-level sidebar (db0–db15), TTL management, and interactive CLI</li>
+<li>TablePlus-compatible database URL handling: `open -a TablePro "postgresql://user@host/db"` with support for schema switching, table opening, filters, color, and environment tags</li>
 </ul>
 <h3>Fixed</h3>
 <ul>
-<li>"Table not found" error when switching databases within the same connection (Cmd+K) while a table tab is open</li>
-<li>Right sidebar state now persists across native window-tabs instead of resetting to closed</li>
+<li>Fix sidebar search field and main content area background colors to blend with macOS vibrancy</li>
+<li>Fix POINT and geometry columns showing blank values in MySQL and wrong type label in sidebar</li>
 </ul></body>]]></description>
-            <enclosure url="https://github.com/datlechin/TablePro/releases/download/v0.12.0/TablePro-0.12.0-x86_64.zip" length="22608859" type="application/octet-stream" sparkle:edSignature="BTAFfk3T3oL2lIJpx1FVX50naTJBC98qQfjluKMVCb53FCtN78iMvUcPaySRC4GxBz4GHRnB75OJ7u66epOiBg==" sparkle:architectures="x86_64"/>
+            <enclosure url="https://github.com/datlechin/TablePro/releases/download/v0.13.0/TablePro-0.13.0-x86_64.zip" length="22790246" type="application/octet-stream" sparkle:edSignature="f4/AWg360va5+fGRaKA08wjZt/NHjQZsVPNutP8MfBDRw6xrE1cR86KQjSAbU6l9dAozEKhURTIp911AUrwQAg==" sparkle:architectures="x86_64"/>
         </item>
     </channel>
 </rss>
