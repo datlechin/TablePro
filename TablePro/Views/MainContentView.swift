@@ -95,6 +95,27 @@ struct MainContentView: View {
         }
         toolbarSt.hasCompletedSetup = true
 
+        // Redis: set initial database name and create default tab eagerly to avoid
+        // toolbar flash and race condition with schema loading
+        if connection.type == .redis {
+            let dbIndex = connection.redisDatabase ?? Int(connection.database) ?? 0
+            toolbarSt.databaseName = String(dbIndex)
+
+            // Create db tab synchronously for connection-only / no-payload case
+            // so it exists before loadSchemaIfNeeded() triggers sidebar sync
+            if payload == nil || payload?.isConnectionOnly == true {
+                let dbName = "db\(dbIndex)"
+                tabMgr.addTableTab(
+                    tableName: dbName,
+                    databaseType: .redis,
+                    databaseName: String(dbIndex)
+                )
+                if let tabIndex = tabMgr.selectedTabIndex {
+                    tabMgr.tabs[tabIndex].pagination.reset()
+                }
+            }
+        }
+
         // Initialize single tab based on payload
         if let payload, !payload.isConnectionOnly {
             switch payload.tabType {
@@ -454,7 +475,9 @@ struct MainContentView: View {
         // If other windows already exist for this connection, this is a "new tab"
         // from the native macOS "+" button — just add a single empty query tab.
         if NativeTabRegistry.shared.hasOtherWindows(for: connection.id, excluding: windowId) {
-            tabManager.addTab(databaseName: connection.database)
+            if tabManager.tabs.isEmpty {
+                tabManager.addTab(databaseName: connection.database)
+            }
             return
         }
 
@@ -521,18 +544,8 @@ struct MainContentView: View {
                 }
             }
         } else if connection.type == .redis {
-            // Redis: auto-open the initial database on first connect (no persisted tabs)
-            let dbIndex = connection.redisDatabase ?? Int(connection.database) ?? 0
-            let dbName = "db\(dbIndex)"
-            tabManager.addTableTab(
-                tableName: dbName,
-                databaseType: .redis,
-                databaseName: String(dbIndex)
-            )
-            if let tabIndex = tabManager.selectedTabIndex {
-                tabManager.tabs[tabIndex].pagination.reset()
-                toolbarState.isTableTab = true
-            }
+            // Redis db tab was already created synchronously in init — just run the query
+            toolbarState.isTableTab = true
             if let session = DatabaseManager.shared.activeSessions[connection.id],
                session.isConnected
             {
