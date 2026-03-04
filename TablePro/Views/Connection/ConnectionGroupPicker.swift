@@ -2,12 +2,10 @@
 //  ConnectionGroupPicker.swift
 //  TablePro
 //
-//  Group selector dropdown for connection form
-//
 
 import SwiftUI
 
-/// Group selection for a connection — single Menu dropdown
+/// Group selection dropdown for the connection form
 struct ConnectionGroupPicker: View {
     @Binding var selectedGroupId: UUID?
     @State private var allGroups: [ConnectionGroup] = []
@@ -17,12 +15,17 @@ struct ConnectionGroupPicker: View {
 
     private var selectedGroup: ConnectionGroup? {
         guard let id = selectedGroupId else { return nil }
-        return allGroups.first { $0.id == id }
+        return groupStorage.group(for: id)
+    }
+
+    private func children(of parentId: UUID?) -> [ConnectionGroup] {
+        allGroups
+            .filter { $0.parentGroupId == parentId }
+            .sorted { $0.sortOrder < $1.sortOrder }
     }
 
     var body: some View {
         Menu {
-            // None option
             Button {
                 selectedGroupId = nil
             } label: {
@@ -35,42 +38,42 @@ struct ConnectionGroupPicker: View {
                 }
             }
 
-            Divider()
+            let rootGroups = children(of: nil)
+            if !rootGroups.isEmpty {
+                Divider()
+            }
 
-            // Available groups
-            ForEach(allGroups) { group in
-                Button {
-                    selectedGroupId = group.id
-                } label: {
-                    HStack {
-                        if !group.color.isDefault {
-                            Image(nsImage: colorDot(group.color.color))
-                        }
-                        Text(group.name)
-                        if selectedGroupId == group.id {
-                            Spacer()
-                            Image(systemName: "checkmark")
-                        }
-                    }
-                }
+            ForEach(rootGroups) { group in
+                groupMenuItem(group)
             }
 
             Divider()
 
-            // Create new group
             Button {
                 showingCreateSheet = true
             } label: {
                 Label("Create New Group...", systemImage: "plus.circle")
             }
+
+            if !allGroups.isEmpty {
+                Divider()
+
+                Menu("Manage Groups") {
+                    ForEach(allGroups) { group in
+                        Button(role: .destructive) {
+                            deleteGroup(group)
+                        } label: {
+                            Label("Delete \"\(group.name)\"", systemImage: "trash")
+                        }
+                    }
+                }
+            }
         } label: {
             HStack(spacing: 6) {
                 if let group = selectedGroup {
-                    if !group.color.isDefault {
-                        Circle()
-                            .fill(group.color.color)
-                            .frame(width: 8, height: 8)
-                    }
+                    Image(systemName: "folder.fill")
+                        .foregroundStyle(group.color.color)
+                        .font(.system(size: 10))
                     Text(group.name)
                         .foregroundStyle(.primary)
                 } else {
@@ -83,16 +86,68 @@ struct ConnectionGroupPicker: View {
         .fixedSize()
         .task { allGroups = groupStorage.loadGroups() }
         .sheet(isPresented: $showingCreateSheet) {
-            CreateGroupSheet { groupName, groupColor in
-                let group = ConnectionGroup(name: groupName, color: groupColor)
-                groupStorage.addGroup(group)
-                selectedGroupId = group.id
+            ConnectionGroupFormSheet { newGroup in
+                groupStorage.addGroup(newGroup)
+                selectedGroupId = newGroup.id
                 allGroups = groupStorage.loadGroups()
             }
         }
     }
 
-    /// Create a colored circle NSImage for use in menu items
+    // MARK: - Helpers
+
+    private func groupMenuItem(_ group: ConnectionGroup) -> AnyView {
+        let subgroups = children(of: group.id)
+        if subgroups.isEmpty {
+            return AnyView(
+                Button {
+                    selectedGroupId = group.id
+                } label: {
+                    HStack {
+                        Image(nsImage: colorDot(group.color.color))
+                        Text(group.name)
+                        if selectedGroupId == group.id {
+                            Spacer()
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            )
+        } else {
+            return AnyView(
+                Menu {
+                    Button {
+                        selectedGroupId = group.id
+                    } label: {
+                        HStack {
+                            Image(nsImage: colorDot(group.color.color))
+                            Text(group.name)
+                            if selectedGroupId == group.id {
+                                Spacer()
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+
+                    Divider()
+
+                    ForEach(subgroups) { child in
+                        groupMenuItem(child)
+                    }
+                } label: {
+                    HStack {
+                        Image(nsImage: colorDot(group.color.color))
+                        Text(group.name)
+                        if selectedGroupId == group.id {
+                            Spacer()
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            )
+        }
+    }
+
     private func colorDot(_ color: Color) -> NSImage {
         let size = NSSize(width: 10, height: 10)
         let image = NSImage(size: size, flipped: false) { rect in
@@ -103,94 +158,12 @@ struct ConnectionGroupPicker: View {
         image.isTemplate = false
         return image
     }
-}
 
-// MARK: - Create Group Sheet
-
-struct CreateGroupSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var groupName: String = ""
-    @State private var groupColor: ConnectionColor = .none
-    let onSave: (String, ConnectionColor) -> Void
-
-    var body: some View {
-        VStack(spacing: 16) {
-            Text("Create New Group")
-                .font(.headline)
-
-            TextField("Group name", text: $groupName)
-                .textFieldStyle(.roundedBorder)
-                .frame(width: 200)
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Color")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                GroupColorPicker(selectedColor: $groupColor)
-            }
-
-            HStack {
-                Button("Cancel") {
-                    dismiss()
-                }
-
-                Button("Create") {
-                    onSave(groupName, groupColor)
-                    dismiss()
-                }
-                .keyboardShortcut(.return)
-                .buttonStyle(.borderedProminent)
-                .disabled(groupName.trimmingCharacters(in: .whitespaces).isEmpty)
-            }
+    private func deleteGroup(_ group: ConnectionGroup) {
+        if selectedGroupId == group.id {
+            selectedGroupId = nil
         }
-        .padding(20)
-        .frame(width: 300)
-        .onExitCommand {
-            dismiss()
-        }
+        groupStorage.deleteGroup(group)
+        allGroups = groupStorage.loadGroups()
     }
-}
-
-// MARK: - Group Color Picker
-
-private struct GroupColorPicker: View {
-    @Binding var selectedColor: ConnectionColor
-
-    var body: some View {
-        HStack(spacing: 6) {
-            ForEach(ConnectionColor.allCases) { color in
-                Circle()
-                    .fill(color == .none ? Color(nsColor: .quaternaryLabelColor) : color.color)
-                    .frame(width: DesignConstants.IconSize.medium, height: DesignConstants.IconSize.medium)
-                    .overlay(
-                        Circle()
-                            .stroke(Color.primary, lineWidth: selectedColor == color ? 2 : 0)
-                            .frame(
-                                width: DesignConstants.IconSize.large,
-                                height: DesignConstants.IconSize.large
-                            )
-                    )
-                    .onTapGesture {
-                        selectedColor = color
-                    }
-            }
-        }
-    }
-}
-
-#Preview {
-    struct PreviewWrapper: View {
-        @State private var groupId: UUID?
-
-        var body: some View {
-            VStack(spacing: 20) {
-                ConnectionGroupPicker(selectedGroupId: $groupId)
-                Text("Selected: \(groupId?.uuidString ?? "none")")
-            }
-            .padding()
-            .frame(width: 400)
-        }
-    }
-
-    return PreviewWrapper()
 }

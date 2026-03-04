@@ -228,7 +228,7 @@ struct ConnectionFormView: View {
                     ConnectionTagEditor(selectedTagId: $selectedTagId)
                 }
                 LabeledContent(String(localized: "Group")) {
-                    ConnectionGroupEditor(selectedGroupId: $selectedGroupId)
+                    ConnectionGroupPicker(selectedGroupId: $selectedGroupId)
                 }
                 Toggle(String(localized: "Read-Only"), isOn: $isReadOnly)
                     .help("Prevent write operations (INSERT, UPDATE, DELETE, DROP, etc.)")

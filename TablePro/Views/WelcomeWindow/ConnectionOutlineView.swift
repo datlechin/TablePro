@@ -55,6 +55,7 @@ struct ConnectionOutlineView: NSViewRepresentable {
     var onDeleteGroup: ((ConnectionGroup) -> Void)?
     var onEditConnection: ((DatabaseConnection) -> Void)?
     var onDuplicateConnection: ((DatabaseConnection) -> Void)?
+    var onCopyConnectionURL: ((DatabaseConnection) -> Void)?
     var onDeleteConnection: ((DatabaseConnection) -> Void)?
     var onMoveConnectionToGroup: ((DatabaseConnection, UUID?) -> Void)?
 
@@ -506,6 +507,7 @@ extension ConnectionOutlineView {
                     conn.name.lowercased().contains(query)
                         || conn.host.lowercased().contains(query)
                         || conn.database.lowercased().contains(query)
+                        || parent.groups.first(where: { $0.id == conn.groupId })?.name.lowercased().contains(query) == true
                 }
                 .sorted { $0.sortOrder < $1.sortOrder }
 
@@ -1050,6 +1052,7 @@ extension ConnectionOutlineView {
                 keyEquivalent: ""
             )
             newConnItem.target = self
+            newConnItem.image = NSImage(systemSymbolName: "plus", accessibilityDescription: nil)
             menu.addItem(newConnItem)
 
             let newSubgroupItem = NSMenuItem(
@@ -1059,6 +1062,7 @@ extension ConnectionOutlineView {
             )
             newSubgroupItem.target = self
             newSubgroupItem.representedObject = group.id
+            newSubgroupItem.image = NSImage(systemSymbolName: "folder.badge.plus", accessibilityDescription: nil)
             menu.addItem(newSubgroupItem)
 
             menu.addItem(.separator())
@@ -1070,6 +1074,7 @@ extension ConnectionOutlineView {
             )
             editItem.target = self
             editItem.representedObject = group
+            editItem.image = NSImage(systemSymbolName: "pencil", accessibilityDescription: nil)
             menu.addItem(editItem)
 
             menu.addItem(.separator())
@@ -1081,6 +1086,7 @@ extension ConnectionOutlineView {
             )
             deleteItem.target = self
             deleteItem.representedObject = group
+            deleteItem.image = NSImage(systemSymbolName: "trash", accessibilityDescription: nil)
             deleteItem.setDestructiveStyle()
             menu.addItem(deleteItem)
 
@@ -1098,6 +1104,7 @@ extension ConnectionOutlineView {
             )
             connectItem.target = self
             connectItem.representedObject = connection
+            connectItem.image = NSImage(systemSymbolName: "play.fill", accessibilityDescription: nil)
             menu.addItem(connectItem)
 
             menu.addItem(.separator())
@@ -1109,6 +1116,7 @@ extension ConnectionOutlineView {
             )
             editItem.target = self
             editItem.representedObject = connection
+            editItem.image = NSImage(systemSymbolName: "pencil", accessibilityDescription: nil)
             menu.addItem(editItem)
 
             let duplicateItem = NSMenuItem(
@@ -1118,7 +1126,18 @@ extension ConnectionOutlineView {
             )
             duplicateItem.target = self
             duplicateItem.representedObject = connection
+            duplicateItem.image = NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: nil)
             menu.addItem(duplicateItem)
+
+            let copyURLItem = NSMenuItem(
+                title: String(localized: "Copy as URL"),
+                action: #selector(contextMenuCopyConnectionURL(_:)),
+                keyEquivalent: ""
+            )
+            copyURLItem.target = self
+            copyURLItem.representedObject = connection
+            copyURLItem.image = NSImage(systemSymbolName: "link", accessibilityDescription: nil)
+            menu.addItem(copyURLItem)
 
             menu.addItem(.separator())
 
@@ -1149,6 +1168,7 @@ extension ConnectionOutlineView {
 
             let moveItem = NSMenuItem(title: String(localized: "Move to Group"), action: nil, keyEquivalent: "")
             moveItem.submenu = moveMenu
+            moveItem.image = NSImage(systemSymbolName: "folder", accessibilityDescription: nil)
             menu.addItem(moveItem)
 
             menu.addItem(.separator())
@@ -1160,6 +1180,7 @@ extension ConnectionOutlineView {
             )
             deleteItem.target = self
             deleteItem.representedObject = connection
+            deleteItem.image = NSImage(systemSymbolName: "trash", accessibilityDescription: nil)
             deleteItem.setDestructiveStyle()
             menu.addItem(deleteItem)
 
@@ -1175,6 +1196,7 @@ extension ConnectionOutlineView {
                 keyEquivalent: ""
             )
             newConnItem.target = self
+            newConnItem.image = NSImage(systemSymbolName: "plus", accessibilityDescription: nil)
             menu.addItem(newConnItem)
 
             let newGroupItem = NSMenuItem(
@@ -1183,6 +1205,7 @@ extension ConnectionOutlineView {
                 keyEquivalent: ""
             )
             newGroupItem.target = self
+            newGroupItem.image = NSImage(systemSymbolName: "folder.badge.plus", accessibilityDescription: nil)
             menu.addItem(newGroupItem)
 
             return menu
@@ -1226,6 +1249,11 @@ extension ConnectionOutlineView {
         @objc private func contextMenuDuplicateConnection(_ sender: NSMenuItem) {
             guard let connection = sender.representedObject as? DatabaseConnection else { return }
             parent.onDuplicateConnection?(connection)
+        }
+
+        @objc private func contextMenuCopyConnectionURL(_ sender: NSMenuItem) {
+            guard let connection = sender.representedObject as? DatabaseConnection else { return }
+            parent.onCopyConnectionURL?(connection)
         }
 
         @objc private func contextMenuDeleteConnection(_ sender: NSMenuItem) {

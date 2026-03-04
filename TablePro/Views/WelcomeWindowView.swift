@@ -42,6 +42,8 @@ struct WelcomeWindowView: View {
             connection.name.localizedCaseInsensitiveContains(searchText)
                 || connection.host.localizedCaseInsensitiveContains(searchText)
                 || connection.database.localizedCaseInsensitiveContains(searchText)
+                || groups.first(where: { $0.id == connection.groupId })?.name
+                    .localizedCaseInsensitiveContains(searchText) == true
         }
     }
 
@@ -201,6 +203,24 @@ struct WelcomeWindowView: View {
                 .buttonStyle(.plain)
                 .help("New Connection (⌘N)")
 
+                Button(action: {
+                    groupFormContext = GroupFormContext(group: nil, parentGroupId: nil)
+                }) {
+                    Image(systemName: "folder.badge.plus")
+                        .font(.system(size: DesignConstants.FontSize.medium, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .frame(
+                            width: DesignConstants.IconSize.extraLarge,
+                            height: DesignConstants.IconSize.extraLarge
+                        )
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color(nsColor: .quaternaryLabelColor))
+                        )
+                }
+                .buttonStyle(.plain)
+                .help(String(localized: "New Group"))
+
                 HStack(spacing: 6) {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: DesignConstants.FontSize.medium))
@@ -292,6 +312,16 @@ struct WelcomeWindowView: View {
             },
             onDuplicateConnection: { connection in
                 duplicateConnection(connection)
+            },
+            onCopyConnectionURL: { connection in
+                Task.detached {
+                    let pw = ConnectionStorage.shared.loadPassword(for: connection.id)
+                    let sshPw = ConnectionStorage.shared.loadSSHPassword(for: connection.id)
+                    let url = ConnectionURLFormatter.format(connection, password: pw, sshPassword: sshPw)
+                    await MainActor.run {
+                        ClipboardService.shared.writeText(url)
+                    }
+                }
             },
             onDeleteConnection: { connection in
                 connectionToDelete = connection
