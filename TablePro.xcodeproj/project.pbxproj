@@ -393,8 +393,7 @@
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
-					"/opt/homebrew/opt/mariadb-connector-c/include/mariadb",
-					"/usr/local/opt/mariadb-connector-c/include/mariadb",
+					"$(PROJECT_DIR)/TablePro/Core/Database/CMariaDB/include",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibPQ/include",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc/include",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc/include/libbson-1.0",
@@ -486,8 +485,7 @@
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
-					"/opt/homebrew/opt/mariadb-connector-c/include/mariadb",
-					"/usr/local/opt/mariadb-connector-c/include/mariadb",
+					"$(PROJECT_DIR)/TablePro/Core/Database/CMariaDB/include",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibPQ/include",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc/include",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc/include/libbson-1.0",
@@ -560,8 +558,7 @@
 				DEVELOPMENT_TEAM = D7HJ5TFYCU;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
-					"/opt/homebrew/opt/mariadb-connector-c/include/mariadb",
-					"/usr/local/opt/mariadb-connector-c/include/mariadb",
+					"$(PROJECT_DIR)/TablePro/Core/Database/CMariaDB/include",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibPQ/include",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc/include",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc/include/libbson-1.0",
@@ -591,8 +588,7 @@
 				DEVELOPMENT_TEAM = D7HJ5TFYCU;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
-					"/opt/homebrew/opt/mariadb-connector-c/include/mariadb",
-					"/usr/local/opt/mariadb-connector-c/include/mariadb",
+					"$(PROJECT_DIR)/TablePro/Core/Database/CMariaDB/include",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibPQ/include",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc/include",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc/include/libbson-1.0",
