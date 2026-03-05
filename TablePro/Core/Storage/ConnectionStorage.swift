@@ -358,6 +358,9 @@ private struct StoredConnection: Codable {
     // AI policy
     let aiPolicy: String?
 
+    // MSSQL schema
+    let mssqlSchema: String?
+
     init(from connection: DatabaseConnection) {
         self.id = connection.id
         self.name = connection.name
@@ -392,6 +395,9 @@ private struct StoredConnection: Codable {
 
         // AI policy
         self.aiPolicy = connection.aiPolicy?.rawValue
+
+        // MSSQL schema
+        self.mssqlSchema = connection.mssqlSchema
     }
 
     // Custom decoder to handle migration from old format
@@ -428,6 +434,7 @@ private struct StoredConnection: Codable {
         groupId = try container.decodeIfPresent(String.self, forKey: .groupId)
         isReadOnly = try container.decodeIfPresent(Bool.self, forKey: .isReadOnly) ?? false
         aiPolicy = try container.decodeIfPresent(String.self, forKey: .aiPolicy)
+        mssqlSchema = try container.decodeIfPresent(String.self, forKey: .mssqlSchema)
     }
 
     func toConnection() -> DatabaseConnection {
@@ -467,7 +474,8 @@ private struct StoredConnection: Codable {
             tagId: parsedTagId,
             groupId: parsedGroupId,
             isReadOnly: isReadOnly,
-            aiPolicy: parsedAIPolicy
+            aiPolicy: parsedAIPolicy,
+            mssqlSchema: mssqlSchema
         )
     }
 }

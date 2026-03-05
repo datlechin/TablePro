@@ -7303,6 +7303,9 @@
         }
       }
     },
+    "Schema" : {
+
+    },
     "Search databases..." : {
       "localizations" : {
         "vi" : {
@@ -7754,6 +7757,9 @@
           }
         }
       }
+    },
+    "SQL Server" : {
+
     },
     "SQLite is file-based" : {
       "localizations" : {

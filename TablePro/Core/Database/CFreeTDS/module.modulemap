@@ -1,0 +1,4 @@
+module CFreeTDS {
+    umbrella header "CFreeTDS.h"
+    export *
+}

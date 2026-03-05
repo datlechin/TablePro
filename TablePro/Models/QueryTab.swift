@@ -569,6 +569,9 @@ final class QueryTabManager {
             query = "db[\"\(escaped)\"].find({}).limit(\(pageSize))"
         } else if databaseType == .redis {
             query = "SCAN 0 MATCH * COUNT \(pageSize)"
+        } else if databaseType == .mssql {
+            let quotedName = databaseType.quoteIdentifier(tableName)
+            query = "SELECT * FROM \(quotedName) ORDER BY (SELECT NULL) OFFSET 0 ROWS FETCH NEXT \(pageSize) ROWS ONLY;"
         } else {
             let quotedName = databaseType.quoteIdentifier(tableName)
             query = "SELECT * FROM \(quotedName) LIMIT \(pageSize);"
@@ -606,6 +609,9 @@ final class QueryTabManager {
             query = "db[\"\(escaped)\"].find({}).limit(\(pageSize))"
         } else if databaseType == .redis {
             query = "SCAN 0 MATCH * COUNT \(pageSize)"
+        } else if databaseType == .mssql {
+            let quotedName = databaseType.quoteIdentifier(tableName)
+            query = "SELECT * FROM \(quotedName) ORDER BY (SELECT NULL) OFFSET 0 ROWS FETCH NEXT \(pageSize) ROWS ONLY;"
         } else {
             let quotedName = databaseType.quoteIdentifier(tableName)
             query = "SELECT * FROM \(quotedName) LIMIT \(pageSize);"

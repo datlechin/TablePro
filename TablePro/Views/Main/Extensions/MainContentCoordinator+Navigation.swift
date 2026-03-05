@@ -207,6 +207,23 @@ extension MainContentCoordinator {
             AND name NOT LIKE 'sqlite_%'
             ORDER BY name
             """
+        case .mssql:
+            sql = """
+            SELECT
+                s.name as schema_name,
+                t.name as name,
+                CASE WHEN v.object_id IS NOT NULL THEN 'VIEW' ELSE 'TABLE' END as kind,
+                p.rows as estimated_rows,
+                CAST(ROUND(SUM(a.total_pages) * 8 / 1024.0, 2) AS VARCHAR) + ' MB' as total_size
+            FROM sys.tables t
+            INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
+            INNER JOIN sys.indexes i ON t.object_id = i.object_id AND i.index_id IN (0, 1)
+            INNER JOIN sys.partitions p ON i.object_id = p.object_id AND i.index_id = p.index_id
+            INNER JOIN sys.allocation_units a ON p.partition_id = a.container_id
+            LEFT JOIN sys.views v ON t.object_id = v.object_id
+            GROUP BY s.name, t.name, p.rows, v.object_id
+            ORDER BY t.name
+            """
         case .mongodb:
             tabManager.addTab(
                 initialQuery: "db.runCommand({\"listCollections\": 1, \"nameOnly\": false})",
@@ -321,6 +338,31 @@ extension MainContentCoordinator {
 
                 // Force sidebar reload — posting .refreshData ensures loadTables() runs
                 // even when session.tables was already [] (e.g. switching from empty schema back to public)
+                NotificationCenter.default.post(name: .refreshData, object: nil)
+            } else if connection.type == .mssql {
+                if let mssqlDriver = driver as? MSSQLDriver {
+                    try await mssqlDriver.switchDatabase(to: database)
+                }
+
+                if let mssqlMeta = DatabaseManager.shared.metadataDriver(for: connectionId) as? MSSQLDriver {
+                    try? await mssqlMeta.switchDatabase(to: database)
+                }
+
+                DatabaseManager.shared.updateSession(connectionId) { session in
+                    session.currentDatabase = database
+                    session.currentSchema = "dbo"
+                    session.tables = []
+                }
+                AppSettingsStorage.shared.saveLastDatabase(database, for: connectionId)
+
+                toolbarState.databaseName = database
+
+                closeSiblingNativeWindows()
+                tabManager.tabs = []
+                tabManager.selectedTabId = nil
+
+                await loadSchema()
+
                 NotificationCenter.default.post(name: .refreshData, object: nil)
             } else if connection.type == .mongodb {
                 // MongoDB: update the driver's connection so fetchTables/execute use the new database

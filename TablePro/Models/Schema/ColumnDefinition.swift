@@ -57,7 +57,8 @@ struct EditableColumnDefinition: Hashable, Codable, Identifiable {
             dataType: columnInfo.dataType,
             isNullable: columnInfo.isNullable,
             defaultValue: columnInfo.defaultValue,
-            autoIncrement: columnInfo.extra?.contains("auto_increment") ?? false,
+            autoIncrement: columnInfo.extra?.lowercased().contains("auto_increment") == true
+                || columnInfo.extra == "IDENTITY",
             unsigned: columnInfo.dataType.contains("unsigned"),
             comment: columnInfo.comment,
             collation: columnInfo.collation,

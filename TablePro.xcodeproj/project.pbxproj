@@ -395,6 +395,7 @@
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/TablePro/Core/Database/CMariaDB/include",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibPQ/include",
+					"$(PROJECT_DIR)/TablePro/Core/Database/CFreeTDS/include",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc/include",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc/include/libbson-1.0",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc/include/libmongoc-1.0",
@@ -433,6 +434,8 @@
 					"$(PROJECT_DIR)/Libs/libhiredis.a",
 					"-force_load",
 					"$(PROJECT_DIR)/Libs/libhiredis_ssl.a",
+					"$(PROJECT_DIR)/Libs/libsybdb.a",
+					"-liconv",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.TablePro;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -450,7 +453,7 @@
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_INCLUDE_PATHS = "$(PROJECT_DIR)/TablePro/Core/Database/CMariaDB $(PROJECT_DIR)/TablePro/Core/Database/CLibPQ $(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc $(PROJECT_DIR)/TablePro/Core/Database/CRedis";
+				SWIFT_INCLUDE_PATHS = "$(PROJECT_DIR)/TablePro/Core/Database/CMariaDB $(PROJECT_DIR)/TablePro/Core/Database/CLibPQ $(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc $(PROJECT_DIR)/TablePro/Core/Database/CRedis $(PROJECT_DIR)/TablePro/Core/Database/CFreeTDS";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.9;
 				XROS_DEPLOYMENT_TARGET = 26.2;
@@ -487,6 +490,7 @@
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/TablePro/Core/Database/CMariaDB/include",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibPQ/include",
+					"$(PROJECT_DIR)/TablePro/Core/Database/CFreeTDS/include",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc/include",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc/include/libbson-1.0",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc/include/libmongoc-1.0",
@@ -525,6 +529,8 @@
 					"$(PROJECT_DIR)/Libs/libhiredis.a",
 					"-force_load",
 					"$(PROJECT_DIR)/Libs/libhiredis_ssl.a",
+					"$(PROJECT_DIR)/Libs/libsybdb.a",
+					"-liconv",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.TablePro;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -542,7 +548,7 @@
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_INCLUDE_PATHS = "$(PROJECT_DIR)/TablePro/Core/Database/CMariaDB $(PROJECT_DIR)/TablePro/Core/Database/CLibPQ $(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc $(PROJECT_DIR)/TablePro/Core/Database/CRedis";
+				SWIFT_INCLUDE_PATHS = "$(PROJECT_DIR)/TablePro/Core/Database/CMariaDB $(PROJECT_DIR)/TablePro/Core/Database/CLibPQ $(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc $(PROJECT_DIR)/TablePro/Core/Database/CRedis $(PROJECT_DIR)/TablePro/Core/Database/CFreeTDS";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.9;
 				XROS_DEPLOYMENT_TARGET = 26.2;
@@ -560,6 +566,7 @@
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/TablePro/Core/Database/CMariaDB/include",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibPQ/include",
+					"$(PROJECT_DIR)/TablePro/Core/Database/CFreeTDS/include",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc/include",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc/include/libbson-1.0",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc/include/libmongoc-1.0",
@@ -572,7 +579,7 @@
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_INCLUDE_PATHS = "$(PROJECT_DIR)/TablePro/Core/Database/CMariaDB $(PROJECT_DIR)/TablePro/Core/Database/CLibPQ $(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc $(PROJECT_DIR)/TablePro/Core/Database/CRedis";
+				SWIFT_INCLUDE_PATHS = "$(PROJECT_DIR)/TablePro/Core/Database/CMariaDB $(PROJECT_DIR)/TablePro/Core/Database/CLibPQ $(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc $(PROJECT_DIR)/TablePro/Core/Database/CRedis $(PROJECT_DIR)/TablePro/Core/Database/CFreeTDS";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TablePro.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TablePro";
@@ -590,6 +597,7 @@
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/TablePro/Core/Database/CMariaDB/include",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibPQ/include",
+					"$(PROJECT_DIR)/TablePro/Core/Database/CFreeTDS/include",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc/include",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc/include/libbson-1.0",
 					"$(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc/include/libmongoc-1.0",
@@ -602,7 +610,7 @@
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_INCLUDE_PATHS = "$(PROJECT_DIR)/TablePro/Core/Database/CMariaDB $(PROJECT_DIR)/TablePro/Core/Database/CLibPQ $(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc $(PROJECT_DIR)/TablePro/Core/Database/CRedis";
+				SWIFT_INCLUDE_PATHS = "$(PROJECT_DIR)/TablePro/Core/Database/CMariaDB $(PROJECT_DIR)/TablePro/Core/Database/CLibPQ $(PROJECT_DIR)/TablePro/Core/Database/CLibMongoc $(PROJECT_DIR)/TablePro/Core/Database/CRedis $(PROJECT_DIR)/TablePro/Core/Database/CFreeTDS";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TablePro.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TablePro";

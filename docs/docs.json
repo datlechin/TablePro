@@ -32,12 +32,14 @@
                 "group": "Database Connections",
                 "pages": [
                   "databases/overview",
+                  "databases/connection-urls",
                   "databases/mysql",
                   "databases/postgresql",
                   "databases/sqlite",
                   "databases/mongodb",
                   "databases/redis",
                   "databases/redshift",
+                  "databases/mssql",
                   "databases/ssh-tunneling"
                 ]
               },
@@ -118,12 +120,14 @@
                 "group": "Kết nối cơ sở dữ liệu",
                 "pages": [
                   "vi/databases/overview",
+                  "vi/databases/connection-urls",
                   "vi/databases/mysql",
                   "vi/databases/postgresql",
                   "vi/databases/sqlite",
                   "vi/databases/mongodb",
                   "vi/databases/redis",
                   "vi/databases/redshift",
+                  "vi/databases/mssql",
                   "vi/databases/ssh-tunneling"
                 ]
               },

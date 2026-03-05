@@ -52,6 +52,13 @@ struct TableQueryBuilder {
             )
         }
 
+        if databaseType == .mssql {
+            return buildMSSQLBaseQuery(
+                tableName: tableName, sortState: sortState,
+                columns: columns, limit: limit, offset: offset
+            )
+        }
+
         let quotedTable = databaseType.quoteIdentifier(tableName)
         var query = "SELECT * FROM \(quotedTable)"
 
@@ -103,6 +110,18 @@ struct TableQueryBuilder {
                 filters: filters,
                 logicMode: logicMode,
                 limit: limit
+            )
+        }
+
+        if databaseType == .mssql {
+            return buildMSSQLFilteredQuery(
+                tableName: tableName,
+                filters: filters,
+                logicMode: logicMode,
+                sortState: sortState,
+                columns: columns,
+                limit: limit,
+                offset: offset
             )
         }
 
@@ -618,6 +637,47 @@ struct TableQueryBuilder {
             return "CAST(\(column) AS CHAR) LIKE '%\(searchText)%'"
         case .sqlite, .mongodb, .redis:
             return "\(column) LIKE '%\(searchText)%' ESCAPE '\\'"
+        case .mssql:
+            return "CAST(\(column) AS NVARCHAR(MAX)) LIKE '%\(searchText)%' ESCAPE '\\'"
         }
+    }
+
+    // MARK: - MSSQL Query Helpers
+
+    private func buildMSSQLBaseQuery(
+        tableName: String,
+        sortState: SortState?,
+        columns: [String],
+        limit: Int,
+        offset: Int
+    ) -> String {
+        let quotedTable = databaseType.quoteIdentifier(tableName)
+        var query = "SELECT * FROM \(quotedTable)"
+        let orderBy = buildOrderByClause(sortState: sortState, columns: columns)
+            ?? "ORDER BY (SELECT NULL)"
+        query += " \(orderBy) OFFSET \(offset) ROWS FETCH NEXT \(limit) ROWS ONLY"
+        return query
+    }
+
+    private func buildMSSQLFilteredQuery(
+        tableName: String,
+        filters: [TableFilter],
+        logicMode: FilterLogicMode,
+        sortState: SortState?,
+        columns: [String],
+        limit: Int,
+        offset: Int
+    ) -> String {
+        let quotedTable = databaseType.quoteIdentifier(tableName)
+        var query = "SELECT * FROM \(quotedTable)"
+        let generator = FilterSQLGenerator(databaseType: databaseType)
+        let whereClause = generator.generateWhereClause(from: filters, logicMode: logicMode)
+        if !whereClause.isEmpty {
+            query += " \(whereClause)"
+        }
+        let orderBy = buildOrderByClause(sortState: sortState, columns: columns)
+            ?? "ORDER BY (SELECT NULL)"
+        query += " \(orderBy) OFFSET \(offset) ROWS FETCH NEXT \(limit) ROWS ONLY"
+        return query
     }
 }

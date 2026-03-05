@@ -68,6 +68,9 @@ struct ExportDialog: View {
             if connection.type == .redis && config.format == .sql {
                 config.format = .json
             }
+            if connection.type == .mssql && config.format == .mql {
+                config.format = .sql
+            }
         }
         .onExitCommand {
             if !isExporting {
@@ -499,6 +502,33 @@ struct ExportDialog: View {
                         tables: tableItems,
                         isExpanded: true
                     ))
+                }
+
+            case .mssql:
+                // MSSQL: fetch schemas within current database
+                let schemas = try await driver.fetchSchemas()
+                for schema in schemas {
+                    let tables = try await fetchTablesForSchema(schema, driver: driver)
+                    let tableItems = tables.map { table in
+                        ExportTableItem(
+                            name: table.name,
+                            databaseName: schema,
+                            type: table.type,
+                            isSelected: schema == "dbo" && preselectedTables.contains(table.name)
+                        )
+                    }
+                    if !tableItems.isEmpty {
+                        items.append(ExportDatabaseItem(
+                            name: schema,
+                            tables: tableItems,
+                            isExpanded: schema == "dbo"
+                        ))
+                    }
+                }
+                items.sort { item1, item2 in
+                    if item1.name == "dbo" { return true }
+                    if item2.name == "dbo" { return false }
+                    return item1.name < item2.name
                 }
 
             case .mysql, .mariadb:

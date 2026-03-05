@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Microsoft SQL Server (MSSQL) database support via FreeTDS
+
 ### Fixed
+
+- Fix MSSQL connection losing selected database after disconnect and reconnect when no default database is configured
 
 - Fix high CPU/RAM on app launch from blocking storage init, unsynchronized health monitors, and excessive retry loops
 - Fix O(n log n) row cache eviction in RowProvider by replacing sorted eviction with O(n) distance-threshold filter

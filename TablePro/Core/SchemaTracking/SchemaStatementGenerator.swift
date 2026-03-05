@@ -128,7 +128,8 @@ struct SchemaStatementGenerator {
         let tableQuoted = databaseType.quoteIdentifier(tableName)
         let columnDef = try buildEditableColumnDefinition(column)
 
-        let sql = "ALTER TABLE \(tableQuoted) ADD COLUMN \(columnDef)"
+        let keyword = databaseType == .mssql ? "ADD" : "ADD COLUMN"
+        let sql = "ALTER TABLE \(tableQuoted) \(keyword) \(columnDef)"
         return SchemaStatement(
             sql: sql,
             description: "Add column '\(column.name)'",
@@ -195,6 +196,28 @@ struct SchemaStatementGenerator {
                 isDestructive: old.dataType != new.dataType
             )
 
+        case .mssql:
+            var statements: [String] = []
+            let oldQuoted = databaseType.quoteIdentifier(old.name)
+            let newQuoted = databaseType.quoteIdentifier(new.name)
+
+            if old.name != new.name {
+                let tableAndOld = "\(tableName).\(old.name)"
+                statements.append("EXEC sp_rename '\(tableAndOld)', '\(new.name)', 'COLUMN'")
+            }
+
+            if old.dataType != new.dataType || old.isNullable != new.isNullable {
+                let nullClause = new.isNullable ? "NULL" : "NOT NULL"
+                statements.append("ALTER TABLE \(tableQuoted) ALTER COLUMN \(newQuoted) \(new.dataType) \(nullClause)")
+            }
+
+            let sql = statements.map { $0.hasSuffix(";") ? $0 : $0 + ";" }.joined(separator: "\n")
+            return SchemaStatement(
+                sql: sql,
+                description: "Modify column '\(old.name)' to '\(new.name)'",
+                isDestructive: old.dataType != new.dataType
+            )
+
         case .sqlite, .mongodb, .redis:
             // SQLite doesn't support ALTER COLUMN - requires table recreation
             // MongoDB/Redis don't use SQL ALTER TABLE
@@ -250,6 +273,8 @@ struct SchemaStatementGenerator {
                 parts.append("AUTOINCREMENT")
             case .mongodb, .redis:
                 break  // MongoDB/Redis auto-generate IDs
+            case .mssql:
+                parts[1] = "INT IDENTITY(1,1)"
             }
         }
 
@@ -268,8 +293,8 @@ struct SchemaStatementGenerator {
             case .postgresql, .redshift:
                 // PostgreSQL comments are set via separate COMMENT statement
                 break
-            case .sqlite, .mongodb, .redis:
-                // SQLite/MongoDB/Redis don't support column comments
+            case .sqlite, .mongodb, .redis, .mssql:
+                // SQLite/MongoDB/Redis/MSSQL don't support inline column comments
                 break
             }
         }
@@ -296,7 +321,7 @@ struct SchemaStatementGenerator {
             let indexTypeClause = index.type == .btree ? "" : "USING \(index.type.rawValue)"
             sql = "CREATE \(uniqueKeyword)INDEX \(indexQuoted) ON \(tableQuoted) \(indexTypeClause) (\(columnsQuoted))"
 
-        case .sqlite, .mongodb, .redis:
+        case .sqlite, .mongodb, .redis, .mssql:
             sql = "CREATE \(uniqueKeyword)INDEX \(indexQuoted) ON \(tableQuoted) (\(columnsQuoted))"
         }
 
@@ -331,6 +356,9 @@ struct SchemaStatementGenerator {
 
         case .postgresql, .redshift, .sqlite, .mongodb, .redis:
             sql = "DROP INDEX \(indexQuoted)"
+        case .mssql:
+            let tableQuoted = databaseType.quoteIdentifier(tableName)
+            sql = "DROP INDEX \(indexQuoted) ON \(tableQuoted)"
         }
 
         return SchemaStatement(
@@ -387,7 +415,7 @@ struct SchemaStatementGenerator {
         case .mysql, .mariadb:
             sql = "ALTER TABLE \(tableQuoted) DROP FOREIGN KEY \(fkQuoted)"
 
-        case .postgresql, .redshift:
+        case .postgresql, .redshift, .mssql:
             sql = "ALTER TABLE \(tableQuoted) DROP CONSTRAINT \(fkQuoted)"
         case .sqlite, .mongodb, .redis:
             throw DatabaseError.unsupportedOperation
@@ -416,6 +444,13 @@ struct SchemaStatementGenerator {
         case .postgresql, .redshift:
             // Use actual constraint name if available, otherwise fall back to convention
             let pkName = primaryKeyConstraintName ?? "\(tableName)_pkey"
+            sql = """
+            ALTER TABLE \(tableQuoted) DROP CONSTRAINT \(databaseType.quoteIdentifier(pkName));
+            ALTER TABLE \(tableQuoted) ADD PRIMARY KEY (\(newColumnsQuoted));
+            """
+
+        case .mssql:
+            let pkName = primaryKeyConstraintName ?? "PK_\(tableName)"
             sql = """
             ALTER TABLE \(tableQuoted) DROP CONSTRAINT \(databaseType.quoteIdentifier(pkName));
             ALTER TABLE \(tableQuoted) ADD PRIMARY KEY (\(newColumnsQuoted));

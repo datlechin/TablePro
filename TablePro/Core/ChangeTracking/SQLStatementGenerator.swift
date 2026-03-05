@@ -122,8 +122,8 @@ struct SQLStatementGenerator {
         switch databaseType {
         case .postgresql, .redshift:
             return "$\(index + 1)"  // PostgreSQL uses $1, $2, etc.
-        case .mysql, .mariadb, .sqlite, .mongodb, .redis:
-            return "?"  // MySQL, MariaDB, SQLite, and MongoDB use ?
+        case .mysql, .mariadb, .sqlite, .mongodb, .redis, .mssql:
+            return "?"  // MySQL, MariaDB, SQLite, MongoDB, and MSSQL use ?
         }
     }
 

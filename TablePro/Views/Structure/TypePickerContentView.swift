@@ -23,6 +23,8 @@ enum DataTypeCategory: String, CaseIterable {
                 return ["TINYINT", "SMALLINT", "MEDIUMINT", "INT", "BIGINT", "DECIMAL", "NUMERIC", "FLOAT", "DOUBLE", "BIT"]
             case .postgresql, .redshift:
                 return ["SMALLINT", "INTEGER", "BIGINT", "DECIMAL", "NUMERIC", "REAL", "DOUBLE PRECISION", "SMALLSERIAL", "SERIAL", "BIGSERIAL"]
+            case .mssql:
+                return ["TINYINT", "SMALLINT", "INT", "BIGINT", "DECIMAL", "NUMERIC", "FLOAT", "REAL", "MONEY", "SMALLMONEY", "BIT"]
             case .sqlite:
                 return ["INTEGER", "REAL", "NUMERIC"]
             case .mongodb:
@@ -36,6 +38,8 @@ enum DataTypeCategory: String, CaseIterable {
                 return ["CHAR", "VARCHAR", "TINYTEXT", "TEXT", "MEDIUMTEXT", "LONGTEXT"]
             case .postgresql, .redshift:
                 return ["CHAR", "VARCHAR", "TEXT"]
+            case .mssql:
+                return ["CHAR", "VARCHAR", "NCHAR", "NVARCHAR", "TEXT", "NTEXT"]
             case .sqlite:
                 return ["TEXT"]
             case .mongodb:
@@ -49,6 +53,8 @@ enum DataTypeCategory: String, CaseIterable {
                 return ["DATE", "TIME", "DATETIME", "TIMESTAMP", "YEAR"]
             case .postgresql, .redshift:
                 return ["DATE", "TIME", "TIMESTAMP", "TIMESTAMPTZ", "INTERVAL"]
+            case .mssql:
+                return ["DATE", "TIME", "DATETIME", "DATETIME2", "SMALLDATETIME", "DATETIMEOFFSET"]
             case .sqlite:
                 return ["DATE", "DATETIME"]
             case .mongodb:
@@ -62,6 +68,8 @@ enum DataTypeCategory: String, CaseIterable {
                 return ["BINARY", "VARBINARY", "TINYBLOB", "BLOB", "MEDIUMBLOB", "LONGBLOB"]
             case .postgresql, .redshift:
                 return ["BYTEA"]
+            case .mssql:
+                return ["BINARY", "VARBINARY", "IMAGE"]
             case .sqlite:
                 return ["BLOB"]
             case .mongodb:
@@ -75,6 +83,8 @@ enum DataTypeCategory: String, CaseIterable {
                 return ["BOOLEAN", "ENUM", "SET", "JSON"]
             case .postgresql, .redshift:
                 return ["BOOLEAN", "UUID", "JSON", "JSONB", "ARRAY", "HSTORE", "INET", "CIDR", "MACADDR", "TSVECTOR", "TSQUERY"]
+            case .mssql:
+                return ["BIT", "UNIQUEIDENTIFIER", "XML", "SQL_VARIANT", "ROWVERSION", "HIERARCHYID"]
             case .sqlite:
                 return ["BOOLEAN"]
             case .mongodb:

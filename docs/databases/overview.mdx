@@ -9,7 +9,7 @@ TablePro provides a single interface for managing all your database connections.
 
 ## Supported Databases
 
-TablePro supports seven database systems:
+TablePro supports eight database systems:
 
 <CardGroup cols={2}>
   <Card title="MySQL" icon="database">
@@ -32,6 +32,9 @@ TablePro supports seven database systems:
   </Card>
   <Card title="Redis" icon="database">
     Redis 6.0+ with key-value browsing and CLI. Default port: 6379
+  </Card>
+  <Card title="Microsoft SQL Server" icon="database">
+    SQL Server 2017+ via FreeTDS. Default port: 1433
   </Card>
 </CardGroup>
 
@@ -76,27 +79,40 @@ If you have a database connection string (commonly provided by hosting platforms
 4. All fields (type, host, port, database, username, password) are filled in automatically
 5. Review the auto-filled values and click **Create**
 
-**Supported URL formats:**
-
-| Format | Example |
-|--------|---------|
-| PostgreSQL | `postgresql://user:pass@host:5432/dbname` |
-| PostgreSQL (alias) | `postgres://user:pass@host:5432/dbname` |
-| MySQL | `mysql://user:pass@host:3306/dbname` |
-| MariaDB | `mariadb://user:pass@host:3306/dbname` |
-| SQLite | `sqlite:///path/to/database.db` |
-| MongoDB | `mongodb://user:pass@host:27017/dbname` |
-| Redis | `redis://password@host:6379/0` |
-| MySQL (SSH) | `mysql+ssh://ssh_user@ssh_host:22/db_user:pass@db_host/dbname` |
-| PostgreSQL (SSH) | `postgresql+ssh://ssh_user@ssh_host:22/db_user:pass@db_host/dbname` |
-| MariaDB (SSH) | `mariadb+ssh://ssh_user@ssh_host:22/db_user:pass@db_host/dbname` |
+See [Connection URL Reference](/databases/connection-urls) for all supported schemes and formats.
 
 <Tip>
 Connection URLs with special characters in the password (like `@`, `#`, or `%`) should use percent-encoding. For example, `p@ssword` becomes `p%40ssword`.
 </Tip>
 
+### Connect Directly from a URL
+
+If you have a database URL, you can open it directly from your browser or terminal — TablePro will launch and connect immediately without any form or saved connection required.
+
+**From a browser:** paste the URL into your address bar and press Enter.
+
+**From the terminal:**
+
+```bash
+open "postgresql://user:pass@host:5432/dbname"
+open "mysql://root:secret@localhost:3306/myapp"
+open "redis://:password@localhost:6379"
+```
+
+TablePro registers `postgresql`, `postgres`, `mysql`, `mariadb`, `sqlite`, `mongodb`, `redis`, `rediss`, and `redshift` as URL schemes on macOS, so the OS routes these URLs directly to the app.
+
+**What happens:**
+
+- If a saved connection already matches the host, port, database, and username, TablePro reuses it
+- Otherwise, a temporary session is created — nothing is saved to your connection list
+- The password from the URL is stored in Keychain for the duration of the session
+
+You can also target a specific table, schema, or apply a filter via query parameters.
+
+See [Connection URL Reference](/databases/connection-urls) for all supported query parameters.
+
 <Note>
-SSH tunnel URLs use the format `scheme+ssh://ssh_user@ssh_host:ssh_port/db_user:db_password@db_host/db_name`. Query parameters `name` (connection name) and `usePrivateKey=true` (use key-based auth) are also supported.
+This is different from **Import from URL**, which fills in the connection form so you can review and save. Direct URL opening skips the form entirely and connects right away.
 </Note>
 
 ### Connection Form Fields
@@ -518,6 +534,7 @@ TablePro automatically sets the default port when you select a database type:
 | SQLite | N/A (file-based) |
 | MongoDB | 27017 |
 | Redis | 6379 |
+| Microsoft SQL Server | 1433 |
 
 ## Related Guides
 
@@ -536,6 +553,9 @@ TablePro automatically sets the default port when you select a database type:
   </Card>
   <Card title="Redis" icon="database" href="/databases/redis">
     Redis key-value browsing and CLI
+  </Card>
+  <Card title="Microsoft SQL Server" icon="database" href="/databases/mssql">
+    SQL Server connections via FreeTDS
   </Card>
   <Card title="Amazon Redshift" icon="database" href="/databases/redshift">
     Redshift data warehouse connections

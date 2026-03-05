@@ -67,6 +67,9 @@ struct ConnectionFormView: View {
     @State private var mongoReadPreference: String = ""
     @State private var mongoWriteConcern: String = ""
 
+    // MSSQL-specific settings
+    @State private var mssqlSchema: String = "dbo"
+
     @State private var isTesting: Bool = false
     @State private var testResult: TestResult?
 
@@ -449,6 +452,16 @@ struct ConnectionFormView: View {
                 }
             }
 
+            if type == .mssql {
+                Section("SQL Server") {
+                    TextField(String(localized: "Schema"), text: Binding(
+                        get: { mssqlSchema },
+                        set: { mssqlSchema = $0 }
+                    ))
+                    .textFieldStyle(.roundedBorder)
+                }
+            }
+
             Section(String(localized: "AI")) {
                 Picker(String(localized: "AI Policy"), selection: $aiPolicy) {
                     Text(String(localized: "Use Default"))
@@ -539,6 +552,7 @@ struct ConnectionFormView: View {
         case .sqlite: return ""
         case .mongodb: return "27017"
         case .redis: return "6379"
+        case .mssql: return "1433"
         }
     }
 
@@ -606,6 +620,9 @@ struct ConnectionFormView: View {
             mongoReadPreference = existing.mongoReadPreference ?? ""
             mongoWriteConcern = existing.mongoWriteConcern ?? ""
 
+            // Load MSSQL settings
+            mssqlSchema = existing.mssqlSchema ?? "dbo"
+
             // Load passwords from Keychain
             if let savedSSHPassword = storage.loadSSHPassword(for: existing.id) {
                 sshPassword = savedSSHPassword
@@ -660,7 +677,8 @@ struct ConnectionFormView: View {
             isReadOnly: isReadOnly,
             aiPolicy: aiPolicy,
             mongoReadPreference: mongoReadPreference.isEmpty ? nil : mongoReadPreference,
-            mongoWriteConcern: mongoWriteConcern.isEmpty ? nil : mongoWriteConcern
+            mongoWriteConcern: mongoWriteConcern.isEmpty ? nil : mongoWriteConcern,
+            mssqlSchema: mssqlSchema.isEmpty ? nil : mssqlSchema
         )
 
         // Save passwords to Keychain
@@ -757,7 +775,8 @@ struct ConnectionFormView: View {
             tagId: selectedTagId,
             groupId: selectedGroupId,
             mongoReadPreference: mongoReadPreference.isEmpty ? nil : mongoReadPreference,
-            mongoWriteConcern: mongoWriteConcern.isEmpty ? nil : mongoWriteConcern
+            mongoWriteConcern: mongoWriteConcern.isEmpty ? nil : mongoWriteConcern,
+            mssqlSchema: mssqlSchema.isEmpty ? nil : mssqlSchema
         )
 
         Task {

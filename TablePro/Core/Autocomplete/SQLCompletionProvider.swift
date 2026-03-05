@@ -332,6 +332,11 @@ final class SQLCompletionProvider {
                         "TABLESPACE", "INHERITS", "PARTITION BY",
                         "WITH", "WITHOUT OIDS",
                     ])
+                case .mssql:
+                    items += filterKeywords([
+                        "ON", "CLUSTERED", "NONCLUSTERED",
+                        "WITH", "TEXTIMAGE_ON",
+                    ])
                 default:
                     items += filterKeywords([
                         "ENGINE", "CHARSET", "COLLATE", "COMMENT",
@@ -495,6 +500,16 @@ final class SQLCompletionProvider {
                 "TIMESTAMPTZ", "TIMETZ", "INTERVAL",
                 "POINT", "LINE", "LSEG", "BOX", "PATH", "POLYGON", "CIRCLE",
                 "INET", "CIDR", "MACADDR", "MACADDR8",
+            ]
+
+        case .mssql:
+            types += [
+                "NVARCHAR", "NCHAR", "NTEXT",
+                "MONEY", "SMALLMONEY",
+                "DATETIMEOFFSET", "DATETIME2", "SMALLDATETIME",
+                "BINARY", "VARBINARY", "IMAGE",
+                "UNIQUEIDENTIFIER", "XML", "SQL_VARIANT",
+                "ROWVERSION", "HIERARCHYID",
             ]
 
         case .sqlite:

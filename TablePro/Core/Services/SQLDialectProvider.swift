@@ -216,6 +216,68 @@ struct SQLiteDialect: SQLDialectProvider {
     ]
 }
 
+// MARK: - MSSQL Dialect
+
+struct MSSQLDialect: SQLDialectProvider {
+    let identifierQuote = "["
+
+    let keywords: Set<String> = [
+        "SELECT", "FROM", "WHERE", "JOIN", "INNER", "LEFT", "RIGHT", "OUTER", "CROSS", "FULL",
+        "ON", "USING", "AND", "OR", "NOT", "IN", "LIKE", "BETWEEN", "AS",
+        "ORDER", "BY", "GROUP", "HAVING", "TOP", "OFFSET", "FETCH", "NEXT", "ROWS", "ONLY",
+        "INSERT", "INTO", "VALUES", "UPDATE", "SET", "DELETE",
+
+        "CREATE", "ALTER", "DROP", "TABLE", "INDEX", "VIEW", "DATABASE", "SCHEMA",
+        "PRIMARY", "KEY", "FOREIGN", "REFERENCES", "UNIQUE", "CONSTRAINT",
+        "ADD", "COLUMN", "RENAME", "EXEC",
+
+        "NULL", "IS", "ASC", "DESC", "DISTINCT", "ALL", "ANY", "SOME",
+        "IDENTITY", "NOLOCK", "WITH", "ROWCOUNT", "NEWID",
+
+        "CASE", "WHEN", "THEN", "ELSE", "END", "COALESCE", "NULLIF", "IIF",
+
+        "UNION", "INTERSECT", "EXCEPT",
+
+        "DECLARE", "BEGIN", "COMMIT", "ROLLBACK", "TRANSACTION",
+        "PRINT", "GO", "EXEC", "EXECUTE",
+        "OVER", "PARTITION", "ROW_NUMBER", "RANK", "DENSE_RANK",
+        "RETURNING", "OUTPUT", "INSERTED", "DELETED"
+    ]
+
+    let functions: Set<String> = [
+        "COUNT", "SUM", "AVG", "MAX", "MIN", "STRING_AGG",
+
+        "CONCAT", "SUBSTRING", "LEFT", "RIGHT", "LEN", "LOWER", "UPPER",
+        "TRIM", "LTRIM", "RTRIM", "REPLACE", "CHARINDEX", "PATINDEX",
+        "STUFF", "FORMAT",
+
+        "GETDATE", "GETUTCDATE", "SYSDATETIME", "CURRENT_TIMESTAMP",
+        "DATEADD", "DATEDIFF", "DATENAME", "DATEPART",
+        "CONVERT", "CAST", "FORMAT",
+
+        "ROUND", "CEILING", "FLOOR", "ABS", "POWER", "SQRT", "RAND",
+
+        "ISNULL", "ISNUMERIC", "ISDATE", "COALESCE", "NEWID",
+        "OBJECT_ID", "OBJECT_NAME", "SCHEMA_NAME", "DB_NAME",
+        "SCOPE_IDENTITY", "@@IDENTITY", "@@ROWCOUNT"
+    ]
+
+    let dataTypes: Set<String> = [
+        "INT", "INTEGER", "TINYINT", "SMALLINT", "BIGINT",
+
+        "DECIMAL", "NUMERIC", "FLOAT", "REAL", "MONEY", "SMALLMONEY",
+
+        "CHAR", "VARCHAR", "NCHAR", "NVARCHAR", "TEXT", "NTEXT",
+
+        "BINARY", "VARBINARY", "IMAGE",
+
+        "DATE", "TIME", "DATETIME", "DATETIME2", "SMALLDATETIME", "DATETIMEOFFSET",
+
+        "BIT", "UNIQUEIDENTIFIER", "XML", "SQL_VARIANT",
+        "ROWVERSION", "TIMESTAMP", "HIERARCHYID"
+    ]
+}
+
 // MARK: - Dialect Factory
 
 struct SQLDialectFactory {
@@ -232,6 +294,8 @@ struct SQLDialectFactory {
             return SQLiteDialect()  // Placeholder until MongoDB dialect is implemented
         case .redis:
             return SQLiteDialect()  // Placeholder until Redis dialect is implemented
+        case .mssql:
+            return MSSQLDialect()
         }
     }
 }

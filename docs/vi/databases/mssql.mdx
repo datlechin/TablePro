@@ -1,0 +1,290 @@
+---
+title: Microsoft SQL Server
+description: Kết nối đến cơ sở dữ liệu Microsoft SQL Server (MSSQL) với TablePro
+---
+
+# Kết nối Microsoft SQL Server
+
+TablePro hỗ trợ Microsoft SQL Server 2017 và các phiên bản mới hơn thông qua FreeTDS. Điều này bao gồm các instance SQL Server chạy trên Windows, Linux hoặc trong Docker, cũng như Azure SQL Database.
+
+<Warning>
+FreeTDS phải được build trước khi kết nối với SQL Server. Chạy `scripts/build-freetds.sh` một lần để biên dịch thư viện cần thiết.
+</Warning>
+
+## Thiết lập nhanh
+
+<Steps>
+  <Step title="Build FreeTDS">
+    Chạy `scripts/build-freetds.sh` từ thư mục gốc của repository nếu chưa thực hiện
+  </Step>
+  <Step title="Mở Form kết nối">
+    Click **New Connection** từ màn hình Welcome hoặc **File** > **New Connection**
+  </Step>
+  <Step title="Chọn SQL Server">
+    Chọn **SQL Server** từ danh sách loại cơ sở dữ liệu
+  </Step>
+  <Step title="Nhập thông tin kết nối">
+    Điền host, port, username, password và tên database
+  </Step>
+  <Step title="Kiểm tra và kết nối">
+    Click **Test Connection**, sau đó **Create**
+  </Step>
+</Steps>
+
+## Cài đặt kết nối
+
+### Các trường bắt buộc
+
+| Trường | Mô tả | Mặc định |
+|-------|-------------|---------|
+| **Name** | Tên định danh kết nối | - |
+| **Host** | Hostname hoặc địa chỉ IP của server | `localhost` |
+| **Port** | Cổng SQL Server | `1433` |
+| **Username** | Tên đăng nhập SQL Server | `sa` |
+| **Password** | Mật khẩu đăng nhập | - |
+| **Database** | Tên database để kết nối | - |
+
+<Note>
+TablePro kết nối sử dụng SQL Server Authentication (username và password). Windows Authentication không được hỗ trợ.
+</Note>
+
+## Các cấu hình ví dụ
+
+### Server phát triển cục bộ
+
+```
+Name:     Local SQL Server
+Host:     localhost
+Port:     1433
+Username: sa
+Password: (mật khẩu của bạn)
+Database: master
+```
+
+### Docker SQL Server Container
+
+Khởi động container SQL Server 2022 để kiểm tra cục bộ:
+
+```bash
+docker run \
+  -e "ACCEPT_EULA=Y" \
+  -e "SA_PASSWORD=YourStrong@Passw0rd" \
+  -p 1433:1433 \
+  --name sql-server \
+  -d mcr.microsoft.com/mssql/server:2022-latest
+```
+
+Sau đó kết nối với:
+
+```
+Name:     Docker SQL Server
+Host:     localhost
+Port:     1433
+Username: sa
+Password: YourStrong@Passw0rd
+Database: master
+```
+
+<Tip>
+`SA_PASSWORD` phải đáp ứng yêu cầu độ phức tạp của SQL Server: ít nhất 8 ký tự bao gồm chữ hoa, chữ thường, chữ số và ký tự đặc biệt.
+</Tip>
+
+### Remote Server
+
+```
+Name:     Production SQL Server
+Host:     sql.example.com
+Port:     1433
+Username: app_user
+Password: (mật khẩu an toàn)
+Database: myapp_production
+```
+
+### Azure SQL Database
+
+```
+Name:     Azure SQL
+Host:     myserver.database.windows.net
+Port:     1433
+Username: admin@myserver
+Password: (mật khẩu của bạn)
+Database: mydb
+```
+
+<Note>
+Azure SQL Database yêu cầu username bao gồm hậu tố server (ví dụ: `user@servername`) hoặc chỉ username tùy theo cấu hình xác thực.
+</Note>
+
+## Tính năng
+
+### Chọn Schema
+
+SQL Server tổ chức các đối tượng thành schemas trong một database. Schema mặc định là `dbo`. TablePro hiển thị tất cả schemas mà tài khoản đăng nhập của bạn có quyền truy cập và liệt kê các bảng trong mỗi schema.
+
+Bạn có thể chuyển đổi schema bằng trình chuyển đổi database (**⌘K**), hiển thị các schema có sẵn cho database hiện tại.
+
+### Duyệt bảng
+
+Cho mỗi bảng, TablePro hiển thị:
+
+- **Structure**: Các cột với kiểu dữ liệu SQL Server, nullable và giá trị mặc định
+- **Indexes**: Clustered và non-clustered indexes
+- **Foreign Keys**: Quan hệ với các bảng khác
+- **DDL**: Định nghĩa bảng bao gồm các ràng buộc
+
+### Trình soạn thảo truy vấn
+
+Viết và thực thi truy vấn T-SQL trong SQL editor. Phân trang sử dụng cú pháp offset chuẩn của SQL Server:
+
+```sql
+-- Kết quả phân trang
+SELECT *
+FROM dbo.orders
+ORDER BY order_id
+OFFSET 0 ROWS FETCH NEXT 50 ROWS ONLY;
+
+-- Ước tính số dòng (nhanh, sử dụng thống kê)
+SELECT SUM(p.rows) AS row_count
+FROM sys.partitions p
+JOIN sys.tables t ON p.object_id = t.object_id
+WHERE p.index_id IN (0, 1)
+  AND t.name = 'orders';
+
+-- Định nghĩa view
+SELECT OBJECT_DEFINITION(OBJECT_ID('dbo.my_view'));
+
+-- Liệt kê tất cả bảng trong database hiện tại
+SELECT TABLE_SCHEMA, TABLE_NAME
+FROM INFORMATION_SCHEMA.TABLES
+WHERE TABLE_TYPE = 'BASE TABLE'
+ORDER BY TABLE_SCHEMA, TABLE_NAME;
+```
+
+### Chỉnh sửa Schema
+
+Sửa đổi cấu trúc bảng thông qua câu lệnh T-SQL ALTER TABLE trong query editor. SQL Server sử dụng ký hiệu bracket cho identifiers:
+
+```sql
+-- Thêm cột
+ALTER TABLE [dbo].[users] ADD [last_login] DATETIME2 NULL;
+
+-- Đổi tên cột (yêu cầu sp_rename)
+EXEC sp_rename 'dbo.users.old_name', 'new_name', 'COLUMN';
+
+-- Xóa cột
+ALTER TABLE [dbo].[users] DROP COLUMN [legacy_field];
+
+-- Thêm index
+CREATE INDEX [IX_users_email] ON [dbo].[users] ([email]);
+```
+
+### Foreign Keys
+
+TablePro hiển thị quan hệ foreign key trong view cấu trúc bảng. Để xem foreign keys thủ công:
+
+```sql
+SELECT
+    fk.name AS fk_name,
+    OBJECT_NAME(fk.parent_object_id) AS parent_table,
+    COL_NAME(fkc.parent_object_id, fkc.parent_column_id) AS parent_column,
+    OBJECT_NAME(fk.referenced_object_id) AS referenced_table,
+    COL_NAME(fkc.referenced_object_id, fkc.referenced_column_id) AS referenced_column
+FROM sys.foreign_keys fk
+JOIN sys.foreign_key_columns fkc ON fk.object_id = fkc.constraint_object_id
+ORDER BY parent_table, fk_name;
+```
+
+## Xác thực
+
+TablePro chỉ sử dụng SQL Server Authentication. Cung cấp tên đăng nhập và mật khẩu SQL Server trong form kết nối.
+
+**Windows Authentication** (Integrated Security / Kerberos) không được hỗ trợ.
+
+Để tạo tài khoản đăng nhập SQL Server:
+
+```sql
+-- Tạo login
+CREATE LOGIN app_user WITH PASSWORD = 'StrongPassword1!';
+
+-- Tạo database user cho login đó
+USE mydb;
+CREATE USER app_user FOR LOGIN app_user;
+
+-- Cấp quyền
+ALTER ROLE db_datareader ADD MEMBER app_user;
+ALTER ROLE db_datawriter ADD MEMBER app_user;
+```
+
+## Khắc phục sự cố
+
+### Connection Refused
+
+**Triệu chứng**: "Unable to connect" hoặc timeout khi kết nối
+
+**Nguyên nhân và Giải pháp**:
+
+1. **SQL Server không chạy hoặc không chấp nhận kết nối TCP**
+
+   SQL Server Browser và giao thức TCP/IP phải được bật:
+   - Mở SQL Server Configuration Manager
+   - Bật TCP/IP trong "SQL Server Network Configuration"
+   - Đảm bảo dịch vụ SQL Server đang chạy
+
+2. **Cổng 1433 bị firewall chặn**
+   - Với Windows Firewall, thêm quy tắc inbound cho TCP cổng 1433
+   - Với cloud VM, kiểm tra security group / firewall rules
+
+3. **Docker container chưa khởi động**
+   ```bash
+   docker start sql-server
+   docker logs sql-server
+   ```
+
+### Đăng nhập thất bại
+
+**Triệu chứng**: Lỗi "Login failed for user"
+
+**Giải pháp**:
+
+1. Xác minh username và password
+2. Xác nhận SQL Server Authentication được bật (không chỉ Windows-only mode):
+   ```sql
+   -- Kiểm tra chế độ xác thực server (1 = chỉ Windows, 2 = mixed mode)
+   SELECT SERVERPROPERTY('IsIntegratedSecurityOnly');
+   ```
+3. Bật mixed-mode authentication trong SQL Server Management Studio tại Server Properties > Security, sau đó khởi động lại dịch vụ SQL Server
+
+### FreeTDS không tìm thấy
+
+**Triệu chứng**: "FreeTDS library not found" hoặc lỗi linker khi khởi động
+
+**Giải pháp**: Chạy build script từ thư mục gốc repository:
+
+```bash
+scripts/build-freetds.sh
+```
+
+Script này biên dịch FreeTDS và đặt static library vào vị trí mà Xcode project yêu cầu.
+
+## Hạn chế đã biết
+
+- **Windows Authentication không được hỗ trợ.** Chỉ SQL Server Authentication (username + password) hoạt động.
+- **Named instances** (ví dụ: `HOSTNAME\INSTANCENAME`) chưa được hỗ trợ. Kết nối qua địa chỉ IP và port tường minh.
+- **Cột `NTEXT`, `TEXT`, `IMAGE`** (đã deprecated từ SQL Server 2005) có thể có hỗ trợ chỉnh sửa hạn chế. Sử dụng `NVARCHAR(MAX)`, `VARCHAR(MAX)` và `VARBINARY(MAX)` trong schema mới.
+
+## Bước tiếp theo
+
+<CardGroup cols={2}>
+  <Card title="SSH Tunnel" icon="lock" href="/vi/databases/ssh-tunneling">
+    Kết nối an toàn đến các instance SQL Server remote
+  </Card>
+  <Card title="Trình soạn thảo SQL" icon="code" href="/vi/features/sql-editor">
+    Làm chủ các tính năng SQL editor
+  </Card>
+  <Card title="Theo dõi thay đổi" icon="pen" href="/vi/features/change-tracking">
+    Chỉnh sửa hàng và lưu thay đổi với xem trước SQL
+  </Card>
+  <Card title="Cấu trúc Bảng" icon="table" href="/vi/features/table-structure">
+    Xem và sửa đổi cấu trúc bảng
+  </Card>
+</CardGroup>

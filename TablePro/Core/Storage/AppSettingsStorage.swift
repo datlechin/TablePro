@@ -135,6 +135,20 @@ final class AppSettingsStorage {
         }
     }
 
+    // MARK: - Last Selected Database (per connection)
+
+    func saveLastDatabase(_ database: String?, for connectionId: UUID) {
+        if let database {
+            defaults.set(database, forKey: "com.TablePro.lastSelectedDatabase.\(connectionId)")
+        } else {
+            defaults.removeObject(forKey: "com.TablePro.lastSelectedDatabase.\(connectionId)")
+        }
+    }
+
+    func loadLastDatabase(for connectionId: UUID) -> String? {
+        defaults.string(forKey: "com.TablePro.lastSelectedDatabase.\(connectionId)")
+    }
+
     // MARK: - Onboarding
 
     /// Check if user has completed onboarding

@@ -1,0 +1,217 @@
+---
+title: Connection URL Reference
+description: Full specification for database connection URLs supported by TablePro
+---
+
+# Connection URL Reference
+
+TablePro supports standard database connection URLs for importing connections, opening them directly from a browser or terminal, and configuring SSH tunnels. This page covers every supported scheme, format, and query parameter.
+
+## URL Schemes
+
+| Scheme | Database |
+|--------|----------|
+| `postgresql://` | PostgreSQL |
+| `postgres://` | PostgreSQL (alias) |
+| `mysql://` | MySQL |
+| `mariadb://` | MariaDB |
+| `sqlite://` | SQLite |
+| `mongodb://` | MongoDB |
+| `mongodb+srv://` | MongoDB (SRV) |
+| `redis://` | Redis |
+| `rediss://` | Redis with TLS |
+| `redshift://` | Amazon Redshift |
+| `mssql://` | Microsoft SQL Server |
+| `sqlserver://` | Microsoft SQL Server (alias) |
+
+Append `+ssh` to any scheme (except SQLite) to use an SSH tunnel:
+
+```
+postgresql+ssh://
+mysql+ssh://
+mariadb+ssh://
+```
+
+## Standard Format
+
+```
+scheme://[username[:password]@]host[:port][/database][?param=value&...]
+```
+
+**Examples:**
+
+```
+postgresql://alice:secret@db.example.com:5432/myapp
+mysql://root@localhost/shop
+mongodb://user:pass@mongo.host:27017/analytics?authSource=admin
+redis://:password@cache.host:6379/1
+sqlite:///Users/alice/data/local.db
+```
+
+<Tip>
+Passwords containing special characters (`@`, `#`, `%`, `:`) must be percent-encoded. For example, `p@ss#word` becomes `p%40ss%23word`.
+</Tip>
+
+## SSH Tunnel Format
+
+SSH tunnel URLs encode both SSH and database credentials in a single string:
+
+```
+scheme+ssh://[ssh_user@]ssh_host[:ssh_port]/[db_user[:db_pass]@]db_host[:db_port][/database][?params]
+```
+
+**Examples:**
+
+```
+postgresql+ssh://deploy@bastion.host:22/dbuser:dbpass@internal-pg:5432/mydb
+mysql+ssh://ec2-user@jump.host/root:secret@10.0.0.5/shop
+mariadb+ssh://admin@ssh.host/maria_user@db.internal/store?usePrivateKey=true
+```
+
+If `db_host` is omitted, it defaults to `127.0.0.1`.
+
+## Query Parameters
+
+### Connection Identity
+
+| Parameter | Description | Example |
+|-----------|-------------|---------|
+| `name` | Override the connection name shown in the sidebar | `?name=Production+DB` |
+
+### SSL / TLS
+
+| Parameter | Values | Description |
+|-----------|--------|-------------|
+| `sslmode` | `disable`, `prefer`, `require`, `verify-ca`, `verify-full` | SSL mode (standard PostgreSQL names) |
+| `tlsmode` | `0`–`4` | SSL mode as integer: 0=disable, 1=prefer, 2=require, 3=verify-ca, 4=verify-full |
+
+**Example:**
+
+```
+postgresql://user:pass@host/db?sslmode=require
+postgresql://user:pass@host/db?tlsmode=2
+```
+
+### Navigation
+
+These parameters open a specific table, view, or schema immediately after connecting.
+
+| Parameter | Description | Example |
+|-----------|-------------|---------|
+| `table` | Open the named table | `?table=users` |
+| `view` | Open the named view | `?view=active_orders` |
+| `schema` | Switch to this schema before opening (PostgreSQL/Redshift only) | `?schema=reporting` |
+
+**Example:**
+
+```
+postgresql://user:pass@host/mydb?schema=reporting&table=monthly_sales
+```
+
+### Filtering
+
+Apply a filter to the opened table automatically.
+
+| Parameter | Description | Example |
+|-----------|-------------|---------|
+| `column` | Column name to filter on | `?column=status` |
+| `operation` | Filter operator (e.g. `=`, `!=`, `LIKE`) | `?operation=LIKE` |
+| `value` | Filter value | `?value=active` |
+| `condition` | Raw SQL WHERE condition (overrides column/operation/value) | `?condition=status%3D'active'+AND+role%3D'admin'` |
+
+`raw` and `query` are accepted as aliases for `condition`.
+
+**Example:**
+
+```
+postgresql://user:pass@host/mydb?table=orders&column=status&operation==&value=pending
+postgresql://user:pass@host/mydb?table=orders&condition=total%3E1000
+```
+
+### Appearance
+
+| Parameter | Description | Example |
+|-----------|-------------|---------|
+| `statusColor` | Assign a color to the connection (hex, matched to nearest palette color) | `?statusColor=FF3B30` |
+| `env` | Assign an existing tag by name | `?env=production` |
+
+**Example:**
+
+```
+postgresql://user:pass@host/db?statusColor=FF3B30&env=production
+```
+
+### MongoDB
+
+| Parameter | Description |
+|-----------|-------------|
+| `authSource` | Authentication database (defaults to `admin`) |
+
+**Example:**
+
+```
+mongodb://user:pass@host:27017/mydb?authSource=admin
+```
+
+### Redis
+
+The path component sets the database index (0–15). The `rediss://` scheme automatically enables TLS.
+
+```
+redis://:password@host:6379/2       # database index 2
+rediss://:password@host:6380        # TLS, default index 0
+```
+
+### SSH Tunnel
+
+| Parameter | Description |
+|-----------|-------------|
+| `usePrivateKey` | `true` to use key-based SSH authentication instead of password |
+
+**Example:**
+
+```
+postgresql+ssh://ubuntu@bastion/dbuser@10.0.0.5/mydb?usePrivateKey=true
+```
+
+## How Direct URL Opening Works
+
+When you open a database URL from a browser or terminal, TablePro handles it automatically:
+
+1. **Matching saved connection** — if host, port, database, and username all match an existing saved connection, TablePro connects using that connection (including its saved password)
+2. **No match** — TablePro creates a temporary session. The password from the URL is stored in Keychain for the session but the connection is not saved to your list
+
+To open a URL from the terminal:
+
+```bash
+open "postgresql://user:pass@localhost:5432/mydb"
+open "mysql://root@localhost/shop?table=products"
+open "postgresql+ssh://ubuntu@bastion/user:pass@10.0.0.5/mydb?usePrivateKey=true"
+```
+
+<Note>
+To save the connection permanently, use **Import from URL** in the New Connection form instead. That fills in all fields so you can review them and click **Create**.
+</Note>
+
+## Full Example
+
+A URL that connects via SSH, opens a specific schema and table, pre-applies a filter, and sets a color tag:
+
+```
+postgresql+ssh://deploy@bastion.example.com:22/dbuser:dbpass@10.0.1.5:5432/analytics?schema=public&table=events&column=type&value=purchase&statusColor=FF9500&env=staging
+```
+
+Breaking it down:
+
+| Part | Value |
+|------|-------|
+| SSH user | `deploy` |
+| SSH host | `bastion.example.com:22` |
+| DB user / pass | `dbuser` / `dbpass` |
+| DB host / port | `10.0.1.5:5432` |
+| Database | `analytics` |
+| Schema | `public` |
+| Table | `events` |
+| Filter | `type = purchase` |
+| Color | orange (`FF9500`) |
+| Tag | `staging` |

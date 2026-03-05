@@ -163,6 +163,8 @@ class DatabaseSwitcherViewModel {
             return false
         case .redis:
             return false
+        case .mssql:
+            return ["master", "tempdb", "model", "msdb"].contains(name)
         }
     }
 }

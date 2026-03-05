@@ -31,6 +31,7 @@ struct ConnectionURLFormatter {
         case .sqlite: return "sqlite"
         case .mongodb: return "mongodb"
         case .redis: return "redis"
+        case .mssql: return "sqlserver"
         }
     }
 

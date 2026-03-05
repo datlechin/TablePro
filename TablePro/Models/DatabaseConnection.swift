@@ -105,6 +105,7 @@ enum DatabaseType: String, CaseIterable, Identifiable, Codable {
     case redshift = "Redshift"
     case mongodb = "MongoDB"
     case redis = "Redis"
+    case mssql = "SQL Server"
 
     var id: String { rawValue }
 
@@ -125,6 +126,8 @@ enum DatabaseType: String, CaseIterable, Identifiable, Codable {
             return "mongodb-icon"
         case .redis:
             return "redis-icon"
+        case .mssql:
+            return "mssql-icon"
         }
     }
 
@@ -137,6 +140,7 @@ enum DatabaseType: String, CaseIterable, Identifiable, Codable {
         case .redshift: return 5_439
         case .mongodb: return 27_017
         case .redis: return 6_379
+        case .mssql: return 1_433
         }
     }
 
@@ -145,7 +149,7 @@ enum DatabaseType: String, CaseIterable, Identifiable, Codable {
     /// MongoDB and SQLite commonly run without authentication.
     var requiresAuthentication: Bool {
         switch self {
-        case .mysql, .mariadb, .postgresql, .redshift: return true
+        case .mysql, .mariadb, .postgresql, .redshift, .mssql: return true
         case .sqlite, .mongodb, .redis: return false
         }
     }
@@ -153,7 +157,7 @@ enum DatabaseType: String, CaseIterable, Identifiable, Codable {
     /// Whether this database type supports foreign key constraints
     var supportsForeignKeys: Bool {
         switch self {
-        case .mysql, .mariadb, .postgresql, .sqlite, .redshift:
+        case .mysql, .mariadb, .postgresql, .sqlite, .redshift, .mssql:
             return true
         case .mongodb, .redis:
             return false
@@ -163,7 +167,7 @@ enum DatabaseType: String, CaseIterable, Identifiable, Codable {
     /// Whether this database type supports SQL-based schema editing (ALTER TABLE etc.)
     var supportsSchemaEditing: Bool {
         switch self {
-        case .mysql, .mariadb, .postgresql, .sqlite:
+        case .mysql, .mariadb, .postgresql, .sqlite, .mssql:
             return true
         case .redshift, .mongodb, .redis:
             return false
@@ -178,17 +182,24 @@ enum DatabaseType: String, CaseIterable, Identifiable, Codable {
             return "`"
         case .postgresql, .redshift, .mongodb, .redis:
             return "\""
+        case .mssql:
+            return "["
         }
     }
 
     /// Quote an identifier (table or column name) for this database type.
     /// Escapes embedded quote characters to prevent SQL injection.
     func quoteIdentifier(_ name: String) -> String {
-        guard self != .mongodb, self != .redis else { return name }
-        let q = identifierQuote
-        // Escape embedded quotes by doubling them (SQL standard)
-        let escaped = name.replacingOccurrences(of: q, with: q + q)
-        return "\(q)\(escaped)\(q)"
+        switch self {
+        case .mongodb, .redis:
+            return name
+        case .mssql:
+            return "[\(name.replacingOccurrences(of: "]", with: "]]"))]"
+        default:
+            let q = identifierQuote
+            let escaped = name.replacingOccurrences(of: q, with: q + q)
+            return "\(q)\(escaped)\(q)"
+        }
     }
 }
 
@@ -262,6 +273,7 @@ struct DatabaseConnection: Identifiable, Hashable {
     var mongoReadPreference: String?
     var mongoWriteConcern: String?
     var redisDatabase: Int?
+    var mssqlSchema: String?
 
     init(
         id: UUID = UUID(),
@@ -280,7 +292,8 @@ struct DatabaseConnection: Identifiable, Hashable {
         aiPolicy: AIConnectionPolicy? = nil,
         mongoReadPreference: String? = nil,
         mongoWriteConcern: String? = nil,
-        redisDatabase: Int? = nil
+        redisDatabase: Int? = nil,
+        mssqlSchema: String? = nil
     ) {
         self.id = id
         self.name = name
@@ -299,6 +312,7 @@ struct DatabaseConnection: Identifiable, Hashable {
         self.mongoReadPreference = mongoReadPreference
         self.mongoWriteConcern = mongoWriteConcern
         self.redisDatabase = redisDatabase
+        self.mssqlSchema = mssqlSchema
     }
 
     /// Returns the display color (custom color or database type color)

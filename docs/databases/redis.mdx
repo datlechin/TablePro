@@ -47,15 +47,11 @@ For local development without authentication enabled, you can leave the password
 
 ## Connection URL Format
 
-You can import connections using a Redis URL:
-
-| Format | Example |
-|--------|---------|
-| Redis | `redis://password@host:6379/0` |
-| Redis (no auth) | `redis://host:6379/0` |
-| Redis TLS | `rediss://password@host:6380/0` |
+You can import connections using a Redis URL.
 
 The `rediss://` scheme (note the double `s`) indicates a TLS-encrypted connection.
+
+See [Connection URL Reference](/databases/connection-urls#redis) for the full Redis URL format.
 
 ## Example Configurations
 
