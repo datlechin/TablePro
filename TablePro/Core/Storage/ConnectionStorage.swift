@@ -115,9 +115,16 @@ final class ConnectionStorage {
             username: connection.username,
             type: connection.type,
             sshConfig: connection.sshConfig,
+            sslConfig: connection.sslConfig,
             color: connection.color,
             tagId: connection.tagId,
-            groupId: connection.groupId
+            groupId: connection.groupId,
+            isReadOnly: connection.isReadOnly,
+            aiPolicy: connection.aiPolicy,
+            mongoReadPreference: connection.mongoReadPreference,
+            mongoWriteConcern: connection.mongoWriteConcern,
+            sortOrder: connection.sortOrder,
+            redisDatabase: connection.redisDatabase
         )
 
         // Save the duplicate connection

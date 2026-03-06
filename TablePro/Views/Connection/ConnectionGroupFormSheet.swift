@@ -98,9 +98,15 @@ struct ConnectionGroupFormSheet: View {
         guard !trimmedName.isEmpty else { return }
 
         if var existing = group {
+            let originalParentId = existing.parentGroupId
             existing.name = trimmedName
             existing.color = color
-            existing.parentGroupId = selectedParentId
+            if originalParentId != selectedParentId {
+                existing.parentGroupId = selectedParentId
+                existing.sortOrder = groupStorage.nextSortOrder(parentId: selectedParentId)
+            } else {
+                existing.parentGroupId = selectedParentId
+            }
             onSave?(existing)
         } else {
             let sortOrder = groupStorage.nextSortOrder(parentId: selectedParentId)

@@ -45,9 +45,13 @@ final class GroupStorage {
         }
     }
 
-    /// Add a new group
+    /// Add a new group (rejects case-insensitive duplicate names)
     func addGroup(_ group: ConnectionGroup) {
         var groups = loadGroups()
+        if groups.contains(where: { $0.name.caseInsensitiveCompare(group.name) == .orderedSame }) {
+            Self.logger.debug("Ignoring attempt to add duplicate group name: \(group.name, privacy: .public)")
+            return
+        }
         groups.append(group)
         saveGroups(groups)
     }

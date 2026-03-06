@@ -243,12 +243,14 @@ struct WelcomeWindowView: View {
             Divider()
 
             // Connection list
-            if connections.isEmpty, groups.isEmpty {
-                emptyState
-            } else if !searchText.isEmpty, filteredConnections.isEmpty {
-                emptyState
-            } else {
+            ZStack {
                 connectionList
+
+                if connections.isEmpty, groups.isEmpty {
+                    emptyState
+                } else if !searchText.isEmpty, filteredConnections.isEmpty {
+                    emptyState
+                }
             }
         }
         .frame(minWidth: 350)
@@ -272,19 +274,33 @@ struct WelcomeWindowView: View {
             onToggleGroup: { groupId in
                 toggleGroup(groupId)
             },
-            onMoveConnection: { connection, newGroupId in
-                moveConnectionToGroup(connection, groupId: newGroupId)
-            },
             onReorderConnections: { reorderedConns in
-                for conn in reorderedConns {
-                    storage.updateConnection(conn)
+                let updatedIds = Dictionary(uniqueKeysWithValues: reorderedConns.map { ($0.id, $0) })
+                var allConns = connections
+                for index in allConns.indices {
+                    if let updated = updatedIds[allConns[index].id] {
+                        allConns[index] = updated
+                    }
                 }
-                loadConnections()
+                // Append any new entries (e.g. moved from another group)
+                for conn in reorderedConns where !allConns.contains(where: { $0.id == conn.id }) {
+                    allConns.append(conn)
+                }
+                storage.saveConnections(allConns)
+                connections = allConns
             },
             onReorderGroups: { reorderedGroups in
-                for group in reorderedGroups {
-                    groupStorage.updateGroup(group)
+                let updatedIds = Dictionary(uniqueKeysWithValues: reorderedGroups.map { ($0.id, $0) })
+                var allGroups = groups
+                for index in allGroups.indices {
+                    if let updated = updatedIds[allGroups[index].id] {
+                        allGroups[index] = updated
+                    }
                 }
+                for grp in reorderedGroups where !allGroups.contains(where: { $0.id == grp.id }) {
+                    allGroups.append(grp)
+                }
+                groupStorage.saveGroups(allGroups)
                 loadConnections()
             },
             onMoveGroup: { group, newParentId in
@@ -373,9 +389,7 @@ struct WelcomeWindowView: View {
             connections = saved
         }
         groups = groupStorage.loadGroups()
-        let savedExpanded = groupStorage.loadExpandedGroupIds()
-        // Auto-expand new groups
-        expandedGroups = savedExpanded.union(Set(groups.map(\.id)))
+        expandedGroups = groupStorage.loadExpandedGroupIds()
     }
 
     private func connectToDatabase(_ connection: DatabaseConnection) {
@@ -447,8 +461,11 @@ struct WelcomeWindowView: View {
     }
 
     private func deleteGroup(_ group: ConnectionGroup) {
+        let allGroups = groupStorage.loadGroups()
+        let descendantIds = collectDescendantIds(of: group.id, in: allGroups)
+        let allDeletedIds = descendantIds.union([group.id])
         groupStorage.deleteGroup(group)
-        expandedGroups.remove(group.id)
+        expandedGroups.subtract(allDeletedIds)
         groupStorage.saveExpandedGroupIds(expandedGroups)
         loadConnections()
     }
@@ -458,6 +475,16 @@ struct WelcomeWindowView: View {
         updated.groupId = groupId
         storage.updateConnection(updated)
         loadConnections()
+    }
+
+    private func collectDescendantIds(of groupId: UUID, in groups: [ConnectionGroup]) -> Set<UUID> {
+        var result = Set<UUID>()
+        let children = groups.filter { $0.parentGroupId == groupId }
+        for child in children {
+            result.insert(child.id)
+            result.formUnion(collectDescendantIds(of: child.id, in: groups))
+        }
+        return result
     }
 
     private func toggleGroup(_ groupId: UUID) {

@@ -43,7 +43,6 @@ struct ConnectionOutlineView: NSViewRepresentable {
     var onSelectionChanged: ((UUID?) -> Void)?
     var onDoubleClickConnection: ((DatabaseConnection) -> Void)?
     var onToggleGroup: ((UUID) -> Void)?
-    var onMoveConnection: ((DatabaseConnection, UUID?) -> Void)?
     var onReorderConnections: (([DatabaseConnection]) -> Void)?
     var onReorderGroups: (([ConnectionGroup]) -> Void)?
     var onMoveGroup: ((ConnectionGroup, UUID?) -> Void)?
@@ -397,7 +396,7 @@ final class ConnectionNSOutlineView: NSOutlineView {
     weak var coordinator: ConnectionOutlineView.Coordinator?
 
     override func drawBackground(inClipRect clipRect: NSRect) {
-        // Sip the translucent gray; SwiftUI parent background shows through
+        // Skip the translucent gray; SwiftUI parent background shows through
     }
 
     override func menu(for event: NSEvent) -> NSMenu? {
@@ -430,6 +429,18 @@ final class ConnectionNSOutlineView: NSOutlineView {
             // Return on a group toggles expand/collapse
             if row >= 0, let outlineGroup = item(atRow: row) as? OutlineGroup {
                 coordinator?.parent.onToggleGroup?(outlineGroup.group.id)
+                return
+            }
+        }
+        // Delete/Backspace key deletes the selected item
+        if event.keyCode == 51 {
+            let row = selectedRow
+            if row >= 0, let outlineConn = item(atRow: row) as? OutlineConnection {
+                coordinator?.parent.onDeleteConnection?(outlineConn.connection)
+                return
+            }
+            if row >= 0, let outlineGroup = item(atRow: row) as? OutlineGroup {
+                coordinator?.parent.onDeleteGroup?(outlineGroup.group)
                 return
             }
         }
@@ -501,17 +512,11 @@ extension ConnectionOutlineView {
             lastSnapshotHash = computeSnapshotHash(groups: groups, connections: connections, searchText: searchText)
 
             if isSearchMode {
-                // Flat filtered list of connections only
-                let query = searchText.lowercased()
-                let filtered = connections.filter { conn in
-                    conn.name.lowercased().contains(query)
-                        || conn.host.lowercased().contains(query)
-                        || conn.database.lowercased().contains(query)
-                        || parent.groups.first(where: { $0.id == conn.groupId })?.name.lowercased().contains(query) == true
-                }
-                .sorted { $0.sortOrder < $1.sortOrder }
+                // In search mode, `connections` is already filtered by the caller.
+                // Build a flat, sorted list of those connections.
+                let sortedConnections = connections.sorted { $0.sortOrder < $1.sortOrder }
 
-                for conn in filtered {
+                for conn in sortedConnections {
                     let item = OutlineConnection(conn)
                     allConnectionItems[conn.id] = item
                     rootItems.append(item)
