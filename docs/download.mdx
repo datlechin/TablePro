@@ -1,0 +1,55 @@
+---
+title: Download TablePro
+description: Download TablePro for your Mac
+---
+
+# Download TablePro
+
+## Install via Homebrew
+
+The fastest way to install TablePro:
+
+```bash
+brew install datlechin/tap/tablepro
+```
+
+<Tip>
+Homebrew automatically removes the macOS quarantine attribute, so you won't need to run `xattr -cr` on first launch.
+</Tip>
+
+## Direct Download
+
+Download the latest version for your Mac's architecture:
+
+<CardGroup cols={2}>
+  <Card title="Apple Silicon" icon="microchip" href="https://github.com/datlechin/tablepro/releases/latest/download/TablePro-arm64.dmg">
+    For Macs with M1, M2, M3, M4, or M5 chip. Download `TablePro-arm64.dmg`.
+  </Card>
+  <Card title="Intel" icon="desktop" href="https://github.com/datlechin/tablepro/releases/latest/download/TablePro-x86_64.dmg">
+    For Macs with Intel processor. Download `TablePro-x86_64.dmg`.
+  </Card>
+</CardGroup>
+
+### Which version do I need?
+
+Click the **Apple menu** () > **About This Mac**:
+
+- **Chip: Apple M1/M2/M3/M4/M5** — download Apple Silicon
+- **Processor: Intel** — download Intel
+
+### After downloading
+
+1. Open the `.dmg` file and drag TablePro to Applications
+2. On first launch, macOS will block the app. Open **Terminal** and run:
+
+```bash
+xattr -cr /Applications/TablePro.app
+```
+
+3. Open TablePro again — you only need to do this once
+
+See the [Installation guide](/installation#first-launch-security) for more details.
+
+## All Releases
+
+Browse all versions on the [GitHub Releases page](https://github.com/datlechin/tablepro/releases).
