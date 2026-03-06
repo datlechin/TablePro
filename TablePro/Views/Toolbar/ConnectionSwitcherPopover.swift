@@ -56,15 +56,15 @@ struct ConnectionSwitcherPopover: View {
                 if !sortedSessions.isEmpty {
                     Section {
                         ForEach(Array(sortedSessions.enumerated()), id: \.element.id) { index, session in
-                            connectionRow(
-                                connection: session.connection,
-                                isActive: session.id == currentSessionId,
-                                isConnected: session.status.isConnected,
-                                isHighlighted: index == selectedIndex
-                            )
-                            .onTapGesture {
-                                switchToSession(session.id)
+                            Button(action: { switchToSession(session.id) }) {
+                                connectionRow(
+                                    connection: session.connection,
+                                    isActive: session.id == currentSessionId,
+                                    isConnected: session.status.isConnected,
+                                    isHighlighted: index == selectedIndex
+                                )
                             }
+                            .buttonStyle(.plain)
                             .listRowBackground(
                                 RoundedRectangle(cornerRadius: 4)
                                     .fill(
@@ -89,16 +89,16 @@ struct ConnectionSwitcherPopover: View {
                     Section {
                         ForEach(Array(inactiveSaved.enumerated()), id: \.element.id) { index, connection in
                             let itemIndex = sortedSessions.count + index
-                            connectionRow(
-                                connection: connection,
-                                isActive: false,
-                                isConnected: false,
-                                isConnecting: isConnecting == connection.id,
-                                isHighlighted: itemIndex == selectedIndex
-                            )
-                            .onTapGesture {
-                                connectToSaved(connection)
+                            Button(action: { connectToSaved(connection) }) {
+                                connectionRow(
+                                    connection: connection,
+                                    isActive: false,
+                                    isConnected: false,
+                                    isConnecting: isConnecting == connection.id,
+                                    isHighlighted: itemIndex == selectedIndex
+                                )
                             }
+                            .buttonStyle(.plain)
                             .listRowBackground(
                                 RoundedRectangle(cornerRadius: 4)
                                     .fill(

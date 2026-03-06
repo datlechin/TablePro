@@ -184,19 +184,17 @@ actor SSHTunnelManager {
         process.arguments = arguments
 
         // Set up SSH_ASKPASS for passphrase or password
-        var askpassScript: String?
+        var askpassScriptPath: String?
 
         if authMethod == .privateKey, let passphrase = keyPassphrase {
-            // Private key with passphrase - use SSH_ASKPASS to provide it
-            askpassScript = try await createAskpassScript(password: passphrase)
+            askpassScriptPath = try createAskpassScript(password: passphrase)
         } else if authMethod == .password, let password = sshPassword {
-            // Password authentication
-            askpassScript = try await createAskpassScript(password: password)
+            askpassScriptPath = try createAskpassScript(password: password)
         }
 
-        if let script = askpassScript {
+        if let scriptPath = askpassScriptPath {
             var environment = ProcessInfo.processInfo.environment
-            environment["SSH_ASKPASS"] = script
+            environment["SSH_ASKPASS"] = scriptPath
             environment["SSH_ASKPASS_REQUIRE"] = "force"
             environment["DISPLAY"] = ":0"  // Required for SSH_ASKPASS to work
             process.environment = environment
@@ -211,6 +209,7 @@ actor SSHTunnelManager {
         do {
             try process.run()
         } catch {
+            removeAskpassScript(askpassScriptPath)
             throw SSHTunnelError.tunnelCreationFailed(error.localizedDescription)
         }
 
@@ -220,6 +219,8 @@ actor SSHTunnelManager {
             process: process,
             timeoutSeconds: 15
         )
+
+        removeAskpassScript(askpassScriptPath)
 
         if !tunnelReady {
             // Process died or timed out — read stderr for diagnostics
@@ -248,11 +249,6 @@ actor SSHTunnelManager {
             createdAt: Date()
         )
         tunnels[connectionId] = tunnel
-
-        // Clean up askpass script if created (for password or passphrase)
-        if authMethod == .password || keyPassphrase != nil {
-            cleanupAskpassScript()
-        }
 
         return localPort
     }
@@ -331,22 +327,23 @@ actor SSHTunnelManager {
         return path
     }
 
-    /// Create a temporary script for SSH_ASKPASS
-    private func createAskpassScript(password: String) async throws -> String {
+    private func createAskpassScript(password: String) throws -> String {
         let scriptPath = NSTemporaryDirectory() + "ssh_askpass_\(UUID().uuidString)"
-        let scriptContent = """
-            #!/bin/bash
-            echo '\(password.replacingOccurrences(of: "'", with: "'\\''"))'
-            """
+        let scriptContent = "#!/bin/bash\necho '\(password.replacingOccurrences(of: "'", with: "'\\''"))'\n"
 
-        try scriptContent.write(toFile: scriptPath, atomically: true, encoding: .utf8)
+        guard let data = scriptContent.data(using: .utf8) else {
+            throw SSHTunnelError.tunnelCreationFailed("Failed to encode askpass script")
+        }
 
-        // Make it executable
-        let chmod = Process()
-        chmod.executableURL = URL(fileURLWithPath: "/bin/chmod")
-        chmod.arguments = ["+x", scriptPath]
-        try chmod.run()
-        await waitForProcessExit(chmod)
+        let created = FileManager.default.createFile(
+            atPath: scriptPath,
+            contents: data,
+            attributes: [.posixPermissions: 0o700]
+        )
+
+        guard created else {
+            throw SSHTunnelError.tunnelCreationFailed("Failed to create askpass script")
+        }
 
         return scriptPath
     }
@@ -440,15 +437,12 @@ actor SSHTunnelManager {
         return .tunnelCreationFailed(errorMessage)
     }
 
-    private func cleanupAskpassScript() {
-        // Clean up any temporary askpass scripts
-        let tempDir = NSTemporaryDirectory()
-        if let enumerator = FileManager.default.enumerator(atPath: tempDir) {
-            while let file = enumerator.nextObject() as? String {
-                if file.hasPrefix("ssh_askpass_") {
-                    try? FileManager.default.removeItem(atPath: tempDir + file)
-                }
-            }
+    private func removeAskpassScript(_ path: String?) {
+        guard let path else { return }
+        do {
+            try FileManager.default.removeItem(atPath: path)
+        } catch {
+            Self.logger.warning("Failed to remove askpass script at \(path): \(error.localizedDescription)")
         }
     }
 }

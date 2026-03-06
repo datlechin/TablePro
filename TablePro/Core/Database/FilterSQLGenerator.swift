@@ -103,7 +103,7 @@ struct FilterSQLGenerator {
         case .regex:
             // SQLite doesn't support REGEXP without a custom function;
             // MongoDB filters are handled natively by MongoDBQueryBuilder
-            if databaseType == .sqlite || databaseType == .mongodb || databaseType == .redis { return nil }
+            if databaseType == .mongodb || databaseType == .redis { return nil }
             return generateRegexCondition(column: quotedColumn, pattern: filter.value)
         }
     }
@@ -192,14 +192,24 @@ struct FilterSQLGenerator {
             .replacingOccurrences(of: "'", with: "''")
     }
 
-    /// Escape LIKE pattern wildcards (% and _) in user input
     private func escapeLikeWildcards(_ value: String) -> String {
-        // Fast path: most values have no special chars
         guard value.contains("\\") || value.contains("%") || value.contains("_") else { return value }
-        return value
-            .replacingOccurrences(of: "\\", with: "\\\\")
-            .replacingOccurrences(of: "%", with: "\\%")
-            .replacingOccurrences(of: "_", with: "\\_")
+
+        switch databaseType {
+        case .mysql, .mariadb:
+            // MySQL uses \ as both string escape and default LIKE escape.
+            // Need double backslash in SQL string so string layer yields single \
+            // which LIKE then uses as escape char.
+            return value
+                .replacingOccurrences(of: "\\", with: "\\\\\\\\")
+                .replacingOccurrences(of: "%", with: "\\\\%")
+                .replacingOccurrences(of: "_", with: "\\\\_")
+        default:
+            return value
+                .replacingOccurrences(of: "\\", with: "\\\\")
+                .replacingOccurrences(of: "%", with: "\\%")
+                .replacingOccurrences(of: "_", with: "\\_")
+        }
     }
 
     // MARK: - List Parsing

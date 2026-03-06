@@ -283,12 +283,13 @@ final class DatabaseManager {
 
     /// Disconnect all sessions
     func disconnectAll() async {
-        // Stop all health monitors
-        for sessionId in healthMonitors.keys {
+        let monitorIds = Array(healthMonitors.keys)
+        for sessionId in monitorIds {
             await stopHealthMonitor(for: sessionId)
         }
 
-        for sessionId in activeSessions.keys {
+        let sessionIds = Array(activeSessions.keys)
+        for sessionId in sessionIds {
             await disconnectSession(sessionId)
         }
     }

@@ -105,7 +105,7 @@ final class LibPQConnection: @unchecked Sendable {
     // MARK: - Properties
 
     /// The underlying PGconn pointer (opaque handle)
-    /// Access only through the serial queue
+    /// Protected by `stateLock` for reads/writes from any thread
     private var conn: OpaquePointer?
 
     /// Serial queue for thread-safe access to the C library
@@ -255,8 +255,6 @@ final class LibPQConnection: @unchecked Sendable {
                     PQexec(connection, cStr)
                 }
 
-                self.conn = connection
-
                 // Cache server version while on the serial queue
                 let version = PQserverVersion(connection)
                 if version > 0 {
@@ -267,6 +265,7 @@ final class LibPQConnection: @unchecked Sendable {
                 }
 
                 self.stateLock.lock()
+                self.conn = connection
                 self._isConnected = true
                 self.stateLock.unlock()
                 continuation.resume()
@@ -278,17 +277,15 @@ final class LibPQConnection: @unchecked Sendable {
     func disconnect() {
         isShuttingDown = true
 
-        // Capture handle for async cleanup — avoids queue.sync deadlock
-        let handle = conn
-        conn = nil
-
         stateLock.lock()
         _isConnected = false
+        let handle = conn
+        conn = nil
         stateLock.unlock()
 
         _cachedServerVersion = nil
 
-        if let handle = handle {
+        if let handle {
             queue.async {
                 PQfinish(handle)
             }
@@ -302,11 +299,12 @@ final class LibPQConnection: @unchecked Sendable {
     func cancelCurrentQuery() {
         stateLock.lock()
         _isCancelled = true
+        let currentConn = conn
         stateLock.unlock()
 
-        guard let conn = conn else { return }
-        let cancelObj = PQgetCancel(conn)
-        guard let cancelObj = cancelObj else { return }
+        guard let currentConn else { return }
+        let cancelObj = PQgetCancel(currentConn)
+        guard let cancelObj else { return }
         defer { PQfreeCancel(cancelObj) }
 
         var errbuf = [CChar](repeating: 0, count: 256)
@@ -371,7 +369,11 @@ final class LibPQConnection: @unchecked Sendable {
 
     /// Synchronous query execution - must be called on the serial queue
     private func executeQuerySync(_ query: String) throws -> LibPQQueryResult {
-        guard !isShuttingDown, let conn = self.conn else {
+        stateLock.lock()
+        let conn = self.conn
+        stateLock.unlock()
+
+        guard !isShuttingDown, let conn else {
             throw LibPQError.notConnected
         }
 
@@ -425,7 +427,11 @@ final class LibPQConnection: @unchecked Sendable {
     /// Synchronous parameterized query execution using PQexecParams
     /// MUST be called on the serial queue
     private func executeParameterizedQuerySync(_ query: String, parameters: [Any?]) throws -> LibPQQueryResult {
-        guard !isShuttingDown, let conn = self.conn else {
+        stateLock.lock()
+        let conn = self.conn
+        stateLock.unlock()
+
+        guard !isShuttingDown, let conn else {
             throw LibPQError.notConnected
         }
 

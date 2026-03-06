@@ -22,6 +22,13 @@ protocol SQLFormatterProtocol {
 // MARK: - Main Formatter Service
 
 struct SQLFormatterService: SQLFormatterProtocol {
+    private static func regex(_ pattern: String, options: NSRegularExpression.Options = []) -> NSRegularExpression {
+        do {
+            return try NSRegularExpression(pattern: pattern, options: options)
+        } catch {
+            preconditionFailure("Invalid regex pattern: \(pattern)")
+        }
+    }
     // MARK: - Constants
 
     /// Maximum input size: 10MB (protection against DoS)
@@ -38,22 +45,19 @@ struct SQLFormatterService: SQLFormatterProtocol {
         for quoteChar in ["'", "\"", "`"] {
             let escaped = NSRegularExpression.escapedPattern(for: quoteChar)
             let pattern = "\(escaped)((?:\\\\\\\\\(quoteChar)|[^\(quoteChar)])*?)\(escaped)"
-            // swiftlint:disable:next force_try
-            result[quoteChar] = try! NSRegularExpression(pattern: pattern)
+            result[quoteChar] = regex(pattern)
         }
         return result
     }()
 
     /// Line comment pattern: --[^\n]*
     private static let lineCommentRegex: NSRegularExpression = {
-        // swiftlint:disable:next force_try
-        try! NSRegularExpression(pattern: "--[^\\n]*")
+        regex("--[^\\n]*")
     }()
 
     /// Block comment pattern: /* ... */
     private static let blockCommentRegex: NSRegularExpression = {
-        // swiftlint:disable:next force_try
-        try! NSRegularExpression(pattern: "/\\*.*?\\*/", options: .dotMatchesLineSeparators)
+        regex("/\\*.*?\\*/", options: .dotMatchesLineSeparators)
     }()
 
     /// Line break keyword patterns — pre-compiled for all 16 keywords (CPU-9)
@@ -67,34 +71,29 @@ struct SQLFormatterService: SQLFormatterProtocol {
         return keywords.sorted(by: { $0.count > $1.count }).map { keyword in
             let escapedKeyword = NSRegularExpression.escapedPattern(for: keyword)
             let pattern = "\\s+\(escapedKeyword)\\b"
-            // swiftlint:disable:next force_try
-            let regex = try! NSRegularExpression(pattern: pattern, options: .caseInsensitive)
+            let regex = regex(pattern, options: .caseInsensitive)
             return (keyword, regex)
         }
     }()
 
     /// Subquery pattern: \(\s*SELECT\b  (CPU-10)
     private static let subqueryRegex: NSRegularExpression = {
-        // swiftlint:disable:next force_try
-        try! NSRegularExpression(pattern: "\\(\\s*SELECT\\b", options: .caseInsensitive)
+        regex("\\(\\s*SELECT\\b", options: .caseInsensitive)
     }()
 
     /// Word boundary pattern for "END" keyword (CPU-10)
     private static let endWordBoundaryRegex: NSRegularExpression = {
-        // swiftlint:disable:next force_try
-        try! NSRegularExpression(pattern: "\\bEND\\b", options: .caseInsensitive)
+        regex("\\bEND\\b", options: .caseInsensitive)
     }()
 
     /// Word boundary pattern for "CASE" keyword (CPU-10)
     private static let caseWordBoundaryRegex: NSRegularExpression = {
-        // swiftlint:disable:next force_try
-        try! NSRegularExpression(pattern: "\\bCASE\\b", options: .caseInsensitive)
+        regex("\\bCASE\\b", options: .caseInsensitive)
     }()
 
     /// WHERE condition alignment pattern: \s+(AND|OR)\s+
     private static let whereConditionRegex: NSRegularExpression = {
-        // swiftlint:disable:next force_try
-        try! NSRegularExpression(pattern: "\\s+(AND|OR)\\s+", options: .caseInsensitive)
+        regex("\\s+(AND|OR)\\s+", options: .caseInsensitive)
     }()
 
     /// Keyword uppercasing regex cache per DatabaseType (CPU-5)

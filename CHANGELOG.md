@@ -11,6 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Replace CodeEditLanguages xcframework (38 grammars) with local package compiling only SQL, Bash, and JavaScript, reducing app binary size by ~55%
 
+### Fixed
+
+- Replace `.onTapGesture` with `Button` in color pickers, section headers, group headers, and connection switcher for VoiceOver accessibility
+- Fix data race on `isAppTerminating` static var in `MainContentCoordinator` using `OSAllocatedUnfairLock`
+- Fix `MainActor.assumeIsolated` crash risk in `VimKeyInterceptor` notification observer
+- Fix data race on `conn` pointer in `LibPQConnection` during disconnect and cancel
+- Fix SSH askpass script written with world-readable permissions; now uses atomic `0o700` creation and immediate cleanup
+- Fix potential dict mutation during iteration in `DatabaseManager.disconnectAll()`
+- Fix welcome screen showing blank panel when connections have orphaned group IDs
+
 ## [0.14.1] - 2026-03-06
 
 ### Added

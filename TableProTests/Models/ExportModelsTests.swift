@@ -32,9 +32,9 @@ struct ExportModelsTests {
         #expect(ExportFormat.xlsx.fileExtension == "xlsx")
     }
 
-    @Test("Export format has four cases")
+    @Test("Export format has five cases")
     func exportFormatCaseCount() {
-        #expect(ExportFormat.allCases.count == 4)
+        #expect(ExportFormat.allCases.count == 5)
     }
 
     @Test("CSV delimiter comma actual value")

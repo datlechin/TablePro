@@ -262,6 +262,16 @@
         }
       }
     },
+    "%@, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@"
+          }
+        }
+      }
+    },
     "%@." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1755,6 +1765,7 @@
       }
     },
     "Click + to create your first connection" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -1907,6 +1918,9 @@
           }
         }
       }
+    },
+    "Color %@" : {
+
     },
     "Column" : {
       "localizations" : {
@@ -2472,6 +2486,9 @@
           }
         }
       }
+    },
+    "Create a connection to get started" : {
+
     },
     "Create a connection to get started with\nyour databases." : {
       "localizations" : {
@@ -5852,7 +5869,11 @@
         }
       }
     },
+    "No Connections" : {
+
+    },
     "No connections yet" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -5934,6 +5955,7 @@
       }
     },
     "No matching connections" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -5942,6 +5964,9 @@
           }
         }
       }
+    },
+    "No Matching Connections" : {
+
     },
     "No matching databases" : {
       "localizations" : {
@@ -9328,6 +9353,9 @@
           }
         }
       }
+    },
+    "Try a different search term" : {
+
     },
     "Try adjusting your search terms\nor date filter." : {
       "localizations" : {

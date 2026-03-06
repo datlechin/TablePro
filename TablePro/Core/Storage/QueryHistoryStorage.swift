@@ -51,15 +51,27 @@ final class QueryHistoryStorage {
     // Throttle cleanup: only run every 100 inserts
     private var insertsSinceCleanup: Int = 0
 
+    private static var isRunningTests: Bool {
+        NSClassFromString("XCTestCase") != nil
+    }
+
     private init() {
         queue.async { [weak self] in
             self?.setupDatabase()
         }
     }
 
+    private var dbPath: String?
+
     deinit {
         if let db = db {
             sqlite3_close(db)
+        }
+        if Self.isRunningTests, let dbPath = dbPath {
+            try? FileManager.default.removeItem(atPath: dbPath)
+            for suffix in ["-wal", "-shm"] {
+                try? FileManager.default.removeItem(atPath: dbPath + suffix)
+            }
         }
     }
 
@@ -106,7 +118,12 @@ final class QueryHistoryStorage {
         // Create directory if needed
         try? fileManager.createDirectory(at: TableProDir, withIntermediateDirectories: true)
 
-        let dbPath = TableProDir.appendingPathComponent("query_history.db").path(percentEncoded: false)
+        let dbFileName = Self.isRunningTests
+            ? "query_history_test_\(ProcessInfo.processInfo.processIdentifier).db"
+            : "query_history.db"
+        let dbPath = TableProDir.appendingPathComponent(dbFileName).path(percentEncoded: false)
+
+        self.dbPath = dbPath
 
         // Open database
         if sqlite3_open(dbPath, &db) != SQLITE_OK {

@@ -55,7 +55,11 @@ struct WelcomeWindowView: View {
     }
 
     private var ungroupedConnections: [DatabaseConnection] {
-        filteredConnections.filter { $0.groupId == nil }
+        let validGroupIds = Set(groups.map(\.id))
+        return filteredConnections.filter { conn in
+            guard let groupId = conn.groupId else { return true }
+            return !validGroupIds.contains(groupId)
+        }
     }
 
     private var activeGroups: [ConnectionGroup] {
@@ -328,30 +332,7 @@ struct WelcomeWindowView: View {
     }
 
     private func groupHeader(for group: ConnectionGroup) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: collapsedGroupIds.contains(group.id) ? "chevron.right" : "chevron.down")
-                .font(.system(size: DesignConstants.FontSize.small, weight: .medium))
-                .foregroundStyle(.tertiary)
-                .frame(width: 12)
-
-            if !group.color.isDefault {
-                Circle()
-                    .fill(group.color.color)
-                    .frame(width: 8, height: 8)
-            }
-
-            Text(group.name)
-                .font(.system(size: DesignConstants.FontSize.small, weight: .semibold))
-                .foregroundStyle(.secondary)
-
-            Text("\(connections(in: group).count)")
-                .font(.system(size: DesignConstants.FontSize.tiny))
-                .foregroundStyle(.tertiary)
-
-            Spacer()
-        }
-        .contentShape(Rectangle())
-        .onTapGesture {
+        Button(action: {
             withAnimation(.easeInOut(duration: 0.2)) {
                 if collapsedGroupIds.contains(group.id) {
                     collapsedGroupIds.remove(group.id)
@@ -363,7 +344,33 @@ struct WelcomeWindowView: View {
                     forKey: "com.TablePro.collapsedGroupIds"
                 )
             }
+        }) {
+            HStack(spacing: 6) {
+                Image(systemName: collapsedGroupIds.contains(group.id) ? "chevron.right" : "chevron.down")
+                    .font(.system(size: DesignConstants.FontSize.small, weight: .medium))
+                    .foregroundStyle(.tertiary)
+                    .frame(width: 12)
+
+                if !group.color.isDefault {
+                    Circle()
+                        .fill(group.color.color)
+                        .frame(width: 8, height: 8)
+                }
+
+                Text(group.name)
+                    .font(.system(size: DesignConstants.FontSize.small, weight: .semibold))
+                    .foregroundStyle(.secondary)
+
+                Text("\(connections(in: group).count)")
+                    .font(.system(size: DesignConstants.FontSize.tiny))
+                    .foregroundStyle(.tertiary)
+
+                Spacer()
+            }
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel(String(localized: "\(group.name), \(collapsedGroupIds.contains(group.id) ? "expand" : "collapse")"))
         .contextMenu {
             Button {
                 renameGroup(group)
@@ -412,20 +419,30 @@ struct WelcomeWindowView: View {
 
             Image(systemName: "cylinder.split.1x2")
                 .font(.system(size: DesignConstants.IconSize.huge))
-                .foregroundStyle(.quaternary)
+                .foregroundStyle(.tertiary)
 
             if searchText.isEmpty {
-                Text("No connections yet")
+                Text("No Connections")
                     .font(.system(size: DesignConstants.FontSize.title3, weight: .medium))
                     .foregroundStyle(.secondary)
 
-                Text("Click + to create your first connection")
+                Text("Create a connection to get started")
                     .font(.system(size: DesignConstants.FontSize.medium))
                     .foregroundStyle(.tertiary)
+
+                Button(action: { openWindow(id: "connection-form") }) {
+                    Label("New Connection", systemImage: "plus")
+                }
+                .controlSize(.large)
+                .padding(.top, DesignConstants.Spacing.xxs)
             } else {
-                Text("No matching connections")
+                Text("No Matching Connections")
                     .font(.system(size: DesignConstants.FontSize.title3, weight: .medium))
                     .foregroundStyle(.secondary)
+
+                Text("Try a different search term")
+                    .font(.system(size: DesignConstants.FontSize.medium))
+                    .foregroundStyle(.tertiary)
             }
 
             Spacer()

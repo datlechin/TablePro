@@ -183,20 +183,21 @@ private struct TagColorPicker: View {
     var body: some View {
         HStack(spacing: 6) {
             ForEach(availableColors) { color in
-                Circle()
-                    .fill(color.color)
-                    .frame(width: DesignConstants.IconSize.medium, height: DesignConstants.IconSize.medium)
-                    .overlay(
-                        Circle()
-                            .stroke(Color.primary, lineWidth: selectedColor == color ? 2 : 0)
-                            .frame(
-                                width: DesignConstants.IconSize.large,
-                                height: DesignConstants.IconSize.large
-                            )
-                    )
-                    .onTapGesture {
-                        selectedColor = color
-                    }
+                Button(action: { selectedColor = color }) {
+                    Circle()
+                        .fill(color.color)
+                        .frame(width: DesignConstants.IconSize.medium, height: DesignConstants.IconSize.medium)
+                        .overlay(
+                            Circle()
+                                .stroke(Color.primary, lineWidth: selectedColor == color ? 2 : 0)
+                                .frame(
+                                    width: DesignConstants.IconSize.large,
+                                    height: DesignConstants.IconSize.large
+                                )
+                        )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(String(localized: "Color \(color.rawValue)"))
             }
         }
     }

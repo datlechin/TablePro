@@ -18,6 +18,7 @@ import SwiftUI
 /// 2. **Stable and reliable**: AppKit APIs are mature and well-documented
 /// 3. **Separation of concerns**: Window configuration is separate from SwiftUI views
 /// 4. **Future-proof**: Works reliably across macOS Ventura/Sonoma and future versions
+@MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
     private static let logger = Logger(subsystem: "com.TablePro", category: "AppDelegate")
     /// Track windows that have been configured to avoid re-applying styles (which causes flicker)
@@ -655,8 +656,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         saveAllTabStates()
     }
 
-    deinit {
-        // Remove all NotificationCenter observers added in applicationDidFinishLaunching
+    nonisolated deinit {
         NotificationCenter.default.removeObserver(self)
     }
 

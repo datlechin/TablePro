@@ -14,13 +14,14 @@ struct ConnectionColorPicker: View {
     var body: some View {
         HStack(spacing: 8) {
             ForEach(ConnectionColor.allCases) { color in
-                ColorDot(
-                    color: color,
-                    isSelected: selectedColor == color
-                )
-                .onTapGesture {
-                    selectedColor = color
+                Button(action: { selectedColor = color }) {
+                    ColorDot(
+                        color: color,
+                        isSelected: selectedColor == color
+                    )
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel(String(localized: "Color \(color.rawValue)"))
             }
         }
     }

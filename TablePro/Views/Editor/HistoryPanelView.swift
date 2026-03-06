@@ -117,8 +117,9 @@ private extension HistoryPanelView {
         .alert(String(localized: "Clear All History?"), isPresented: $showClearAllAlert) {
             Button(String(localized: "Cancel"), role: .cancel) {}
             Button(String(localized: "Clear All"), role: .destructive) {
-                Task {
+                Task { @MainActor in
                     _ = await dataProvider.clearAll()
+                    entries = dataProvider.historyEntries
                 }
             }
         } message: {
@@ -319,8 +320,9 @@ private extension HistoryPanelView {
     }
 
     func deleteEntry(_ entry: QueryHistoryEntry) {
-        Task {
+        Task { @MainActor in
             _ = await dataProvider.deleteEntry(id: entry.id)
+            entries = dataProvider.historyEntries
         }
     }
 
@@ -329,7 +331,7 @@ private extension HistoryPanelView {
         let currentIndex = entries.firstIndex(of: entry)
         deleteEntry(entry)
 
-        // After deletion notification triggers reload, select adjacent entry
+        // After deletion triggers reload, select adjacent entry
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
             if let idx = currentIndex, !entries.isEmpty {
                 let newIndex = min(idx, entries.count - 1)
