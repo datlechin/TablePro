@@ -20,17 +20,17 @@ struct WelcomeWindowView: View {
 
     @State private var connections: [DatabaseConnection] = []
     @State private var searchText = ""
-    @State private var connectionToDelete: DatabaseConnection?
-    @State private var showDeleteConfirmation = false
-    @State private var selectedConnectionId: UUID?
     @State private var showOnboarding = !AppSettingsStorage.shared.hasCompletedOnboarding()
 
     // Group state
     @State private var groups: [ConnectionGroup] = []
     @State private var expandedGroups: Set<UUID> = []
     @State private var groupFormContext: GroupFormContext?
-    @State private var groupToDelete: ConnectionGroup?
-    @State private var showDeleteGroupConfirmation = false
+
+    // Delete confirmation (2-step for non-empty groups)
+    @State private var pendingDelete = PendingDelete()
+    @State private var showDeleteStep1 = false
+    @State private var showDeleteStep2 = false
 
     @Environment(\.openWindow) private var openWindow
 
@@ -67,35 +67,43 @@ struct WelcomeWindowView: View {
         .onAppear {
             loadConnections()
         }
-        .confirmationDialog(
-            "Delete Connection",
-            isPresented: $showDeleteConfirmation,
-            presenting: connectionToDelete
-        ) { connection in
-            Button("Delete", role: .destructive) {
-                deleteConnection(connection)
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: { connection in
-            Text("Are you sure you want to delete \"\(connection.name)\"?")
-        }
         .onReceive(NotificationCenter.default.publisher(for: .newConnection)) { _ in
             openWindow(id: "connection-form", value: nil as UUID?)
         }
         .onReceive(NotificationCenter.default.publisher(for: .connectionUpdated)) { _ in
             loadConnections()
         }
+        // Step 1: confirm deletion
         .confirmationDialog(
-            "Delete Group",
-            isPresented: $showDeleteGroupConfirmation,
-            presenting: groupToDelete
-        ) { group in
-            Button("Delete", role: .destructive) {
-                deleteGroup(group)
+            pendingDelete.step1Title,
+            isPresented: $showDeleteStep1
+        ) {
+            Button(pendingDelete.step1ButtonTitle, role: .destructive) {
+                if pendingDelete.affectedConnectionCount > 0 {
+                    showDeleteStep2 = true
+                } else {
+                    executePendingDelete()
+                }
             }
-            Button("Cancel", role: .cancel) {}
-        } message: { group in
-            Text("Are you sure you want to delete \"\(group.name)\"? Connections will be ungrouped.")
+            Button("Cancel", role: .cancel) {
+                pendingDelete = PendingDelete()
+            }
+        } message: {
+            Text(pendingDelete.step1Message)
+        }
+        // Step 2: confirm connection deletion (only when groups contain connections)
+        .confirmationDialog(
+            pendingDelete.step2Title,
+            isPresented: $showDeleteStep2
+        ) {
+            Button(pendingDelete.step2ButtonTitle, role: .destructive) {
+                executePendingDelete()
+            }
+            Button("Cancel", role: .cancel) {
+                pendingDelete = PendingDelete()
+            }
+        } message: {
+            Text(pendingDelete.step2Message)
         }
         .sheet(item: $groupFormContext) { context in
             ConnectionGroupFormSheet(
@@ -263,11 +271,7 @@ struct WelcomeWindowView: View {
             groups: groups,
             connections: searchText.isEmpty ? connections : filteredConnections,
             expandedGroupIds: expandedGroups,
-            selectedItemId: selectedConnectionId,
             searchText: searchText,
-            onSelectionChanged: { id in
-                selectedConnectionId = id
-            },
             onDoubleClickConnection: { connection in
                 connectToDatabase(connection)
             },
@@ -318,10 +322,6 @@ struct WelcomeWindowView: View {
             onEditGroup: { group in
                 groupFormContext = GroupFormContext(group: group, parentGroupId: group.parentGroupId)
             },
-            onDeleteGroup: { group in
-                groupToDelete = group
-                showDeleteGroupConfirmation = true
-            },
             onEditConnection: { connection in
                 openWindow(id: "connection-form", value: connection.id as UUID?)
                 focusConnectionFormWindow()
@@ -339,12 +339,16 @@ struct WelcomeWindowView: View {
                     }
                 }
             },
-            onDeleteConnection: { connection in
-                connectionToDelete = connection
-                showDeleteConfirmation = true
-            },
             onMoveConnectionToGroup: { connection, groupId in
                 moveConnectionToGroup(connection, groupId: groupId)
+            },
+            onRequestDelete: { grps, conns in
+                requestDelete(groups: grps, connections: conns)
+            },
+            onMoveConnectionsToGroup: { conns, groupId in
+                for conn in conns {
+                    moveConnectionToGroup(conn, groupId: groupId)
+                }
             }
         )
     }
@@ -418,10 +422,9 @@ struct WelcomeWindowView: View {
     }
 
     private func deleteConnection(_ connection: DatabaseConnection) {
-        connections.removeAll { $0.id == connection.id }
         storage.deleteConnection(connection)
-        storage.saveConnections(connections)
     }
+
 
     private func duplicateConnection(_ connection: DatabaseConnection) {
         // Create duplicate with new UUID and copy passwords
@@ -467,7 +470,6 @@ struct WelcomeWindowView: View {
         groupStorage.deleteGroup(group)
         expandedGroups.subtract(allDeletedIds)
         groupStorage.saveExpandedGroupIds(expandedGroups)
-        loadConnections()
     }
 
     private func moveConnectionToGroup(_ connection: DatabaseConnection, groupId: UUID?) {
@@ -487,6 +489,43 @@ struct WelcomeWindowView: View {
         return result
     }
 
+    private func requestDelete(groups: [ConnectionGroup] = [], connections: [DatabaseConnection] = []) {
+        // Collect all group IDs being deleted (including descendants)
+        let allGroups = groupStorage.loadGroups()
+        var deletedGroupIds = Set<UUID>()
+        for group in groups {
+            deletedGroupIds.insert(group.id)
+            deletedGroupIds.formUnion(collectDescendantIds(of: group.id, in: allGroups))
+        }
+
+        // Collect all affected connections: explicitly selected + inside deleted groups
+        let allConnections = storage.loadConnections()
+        var affectedIds = Set(connections.map(\.id))
+        for conn in allConnections {
+            if let gid = conn.groupId, deletedGroupIds.contains(gid) {
+                affectedIds.insert(conn.id)
+            }
+        }
+
+        pendingDelete = PendingDelete(
+            groups: groups,
+            connections: connections,
+            affectedConnectionCount: affectedIds.count
+        )
+        showDeleteStep1 = true
+    }
+
+    private func executePendingDelete() {
+        for conn in pendingDelete.connections {
+            deleteConnection(conn)
+        }
+        for group in pendingDelete.groups {
+            deleteGroup(group)
+        }
+        pendingDelete = PendingDelete()
+        loadConnections()
+    }
+
     private func toggleGroup(_ groupId: UUID) {
         if expandedGroups.contains(groupId) {
             expandedGroups.remove(groupId)
@@ -494,6 +533,77 @@ struct WelcomeWindowView: View {
             expandedGroups.insert(groupId)
         }
         groupStorage.saveExpandedGroupIds(expandedGroups)
+    }
+}
+
+// MARK: - PendingDelete
+
+/// Tracks items pending deletion with 2-step confirmation
+private struct PendingDelete {
+    var groups: [ConnectionGroup] = []
+    var connections: [DatabaseConnection] = []
+    var affectedConnectionCount = 0
+
+    var step1Title: String {
+        if !groups.isEmpty, connections.isEmpty {
+            return groups.count == 1
+                ? String(localized: "Delete Group")
+                : String(localized: "Delete Groups")
+        }
+        return connections.count == 1
+            ? String(localized: "Delete Connection")
+            : String(localized: "Delete Connections")
+    }
+
+    var step1Message: String {
+        if groups.count == 1, connections.isEmpty {
+            let name = groups[0].name
+            if affectedConnectionCount > 0 {
+                return String(
+                    localized:
+                        "Delete \"\(name)\" and its \(affectedConnectionCount) connection(s)?"
+                )
+            }
+            return String(localized: "Delete \"\(name)\"?")
+        }
+        if !groups.isEmpty, !connections.isEmpty {
+            return String(
+                localized:
+                    "Delete \(groups.count) group(s) and \(affectedConnectionCount) connection(s) total?"
+            )
+        }
+        if groups.count > 1 {
+            if affectedConnectionCount > 0 {
+                return String(
+                    localized:
+                        "Delete \(groups.count) groups and \(affectedConnectionCount) connection(s) inside?"
+                )
+            }
+            return String(localized: "Delete \(groups.count) groups?")
+        }
+        if connections.count == 1 {
+            return String(localized: "Delete \"\(connections[0].name)\"?")
+        }
+        return String(localized: "Delete \(connections.count) connections?")
+    }
+
+    var step1ButtonTitle: String {
+        String(localized: "Delete")
+    }
+
+    var step2Title: String {
+        String(localized: "Delete Connections")
+    }
+
+    var step2Message: String {
+        String(
+            localized:
+                "\(affectedConnectionCount) connection(s) will be permanently deleted. This cannot be undone."
+        )
+    }
+
+    var step2ButtonTitle: String {
+        String(localized: "Delete \(affectedConnectionCount) Connection(s)")
     }
 }
 

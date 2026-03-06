@@ -36,11 +36,9 @@ struct ConnectionOutlineView: NSViewRepresentable {
     let groups: [ConnectionGroup]
     let connections: [DatabaseConnection]
     var expandedGroupIds: Set<UUID>
-    var selectedItemId: UUID?
     var searchText: String
 
     // Callbacks
-    var onSelectionChanged: ((UUID?) -> Void)?
     var onDoubleClickConnection: ((DatabaseConnection) -> Void)?
     var onToggleGroup: ((UUID) -> Void)?
     var onReorderConnections: (([DatabaseConnection]) -> Void)?
@@ -51,12 +49,14 @@ struct ConnectionOutlineView: NSViewRepresentable {
     var onNewConnection: (() -> Void)?
     var onNewGroup: ((UUID?) -> Void)?
     var onEditGroup: ((ConnectionGroup) -> Void)?
-    var onDeleteGroup: ((ConnectionGroup) -> Void)?
     var onEditConnection: ((DatabaseConnection) -> Void)?
     var onDuplicateConnection: ((DatabaseConnection) -> Void)?
     var onCopyConnectionURL: ((DatabaseConnection) -> Void)?
-    var onDeleteConnection: ((DatabaseConnection) -> Void)?
     var onMoveConnectionToGroup: ((DatabaseConnection, UUID?) -> Void)?
+
+    // Delete & bulk callbacks
+    var onRequestDelete: (([ConnectionGroup], [DatabaseConnection]) -> Void)?
+    var onMoveConnectionsToGroup: (([DatabaseConnection], UUID?) -> Void)?
 
     // MARK: - NSViewRepresentable
 
@@ -77,7 +77,7 @@ struct ConnectionOutlineView: NSViewRepresentable {
         outlineView.rowHeight = DesignConstants.RowHeight.comfortable
         outlineView.style = .sourceList
         outlineView.selectionHighlightStyle = .regular
-        outlineView.allowsMultipleSelection = false
+        outlineView.allowsMultipleSelection = true
         outlineView.autosaveExpandedItems = false
         outlineView.floatsGroupRows = false
         outlineView.rowSizeStyle = .default
@@ -104,8 +104,7 @@ struct ConnectionOutlineView: NSViewRepresentable {
         context.coordinator.outlineView = outlineView
         context.coordinator.rebuildData(groups: groups, connections: connections, searchText: searchText)
         outlineView.reloadData()
-        syncExpandedState(outlineView: outlineView, coordinator: context.coordinator)
-        syncSelection(outlineView: outlineView, coordinator: context.coordinator)
+        restoreExpandedState(outlineView: outlineView, coordinator: context.coordinator, expandedIds: expandedGroupIds)
 
         return scrollView
     }
@@ -126,67 +125,69 @@ struct ConnectionOutlineView: NSViewRepresentable {
         )
 
         if needsReload {
+            // Capture current state before reload destroys it
+            let currentExpanded = coordinator.captureExpandedGroupIds(from: outlineView)
+            let scrollView = outlineView.enclosingScrollView
+            let savedOrigin = scrollView?.contentView.bounds.origin
+
             coordinator.rebuildData(groups: groups, connections: connections, searchText: searchText)
             outlineView.reloadData()
-            syncExpandedState(outlineView: outlineView, coordinator: coordinator)
-        }
 
-        syncSelection(outlineView: outlineView, coordinator: coordinator)
+            restoreExpandedState(
+                outlineView: outlineView,
+                coordinator: coordinator,
+                expandedIds: currentExpanded.union(expandedGroupIds)
+            )
+
+            // Restore scroll position, clamped to new content bounds
+            if let scrollView, let savedOrigin {
+                let maxY = max(0, outlineView.frame.height - scrollView.contentView.bounds.height)
+                let clampedY = min(savedOrigin.y, maxY)
+                scrollView.contentView.scroll(to: NSPoint(x: savedOrigin.x, y: clampedY))
+                scrollView.reflectScrolledClipView(scrollView.contentView)
+            }
+        }
     }
 
     // MARK: - State Sync
 
-    private func syncExpandedState(outlineView: NSOutlineView, coordinator: Coordinator) {
+    /// Restore expanded state after a reload using the given set of IDs.
+    private func restoreExpandedState(
+        outlineView: NSOutlineView,
+        coordinator: Coordinator,
+        expandedIds: Set<UUID>
+    ) {
         NSAnimationContext.beginGrouping()
         NSAnimationContext.current.duration = 0
 
         for item in coordinator.rootItems {
-            syncExpandedStateRecursive(outlineView: outlineView, item: item, coordinator: coordinator)
+            restoreExpandedStateRecursive(
+                outlineView: outlineView, item: item, coordinator: coordinator, expandedIds: expandedIds
+            )
         }
 
         NSAnimationContext.endGrouping()
     }
 
-    private func syncExpandedStateRecursive(
+    private func restoreExpandedStateRecursive(
         outlineView: NSOutlineView,
         item: NSObject,
-        coordinator: Coordinator
+        coordinator: Coordinator,
+        expandedIds: Set<UUID>
     ) {
         guard let outlineGroup = item as? OutlineGroup else { return }
-        let shouldExpand = expandedGroupIds.contains(outlineGroup.group.id)
-        let isExpanded = outlineView.isItemExpanded(item)
-
-        if shouldExpand && !isExpanded {
+        if expandedIds.contains(outlineGroup.group.id) {
             outlineView.expandItem(item)
-        } else if !shouldExpand && isExpanded {
-            outlineView.collapseItem(item)
         }
-
-        // Recurse into children
         if let children = coordinator.childrenMap[outlineGroup.group.id] {
             for child in children {
-                syncExpandedStateRecursive(outlineView: outlineView, item: child, coordinator: coordinator)
+                restoreExpandedStateRecursive(
+                    outlineView: outlineView, item: child, coordinator: coordinator, expandedIds: expandedIds
+                )
             }
         }
     }
 
-    private func syncSelection(outlineView: NSOutlineView, coordinator: Coordinator) {
-        guard let targetId = selectedItemId else {
-            if outlineView.selectedRow != -1 {
-                outlineView.deselectAll(nil)
-            }
-            return
-        }
-
-        if let item = coordinator.itemById(targetId) {
-            let row = outlineView.row(forItem: item)
-            if row >= 0 && outlineView.selectedRow != row {
-                coordinator.isSyncingSelection = true
-                outlineView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
-                coordinator.isSyncingSelection = false
-            }
-        }
-    }
 }
 
 // MARK: - Pasteboard Type
@@ -404,10 +405,17 @@ final class ConnectionNSOutlineView: NSOutlineView {
         let clickedRow = row(at: point)
 
         if clickedRow >= 0 {
-            // Select the row under right-click
-            selectRowIndexes(IndexSet(integer: clickedRow), byExtendingSelection: false)
-            let item = self.item(atRow: clickedRow)
+            // If clicked row is already in selection, keep multi-selection
+            if !selectedRowIndexes.contains(clickedRow) {
+                selectRowIndexes(IndexSet(integer: clickedRow), byExtendingSelection: false)
+            }
 
+            // Multi-selection context menu
+            if selectedRowIndexes.count > 1 {
+                return coordinator?.multiSelectionContextMenu(outlineView: self)
+            }
+
+            let item = self.item(atRow: clickedRow)
             if let outlineGroup = item as? OutlineGroup {
                 return coordinator?.contextMenu(for: outlineGroup)
             } else if let outlineConn = item as? OutlineConnection {
@@ -432,17 +440,21 @@ final class ConnectionNSOutlineView: NSOutlineView {
                 return
             }
         }
-        // Delete/Backspace key deletes the selected item
-        if event.keyCode == 51 {
-            let row = selectedRow
-            if row >= 0, let outlineConn = item(atRow: row) as? OutlineConnection {
-                coordinator?.parent.onDeleteConnection?(outlineConn.connection)
-                return
+        // Delete/Backspace key deletes selected items
+        if event.keyCode == 51, !selectedRowIndexes.isEmpty {
+            var selectedConnections: [DatabaseConnection] = []
+            var selectedGroups: [ConnectionGroup] = []
+            for row in selectedRowIndexes {
+                if let outlineConn = item(atRow: row) as? OutlineConnection {
+                    selectedConnections.append(outlineConn.connection)
+                } else if let outlineGroup = item(atRow: row) as? OutlineGroup {
+                    selectedGroups.append(outlineGroup.group)
+                }
             }
-            if row >= 0, let outlineGroup = item(atRow: row) as? OutlineGroup {
-                coordinator?.parent.onDeleteGroup?(outlineGroup.group)
-                return
+            if !selectedGroups.isEmpty || !selectedConnections.isEmpty {
+                coordinator?.parent.onRequestDelete?(selectedGroups, selectedConnections)
             }
+            return
         }
         super.keyDown(with: event)
     }
@@ -456,9 +468,9 @@ extension ConnectionOutlineView {
 
         var parent: ConnectionOutlineView
         weak var outlineView: ConnectionNSOutlineView?
-        var isSyncingSelection = false
         var isDragging = false
         private var draggedItemId: UUID?
+        private var draggedItemIds: Set<UUID> = []
 
         // Data model
         var rootItems: [NSObject] = []
@@ -591,6 +603,17 @@ extension ConnectionOutlineView {
             return allConnectionItems[id]
         }
 
+        /// Capture which group IDs are currently expanded in the outline view.
+        func captureExpandedGroupIds(from outlineView: NSOutlineView) -> Set<UUID> {
+            var expanded = Set<UUID>()
+            for (groupId, item) in allGroupItems {
+                if outlineView.isItemExpanded(item) {
+                    expanded.insert(groupId)
+                }
+            }
+            return expanded
+        }
+
         // MARK: - NSOutlineViewDataSource
 
         func outlineView(_ outlineView: NSOutlineView, numberOfChildrenOfItem item: Any?) -> Int {
@@ -634,6 +657,34 @@ extension ConnectionOutlineView {
 
             isDragging = true
 
+            // On first item of a drag, capture all selected IDs
+            if draggedItemIds.isEmpty {
+                var hasGroup = false
+                var hasConnection = false
+                for row in outlineView.selectedRowIndexes {
+                    if outlineView.item(atRow: row) is OutlineGroup {
+                        hasGroup = true
+                    } else if outlineView.item(atRow: row) is OutlineConnection {
+                        hasConnection = true
+                    }
+                }
+                // Don't allow multi-drag when groups are involved (moving a parent already moves children)
+                let isMultiSelection = outlineView.selectedRowIndexes.count > 1
+                if isMultiSelection, hasGroup {
+                    isDragging = false
+                    return nil
+                }
+
+                for row in outlineView.selectedRowIndexes {
+                    if let conn = outlineView.item(atRow: row) as? OutlineConnection {
+                        draggedItemIds.insert(conn.connection.id)
+                    }
+                }
+            }
+
+            // If multi-drag was blocked, reject subsequent items too
+            if !isDragging { return nil }
+
             let pasteboardItem = NSPasteboardItem()
             if let outlineGroup = item as? OutlineGroup {
                 draggedItemId = outlineGroup.group.id
@@ -648,6 +699,7 @@ extension ConnectionOutlineView {
         func outlineView(_ outlineView: NSOutlineView, draggingSession session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
             isDragging = false
             draggedItemId = nil
+            draggedItemIds = []
         }
 
         // MARK: - Drop Validation
@@ -790,19 +842,29 @@ extension ConnectionOutlineView {
                 return false
             }
 
+            // Capture all dragged IDs before clearing state
+            let allDraggedIds = draggedItemIds.isEmpty ? [draggedId] : draggedItemIds
+
             // Clear drag state before callbacks so the subsequent
             // SwiftUI state update → updateNSView is not blocked
             isDragging = false
             draggedItemId = nil
+            draggedItemIds = []
 
-            if let draggedConnItem = allConnectionItems[draggedId] {
-                return acceptConnectionDrop(
-                    connection: draggedConnItem.connection,
+            // Collect all dragged connections and groups
+            let draggedConnections = allDraggedIds.compactMap { allConnectionItems[$0]?.connection }
+            let draggedGroups = allDraggedIds.compactMap { allGroupItems[$0]?.group }
+
+            // Multi-connection drop
+            if !draggedConnections.isEmpty, draggedGroups.isEmpty {
+                return acceptMultiConnectionDrop(
+                    connections: draggedConnections,
                     targetItem: item,
                     childIndex: index
                 )
             }
 
+            // Single group drop (multi-group drag not supported)
             if let draggedGroupItem = allGroupItems[draggedId] {
                 return acceptGroupDrop(
                     group: draggedGroupItem.group,
@@ -887,6 +949,45 @@ extension ConnectionOutlineView {
             }
 
             return false
+        }
+
+        private func acceptMultiConnectionDrop(
+            connections: [DatabaseConnection],
+            targetItem: Any?,
+            childIndex: Int
+        ) -> Bool {
+            // Single connection: use existing logic
+            if connections.count == 1 {
+                return acceptConnectionDrop(
+                    connection: connections[0],
+                    targetItem: targetItem,
+                    childIndex: childIndex
+                )
+            }
+
+            let draggedIds = Set(connections.map(\.id))
+            let targetGroupId: UUID? = (targetItem as? OutlineGroup)?.group.id
+
+            // Get existing siblings excluding dragged items
+            var siblings = parent.connections
+                .filter { $0.groupId == targetGroupId && !draggedIds.contains($0.id) }
+                .sorted { $0.sortOrder < $1.sortOrder }
+
+            // Append all dragged connections at the end
+            for var conn in connections {
+                conn.groupId = targetGroupId
+                conn.sortOrder = (siblings.last?.sortOrder ?? -1) + 1
+                siblings.append(conn)
+            }
+
+            // Renumber
+            for (order, var conn) in siblings.enumerated() {
+                conn.sortOrder = order
+                siblings[order] = conn
+            }
+
+            parent.onReorderConnections?(siblings)
+            return true
         }
 
         private func acceptGroupDrop(
@@ -985,26 +1086,6 @@ extension ConnectionOutlineView {
                 return cellView
             }
             return nil
-        }
-
-        func outlineViewSelectionDidChange(_ notification: Notification) {
-            guard !isSyncingSelection else { return }
-            guard let outlineView = notification.object as? NSOutlineView else { return }
-
-            let row = outlineView.selectedRow
-            guard row >= 0 else {
-                parent.onSelectionChanged?(nil)
-                return
-            }
-
-            let item = outlineView.item(atRow: row)
-            if let outlineGroup = item as? OutlineGroup {
-                parent.onSelectionChanged?(outlineGroup.group.id)
-            } else if let outlineConn = item as? OutlineConnection {
-                parent.onSelectionChanged?(outlineConn.connection.id)
-            } else {
-                parent.onSelectionChanged?(nil)
-            }
         }
 
         func outlineViewItemDidExpand(_ notification: Notification) {
@@ -1216,6 +1297,80 @@ extension ConnectionOutlineView {
             return menu
         }
 
+        // MARK: - Multi-Selection Context Menu
+
+        func multiSelectionContextMenu(outlineView: NSOutlineView) -> NSMenu {
+            var selectedConnections: [DatabaseConnection] = []
+            var selectedGroups: [ConnectionGroup] = []
+            for row in outlineView.selectedRowIndexes {
+                if let outlineConn = outlineView.item(atRow: row) as? OutlineConnection {
+                    selectedConnections.append(outlineConn.connection)
+                } else if let outlineGroup = outlineView.item(atRow: row) as? OutlineGroup {
+                    selectedGroups.append(outlineGroup.group)
+                }
+            }
+
+            let menu = NSMenu()
+
+            // Move to Group (only for connections)
+            if !selectedConnections.isEmpty, selectedGroups.isEmpty {
+                let moveMenu = NSMenu()
+
+                let noneItem = NSMenuItem(
+                    title: String(localized: "None"),
+                    action: #selector(contextMenuBulkMoveToGroup(_:)),
+                    keyEquivalent: ""
+                )
+                noneItem.target = self
+                noneItem.representedObject = BulkMoveInfo(connections: selectedConnections, targetGroupId: nil)
+                moveMenu.addItem(noneItem)
+
+                moveMenu.addItem(.separator())
+
+                let rootGroups = parent.groups
+                    .filter { $0.parentGroupId == nil }
+                    .sorted { $0.sortOrder < $1.sortOrder }
+                for group in rootGroups {
+                    moveMenu.addItem(bulkMoveToGroupMenuItem(for: selectedConnections, group: group))
+                }
+
+                let moveItem = NSMenuItem(
+                    title: String(localized: "Move to Group"),
+                    action: nil,
+                    keyEquivalent: ""
+                )
+                moveItem.submenu = moveMenu
+                moveItem.image = NSImage(systemSymbolName: "folder", accessibilityDescription: nil)
+                menu.addItem(moveItem)
+
+                menu.addItem(.separator())
+            }
+
+            // Delete
+            let totalCount = selectedConnections.count + selectedGroups.count
+            let deleteTitle: String
+            if !selectedConnections.isEmpty, selectedGroups.isEmpty {
+                deleteTitle = String(localized: "Delete \(selectedConnections.count) Connections")
+            } else if selectedConnections.isEmpty, !selectedGroups.isEmpty {
+                deleteTitle = String(localized: "Delete \(selectedGroups.count) Groups")
+            } else {
+                deleteTitle = String(localized: "Delete \(totalCount) Items")
+            }
+
+            let deleteItem = NSMenuItem(
+                title: deleteTitle,
+                action: #selector(contextMenuBulkDelete(_:)),
+                keyEquivalent: ""
+            )
+            deleteItem.target = self
+            deleteItem.representedObject = BulkDeleteInfo(connections: selectedConnections, groups: selectedGroups)
+            deleteItem.image = NSImage(systemSymbolName: "trash", accessibilityDescription: nil)
+            deleteItem.setDestructiveStyle()
+            menu.addItem(deleteItem)
+
+            return menu
+        }
+
         // MARK: - Context Menu Actions
 
         @objc private func contextMenuNewConnection() {
@@ -1238,7 +1393,7 @@ extension ConnectionOutlineView {
 
         @objc private func contextMenuDeleteGroup(_ sender: NSMenuItem) {
             guard let group = sender.representedObject as? ConnectionGroup else { return }
-            parent.onDeleteGroup?(group)
+            parent.onRequestDelete?([group], [])
         }
 
         @objc private func contextMenuConnect(_ sender: NSMenuItem) {
@@ -1263,7 +1418,7 @@ extension ConnectionOutlineView {
 
         @objc private func contextMenuDeleteConnection(_ sender: NSMenuItem) {
             guard let connection = sender.representedObject as? DatabaseConnection else { return }
-            parent.onDeleteConnection?(connection)
+            parent.onRequestDelete?([], [connection])
         }
 
         /// Build an NSMenuItem for a group — if it has children, wrap in a submenu
@@ -1327,6 +1482,65 @@ extension ConnectionOutlineView {
             guard let moveInfo = sender.representedObject as? ConnectionMoveInfo else { return }
             parent.onMoveConnectionToGroup?(moveInfo.connection, moveInfo.targetGroupId)
         }
+
+        @objc private func contextMenuBulkDelete(_ sender: NSMenuItem) {
+            guard let info = sender.representedObject as? BulkDeleteInfo else { return }
+            parent.onRequestDelete?(info.groups, info.connections)
+        }
+
+        @objc private func contextMenuBulkMoveToGroup(_ sender: NSMenuItem) {
+            guard let info = sender.representedObject as? BulkMoveInfo else { return }
+            parent.onMoveConnectionsToGroup?(info.connections, info.targetGroupId)
+        }
+
+        private func bulkMoveToGroupMenuItem(
+            for connections: [DatabaseConnection],
+            group: ConnectionGroup
+        ) -> NSMenuItem {
+            let childGroups = parent.groups
+                .filter { $0.parentGroupId == group.id }
+                .sorted { $0.sortOrder < $1.sortOrder }
+
+            let folderImage = NSImage(systemSymbolName: "folder.fill", accessibilityDescription: nil)?
+                .withSymbolConfiguration(.init(paletteColors: [
+                    group.color.isDefault ? .secondaryLabelColor : NSColor(group.color.color),
+                ]))
+
+            if childGroups.isEmpty {
+                let item = NSMenuItem(
+                    title: group.name,
+                    action: #selector(contextMenuBulkMoveToGroup(_:)),
+                    keyEquivalent: ""
+                )
+                item.target = self
+                item.representedObject = BulkMoveInfo(connections: connections, targetGroupId: group.id)
+                item.image = folderImage
+                return item
+            } else {
+                let submenu = NSMenu()
+
+                let selfItem = NSMenuItem(
+                    title: group.name,
+                    action: #selector(contextMenuBulkMoveToGroup(_:)),
+                    keyEquivalent: ""
+                )
+                selfItem.target = self
+                selfItem.representedObject = BulkMoveInfo(connections: connections, targetGroupId: group.id)
+                selfItem.image = folderImage
+                submenu.addItem(selfItem)
+
+                submenu.addItem(.separator())
+
+                for child in childGroups {
+                    submenu.addItem(bulkMoveToGroupMenuItem(for: connections, group: child))
+                }
+
+                let item = NSMenuItem(title: group.name, action: nil, keyEquivalent: "")
+                item.submenu = submenu
+                item.image = folderImage
+                return item
+            }
+        }
     }
 }
 
@@ -1339,6 +1553,28 @@ private final class ConnectionMoveInfo: NSObject {
 
     init(connection: DatabaseConnection, targetGroupId: UUID?) {
         self.connection = connection
+        self.targetGroupId = targetGroupId
+    }
+}
+
+/// Helper for bulk delete via NSMenuItem.representedObject
+private final class BulkDeleteInfo: NSObject {
+    let connections: [DatabaseConnection]
+    let groups: [ConnectionGroup]
+
+    init(connections: [DatabaseConnection], groups: [ConnectionGroup]) {
+        self.connections = connections
+        self.groups = groups
+    }
+}
+
+/// Helper for bulk move via NSMenuItem.representedObject
+private final class BulkMoveInfo: NSObject {
+    let connections: [DatabaseConnection]
+    let targetGroupId: UUID?
+
+    init(connections: [DatabaseConnection], targetGroupId: UUID?) {
+        self.connections = connections
         self.targetGroupId = targetGroupId
     }
 }

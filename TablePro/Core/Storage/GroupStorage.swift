@@ -65,8 +65,7 @@ final class GroupStorage {
         }
     }
 
-    /// Delete a group and all its descendants.
-    /// Member connections become ungrouped.
+    /// Delete a group and all its descendants, including their connections.
     func deleteGroup(_ group: ConnectionGroup) {
         var groups = loadGroups()
         let deletedIds = collectDescendantIds(of: group.id, in: groups)
@@ -76,19 +75,33 @@ final class GroupStorage {
         groups.removeAll { allDeletedIds.contains($0.id) }
         saveGroups(groups)
 
-        // Ungroup connections that belonged to deleted groups
+        // Delete connections that belonged to deleted groups
         let storage = ConnectionStorage.shared
-        var connections = storage.loadConnections()
-        var changed = false
-        for index in connections.indices {
-            if let gid = connections[index].groupId, allDeletedIds.contains(gid) {
-                connections[index].groupId = nil
-                changed = true
+        let connections = storage.loadConnections()
+        var remaining: [DatabaseConnection] = []
+        for conn in connections {
+            if let gid = conn.groupId, allDeletedIds.contains(gid) {
+                // Clean up keychain entries
+                storage.deletePassword(for: conn.id)
+                storage.deleteSSHPassword(for: conn.id)
+                storage.deleteKeyPassphrase(for: conn.id)
+            } else {
+                remaining.append(conn)
             }
         }
-        if changed {
-            storage.saveConnections(connections)
-        }
+        storage.saveConnections(remaining)
+    }
+
+    /// Count all connections inside a group and its descendants.
+    func connectionCount(for group: ConnectionGroup) -> Int {
+        let allGroups = loadGroups()
+        let descendantIds = collectDescendantIds(of: group.id, in: allGroups)
+        let allGroupIds = descendantIds.union([group.id])
+        let connections = ConnectionStorage.shared.loadConnections()
+        return connections.filter { conn in
+            guard let gid = conn.groupId else { return false }
+            return allGroupIds.contains(gid)
+        }.count
     }
 
     /// Get group by ID

@@ -127,9 +127,19 @@ final class ConnectionStorage {
             redisDatabase: connection.redisDatabase
         )
 
-        // Save the duplicate connection
+        // Insert duplicate right after the original by shifting siblings
         var connections = loadConnections()
-        connections.append(duplicate)
+        let newSortOrder = connection.sortOrder + 1
+        for index in connections.indices {
+            if connections[index].groupId == connection.groupId,
+               connections[index].sortOrder >= newSortOrder
+            {
+                connections[index].sortOrder += 1
+            }
+        }
+        var placed = duplicate
+        placed.sortOrder = newSortOrder
+        connections.append(placed)
         saveConnections(connections)
 
         // Copy all passwords from source to duplicate
