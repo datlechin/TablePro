@@ -37,9 +37,10 @@ final class ConnectionStorage {
         do {
             let storedConnections = try decoder.decode([StoredConnection].self, from: data)
 
-            let connections = storedConnections.map { stored in
+            var connections = storedConnections.map { stored in
                 stored.toConnection()
             }
+            migrateSortOrderIfNeeded(&connections)
             cachedConnections = connections
             return connections
         } catch {
@@ -60,6 +61,17 @@ final class ConnectionStorage {
         } catch {
             Self.logger.error("Failed to save connections: \(error)")
         }
+    }
+
+    /// Assign sequential sortOrder when all items have default 0 (legacy migration).
+    private func migrateSortOrderIfNeeded(_ connections: inout [DatabaseConnection]) {
+        guard connections.count > 1, connections.allSatisfy({ $0.sortOrder == 0 }) else { return }
+        for index in connections.indices {
+            connections[index].sortOrder = index
+        }
+        saveConnections(connections)
+        let count = connections.count
+        Self.logger.info("Migrated sortOrder for \(count) connections")
     }
 
     /// Add a new connection
@@ -115,14 +127,32 @@ final class ConnectionStorage {
             username: connection.username,
             type: connection.type,
             sshConfig: connection.sshConfig,
+            sslConfig: connection.sslConfig,
             color: connection.color,
             tagId: connection.tagId,
-            groupId: connection.groupId
+            groupId: connection.groupId,
+            isReadOnly: connection.isReadOnly,
+            aiPolicy: connection.aiPolicy,
+            mongoReadPreference: connection.mongoReadPreference,
+            mongoWriteConcern: connection.mongoWriteConcern,
+            sortOrder: connection.sortOrder,
+            redisDatabase: connection.redisDatabase,
+            mssqlSchema: connection.mssqlSchema
         )
 
-        // Save the duplicate connection
+        // Insert duplicate right after the original by shifting siblings
         var connections = loadConnections()
-        connections.append(duplicate)
+        let newSortOrder = connection.sortOrder + 1
+        for index in connections.indices {
+            if connections[index].groupId == connection.groupId,
+               connections[index].sortOrder >= newSortOrder
+            {
+                connections[index].sortOrder += 1
+            }
+        }
+        var placed = duplicate
+        placed.sortOrder = newSortOrder
+        connections.append(placed)
         saveConnections(connections)
 
         // Copy all passwords from source to duplicate
@@ -136,7 +166,7 @@ final class ConnectionStorage {
             saveKeyPassphrase(keyPassphrase, for: newId)
         }
 
-        return duplicate
+        return placed
     }
 
     // MARK: - Keychain (Password Storage)
@@ -358,6 +388,9 @@ private struct StoredConnection: Codable {
     // AI policy
     let aiPolicy: String?
 
+    // Sort order
+    let sortOrder: Int
+
     // MSSQL schema
     let mssqlSchema: String?
 
@@ -395,6 +428,9 @@ private struct StoredConnection: Codable {
 
         // AI policy
         self.aiPolicy = connection.aiPolicy?.rawValue
+
+        // Sort order
+        self.sortOrder = connection.sortOrder
 
         // MSSQL schema
         self.mssqlSchema = connection.mssqlSchema
@@ -434,6 +470,7 @@ private struct StoredConnection: Codable {
         groupId = try container.decodeIfPresent(String.self, forKey: .groupId)
         isReadOnly = try container.decodeIfPresent(Bool.self, forKey: .isReadOnly) ?? false
         aiPolicy = try container.decodeIfPresent(String.self, forKey: .aiPolicy)
+        sortOrder = try container.decodeIfPresent(Int.self, forKey: .sortOrder) ?? 0
         mssqlSchema = try container.decodeIfPresent(String.self, forKey: .mssqlSchema)
     }
 
@@ -475,6 +512,7 @@ private struct StoredConnection: Codable {
             groupId: parsedGroupId,
             isReadOnly: isReadOnly,
             aiPolicy: parsedAIPolicy,
+            sortOrder: sortOrder,
             mssqlSchema: mssqlSchema
         )
     }

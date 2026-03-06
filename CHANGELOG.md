@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Connection groups: organize connections into named, color-coded folders with support for nested subgroups, drag-and-drop reordering, expand/collapse state persistence, multi-selection (bulk delete, bulk move to group), and context menus for group and connection management
 - Add database and schema switching for PostgreSQL connections via ⌘K
 
 ## [0.14.0] - 2026-03-05

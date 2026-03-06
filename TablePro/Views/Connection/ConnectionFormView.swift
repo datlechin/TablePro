@@ -52,7 +52,7 @@ struct ConnectionFormView: View {
     @State private var sslClientCertPath: String = ""
     @State private var sslClientKeyPath: String = ""
 
-    // Color and Tag
+    // Color, Tag, and Group
     @State private var connectionColor: ConnectionColor = .none
     @State private var selectedTagId: UUID?
     @State private var selectedGroupId: UUID?
@@ -702,7 +702,10 @@ struct ConnectionFormView: View {
             connectToDatabase(connectionToSave)
         } else {
             if let index = savedConnections.firstIndex(where: { $0.id == connectionToSave.id }) {
-                savedConnections[index] = connectionToSave
+                // Preserve sortOrder from existing connection
+                var updated = connectionToSave
+                updated.sortOrder = savedConnections[index].sortOrder
+                savedConnections[index] = updated
                 storage.saveConnections(savedConnections)
             }
             NSApplication.shared.closeWindows(withId: "connection-form")

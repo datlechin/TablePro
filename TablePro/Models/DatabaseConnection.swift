@@ -272,6 +272,7 @@ struct DatabaseConnection: Identifiable, Hashable {
     var aiPolicy: AIConnectionPolicy?
     var mongoReadPreference: String?
     var mongoWriteConcern: String?
+    var sortOrder: Int
     var redisDatabase: Int?
     var mssqlSchema: String?
 
@@ -292,6 +293,7 @@ struct DatabaseConnection: Identifiable, Hashable {
         aiPolicy: AIConnectionPolicy? = nil,
         mongoReadPreference: String? = nil,
         mongoWriteConcern: String? = nil,
+        sortOrder: Int = 0,
         redisDatabase: Int? = nil,
         mssqlSchema: String? = nil
     ) {
@@ -311,6 +313,7 @@ struct DatabaseConnection: Identifiable, Hashable {
         self.aiPolicy = aiPolicy
         self.mongoReadPreference = mongoReadPreference
         self.mongoWriteConcern = mongoWriteConcern
+        self.sortOrder = sortOrder
         self.redisDatabase = redisDatabase
         self.mssqlSchema = mssqlSchema
     }

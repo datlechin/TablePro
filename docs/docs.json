@@ -26,7 +26,7 @@
             "groups": [
               {
                 "group": "Getting Started",
-                "pages": ["index", "quickstart", "installation", "changelog"]
+                "pages": ["index", "quickstart", "installation", "download", "changelog"]
               },
               {
                 "group": "Database Connections",
@@ -113,6 +113,7 @@
                   "vi/index",
                   "vi/quickstart",
                   "vi/installation",
+                  "vi/download",
                   "vi/changelog"
                 ]
               },
@@ -233,7 +234,7 @@
     "primary": {
       "type": "button",
       "label": "Download",
-      "href": "https://github.com/datlechin/tablepro/releases"
+      "href": "/download"
     }
   },
   "contextual": {
