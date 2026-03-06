@@ -889,13 +889,23 @@ extension ConnectionOutlineView {
                     parent.onReorderConnections?(siblings)
                 } else {
                     // Dropped at a specific index within the group
-                    var siblings = parent.connections
-                        .filter { $0.groupId == targetGroupId && $0.id != connection.id }
+                    let allGroupConns = parent.connections
+                        .filter { $0.groupId == targetGroupId }
                         .sorted { $0.sortOrder < $1.sortOrder }
 
                     let childGroups = childrenMap[targetGroupId]?.compactMap { $0 as? OutlineGroup } ?? []
-                    let connectionIndex = max(0, childIndex - childGroups.count)
+                    var connectionIndex = max(0, childIndex - childGroups.count)
 
+                    // NSOutlineView childIndex includes the dragged item in its original position.
+                    // When reordering within the same group, adjust for the item's removal.
+                    if connection.groupId == targetGroupId,
+                       let origPosition = allGroupConns.firstIndex(where: { $0.id == connection.id }),
+                       origPosition < connectionIndex
+                    {
+                        connectionIndex -= 1
+                    }
+
+                    var siblings = allGroupConns.filter { $0.id != connection.id }
                     var movedConn = connection
                     movedConn.groupId = targetGroupId
                     siblings.insert(movedConn, at: min(connectionIndex, siblings.count))
@@ -921,13 +931,23 @@ extension ConnectionOutlineView {
                     rootConns.append(movedConn)
                     parent.onReorderConnections?(rootConns)
                 } else {
-                    var rootConns = parent.connections
-                        .filter { $0.groupId == nil && $0.id != connection.id }
+                    let allRootConns = parent.connections
+                        .filter { $0.groupId == nil }
                         .sorted { $0.sortOrder < $1.sortOrder }
 
                     let rootGroupCount = rootItems.compactMap { $0 as? OutlineGroup }.count
-                    let connectionIndex = max(0, childIndex - rootGroupCount)
+                    var connectionIndex = max(0, childIndex - rootGroupCount)
 
+                    // NSOutlineView childIndex includes the dragged item in its original position.
+                    // When reordering within root, adjust for the item's removal.
+                    if connection.groupId == nil,
+                       let origPosition = allRootConns.firstIndex(where: { $0.id == connection.id }),
+                       origPosition < connectionIndex
+                    {
+                        connectionIndex -= 1
+                    }
+
+                    var rootConns = allRootConns.filter { $0.id != connection.id }
                     var movedConn = connection
                     movedConn.groupId = nil
                     rootConns.insert(movedConn, at: min(connectionIndex, rootConns.count))
@@ -960,9 +980,10 @@ extension ConnectionOutlineView {
             let draggedIds = Set(connections.map(\.id))
             let targetGroupId: UUID? = (targetItem as? OutlineGroup)?.group.id
 
-            var siblings = parent.connections
-                .filter { $0.groupId == targetGroupId && !draggedIds.contains($0.id) }
+            let allTargetConns = parent.connections
+                .filter { $0.groupId == targetGroupId }
                 .sorted { $0.sortOrder < $1.sortOrder }
+            var siblings = allTargetConns.filter { !draggedIds.contains($0.id) }
 
             // Prepare dragged connections with updated groupId
             let movedConns: [DatabaseConnection] = connections.map { conn in
@@ -982,8 +1003,13 @@ extension ConnectionOutlineView {
                 } else {
                     groupCount = rootItems.compactMap { $0 as? OutlineGroup }.count
                 }
-                let insertAt = min(max(0, childIndex - groupCount), siblings.count)
-                siblings.insert(contentsOf: movedConns, at: insertAt)
+                var insertAt = max(0, childIndex - groupCount)
+
+                // Adjust for dragged items that were in the same container before the drop point
+                let draggedBefore = allTargetConns.prefix(insertAt).filter { draggedIds.contains($0.id) }.count
+                insertAt -= draggedBefore
+
+                siblings.insert(contentsOf: movedConns, at: min(insertAt, siblings.count))
             }
 
             // Renumber
@@ -1015,17 +1041,26 @@ extension ConnectionOutlineView {
                     siblings.append(movedGroup)
                     parent.onReorderGroups?(siblings)
                 } else {
-                    var siblings = parent.groups
-                        .filter { $0.parentGroupId == newParentId && $0.id != group.id }
+                    let allSiblingGroups = parent.groups
+                        .filter { $0.parentGroupId == newParentId }
                         .sorted { $0.sortOrder < $1.sortOrder }
 
                     // childIndex is in childrenMap order (groups first, then connections).
                     // Clamp to sibling group count since we only reorder among groups.
-                    let groupIndex = min(childIndex, siblings.count)
+                    var groupIndex = min(childIndex, allSiblingGroups.count)
 
+                    // Adjust for the dragged group's original position
+                    if group.parentGroupId == newParentId,
+                       let origPosition = allSiblingGroups.firstIndex(where: { $0.id == group.id }),
+                       origPosition < groupIndex
+                    {
+                        groupIndex -= 1
+                    }
+
+                    var siblings = allSiblingGroups.filter { $0.id != group.id }
                     var movedGroup = group
                     movedGroup.parentGroupId = newParentId
-                    siblings.insert(movedGroup, at: groupIndex)
+                    siblings.insert(movedGroup, at: min(groupIndex, siblings.count))
 
                     for (order, var g) in siblings.enumerated() {
                         g.sortOrder = order
@@ -1048,17 +1083,26 @@ extension ConnectionOutlineView {
                     rootGroupSiblings.append(movedGroup)
                     parent.onReorderGroups?(rootGroupSiblings)
                 } else {
-                    var rootGroupSiblings = parent.groups
-                        .filter { $0.parentGroupId == nil && $0.id != group.id }
+                    let allRootGroups = parent.groups
+                        .filter { $0.parentGroupId == nil }
                         .sorted { $0.sortOrder < $1.sortOrder }
 
                     // childIndex is in rootItems order (groups first, then connections).
                     // Clamp to group count since we only reorder among groups.
-                    let groupIndex = min(childIndex, rootGroupSiblings.count)
+                    var groupIndex = min(childIndex, allRootGroups.count)
 
+                    // Adjust for the dragged group's original position
+                    if group.parentGroupId == nil,
+                       let origPosition = allRootGroups.firstIndex(where: { $0.id == group.id }),
+                       origPosition < groupIndex
+                    {
+                        groupIndex -= 1
+                    }
+
+                    var rootGroupSiblings = allRootGroups.filter { $0.id != group.id }
                     var movedGroup = group
                     movedGroup.parentGroupId = nil
-                    rootGroupSiblings.insert(movedGroup, at: groupIndex)
+                    rootGroupSiblings.insert(movedGroup, at: min(groupIndex, rootGroupSiblings.count))
 
                     for (order, var g) in rootGroupSiblings.enumerated() {
                         g.sortOrder = order
