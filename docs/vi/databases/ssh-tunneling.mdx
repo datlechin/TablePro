@@ -112,12 +112,14 @@ TablePro hỗ trợ ba phương thức:
 
     | Trường | Mô tả |
     |-------|-------------|
-    | **Agent Socket** | Đường dẫn socket tùy chỉnh (tùy chọn) |
+    | **Agent Socket** | Dropdown gồm `SSH_AUTH_SOCK`, `1Password`, hoặc `Custom Path` |
 
-    Để trống để dùng `SSH_AUTH_SOCK` hệ thống.
+    - **SSH_AUTH_SOCK**: Dùng biến môi trường `SSH_AUTH_SOCK` của hệ thống.
+    - **1Password**: Dùng đường dẫn socket mặc định của 1Password, `~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock`.
+    - **Custom Path**: Hiện ô nhập để bạn điền đường dẫn socket khác.
 
     <Tip>
-    Người dùng 1Password: đặt socket là `~/.1password/agent.sock`. Với ssh-agent macOS, để trống.
+    1Password cũng ghi `~/.1password/agent.sock` là alias dễ gõ hơn, nhưng shortcut này chỉ hoạt động nếu bạn tự tạo. Tùy chọn **1Password** trong TablePro dùng đường dẫn mặc định trong `~/Library/Group Containers/...`.
     </Tip>
   </Tab>
 </Tabs>
@@ -304,7 +306,7 @@ Kết quả:
 | `name` | Đặt tên kết nối |
 | `usePrivateKey` | `true` để chọn xác thực Private Key |
 | `useSSHAgent` | `true` để chọn xác thực SSH Agent |
-| `agentSocket` | Đường dẫn socket SSH agent tùy chỉnh (ví dụ: `~/.1password/agent.sock`) |
+| `agentSocket` | Đường dẫn socket SSH agent ghi đè (ví dụ: `~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock`) |
 
 Import: mở **New Connection**, nhấp **Import from URL**, dán URL.
 
@@ -443,8 +445,10 @@ Với SSH Agent, private key không rời khỏi tiến trình agent — 1Passwo
 ### Thiết lập
 
 1. Chọn **SSH Agent** làm phương thức xác thực
-2. Để trống **Agent Socket** để dùng mặc định (`SSH_AUTH_SOCK`)
-3. Với 1Password, đặt socket là `~/.1password/agent.sock`
+2. Chọn một tùy chọn trong dropdown **Agent Socket**
+3. Chọn **SSH_AUTH_SOCK** để dùng mặc định của hệ thống
+4. Chọn **1Password** để dùng `~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock`
+5. Chọn **Custom Path** để nhập đường dẫn socket khác
 
 ### Kiểm tra Agent
 
@@ -458,13 +462,13 @@ ssh-add -l
 ssh-add ~/.ssh/id_ed25519
 ```
 
-### Socket Agent Tùy chỉnh
+### Tùy chọn Agent Socket
 
-| Công cụ | Đường dẫn Socket |
+| Tùy chọn | Hành vi |
 |------|-------------|
-| 1Password | `~/.1password/agent.sock` |
-| Secretive | Xem tùy chọn Secretive để lấy đường dẫn socket |
-| macOS ssh-agent | Để trống (dùng `SSH_AUTH_SOCK`) |
+| `SSH_AUTH_SOCK` | Dùng biến môi trường `SSH_AUTH_SOCK` hiện tại |
+| `1Password` | Dùng `~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock` |
+| `Custom Path` | Cho phép nhập đường dẫn socket khác, ví dụ đường dẫn trong phần cài đặt Secretive |
 
 ## Bước Tiếp theo
 
