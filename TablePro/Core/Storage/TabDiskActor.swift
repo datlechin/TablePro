@@ -171,6 +171,35 @@ internal actor TabDiskActor {
         }
     }
 
+    // MARK: - Synchronous Save (quit-time only)
+
+    /// Synchronous file write for `applicationWillTerminate`, where no run loop
+    /// remains to execute an async Task. Safe because the process is single-threaded
+    /// at termination — no concurrent actor access is possible.
+    nonisolated internal static func saveSync(
+        connectionId: UUID,
+        tabs: [PersistedTab],
+        selectedTabId: UUID?
+    ) {
+        let state = TabDiskState(tabs: tabs, selectedTabId: selectedTabId)
+        let encoder = JSONEncoder()
+
+        do {
+            let data = try encoder.encode(state)
+            let appSupport = FileManager.default.urls(
+                for: .applicationSupportDirectory,
+                in: .userDomainMask
+            ).first ?? FileManager.default.temporaryDirectory
+            let fileURL = appSupport
+                .appendingPathComponent("TablePro", isDirectory: true)
+                .appendingPathComponent("TabState", isDirectory: true)
+                .appendingPathComponent("\(connectionId.uuidString).json")
+            try data.write(to: fileURL, options: .atomic)
+        } catch {
+            logger.error("saveSync failed for \(connectionId): \(error.localizedDescription)")
+        }
+    }
+
     // MARK: - Private Helpers
 
     private func tabStateFileURL(for connectionId: UUID) -> URL {

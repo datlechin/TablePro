@@ -653,16 +653,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        // Tab state is saved explicitly on every tab mutation (selection change,
-        // tab add/remove, window close). No additional save needed at quit time.
+        // Each MainContentCoordinator observes willTerminateNotification and
+        // synchronously writes tab state via TabDiskActor.saveSync. No additional
+        // action needed here — the per-coordinator observers fire before this returns.
     }
 
     nonisolated deinit {
         NotificationCenter.default.removeObserver(self)
     }
-
-    // Tab state is saved explicitly by TabPersistenceCoordinator on every
-    // tab mutation. No centralized save-all needed at quit time.
 
     private func isMainWindow(_ window: NSWindow) -> Bool {
         // Main window has identifier containing "main" (from WindowGroup(id: "main"))

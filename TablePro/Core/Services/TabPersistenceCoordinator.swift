@@ -70,6 +70,18 @@ internal final class TabPersistenceCoordinator {
         }
     }
 
+    /// Synchronous save for `applicationWillTerminate` where no run loop
+    /// remains to service async Tasks. Bypasses the actor and writes directly.
+    internal func saveNowSync(tabs: [QueryTab], selectedTabId: UUID?) {
+        let persisted = tabs.map { convertToPersistedTab($0) }
+
+        Self.logger.info(
+            "saveNowSync -- \(persisted.count) tabs, selectedTabId=\(selectedTabId?.uuidString ?? "nil", privacy: .public)"
+        )
+
+        TabDiskActor.saveSync(connectionId: connectionId, tabs: persisted, selectedTabId: selectedTabId)
+    }
+
     // MARK: - Clear
 
     /// Clear all saved state for this connection (user closed all tabs).

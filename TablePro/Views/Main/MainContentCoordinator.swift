@@ -87,6 +87,7 @@ final class MainContentCoordinator {
     @ObservationIgnored internal var currentQueryTask: Task<Void, Never>?
     @ObservationIgnored private var changeManagerUpdateTask: Task<Void, Never>?
     @ObservationIgnored private var activeSortTasks: [UUID: Task<Void, Never>] = [:]
+    @ObservationIgnored private var terminationObserver: NSObjectProtocol?
 
     /// Set during handleTabChange to suppress redundant onChange(of: resultColumns) reconfiguration
     internal var isHandlingTabSwitch = false
@@ -113,7 +114,7 @@ final class MainContentCoordinator {
 
     /// Set when NSApplication is terminating — suppresses deinit warning since
     /// SwiftUI does not call onDisappear during app termination
-    private nonisolated(unsafe) static let _isAppTerminating = OSAllocatedUnfairLock(initialState: false)
+    nonisolated(unsafe) private static let _isAppTerminating = OSAllocatedUnfairLock(initialState: false)
     nonisolated static var isAppTerminating: Bool {
         get { _isAppTerminating.withLock { $0 } }
         set { _isAppTerminating.withLock { $0 = newValue } }
@@ -169,6 +170,23 @@ final class MainContentCoordinator {
         Self.retainSchemaProvider(for: connection.id)
         setupURLNotificationObservers()
 
+        // Synchronous save at quit time. NotificationCenter delivers this
+        // synchronously on the main thread, so the write completes before
+        // the process exits — unlike Task-based saves that need a run loop.
+        terminationObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, !self.isTearingDown else { return }
+                self.persistence.saveNowSync(
+                    tabs: self.tabManager.tabs,
+                    selectedTabId: self.tabManager.selectedTabId
+                )
+            }
+        }
+
         _ = Self.registerTerminationObserver
     }
 
@@ -188,6 +206,10 @@ final class MainContentCoordinator {
     /// synchronously on MainActor so we don't depend on deinit + Task scheduling.
     func teardown() {
         didTeardown = true
+        if let observer = terminationObserver {
+            NotificationCenter.default.removeObserver(observer)
+            terminationObserver = nil
+        }
         currentQueryTask?.cancel()
         currentQueryTask = nil
         changeManagerUpdateTask?.cancel()

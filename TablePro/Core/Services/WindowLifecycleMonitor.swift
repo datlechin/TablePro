@@ -25,9 +25,6 @@ internal final class WindowLifecycleMonitor {
 
     private var entries: [UUID: Entry] = [:]
 
-    /// Called when the last window for a connection closes.
-    internal var onLastWindowClosed: ((_ connectionId: UUID) -> Void)?
-
     private init() {}
 
     deinit {
@@ -160,12 +157,10 @@ internal final class WindowLifecycleMonitor {
             "handleWindowClose -- windowId=\(windowId), connectionId=\(connectionId), remaining=\(remaining)"
         )
 
-        // Fire callback if this was the last window for the connection
         if remaining == 0 {
             Self.logger.info(
                 "handleWindowClose -- last window closed for connectionId=\(connectionId)"
             )
-            onLastWindowClosed?(connectionId)
         }
     }
 }

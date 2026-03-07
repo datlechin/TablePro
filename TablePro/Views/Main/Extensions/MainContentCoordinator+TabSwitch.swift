@@ -54,9 +54,6 @@ extension MainContentCoordinator {
             // that triggers its own SwiftUI update; bumping beforehand causes a
             // redundant re-evaluation that blocks the Task executor (15-40ms).
 
-            // Defer async operations (database switch, lazy load) to avoid blocking
-            let shouldSkipLazyLoad = false
-
             if !newTab.databaseName.isEmpty {
                 let currentDatabase: String
                 if let session = DatabaseManager.shared.session(for: connectionId) {
@@ -88,8 +85,7 @@ extension MainContentCoordinator {
             }
 
             let isEvicted = newTab.rowBuffer.isEvicted
-            let needsLazyQuery = !shouldSkipLazyLoad
-                && newTab.tabType == .table
+            let needsLazyQuery = newTab.tabType == .table
                 && (newTab.resultRows.isEmpty || isEvicted)
                 && (newTab.lastExecutedAt == nil || isEvicted)
                 && !newTab.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty

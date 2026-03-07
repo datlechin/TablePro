@@ -151,11 +151,20 @@ struct ContentView: View {
             .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { notification in
                 // Only process notifications for our own window to avoid every
                 // ContentView instance re-rendering on every window focus change.
+                // Match by checking if the window is registered for our connectionId
+                // in WindowLifecycleMonitor (subtitle may not be set yet on first appear).
                 guard let notificationWindow = notification.object as? NSWindow,
                       notificationWindow.identifier?.rawValue.contains("main") == true,
-                      let connectionId = payload?.connectionId,
-                      notificationWindow.subtitle == currentSession?.connection.name
+                      let connectionId = payload?.connectionId
                 else { return }
+
+                // Verify this notification is for our window. Check WindowLifecycleMonitor
+                // first (reliable after onAppear registers), fall back to subtitle match
+                // for the brief window before registration completes.
+                let isOurWindow = WindowLifecycleMonitor.shared.windows(for: connectionId)
+                    .contains(where: { $0 === notificationWindow })
+                    || notificationWindow.subtitle == currentSession?.connection.name
+                guard isOurWindow else { return }
 
                 if let session = DatabaseManager.shared.activeSessions[connectionId] {
                     AppState.shared.isConnected = true

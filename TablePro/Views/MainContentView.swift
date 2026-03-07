@@ -272,6 +272,11 @@ struct MainContentView: View {
                 let connectionId = connection.id
                 let connectionName = connection.name
                 Task { @MainActor in
+                    // 200ms grace period: SwiftUI fires onDisappear transiently during
+                    // tab group merges/splits, then re-fires onAppear shortly after.
+                    // The onAppear handler re-registers via WindowLifecycleMonitor on
+                    // DispatchQueue.main.async, so this delay must exceed that dispatch
+                    // latency to avoid tearing down a window that's about to reappear.
                     try? await Task.sleep(for: .milliseconds(200))
 
                     // If this window re-registered (temporary disappear during tab group merge), skip cleanup
