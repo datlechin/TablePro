@@ -848,13 +848,13 @@ struct ConnectionURLParserTests {
     @Test("SSH URL with useSSHAgent and custom agentSocket")
     func testSSHURLWithAgentSocket() {
         let result = ConnectionURLParser.parse(
-            "postgresql+ssh://deploy@bastion:2222/admin:secret@db.internal/prod?useSSHAgent=true&agentSocket=~/.1password/agent.sock"
+            "postgresql+ssh://deploy@bastion:2222/admin:secret@db.internal/prod?useSSHAgent=true&agentSocket=~/Library/Group%20Containers/2BUA8C4S2C.com.1password/t/agent.sock"
         )
         guard case .success(let parsed) = result else {
             Issue.record("Expected success"); return
         }
         #expect(parsed.useSSHAgent == true)
-        #expect(parsed.agentSocket == "~/.1password/agent.sock")
+        #expect(parsed.agentSocket == SSHAgentSocketOption.onePasswordSocketPath)
         #expect(parsed.sshHost == "bastion")
         #expect(parsed.sshPort == 2222)
     }

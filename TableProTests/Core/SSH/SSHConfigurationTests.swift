@@ -55,7 +55,7 @@ struct SSHConfigurationTests {
     func testSSHAgentAuthValidWithSocket() {
         let config = SSHConfiguration(
             enabled: true, host: "example.com", username: "admin",
-            authMethod: .sshAgent, agentSocketPath: "~/.1password/agent.sock"
+            authMethod: .sshAgent, agentSocketPath: SSHAgentSocketOption.onePasswordSocketPath
         )
         #expect(config.isValid == true)
     }
@@ -82,5 +82,46 @@ struct SSHConfigurationTests {
     func testAgentSocketPathDefault() {
         let config = SSHConfiguration()
         #expect(config.agentSocketPath == "")
+    }
+
+    @Test("Empty socket path maps to SSH_AUTH_SOCK option")
+    func testEmptySocketPathMapsToSystemDefault() {
+        #expect(SSHAgentSocketOption(socketPath: "") == .systemDefault)
+    }
+
+    @Test("1Password socket path maps to 1Password option")
+    func testOnePasswordSocketPathMapsToPreset() {
+        #expect(SSHAgentSocketOption(socketPath: SSHAgentSocketOption.onePasswordSocketPath) == .onePassword)
+    }
+
+    @Test("1Password alias path maps to 1Password option")
+    func testOnePasswordAliasPathMapsToPreset() {
+        #expect(SSHAgentSocketOption(socketPath: "~/.1password/agent.sock") == .onePassword)
+    }
+
+    @Test("Unknown socket path maps to custom option")
+    func testCustomSocketPathMapsToCustomOption() {
+        #expect(SSHAgentSocketOption(socketPath: "/tmp/custom.sock") == .custom)
+    }
+
+    @Test("System default option resolves to empty socket path")
+    func testSystemDefaultOptionResolvesToEmptyPath() {
+        #expect(SSHAgentSocketOption.systemDefault.resolvedPath(customPath: "/tmp/custom.sock") == "")
+    }
+
+    @Test("1Password option resolves to preset socket path")
+    func testOnePasswordOptionResolvesToPresetPath() {
+        #expect(
+            SSHAgentSocketOption.onePassword.resolvedPath(customPath: "/tmp/custom.sock")
+                == SSHAgentSocketOption.onePasswordSocketPath
+        )
+    }
+
+    @Test("Custom option resolves to trimmed custom socket path")
+    func testCustomOptionResolvesToTrimmedPath() {
+        #expect(
+            SSHAgentSocketOption.custom.resolvedPath(customPath: "  /tmp/custom.sock  ")
+                == "/tmp/custom.sock"
+        )
     }
 }

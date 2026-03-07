@@ -118,6 +118,16 @@
         }
       }
     },
+    "/path/to/agent.sock" : {
+      "localizations" : {
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "/path/to/agent.sock"
+          }
+        }
+      }
+    },
     "/path/to/ca-cert.pem" : {
       "localizations" : {
         "vi" : {
@@ -1041,7 +1051,14 @@
       }
     },
     "Agent Socket" : {
-
+      "localizations" : {
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent Socket"
+          }
+        }
+      }
     },
     "AI" : {
       "localizations" : {
@@ -2721,6 +2738,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tùy chỉnh"
+          }
+        }
+      }
+    },
+    "Custom Path" : {
+      "localizations" : {
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đường dẫn tùy chỉnh"
           }
         }
       }
@@ -5145,7 +5172,14 @@
       }
     },
     "Keys are provided by the SSH agent (e.g. 1Password, ssh-agent)." : {
-
+      "localizations" : {
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Khóa được cung cấp bởi SSH agent (ví dụ: 1Password, ssh-agent)."
+          }
+        }
+      }
     },
     "Language:" : {
       "localizations" : {
@@ -8407,7 +8441,14 @@
       }
     },
     "SSH Agent" : {
-
+      "localizations" : {
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SSH Agent"
+          }
+        }
+      }
     },
     "SSH authentication failed. Check your credentials or private key." : {
       "localizations" : {

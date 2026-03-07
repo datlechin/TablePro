@@ -36,6 +36,52 @@ enum SSHAuthMethod: String, CaseIterable, Identifiable, Codable {
     }
 }
 
+enum SSHAgentSocketOption: String, CaseIterable, Identifiable {
+    case systemDefault
+    case onePassword
+    case custom
+
+    static let onePasswordSocketPath = "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+    private static let onePasswordAliasPath = "~/.1password/agent.sock"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .systemDefault:
+            return "SSH_AUTH_SOCK"
+        case .onePassword:
+            return "1Password"
+        case .custom:
+            return String(localized: "Custom Path")
+        }
+    }
+
+    init(socketPath: String) {
+        let trimmedPath = socketPath.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        switch trimmedPath {
+        case "":
+            self = .systemDefault
+        case Self.onePasswordSocketPath, Self.onePasswordAliasPath:
+            self = .onePassword
+        default:
+            self = .custom
+        }
+    }
+
+    func resolvedPath(customPath: String) -> String {
+        switch self {
+        case .systemDefault:
+            return ""
+        case .onePassword:
+            return Self.onePasswordSocketPath
+        case .custom:
+            return customPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+    }
+}
+
 /// SSH tunnel configuration for database connections
 struct SSHConfiguration: Codable, Hashable {
     var enabled: Bool = false

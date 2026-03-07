@@ -43,7 +43,8 @@ struct ConnectionFormView: View {
     @State private var sshPassword: String = ""
     @State private var sshAuthMethod: SSHAuthMethod = .password
     @State private var sshPrivateKeyPath: String = ""
-    @State private var sshAgentSocketPath: String = ""
+    @State private var sshAgentSocketOption: SSHAgentSocketOption = .systemDefault
+    @State private var customSSHAgentSocketPath: String = ""
     @State private var keyPassphrase: String = ""
     @State private var sshConfigEntries: [SSHConfigEntry] = []
     @State private var selectedSSHConfigHost: String = ""
@@ -143,6 +144,10 @@ struct ConnectionFormView: View {
             return [.general, .advanced]
         }
         return FormTab.allCases
+    }
+
+    private var resolvedSSHAgentSocketPath: String {
+        sshAgentSocketOption.resolvedPath(customPath: customSSHAgentSocketPath)
     }
 
     // MARK: - Tab Form Content
@@ -347,8 +352,17 @@ struct ConnectionFormView: View {
                     if sshAuthMethod == .password {
                         SecureField(String(localized: "Password"), text: $sshPassword)
                     } else if sshAuthMethod == .sshAgent {
-                        LabeledContent(String(localized: "Agent Socket")) {
-                            TextField("", text: $sshAgentSocketPath, prompt: Text("Leave empty for SSH_AUTH_SOCK"))
+                        Picker("Agent Socket", selection: $sshAgentSocketOption) {
+                            ForEach(SSHAgentSocketOption.allCases) { option in
+                                Text(option.displayName).tag(option)
+                            }
+                        }
+                        if sshAgentSocketOption == .custom {
+                            TextField(
+                                "Custom Path",
+                                text: $customSSHAgentSocketPath,
+                                prompt: Text("/path/to/agent.sock")
+                            )
                         }
                         Text("Keys are provided by the SSH agent (e.g. 1Password, ssh-agent).")
                             .font(.caption)
@@ -627,7 +641,7 @@ struct ConnectionFormView: View {
             sshUsername = existing.sshConfig.username
             sshAuthMethod = existing.sshConfig.authMethod
             sshPrivateKeyPath = existing.sshConfig.privateKeyPath
-            sshAgentSocketPath = existing.sshConfig.agentSocketPath
+            applySSHAgentSocketPath(existing.sshConfig.agentSocketPath)
 
             // Load SSL configuration
             sslMode = existing.sslConfig.mode
@@ -677,7 +691,7 @@ struct ConnectionFormView: View {
             authMethod: sshAuthMethod,
             privateKeyPath: sshPrivateKeyPath,
             useSSHConfig: !selectedSSHConfigHost.isEmpty,
-            agentSocketPath: sshAgentSocketPath
+            agentSocketPath: resolvedSSHAgentSocketPath
         )
 
         let sslConfig = SSLConfiguration(
@@ -779,7 +793,7 @@ struct ConnectionFormView: View {
             authMethod: sshAuthMethod,
             privateKeyPath: sshPrivateKeyPath,
             useSSHConfig: !selectedSSHConfigHost.isEmpty,
-            agentSocketPath: sshAgentSocketPath
+            agentSocketPath: resolvedSSHAgentSocketPath
         )
 
         let sslConfig = SSLConfiguration(
@@ -915,7 +929,7 @@ struct ConnectionFormView: View {
                 }
                 if parsed.useSSHAgent == true {
                     sshAuthMethod = .sshAgent
-                    sshAgentSocketPath = parsed.agentSocket ?? ""
+                    applySSHAgentSocketPath(parsed.agentSocket ?? "")
                 }
             }
             if let connectionName = parsed.connectionName, !connectionName.isEmpty {
@@ -941,11 +955,22 @@ struct ConnectionFormView: View {
             sshUsername = user
         }
         if let agentPath = entry.identityAgent {
-            sshAgentSocketPath = agentPath
+            applySSHAgentSocketPath(agentPath)
             sshAuthMethod = .sshAgent
         } else if let keyPath = entry.identityFile {
             sshPrivateKeyPath = keyPath
             sshAuthMethod = .privateKey
+        }
+    }
+
+    private func applySSHAgentSocketPath(_ socketPath: String) {
+        let option = SSHAgentSocketOption(socketPath: socketPath)
+        sshAgentSocketOption = option
+
+        if option == .custom {
+            customSSHAgentSocketPath = socketPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        } else {
+            customSSHAgentSocketPath = ""
         }
     }
 }

@@ -112,12 +112,14 @@ TablePro supports three SSH authentication methods:
 
     | Field | Description |
     |-------|-------------|
-    | **Agent Socket** | Custom socket path (optional) |
+    | **Agent Socket** | Dropdown with `SSH_AUTH_SOCK`, `1Password`, or `Custom Path` |
 
-    Leave empty to use the system `SSH_AUTH_SOCK`.
+    - **SSH_AUTH_SOCK**: Uses the system `SSH_AUTH_SOCK` environment variable.
+    - **1Password**: Uses 1Password's default socket path, `~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock`.
+    - **Custom Path**: Shows a text field so you can enter another agent socket path.
 
     <Tip>
-    1Password users: set the socket to `~/.1password/agent.sock`. For the built-in macOS ssh-agent, leave it empty.
+    1Password also documents `~/.1password/agent.sock` as an easier alias to type, but that shortcut only works if you created it yourself. TablePro's **1Password** option uses the default path in `~/Library/Group Containers/...`.
     </Tip>
   </Tab>
 </Tabs>
@@ -304,7 +306,7 @@ This fills in:
 | `name` | Sets the connection name |
 | `usePrivateKey` | Set to `true` to select Private Key authentication |
 | `useSSHAgent` | Set to `true` to select SSH Agent authentication |
-| `agentSocket` | Custom SSH agent socket path (e.g., `~/.1password/agent.sock`) |
+| `agentSocket` | Optional SSH agent socket path override (for example, `~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock`) |
 
 To import, open **New Connection**, click **Import from URL**, and paste the URL.
 
@@ -443,8 +445,10 @@ With SSH Agent auth, your private keys never leave the agent process — 1Passwo
 ### Setup
 
 1. Pick **SSH Agent** as the authentication method
-2. Leave **Agent Socket** empty to use the system default (`SSH_AUTH_SOCK`)
-3. For 1Password, set the socket to `~/.1password/agent.sock`
+2. Choose an **Agent Socket** option from the dropdown
+3. Select **SSH_AUTH_SOCK** to use the system default
+4. Select **1Password** to use `~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock`
+5. Select **Custom Path** to enter another socket path manually
 
 ### Verify Your Agent
 
@@ -458,13 +462,13 @@ ssh-add -l
 ssh-add ~/.ssh/id_ed25519
 ```
 
-### Custom Agent Sockets
+### Agent Socket Options
 
-| Tool | Socket Path |
-|------|-------------|
-| 1Password | `~/.1password/agent.sock` |
-| Secretive | Check Secretive preferences for the socket path |
-| macOS ssh-agent | Leave empty (uses `SSH_AUTH_SOCK`) |
+| Option | Behavior |
+|--------|----------|
+| `SSH_AUTH_SOCK` | Uses the current `SSH_AUTH_SOCK` environment variable |
+| `1Password` | Uses `~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock` |
+| `Custom Path` | Lets you enter another socket path, such as the one shown in Secretive preferences |
 
 ## Next Steps
 

@@ -317,7 +317,7 @@ struct ConnectionURLFormatterTests {
         let sshConfig = SSHConfiguration(
             enabled: true, host: "jump.example.com", port: 22,
             username: "admin", authMethod: .sshAgent,
-            agentSocketPath: "~/.1password/agent.sock"
+            agentSocketPath: SSHAgentSocketOption.onePasswordSocketPath
         )
         let conn = DatabaseConnection(
             name: "Test", host: "127.0.0.1", port: 3_306, database: "mydb",
@@ -326,7 +326,8 @@ struct ConnectionURLFormatterTests {
         let url = ConnectionURLFormatter.format(conn, password: "pass", sshPassword: nil)
         #expect(url.contains("useSSHAgent=true"))
         #expect(url.contains("agentSocket="))
-        #expect(url.contains("agent.sock"))
+        #expect(url.contains("Group%20Containers"))
+        #expect(!url.contains("Group Containers"))
     }
 
     @Test("SSH Agent without custom socket omits agentSocket param")
