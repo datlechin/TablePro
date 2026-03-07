@@ -1,15 +1,15 @@
 ---
 title: Connection Management
-description: Create, organize, and manage database connections across 8 supported engines in TablePro
+description: Create, organize, and manage database connections across 9 supported engines in TablePro
 ---
 
 # Connection Management
 
-TablePro connects to eight database systems from a single interface. Create connections, organize them with colors, tags, and groups, and switch between them without leaving your workflow.
+TablePro connects to nine database systems from a single interface. Create connections, organize them with colors, tags, and groups, and switch between them without leaving your workflow.
 
 ## Supported Databases
 
-TablePro supports nine database systems:
+TablePro supports nine database systems natively:
 
 <CardGroup cols={2}>
   <Card title="MySQL" icon="database">
@@ -102,7 +102,7 @@ open "mysql://root:secret@localhost:3306/myapp"
 open "redis://:password@localhost:6379"
 ```
 
-TablePro registers `postgresql`, `postgres`, `mysql`, `mariadb`, `sqlite`, `mongodb`, `redis`, `rediss`, `redshift`, `cockroachdb`, and `oracle` as URL schemes on macOS, so the OS routes these URLs directly to the app.
+TablePro registers `postgresql`, `postgres`, `mysql`, `mariadb`, `sqlite`, `mongodb`, `mongodb+srv`, `redis`, `rediss`, `redshift`, `mssql`, `sqlserver`, and `oracle` as URL schemes on macOS, so the OS routes these URLs directly to the app.
 
 **What happens:**
 
@@ -566,9 +566,6 @@ TablePro auto-fills the port when you select a database type:
   </Card>
   <Card title="Amazon Redshift" icon="database" href="/databases/redshift">
     Redshift data warehouse connections
-  </Card>
-  <Card title="CockroachDB" icon="database" href="/databases/cockroachdb">
-    CockroachDB distributed SQL connections
   </Card>
   <Card title="SSH Tunneling" icon="lock" href="/databases/ssh-tunneling">
     Secure connections through SSH

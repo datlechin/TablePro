@@ -28,7 +28,6 @@ struct ConnectionURLFormatter {
         case .mariadb: return "mariadb"
         case .postgresql: return "postgresql"
         case .redshift: return "redshift"
-        case .cockroachdb: return "cockroachdb"
         case .sqlite: return "sqlite"
         case .mongodb: return "mongodb"
         case .redis: return "redis"
@@ -75,7 +74,10 @@ struct ConnectionURLFormatter {
             result += ":\(connection.port)"
         }
 
-        result += "/\(connection.database)"
+        let sshPathComponent = connection.type == .oracle
+            ? (connection.oracleServiceName ?? connection.database)
+            : connection.database
+        result += "/\(sshPathComponent)"
 
         let query = buildQueryString(connection)
         if !query.isEmpty {
@@ -105,7 +107,10 @@ struct ConnectionURLFormatter {
             result += ":\(connection.port)"
         }
 
-        result += "/\(connection.database)"
+        let pathComponent = connection.type == .oracle
+            ? (connection.oracleServiceName ?? connection.database)
+            : connection.database
+        result += "/\(pathComponent)"
 
         let query = buildQueryString(connection)
         if !query.isEmpty {

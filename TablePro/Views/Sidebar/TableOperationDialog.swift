@@ -46,7 +46,7 @@ struct TableOperationDialog: View {
         // PostgreSQL supports CASCADE for both DROP and TRUNCATE.
         // MySQL, MariaDB, and SQLite do not support CASCADE for these operations.
         switch databaseType {
-        case .postgresql, .redshift, .cockroachdb:
+        case .postgresql, .redshift:
             return true
         default:
             return false
@@ -79,12 +79,15 @@ struct TableOperationDialog: View {
 
     /// PostgreSQL doesn't support globally disabling FK checks; use CASCADE instead
     private var ignoreFKDisabled: Bool {
-        databaseType == .postgresql || databaseType == .redshift || databaseType == .cockroachdb
+        databaseType == .postgresql || databaseType == .redshift || databaseType == .oracle
     }
 
     private var ignoreFKDescription: String? {
-        if databaseType == .postgresql || databaseType == .redshift || databaseType == .cockroachdb {
+        if databaseType == .postgresql || databaseType == .redshift {
             return "Not supported for PostgreSQL. Use CASCADE instead."
+        }
+        if databaseType == .oracle {
+            return "Not supported for Oracle."
         }
         return nil
     }

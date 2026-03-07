@@ -19,7 +19,7 @@ final class OracleDriver: DatabaseDriver {
     private(set) var currentSchema: String = ""
 
     var escapedSchema: String {
-        currentSchema.replacingOccurrences(of: "'", with: "''")
+        SQLEscaping.escapeStringLiteral(currentSchema, databaseType: .oracle)
     }
 
     var serverVersion: String? {
@@ -79,7 +79,14 @@ final class OracleDriver: DatabaseDriver {
             throw DatabaseError.connectionFailed("Not connected to Oracle")
         }
         let startTime = Date()
-        var result = try await conn.executeQuery(query)
+
+        // Health monitor sends "SELECT 1" as a ping — Oracle requires FROM DUAL.
+        var effectiveQuery = query
+        if query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "select 1" {
+            effectiveQuery = "SELECT 1 FROM DUAL"
+        }
+
+        var result = try await conn.executeQuery(effectiveQuery)
         let executionTime = Date().timeIntervalSince(startTime)
 
         // OracleNIO may not populate column metadata for empty result sets.
@@ -496,7 +503,7 @@ final class OracleDriver: DatabaseDriver {
     // MARK: - Private Helpers
 
     private static let fromTableRegex = try? NSRegularExpression(
-        pattern: #"FROM\s+"([^"]+)""#,
+        pattern: #"FROM\s+(?:"([^"]+)"|(\w+))"#,
         options: .caseInsensitive
     )
 
@@ -509,15 +516,24 @@ final class OracleDriver: DatabaseDriver {
         guard let match = fromTableRegex?.firstMatch(
             in: trimmed,
             range: NSRange(location: 0, length: ns.length)
-        ), match.numberOfRanges >= 2 else {
+        ), match.numberOfRanges >= 3 else {
             return nil
         }
-        return ns.substring(with: match.range(at: 1))
+        // Group 1 = double-quoted table, Group 2 = unquoted identifier
+        let quotedRange = match.range(at: 1)
+        if quotedRange.location != NSNotFound {
+            return ns.substring(with: quotedRange)
+        }
+        let unquotedRange = match.range(at: 2)
+        if unquotedRange.location != NSNotFound {
+            return ns.substring(with: unquotedRange)
+        }
+        return nil
     }
 
     private func mapToQueryResult(_ oracleResult: OracleQueryResult, executionTime: TimeInterval) -> QueryResult {
         let columnTypes = oracleResult.columnTypeNames.map { rawType in
-            ColumnType(fromSQLiteType: rawType)
+            ColumnType(fromOracleType: rawType)
         }
         return QueryResult(
             columns: oracleResult.columns,

@@ -10,8 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Oracle Database support via OCI (Oracle Call Interface)
-- CockroachDB database support (PostgreSQL wire-compatible via LibPQ)
-- Add database URL scheme support — open connections directly from terminal with `open "mysql://user@host/db" -a TablePro` (supports MySQL, PostgreSQL, SQLite, MongoDB, Redis, MSSQL)
+- Add database URL scheme support — open connections directly from terminal with `open "mysql://user@host/db" -a TablePro` (supports MySQL, PostgreSQL, SQLite, MongoDB, Redis, MSSQL, Oracle)
 - SSH Agent authentication method for SSH tunnels (compatible with 1Password SSH Agent, Secretive, ssh-agent)
 
 ### Changed

@@ -54,7 +54,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private static let databaseURLSchemes: Set<String> = [
         "postgresql", "postgres", "mysql", "mariadb", "sqlite",
         "mongodb", "mongodb+srv", "redis", "rediss", "redshift",
-        "mssql", "sqlserver", "cockroachdb", "oracle"
+        "mssql", "sqlserver", "oracle"
     ]
 
     func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
@@ -385,7 +385,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 sslConfig: sslConfig,
                 color: color,
                 tagId: tagId,
-                redisDatabase: parsed.redisDatabase
+                redisDatabase: parsed.redisDatabase,
+                oracleServiceName: parsed.oracleServiceName
             )
         }
 

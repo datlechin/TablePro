@@ -109,7 +109,6 @@ enum DatabaseType: String, CaseIterable, Identifiable, Codable {
     case postgresql = "PostgreSQL"
     case sqlite = "SQLite"
     case redshift = "Redshift"
-    case cockroachdb = "CockroachDB"
     case mongodb = "MongoDB"
     case redis = "Redis"
     case mssql = "SQL Server"
@@ -130,8 +129,6 @@ enum DatabaseType: String, CaseIterable, Identifiable, Codable {
             return "sqlite-icon"
         case .redshift:
             return "redshift-icon"
-        case .cockroachdb:
-            return "cockroachdb-icon"
         case .mongodb:
             return "mongodb-icon"
         case .redis:
@@ -150,7 +147,6 @@ enum DatabaseType: String, CaseIterable, Identifiable, Codable {
         case .postgresql: return 5_432
         case .sqlite: return 0
         case .redshift: return 5_439
-        case .cockroachdb: return 26_257
         case .mongodb: return 27_017
         case .redis: return 6_379
         case .mssql: return 1_433
@@ -163,7 +159,7 @@ enum DatabaseType: String, CaseIterable, Identifiable, Codable {
     /// MongoDB and SQLite commonly run without authentication.
     var requiresAuthentication: Bool {
         switch self {
-        case .mysql, .mariadb, .postgresql, .redshift, .cockroachdb, .mssql, .oracle: return true
+        case .mysql, .mariadb, .postgresql, .redshift, .mssql, .oracle: return true
         case .sqlite, .mongodb, .redis: return false
         }
     }
@@ -171,7 +167,7 @@ enum DatabaseType: String, CaseIterable, Identifiable, Codable {
     /// Whether this database type supports foreign key constraints
     var supportsForeignKeys: Bool {
         switch self {
-        case .mysql, .mariadb, .postgresql, .sqlite, .redshift, .cockroachdb, .mssql, .oracle:
+        case .mysql, .mariadb, .postgresql, .sqlite, .redshift, .mssql, .oracle:
             return true
         case .mongodb, .redis:
             return false
@@ -181,9 +177,9 @@ enum DatabaseType: String, CaseIterable, Identifiable, Codable {
     var beginTransactionSQL: String {
         switch self {
         case .mysql, .mariadb: return "START TRANSACTION"
-        case .postgresql, .redshift, .cockroachdb, .sqlite: return "BEGIN"
+        case .postgresql, .redshift, .sqlite: return "BEGIN"
         case .mssql: return "BEGIN TRANSACTION"
-        case .oracle: return "SET TRANSACTION READ WRITE"
+        case .oracle: return ""
         case .mongodb, .redis: return ""
         }
     }
@@ -191,7 +187,7 @@ enum DatabaseType: String, CaseIterable, Identifiable, Codable {
     /// Whether this database type supports SQL-based schema editing (ALTER TABLE etc.)
     var supportsSchemaEditing: Bool {
         switch self {
-        case .mysql, .mariadb, .postgresql, .sqlite, .cockroachdb, .mssql, .oracle:
+        case .mysql, .mariadb, .postgresql, .sqlite, .mssql, .oracle:
             return true
         case .redshift, .mongodb, .redis:
             return false
@@ -204,7 +200,7 @@ enum DatabaseType: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .mysql, .mariadb, .sqlite:
             return "`"
-        case .postgresql, .redshift, .cockroachdb, .mongodb, .redis, .oracle:
+        case .postgresql, .redshift, .mongodb, .redis, .oracle:
             return "\""
         case .mssql:
             return "["

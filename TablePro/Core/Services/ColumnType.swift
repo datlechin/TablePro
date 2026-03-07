@@ -243,6 +243,47 @@ enum ColumnType: Equatable {
         }
     }
 
+    // MARK: - Oracle Type Mapping
+
+    /// Initialize from Oracle data type name string
+    /// Reference: https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/Data-Types.html
+    init(fromOracleType declaredType: String?) {
+        guard let type = declaredType?.uppercased() else {
+            self = .text(rawType: declaredType)
+            return
+        }
+
+        if type.contains("TIMESTAMP") {
+            self = .timestamp(rawType: declaredType)
+        } else if type == "DATE" {
+            self = .date(rawType: declaredType)
+        } else if type == "NUMBER" || type.hasPrefix("NUMBER(") || type == "INTEGER"
+                    || type == "FLOAT" || type.hasPrefix("FLOAT(")
+                    || type == "BINARY_FLOAT" || type == "BINARY_DOUBLE"
+                    || type == "SMALLINT" || type == "BOOLEAN" {
+            self = .decimal(rawType: declaredType)
+        } else if type == "VARCHAR2" || type.hasPrefix("VARCHAR2(")
+                    || type == "NVARCHAR2" || type.hasPrefix("NVARCHAR2(")
+                    || type == "CHAR" || type.hasPrefix("CHAR(")
+                    || type == "NCHAR" || type.hasPrefix("NCHAR(")
+                    || type == "LONG" {
+            self = .text(rawType: declaredType)
+        } else if type == "CLOB" || type == "NCLOB" {
+            self = .text(rawType: declaredType)
+        } else if type == "BLOB" || type == "RAW" || type.hasPrefix("RAW(")
+                    || type == "LONG RAW" || type == "BFILE" {
+            self = .blob(rawType: declaredType)
+        } else if type == "XMLTYPE" || type == "JSON" {
+            self = .json(rawType: declaredType)
+        } else if type == "ROWID" || type == "UROWID" || type.hasPrefix("UROWID(") {
+            self = .text(rawType: declaredType)
+        } else if type.hasPrefix("INTERVAL") {
+            self = .text(rawType: declaredType)
+        } else {
+            self = .text(rawType: declaredType)
+        }
+    }
+
     // MARK: - Display Properties
 
     /// Human-readable name for this column type

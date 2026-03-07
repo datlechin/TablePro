@@ -40,6 +40,8 @@ struct OracleQueryResult {
 final class OracleConnectionWrapper: @unchecked Sendable {
     // MARK: - Properties
 
+    private static let connectionCounter = OSAllocatedUnfairLock(initialState: 0)
+
     private let host: String
     private let port: Int
     private let user: String
@@ -81,10 +83,15 @@ final class OracleConnectionWrapper: @unchecked Sendable {
             password: password
         )
 
+        let connectionId = Self.connectionCounter.withLock { state -> Int in
+            state += 1
+            return state
+        }
+
         do {
             let connection = try await OracleNIO.OracleConnection.connect(
                 configuration: config,
-                id: 1,
+                id: connectionId,
                 logger: nioLogger
             )
 
