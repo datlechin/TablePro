@@ -537,6 +537,7 @@ final class SQLCompletionProvider {
                 "JSON", "Bool",
             ]
 
+
         case .sqlite:
             types += [
                 "BLOB",

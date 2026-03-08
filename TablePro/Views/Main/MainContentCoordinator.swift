@@ -1098,6 +1098,7 @@ final class MainContentCoordinator {
     }
 
 
+
     /// Remove shared schema provider when a connection disconnects
     static func clearSharedSchema(for connectionId: UUID) {
         sharedSchemaProviders.removeValue(forKey: connectionId)

@@ -275,6 +275,7 @@ struct SchemaStatementGenerator {
                 isDestructive: old.dataType != new.dataType
             )
 
+
         case .sqlite, .mongodb, .redis:
             // SQLite doesn't support ALTER COLUMN - requires table recreation
             // MongoDB/Redis don't use SQL ALTER TABLE
