@@ -1,36 +1,32 @@
 //
-//  ExportMQLOptionsView.swift
-//  TablePro
-//
-//  Options panel for MQL (MongoDB Query Language) export format.
+//  MQLExportOptionsView.swift
+//  MQLExportPlugin
 //
 
 import SwiftUI
 
-/// Options panel for MQL export
-struct ExportMQLOptionsView: View {
-    @Binding var options: MQLExportOptions
+struct MQLExportOptionsView: View {
+    @Bindable var plugin: MQLExportPlugin
 
-    /// Available batch size options
     private static let batchSizeOptions = [100, 500, 1_000, 5_000]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DesignConstants.Spacing.xs) {
+        VStack(alignment: .leading, spacing: 8) {
             Text("Exports data as mongosh-compatible scripts. Drop, Indexes, and Data options are configured per collection in the collection list.")
-                .font(.system(size: DesignConstants.FontSize.small))
+                .font(.system(size: 11))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
             Divider()
-                .padding(.vertical, DesignConstants.Spacing.xxs)
+                .padding(.vertical, 2)
 
             HStack {
                 Text("Rows per insertMany")
-                    .font(.system(size: DesignConstants.FontSize.body))
+                    .font(.system(size: 13))
 
                 Spacer()
 
-                Picker("", selection: $options.batchSize) {
+                Picker("", selection: $plugin.options.batchSize) {
                     ForEach(Self.batchSizeOptions, id: \.self) { size in
                         Text("\(size)")
                             .tag(size)
@@ -43,12 +39,4 @@ struct ExportMQLOptionsView: View {
             .help("Number of documents per insertMany statement. Higher values create fewer statements.")
         }
     }
-}
-
-// MARK: - Preview
-
-#Preview {
-    ExportMQLOptionsView(options: .constant(MQLExportOptions()))
-        .padding()
-        .frame(width: 300)
 }

@@ -1,31 +1,26 @@
 //
-//  ExportCSVOptionsView.swift
-//  TablePro
-//
-//  Options panel for CSV export format.
-//  Provides controls for delimiter, quoting, NULL handling, and formatting.
+//  CSVExportOptionsView.swift
+//  CSVExportPlugin
 //
 
 import SwiftUI
 
-/// Options panel for CSV export
-struct ExportCSVOptionsView: View {
-    @Binding var options: CSVExportOptions
+struct CSVExportOptionsView: View {
+    @Bindable var plugin: CSVExportPlugin
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            // Checkboxes section
             VStack(alignment: .leading, spacing: 8) {
-                Toggle("Convert NULL to EMPTY", isOn: $options.convertNullToEmpty)
+                Toggle("Convert NULL to EMPTY", isOn: $plugin.options.convertNullToEmpty)
                     .toggleStyle(.checkbox)
 
-                Toggle("Convert line break to space", isOn: $options.convertLineBreakToSpace)
+                Toggle("Convert line break to space", isOn: $plugin.options.convertLineBreakToSpace)
                     .toggleStyle(.checkbox)
 
-                Toggle("Put field names in the first row", isOn: $options.includeFieldNames)
+                Toggle("Put field names in the first row", isOn: $plugin.options.includeFieldNames)
                     .toggleStyle(.checkbox)
 
-                Toggle("Sanitize formula-like values", isOn: $options.sanitizeFormulas)
+                Toggle("Sanitize formula-like values", isOn: $plugin.options.sanitizeFormulas)
                     .toggleStyle(.checkbox)
                     .help("Prevent CSV formula injection by prefixing values starting with =, +, -, @ with a single quote")
             }
@@ -33,10 +28,9 @@ struct ExportCSVOptionsView: View {
             Divider()
                 .padding(.vertical, 4)
 
-            // Dropdowns section
             VStack(alignment: .leading, spacing: 10) {
-                optionRow(String(localized: "Delimiter")) {
-                    Picker("", selection: $options.delimiter) {
+                optionRow(String(localized: "Delimiter", bundle: .main)) {
+                    Picker("", selection: $plugin.options.delimiter) {
                         ForEach(CSVDelimiter.allCases) { delimiter in
                             Text(delimiter.displayName).tag(delimiter)
                         }
@@ -46,8 +40,8 @@ struct ExportCSVOptionsView: View {
                     .frame(width: 140, alignment: .trailing)
                 }
 
-                optionRow(String(localized: "Quote")) {
-                    Picker("", selection: $options.quoteHandling) {
+                optionRow(String(localized: "Quote", bundle: .main)) {
+                    Picker("", selection: $plugin.options.quoteHandling) {
                         ForEach(CSVQuoteHandling.allCases) { handling in
                             Text(handling.rawValue).tag(handling)
                         }
@@ -57,8 +51,8 @@ struct ExportCSVOptionsView: View {
                     .frame(width: 140, alignment: .trailing)
                 }
 
-                optionRow(String(localized: "Line break")) {
-                    Picker("", selection: $options.lineBreak) {
+                optionRow(String(localized: "Line break", bundle: .main)) {
+                    Picker("", selection: $plugin.options.lineBreak) {
                         ForEach(CSVLineBreak.allCases) { lineBreak in
                             Text(lineBreak.rawValue).tag(lineBreak)
                         }
@@ -68,8 +62,8 @@ struct ExportCSVOptionsView: View {
                     .frame(width: 140, alignment: .trailing)
                 }
 
-                optionRow(String(localized: "Decimal")) {
-                    Picker("", selection: $options.decimalFormat) {
+                optionRow(String(localized: "Decimal", bundle: .main)) {
+                    Picker("", selection: $plugin.options.decimalFormat) {
                         ForEach(CSVDecimalFormat.allCases) { format in
                             Text(format.rawValue).tag(format)
                         }
@@ -95,12 +89,4 @@ struct ExportCSVOptionsView: View {
             content()
         }
     }
-}
-
-// MARK: - Preview
-
-#Preview {
-    ExportCSVOptionsView(options: .constant(CSVExportOptions()))
-        .padding()
-        .frame(width: 280)
 }

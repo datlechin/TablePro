@@ -1,25 +1,42 @@
 //
-//  ExportService+XLSX.swift
-//  TablePro
+//  XLSXExportPlugin.swift
+//  XLSXExportPlugin
 //
 
-import AppKit
 import Foundation
+import SwiftUI
+import TableProPluginKit
 
-extension ExportService {
-    func exportToXLSX(
-        tables: [ExportTableItem],
-        config: ExportConfiguration,
-        to url: URL
+@Observable
+final class XLSXExportPlugin: ExportFormatPlugin {
+    static let pluginName = "XLSX Export"
+    static let pluginVersion = "1.0.0"
+    static let pluginDescription = "Export data to Excel format"
+    static let formatId = "xlsx"
+    static let formatDisplayName = "XLSX"
+    static let defaultFileExtension = "xlsx"
+    static let iconName = "tablecells"
+
+    var options = XLSXExportOptions()
+
+    required init() {}
+
+    func optionsView() -> AnyView? {
+        AnyView(XLSXExportOptionsView(plugin: self))
+    }
+
+    func export(
+        tables: [PluginExportTable],
+        dataSource: any PluginExportDataSource,
+        destination: URL,
+        progress: PluginExportProgress
     ) async throws {
         let writer = XLSXWriter()
-        let options = config.xlsxOptions
 
         for (index, table) in tables.enumerated() {
-            try checkCancellation()
+            try progress.checkCancellation()
 
-            state.currentTableIndex = index + 1
-            state.currentTable = table.qualifiedName
+            progress.setCurrentTable(table.qualifiedName, index: index + 1)
 
             let batchSize = 5_000
             var offset = 0
@@ -27,10 +44,14 @@ extension ExportService {
             var isFirstBatch = true
 
             while true {
-                try checkCancellation()
-                try Task.checkCancellation()
+                try progress.checkCancellation()
 
-                let result = try await fetchBatch(for: table, offset: offset, limit: batchSize)
+                let result = try await dataSource.fetchRows(
+                    table: table.name,
+                    databaseName: table.databaseName,
+                    offset: offset,
+                    limit: batchSize
+                )
 
                 if result.rows.isEmpty { break }
 
@@ -45,24 +66,20 @@ extension ExportService {
                     isFirstBatch = false
                 }
 
-                // Write this batch to the sheet XML and release batch memory
                 autoreleasepool {
                     writer.addRows(result.rows, convertNullToEmpty: options.convertNullToEmpty)
                 }
 
-                // Update progress for each row in this batch
                 for _ in result.rows {
-                    await incrementProgress()
+                    progress.incrementRow()
                 }
 
                 offset += batchSize
             }
 
-            // If we fetched at least one batch, finish the sheet
             if !isFirstBatch {
                 writer.finishSheet()
             } else {
-                // Table was empty - create an empty sheet with no data
                 writer.beginSheet(
                     name: table.name,
                     columns: [],
@@ -72,12 +89,11 @@ extension ExportService {
                 writer.finishSheet()
             }
 
-            await finalizeTableProgress()
+            progress.finalizeTable()
         }
 
-        // Write XLSX on background thread to avoid blocking UI
         try await Task.detached(priority: .userInitiated) {
-            try writer.write(to: url)
+            try writer.write(to: destination)
         }.value
     }
 }

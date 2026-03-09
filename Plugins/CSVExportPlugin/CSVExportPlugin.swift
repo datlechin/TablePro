@@ -1,32 +1,51 @@
 //
-//  ExportService+CSV.swift
-//  TablePro
+//  CSVExportPlugin.swift
+//  CSVExportPlugin
 //
 
 import Foundation
+import SwiftUI
+import TableProPluginKit
 
-extension ExportService {
-    func exportToCSV(
-        tables: [ExportTableItem],
-        config: ExportConfiguration,
-        to url: URL
+@Observable
+final class CSVExportPlugin: ExportFormatPlugin {
+    static let pluginName = "CSV Export"
+    static let pluginVersion = "1.0.0"
+    static let pluginDescription = "Export data to CSV format"
+    static let formatId = "csv"
+    static let formatDisplayName = "CSV"
+    static let defaultFileExtension = "csv"
+    static let iconName = "doc.text"
+
+    // swiftlint:disable:next force_try
+    static let decimalFormatRegex = try! NSRegularExpression(pattern: #"^[+-]?\d+\.\d+$"#)
+
+    var options = CSVExportOptions()
+
+    required init() {}
+
+    func optionsView() -> AnyView? {
+        AnyView(CSVExportOptionsView(plugin: self))
+    }
+
+    func export(
+        tables: [PluginExportTable],
+        dataSource: any PluginExportDataSource,
+        destination: URL,
+        progress: PluginExportProgress
     ) async throws {
-        // Create file and get handle for streaming writes
-        let fileHandle = try createFileHandle(at: url)
-        defer { closeFileHandle(fileHandle) }
+        let fileHandle = try PluginExportUtilities.createFileHandle(at: destination)
+        defer { try? fileHandle.close() }
 
-        let lineBreak = config.csvOptions.lineBreak.value
+        let lineBreak = options.lineBreak.value
 
         for (index, table) in tables.enumerated() {
-            try checkCancellation()
+            try progress.checkCancellation()
 
-            state.currentTableIndex = index + 1
-            state.currentTable = table.qualifiedName
+            progress.setCurrentTable(table.qualifiedName, index: index + 1)
 
-            // Add table header comment if multiple tables
-            // Sanitize name to prevent newlines from breaking the comment line
             if tables.count > 1 {
-                let sanitizedName = sanitizeForSQLComment(table.qualifiedName)
+                let sanitizedName = PluginExportUtilities.sanitizeForSQLComment(table.qualifiedName)
                 try fileHandle.write(contentsOf: "# Table: \(sanitizedName)\n".toUTF8Data())
             }
 
@@ -35,52 +54,55 @@ extension ExportService {
             var isFirstBatch = true
 
             while true {
-                try checkCancellation()
-                try Task.checkCancellation()
+                try progress.checkCancellation()
 
-                let result = try await fetchBatch(for: table, offset: offset, limit: batchSize)
+                let result = try await dataSource.fetchRows(
+                    table: table.name,
+                    databaseName: table.databaseName,
+                    offset: offset,
+                    limit: batchSize
+                )
 
-                // No more rows to process
-                if result.rows.isEmpty {
-                    break
-                }
+                if result.rows.isEmpty { break }
 
-                // Stream CSV content for this batch directly to file
-                // Only include headers on the first batch to avoid duplication
-                var batchOptions = config.csvOptions
+                var batchOptions = options
                 if !isFirstBatch {
                     batchOptions.includeFieldNames = false
                 }
 
-                try await writeCSVContentWithProgress(
+                try writeCSVContent(
                     columns: result.columns,
                     rows: result.rows,
                     options: batchOptions,
-                    to: fileHandle
+                    to: fileHandle,
+                    progress: progress
                 )
 
                 isFirstBatch = false
                 offset += batchSize
             }
+
             if index < tables.count - 1 {
                 try fileHandle.write(contentsOf: "\(lineBreak)\(lineBreak)".toUTF8Data())
             }
         }
 
-        try checkCancellation()
-        state.progress = 1.0
+        try progress.checkCancellation()
+        progress.finalizeTable()
     }
 
-    private func writeCSVContentWithProgress(
+    // MARK: - Private
+
+    private func writeCSVContent(
         columns: [String],
         rows: [[String?]],
         options: CSVExportOptions,
-        to fileHandle: FileHandle
-    ) async throws {
+        to fileHandle: FileHandle,
+        progress: PluginExportProgress
+    ) throws {
         let delimiter = options.delimiter.actualValue
         let lineBreak = options.lineBreak.value
 
-        // Header row
         if options.includeFieldNames {
             let headerLine = columns
                 .map { escapeCSVField($0, options: options) }
@@ -88,9 +110,8 @@ extension ExportService {
             try fileHandle.write(contentsOf: (headerLine + lineBreak).toUTF8Data())
         }
 
-        // Data rows with progress tracking - stream directly to file
         for row in rows {
-            try checkCancellation()
+            try progress.checkCancellation()
 
             let rowLine = row.map { value -> String in
                 guard let val = value else {
@@ -98,11 +119,8 @@ extension ExportService {
                 }
 
                 var processed = val
-
-                // Check for line breaks BEFORE converting them (for quote detection)
                 let hadLineBreaks = val.contains("\n") || val.contains("\r")
 
-                // Convert line breaks to space
                 if options.convertLineBreakToSpace {
                     processed = processed
                         .replacingOccurrences(of: "\r\n", with: " ")
@@ -110,7 +128,6 @@ extension ExportService {
                         .replacingOccurrences(of: "\n", with: " ")
                 }
 
-                // Handle decimal format
                 if options.decimalFormat == .comma {
                     let range = NSRange(processed.startIndex..., in: processed)
                     if Self.decimalFormatRegex.firstMatch(in: processed, range: range) != nil {
@@ -121,26 +138,17 @@ extension ExportService {
                 return escapeCSVField(processed, options: options, originalHadLineBreaks: hadLineBreaks)
             }.joined(separator: delimiter)
 
-            // Write row directly to file
             try fileHandle.write(contentsOf: (rowLine + lineBreak).toUTF8Data())
-
-            // Update progress (throttled)
-            await incrementProgress()
+            progress.incrementRow()
         }
-
-        // Ensure final count is shown
-        await finalizeTableProgress()
     }
 
     private func escapeCSVField(_ field: String, options: CSVExportOptions, originalHadLineBreaks: Bool = false) -> String {
         var processed = field
 
-        // Sanitize formula-like prefixes to prevent CSV formula injection
-        // Values starting with these characters can be executed as formulas in Excel/LibreOffice
         if options.sanitizeFormulas {
             let dangerousPrefixes: [Character] = ["=", "+", "-", "@", "\t", "\r"]
             if let first = processed.first, dangerousPrefixes.contains(first) {
-                // Prefix with single quote - Excel/LibreOffice treats this as text
                 processed = "'" + processed
             }
         }
@@ -152,9 +160,6 @@ extension ExportService {
         case .never:
             return processed
         case .asNeeded:
-            // Check current content for special characters, OR if original had line breaks
-            // (important when convertLineBreakToSpace is enabled - original line breaks
-            // mean the field should still be quoted even after conversion to spaces)
             let needsQuotes = processed.contains(options.delimiter.actualValue) ||
                 processed.contains("\"") ||
                 processed.contains("\n") ||
@@ -167,4 +172,5 @@ extension ExportService {
             return processed
         }
     }
+
 }

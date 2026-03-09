@@ -17,6 +17,8 @@ final class PluginManager {
 
     private(set) var driverPlugins: [String: any DriverPlugin] = [:]
 
+    private(set) var exportPlugins: [String: any ExportFormatPlugin] = [:]
+
     private var builtInPluginsDir: URL? { Bundle.main.builtInPlugInsURL }
 
     private var userPluginsDir: URL {
@@ -51,7 +53,7 @@ final class PluginManager {
 
         loadPlugins(from: userPluginsDir, source: .userInstalled)
 
-        Self.logger.info("Loaded \(self.plugins.count) plugin(s): \(self.driverPlugins.count) driver(s)")
+        Self.logger.info("Loaded \(self.plugins.count) plugin(s): \(self.driverPlugins.count) driver(s), \(self.exportPlugins.count) export format(s)")
     }
 
     private func loadPlugins(from directory: URL, source: PluginSource) {
@@ -146,6 +148,12 @@ final class PluginManager {
             }
             Self.logger.debug("Registered driver plugin '\(pluginId)' for database type '\(typeId)'")
         }
+
+        if let exportPlugin = instance as? any ExportFormatPlugin {
+            let formatId = type(of: exportPlugin).formatId
+            exportPlugins[formatId] = exportPlugin
+            Self.logger.debug("Registered export plugin '\(pluginId)' for format '\(formatId)'")
+        }
     }
 
     private func unregisterCapabilities(pluginId: String) {
@@ -154,6 +162,14 @@ final class PluginManager {
             if let principalClass = entry.bundle.principalClass as? any DriverPlugin.Type {
                 let allTypeIds = Set([principalClass.databaseTypeId] + principalClass.additionalDatabaseTypeIds)
                 return !allTypeIds.contains(type(of: value).databaseTypeId)
+            }
+            return true
+        }
+
+        exportPlugins = exportPlugins.filter { _, value in
+            guard let entry = plugins.first(where: { $0.id == pluginId }) else { return true }
+            if let principalClass = entry.bundle.principalClass as? any ExportFormatPlugin.Type {
+                return principalClass.formatId != type(of: value).formatId
             }
             return true
         }

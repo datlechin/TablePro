@@ -43,4 +43,8 @@ extension PluginEntry {
     var defaultPort: Int? {
         driverPlugin?.defaultPort
     }
+
+    var exportPlugin: (any ExportFormatPlugin.Type)? {
+        bundle.principalClass as? any ExportFormatPlugin.Type
+    }
 }

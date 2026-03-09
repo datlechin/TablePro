@@ -10,6 +10,48 @@ import Foundation
 import TableProPluginKit
 import Testing
 
+// MARK: - Mock MSSQL Plugin Driver
+
+private final class MockMSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
+    private var schema: String?
+
+    init(initialSchema: String?) {
+        schema = initialSchema
+    }
+
+    var currentSchema: String? { schema }
+    var supportsSchemas: Bool { true }
+
+    func switchSchema(to schema: String) async throws {
+        self.schema = schema
+    }
+
+    func connect() async throws {}
+    func disconnect() {}
+
+    func execute(query: String) async throws -> PluginQueryResult {
+        throw NSError(
+            domain: "MockMSSQLPluginDriver",
+            code: -1,
+            userInfo: [NSLocalizedDescriptionKey: "Not connected"]
+        )
+    }
+
+    func fetchTables(schema: String?) async throws -> [PluginTableInfo] { [] }
+    func fetchColumns(table: String, schema: String?) async throws -> [PluginColumnInfo] { [] }
+    func fetchIndexes(table: String, schema: String?) async throws -> [PluginIndexInfo] { [] }
+    func fetchForeignKeys(table: String, schema: String?) async throws -> [PluginForeignKeyInfo] { [] }
+    func fetchTableDDL(table: String, schema: String?) async throws -> String { "" }
+    func fetchViewDefinition(view: String, schema: String?) async throws -> String { "" }
+    func fetchTableMetadata(table: String, schema: String?) async throws -> PluginTableMetadata {
+        PluginTableMetadata(tableName: table)
+    }
+    func fetchDatabases() async throws -> [String] { [] }
+    func fetchDatabaseMetadata(_ database: String) async throws -> PluginDatabaseMetadata {
+        PluginDatabaseMetadata(name: database)
+    }
+}
+
 @MainActor
 @Suite("MSSQL Driver")
 struct MSSQLDriverTests {
@@ -23,20 +65,8 @@ struct MSSQLDriverTests {
 
     private func makeAdapter(mssqlSchema: String? = nil) -> PluginDriverAdapter {
         let conn = makeConnection(mssqlSchema: mssqlSchema)
-        let config = DriverConnectionConfig(
-            host: conn.host,
-            port: conn.port,
-            username: conn.username,
-            password: "",
-            database: conn.database,
-            additionalFields: [
-                "mssqlSchema": mssqlSchema ?? "dbo"
-            ]
-        )
-        guard let plugin = PluginManager.shared.driverPlugins["SQL Server"] else {
-            fatalError("SQL Server plugin not loaded")
-        }
-        let pluginDriver = plugin.createDriver(config: config)
+        let effectiveSchema: String? = if let s = mssqlSchema, !s.isEmpty { s } else { "dbo" }
+        let pluginDriver = MockMSSQLPluginDriver(initialSchema: effectiveSchema)
         return PluginDriverAdapter(connection: conn, pluginDriver: pluginDriver)
     }
 
@@ -111,7 +141,7 @@ struct MSSQLDriverTests {
     // MARK: - Execute Tests
 
     @Test("Execute throws when not connected")
-    func executeThrowsWhenNotConnected() async {
+    func executeThrowsWhenNotConnected() async throws {
         let adapter = makeAdapter()
         await #expect(throws: (any Error).self) {
             _ = try await adapter.execute(query: "SELECT 1")

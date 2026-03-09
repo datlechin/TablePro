@@ -653,6 +653,7 @@
       }
     },
     "1 (no batching)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -1209,6 +1210,7 @@
 
     },
     "Always" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -2116,6 +2118,7 @@
       }
     },
     "Compress the file using Gzip" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -2360,6 +2363,7 @@
       }
     },
     "Convert line break to space" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -2370,6 +2374,7 @@
       }
     },
     "Convert NULL to empty" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -2380,6 +2385,7 @@
       }
     },
     "Convert NULL to EMPTY" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -3047,6 +3053,7 @@
       }
     },
     "Decimal" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -3258,6 +3265,7 @@
       }
     },
     "Delimiter" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -3394,6 +3402,7 @@
       }
     },
     "Drop" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -4015,6 +4024,9 @@
     "Export Format" : {
 
     },
+    "Export format '%@' not found" : {
+
+    },
     "Export Formats" : {
 
     },
@@ -4049,6 +4061,7 @@
       }
     },
     "Exports data as mongosh-compatible scripts. Drop, Indexes, and Data options are configured per collection in the collection list." : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -4701,6 +4714,7 @@
       }
     },
     "Higher values create fewer INSERT statements, resulting in smaller files and faster imports" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -4929,6 +4943,7 @@
       }
     },
     "Include column headers" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -4959,6 +4974,7 @@
       }
     },
     "Include NULL values" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -5011,6 +5027,7 @@
       }
     },
     "Indexes" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -5251,6 +5268,7 @@
       }
     },
     "Keep leading zeros in ZIP codes, phone numbers, and IDs by outputting all values as strings" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -5419,6 +5437,7 @@
       }
     },
     "Line break" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -6552,6 +6571,7 @@
       }
     },
     "Number of documents per insertMany statement. Higher values create fewer statements." : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -7037,6 +7057,7 @@
       }
     },
     "Preserve all values as strings" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -7067,6 +7088,7 @@
       }
     },
     "Pretty print (formatted output)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -7077,6 +7099,7 @@
       }
     },
     "Prevent CSV formula injection by prefixing values starting with =, +, -, @ with a single quote" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -7267,6 +7290,7 @@
       }
     },
     "Put field names in the first row" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -7368,6 +7392,7 @@
       }
     },
     "Quote" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -7378,6 +7403,7 @@
       }
     },
     "Quote if needed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -7882,6 +7908,7 @@
       }
     },
     "Rows per INSERT" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -7892,6 +7919,7 @@
       }
     },
     "Rows per insertMany" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -7932,6 +7960,7 @@
       }
     },
     "Sanitize formula-like values" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -8896,6 +8925,7 @@
       }
     },
     "Structure, Drop, and Data options are configured per table in the table list." : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {

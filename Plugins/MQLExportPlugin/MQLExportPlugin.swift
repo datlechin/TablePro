@@ -1,18 +1,53 @@
 //
-//  ExportService+MQL.swift
-//  TablePro
+//  MQLExportPlugin.swift
+//  MQLExportPlugin
 //
 
 import Foundation
+import SwiftUI
+import TableProPluginKit
 
-extension ExportService {
-    func exportToMQL(
-        tables: [ExportTableItem],
-        config: ExportConfiguration,
-        to url: URL
+@Observable
+final class MQLExportPlugin: ExportFormatPlugin {
+    static let pluginName = "MQL Export"
+    static let pluginVersion = "1.0.0"
+    static let pluginDescription = "Export data to MongoDB Query Language format"
+    static let formatId = "mql"
+    static let formatDisplayName = "MQL"
+    static let defaultFileExtension = "js"
+    static let iconName = "leaf"
+    static let supportedDatabaseTypeIds = ["MongoDB"]
+
+    static let perTableOptionColumns: [PluginExportOptionColumn] = [
+        PluginExportOptionColumn(id: "drop", label: "Drop", width: 44),
+        PluginExportOptionColumn(id: "indexes", label: "Indexes", width: 44),
+        PluginExportOptionColumn(id: "data", label: "Data", width: 44)
+    ]
+
+    var options = MQLExportOptions()
+
+    required init() {}
+
+    func defaultTableOptionValues() -> [Bool] {
+        [true, true, true]
+    }
+
+    func isTableExportable(optionValues: [Bool]) -> Bool {
+        optionValues.contains(true)
+    }
+
+    func optionsView() -> AnyView? {
+        AnyView(MQLExportOptionsView(plugin: self))
+    }
+
+    func export(
+        tables: [PluginExportTable],
+        dataSource: any PluginExportDataSource,
+        destination: URL,
+        progress: PluginExportProgress
     ) async throws {
-        let fileHandle = try createFileHandle(at: url)
-        defer { closeFileHandle(fileHandle) }
+        let fileHandle = try PluginExportUtilities.createFileHandle(at: destination)
+        defer { try? fileHandle.close() }
 
         let dateFormatter = ISO8601DateFormatter()
         try fileHandle.write(contentsOf: "// TablePro MQL Export\n".toUTF8Data())
@@ -20,44 +55,44 @@ extension ExportService {
 
         let dbName = tables.first?.databaseName ?? ""
         if !dbName.isEmpty {
-            try fileHandle.write(contentsOf: "// Database: \(sanitizeForSQLComment(dbName))\n".toUTF8Data())
+            try fileHandle.write(contentsOf: "// Database: \(PluginExportUtilities.sanitizeForSQLComment(dbName))\n".toUTF8Data())
         }
         try fileHandle.write(contentsOf: "\n".toUTF8Data())
 
-        let batchSize = config.mqlOptions.batchSize
+        let batchSize = options.batchSize
 
         for (index, table) in tables.enumerated() {
-            try checkCancellation()
+            try progress.checkCancellation()
 
-            state.currentTableIndex = index + 1
-            state.currentTable = table.qualifiedName
+            progress.setCurrentTable(table.qualifiedName, index: index + 1)
 
-            let mqlOpts = table.mqlOptions
-            let escapedCollection = escapeJSIdentifier(table.name)
-            let collectionAccessor: String
-            if escapedCollection.hasPrefix("[") {
-                collectionAccessor = "db\(escapedCollection)"
-            } else {
-                collectionAccessor = "db.\(escapedCollection)"
-            }
+            let includeDrop = optionValue(table, at: 0)
+            let includeIndexes = optionValue(table, at: 1)
+            let includeData = optionValue(table, at: 2)
 
-            try fileHandle.write(contentsOf: "// Collection: \(sanitizeForSQLComment(table.name))\n".toUTF8Data())
+            let collectionAccessor = MQLExportHelpers.collectionAccessor(for: table.name)
 
-            if mqlOpts.includeDrop {
+            try fileHandle.write(contentsOf: "// Collection: \(PluginExportUtilities.sanitizeForSQLComment(table.name))\n".toUTF8Data())
+
+            if includeDrop {
                 try fileHandle.write(contentsOf: "\(collectionAccessor).drop();\n".toUTF8Data())
             }
 
-            if mqlOpts.includeData {
+            if includeData {
                 let fetchBatchSize = 5_000
                 var offset = 0
                 var columns: [String] = []
                 var documentBatch: [String] = []
 
                 while true {
-                    try checkCancellation()
-                    try Task.checkCancellation()
+                    try progress.checkCancellation()
 
-                    let result = try await fetchBatch(for: table, offset: offset, limit: fetchBatchSize)
+                    let result = try await dataSource.fetchRows(
+                        table: table.name,
+                        databaseName: table.databaseName,
+                        offset: offset,
+                        limit: fetchBatchSize
+                    )
 
                     if result.rows.isEmpty { break }
 
@@ -66,14 +101,14 @@ extension ExportService {
                     }
 
                     for row in result.rows {
-                        try checkCancellation()
+                        try progress.checkCancellation()
 
                         var fields: [String] = []
                         for (colIndex, column) in columns.enumerated() {
                             guard colIndex < row.count else { continue }
                             guard let value = row[colIndex] else { continue }
-                            let jsonValue = mqlJsonValue(for: value)
-                            fields.append("\"\(escapeJSONString(column))\": \(jsonValue)")
+                            let jsonValue = MQLExportHelpers.mqlJsonValue(for: value)
+                            fields.append("\"\(PluginExportUtilities.escapeJSONString(column))\": \(jsonValue)")
                         }
                         documentBatch.append("  {\(fields.joined(separator: ", "))}")
 
@@ -86,7 +121,7 @@ extension ExportService {
                             documentBatch.removeAll(keepingCapacity: true)
                         }
 
-                        await incrementProgress()
+                        progress.incrementRow()
                     }
 
                     offset += fetchBatchSize
@@ -101,24 +136,30 @@ extension ExportService {
                 }
             }
 
-            // Indexes after data for performance
-            if mqlOpts.includeIndexes {
+            if includeIndexes {
                 try await writeMQLIndexes(
                     collection: table.name,
+                    databaseName: table.databaseName,
                     collectionAccessor: collectionAccessor,
+                    dataSource: dataSource,
                     to: fileHandle
                 )
             }
-
-            await finalizeTableProgress()
 
             if index < tables.count - 1 {
                 try fileHandle.write(contentsOf: "\n".toUTF8Data())
             }
         }
 
-        try checkCancellation()
-        state.progress = 1.0
+        try progress.checkCancellation()
+        progress.finalizeTable()
+    }
+
+    // MARK: - Private
+
+    private func optionValue(_ table: PluginExportTable, at index: Int) -> Bool {
+        guard index < table.optionValues.count else { return true }
+        return table.optionValues[index]
     }
 
     private func writeMQLInsertMany(
@@ -126,13 +167,8 @@ extension ExportService {
         documents: [String],
         to fileHandle: FileHandle
     ) throws {
-        let escapedCollection = escapeJSIdentifier(collection)
-        var statement: String
-        if escapedCollection.hasPrefix("[") {
-            statement = "db\(escapedCollection).insertMany([\n"
-        } else {
-            statement = "db.\(escapedCollection).insertMany([\n"
-        }
+        let collectionAccessor = MQLExportHelpers.collectionAccessor(for: collection)
+        var statement = "\(collectionAccessor).insertMany([\n"
         statement += documents.joined(separator: ",\n")
         statement += "\n]);\n"
         try fileHandle.write(contentsOf: statement.toUTF8Data())
@@ -140,10 +176,15 @@ extension ExportService {
 
     private func writeMQLIndexes(
         collection: String,
+        databaseName: String,
         collectionAccessor: String,
+        dataSource: any PluginExportDataSource,
         to fileHandle: FileHandle
     ) async throws {
-        let ddl = try await driver.fetchTableDDL(table: collection)
+        let ddl = try await dataSource.fetchTableDDL(
+            table: collection,
+            databaseName: databaseName
+        )
 
         let lines = ddl.components(separatedBy: "\n")
         var indexLines: [String] = []
@@ -159,7 +200,7 @@ extension ExportService {
                 let escapedForDDL = collection.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
                 let ddlAccessor = "db[\"\(escapedForDDL)\"]"
                 if processedLine.hasPrefix(ddlAccessor) {
-                    processedLine = collectionAccessor + processedLine.dropFirst(ddlAccessor.count)
+                    processedLine = collectionAccessor + String(processedLine.dropFirst(ddlAccessor.count))
                 }
                 indexLines.append(processedLine)
             }
@@ -171,37 +212,4 @@ extension ExportService {
         }
     }
 
-    private func mqlJsonValue(for value: String) -> String {
-        if value == "true" || value == "false" {
-            return value
-        }
-        if value == "null" {
-            return "null"
-        }
-        if Int64(value) != nil {
-            return value
-        }
-        if Double(value) != nil, value.contains(".") {
-            return value
-        }
-        // JSON object or array -- pass through if valid (no unescaped control chars)
-        if (value.hasPrefix("{") && value.hasSuffix("}")) ||
-            (value.hasPrefix("[") && value.hasSuffix("]")) {
-            let hasControlChars = value.utf8.contains(where: { $0 < 0x20 })
-            if hasControlChars {
-                return "\"\(escapeJSONString(value))\""
-            }
-            return value
-        }
-        return "\"\(escapeJSONString(value))\""
-    }
-
-    func escapeJSIdentifier(_ name: String) -> String {
-        guard let firstChar = name.first,
-              !firstChar.isNumber,
-              name.allSatisfy({ $0.isLetter || $0.isNumber || $0 == "_" }) else {
-            return "[\"\(escapeJSONString(name))\"]"
-        }
-        return name
-    }
 }
