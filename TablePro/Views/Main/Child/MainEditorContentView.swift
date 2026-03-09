@@ -335,7 +335,8 @@ struct MainEditorContentView: View {
 
     private func makeRowProvider(for tab: QueryTab) -> InMemoryRowProvider {
         InMemoryRowProvider(
-            rows: sortedRows(for: tab),
+            rowBuffer: tab.rowBuffer,
+            sortIndices: sortIndicesForTab(tab),
             columns: tab.resultColumns,
             columnDefaults: tab.columnDefaults,
             columnTypes: tab.columnTypes,
@@ -345,31 +346,32 @@ struct MainEditorContentView: View {
         )
     }
 
-    private func sortedRows(for tab: QueryTab) -> [QueryResultRow] {
-        guard !tab.rowBuffer.isEvicted else { return [] }
+    /// Returns sort index permutation for a tab, or nil if no sorting is needed.
+    /// For table tabs, sorting is handled server-side via SQL ORDER BY.
+    private func sortIndicesForTab(_ tab: QueryTab) -> [Int]? {
+        guard !tab.rowBuffer.isEvicted else { return nil }
 
-        // Table tabs: Don't apply client-side sorting (handled via SQL ORDER BY)
+        // Table tabs: no client-side sorting
         if tab.tabType == .table {
-            return tab.resultRows
+            return nil
         }
 
-        // Query tabs: Apply client-side sorting
+        // Query tabs: apply client-side sorting
         guard tab.sortState.isSorting else {
-            return tab.resultRows
+            return nil
         }
 
         // Check coordinator's async sort cache (for large datasets sorted on background thread)
-        // The cache stores index permutation to avoid duplicating all row data.
         if let cached = coordinator.querySortCache[tab.id],
            cached.columnIndex == (tab.sortState.columnIndex ?? -1),
            cached.direction == tab.sortState.direction,
            cached.resultVersion == tab.resultVersion {
-            return cached.sortedIndices.map { tab.resultRows[$0] }
+            return cached.sortedIndices
         }
 
-        // For large datasets sorted async, return unsorted until cache is ready
+        // For large datasets sorted async, return nil (unsorted) until cache is ready
         if tab.resultRows.count > 10_000 {
-            return tab.resultRows
+            return nil
         }
 
         // Small dataset: sort synchronously with view-level cache
@@ -377,7 +379,7 @@ struct MainEditorContentView: View {
            cached.columnIndex == (tab.sortState.columnIndex ?? -1),
            cached.direction == tab.sortState.direction,
            cached.resultVersion == tab.resultVersion {
-            return cached.sortedIndices.map { tab.resultRows[$0] }
+            return cached.sortedIndices
         }
 
         let sortColumns = tab.sortState.columns
@@ -407,7 +409,7 @@ struct MainEditorContentView: View {
             resultVersion: tab.resultVersion
         )
 
-        return sortedIndices.map { tab.resultRows[$0] }
+        return sortedIndices
     }
 
     private func sortStateBinding(for tab: QueryTab) -> Binding<SortState> {

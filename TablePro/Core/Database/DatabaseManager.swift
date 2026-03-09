@@ -69,6 +69,60 @@ final class DatabaseManager {
         activeSessions[connectionId]?.metadataDriver
     }
 
+    /// Lazily create the metadata driver for a connection if it doesn't exist yet.
+    /// Returns the metadata driver on success, or nil if creation fails (non-fatal).
+    /// Callers should fall back to the main driver when this returns nil.
+    @discardableResult
+    func ensureMetadataDriver(for connectionId: UUID) async -> DatabaseDriver? {
+        // Already created — return immediately
+        if let existing = activeSessions[connectionId]?.metadataDriver {
+            return existing
+        }
+
+        // Already being created — wait for the in-flight task
+        if let existingTask = metadataCreationTasks[connectionId] {
+            await existingTask.value
+            return activeSessions[connectionId]?.metadataDriver
+        }
+
+        guard let session = activeSessions[connectionId] else { return nil }
+
+        let effectiveConnection = session.effectiveConnection ?? session.connection
+        let timeoutSeconds = AppSettingsManager.shared.general.queryTimeoutSeconds
+        let startupCmds = session.connection.startupCommands
+        let connName = session.connection.name
+
+        let task = Task { [weak self] in
+            guard let self else { return }
+            defer { self.metadataCreationTasks.removeValue(forKey: connectionId) }
+            do {
+                let metaDriver = try DatabaseDriverFactory.createDriver(for: effectiveConnection)
+                try await metaDriver.connect()
+                if timeoutSeconds > 0 {
+                    try? await metaDriver.applyQueryTimeout(timeoutSeconds)
+                }
+                await self.executeStartupCommands(
+                    startupCmds, on: metaDriver, connectionName: connName
+                )
+                if let savedSchema = self.activeSessions[connectionId]?.currentSchema,
+                   let schemaMetaDriver = metaDriver as? SchemaSwitchable {
+                    try? await schemaMetaDriver.switchSchema(to: savedSchema)
+                }
+                if let savedDatabase = self.activeSessions[connectionId]?.currentDatabase,
+                   let adapter = metaDriver as? PluginDriverAdapter {
+                    try? await adapter.switchDatabase(to: savedDatabase)
+                }
+                self.activeSessions[connectionId]?.metadataDriver = metaDriver
+            } catch {
+                Self.logger.warning("Metadata connection failed: \(error.localizedDescription)")
+            }
+        }
+
+        metadataCreationTasks[connectionId] = task
+        await task.value
+        return activeSessions[connectionId]?.metadataDriver
+    }
+
     /// Resolve a session by explicit connection ID
     func session(for connectionId: UUID) -> ConnectionSession? {
         activeSessions[connectionId]
@@ -207,33 +261,9 @@ final class DatabaseManager {
                 await startHealthMonitor(for: connection.id)
             }
 
-            // Create a dedicated metadata connection in the background so Phase 2
-            // metadata queries (columns, FKs, count) run in parallel with main queries.
-            let metaConnection = effectiveConnection
-            let metaConnectionId = connection.id
-            let metaTimeout = AppSettingsManager.shared.general.queryTimeoutSeconds
-            metadataCreationTasks[metaConnectionId] = Task { [weak self] in
-                guard let self else { return }
-                defer { self.metadataCreationTasks.removeValue(forKey: metaConnectionId) }
-                do {
-                    let metaDriver = try DatabaseDriverFactory.createDriver(for: metaConnection)
-                    try await metaDriver.connect()
-                    if metaTimeout > 0 {
-                        try? await metaDriver.applyQueryTimeout(metaTimeout)
-                    }
-                    await self.executeStartupCommands(
-                        connection.startupCommands, on: metaDriver, connectionName: connection.name
-                    )
-                    if let savedSchema = self.activeSessions[metaConnectionId]?.currentSchema,
-                       let schemaMetaDriver = metaDriver as? SchemaSwitchable {
-                        try? await schemaMetaDriver.switchSchema(to: savedSchema)
-                    }
-                    activeSessions[metaConnectionId]?.metadataDriver = metaDriver
-                } catch {
-                    // Non-fatal: Phase 2 falls back to main driver if metadata driver unavailable
-                    Self.logger.warning("Metadata connection failed: \(error.localizedDescription)")
-                }
-            }
+            // Metadata driver is created lazily on first access via ensureMetadataDriver(for:)
+            // to avoid allocating ~30-50 MB for a second C-level driver when no metadata
+            // queries are needed (e.g. query-only tabs, short-lived connections).
         } catch {
             // Close tunnel if connection failed
             if connection.sshConfig.enabled {
@@ -636,39 +666,8 @@ final class DatabaseManager {
                 session.effectiveConnection = effectiveConnection
             }
 
-            // Recreate metadata connection in background
-            let metaConnection = effectiveConnection
-            let metaConnectionId = sessionId
-            let metaTimeout = AppSettingsManager.shared.general.queryTimeoutSeconds
-            let startupCmds = session.connection.startupCommands
-            let connName = session.connection.name
-            metadataCreationTasks[metaConnectionId] = Task { [weak self] in
-                guard let self else { return }
-                defer { self.metadataCreationTasks.removeValue(forKey: metaConnectionId) }
-                do {
-                    let metaDriver = try DatabaseDriverFactory.createDriver(for: metaConnection)
-                    try await metaDriver.connect()
-                    if metaTimeout > 0 {
-                        try? await metaDriver.applyQueryTimeout(metaTimeout)
-                    }
-                    await self.executeStartupCommands(
-                        startupCmds, on: metaDriver, connectionName: connName
-                    )
-                    if let savedSchema = self.activeSessions[metaConnectionId]?.currentSchema,
-                       let schemaMetaDriver = metaDriver as? SchemaSwitchable {
-                        try? await schemaMetaDriver.switchSchema(to: savedSchema)
-                    }
-                    // Restore database on metadata driver too for MSSQL
-                    if let savedDatabase = self.activeSessions[metaConnectionId]?.currentDatabase,
-                       let adapter = metaDriver as? PluginDriverAdapter {
-                        try? await adapter.switchDatabase(to: savedDatabase)
-                    }
-                    activeSessions[metaConnectionId]?.metadataDriver = metaDriver
-                } catch {
-                    Self.logger.warning(
-                        "Metadata reconnection failed: \(error.localizedDescription)")
-                }
-            }
+            // Metadata driver is created lazily via ensureMetadataDriver(for:).
+            // Previous metadata driver was already disconnected above.
 
             // Restart health monitoring
             if session.connection.type != .sqlite {

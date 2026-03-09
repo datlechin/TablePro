@@ -545,10 +545,9 @@ final class MainContentCoordinator {
                     let cached = isMetadataCached(tabId: tabId, tableName: tableName)
                     needsMetadataFetch = !cached
 
-                    // If metadata is NOT cached and a dedicated metadata driver exists,
-                    // start fetching columns+FKs on the separate connection so it runs
-                    // in parallel with the main query.
-                    if needsMetadataFetch, let metaDriver = DatabaseManager.shared.metadataDriver(for: connectionId) {
+                    // If metadata is NOT cached, lazily create (or reuse) the dedicated
+                    // metadata driver so Phase 2 queries run in parallel with the main query.
+                    if needsMetadataFetch, let metaDriver = await DatabaseManager.shared.ensureMetadataDriver(for: connectionId) {
                         parallelSchemaTask = Task {
                             async let cols = metaDriver.fetchColumns(table: tableName)
                             async let fks = metaDriver.fetchForeignKeys(table: tableName)

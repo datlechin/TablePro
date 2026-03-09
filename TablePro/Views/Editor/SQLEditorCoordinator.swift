@@ -275,9 +275,10 @@ final class SQLEditorCoordinator: TextViewCoordinator {
             forName: NSWindow.didUpdateNotification,
             object: nil,
             queue: .main
-        ) { [weak self] _ in
+        ) { [weak self] notification in
             MainActor.assumeIsolated {
-                self?.checkFirstResponderChange()
+                guard let self, notification.object as? NSWindow == self.controller?.textView?.window else { return }
+                self.checkFirstResponderChange()
             }
         }
     }

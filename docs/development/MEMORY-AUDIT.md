@@ -30,7 +30,7 @@ Each carries its own C library state (libmariadb internal buffers, TLS context, 
 **Fix options:**
 - [ ] Multiplex metadata queries on the main driver when idle (eliminates 1 driver)
 - [x] Use a lightweight ping mechanism (e.g., TCP keepalive or `mysql_ping` on main driver with a mutex) instead of a dedicated ping driver — **Done**: removed dedicated `pingDrivers` dict, health checks now use main driver
-- [ ] Lazy-create the metadata driver only when needed, release after use
+- [x] Lazy-create the metadata driver only when needed, release after use — **Done**: `ensureMetadataDriver(for:)` creates on first Phase 2 request; deduplicates in-flight creation tasks
 
 ---
 
@@ -50,9 +50,9 @@ Each carries its own C library state (libmariadb internal buffers, TLS context, 
 For sorted tabs, `sortedRows(for:)` at `MainEditorContentView.swift:406` calls `.map { tab.resultRows[$0] }`, materializing yet another full `[QueryResultRow]` array before handing it to the provider.
 
 **Fix options:**
-- [ ] Make `InMemoryRowProvider` reference `RowBuffer` directly instead of copying rows
+- [x] Make `InMemoryRowProvider` reference `RowBuffer` directly instead of copying rows — **Done**: primary init takes `rowBuffer: RowBuffer` + optional `sortIndices: [Int]?`; convenience init wraps rows for backward compat
 - [ ] Replace `rowCache` with index-based access into `sourceRows` (avoid `TableRowData` wrapper objects)
-- [ ] For sorted tabs, store only the index permutation and let the provider apply it lazily
+- [x] For sorted tabs, store only the index permutation and let the provider apply it lazily — **Done**: `sortIndicesForTab(_:)` returns `[Int]?` permutation; `InMemoryRowProvider` resolves display→source indices via `resolveSourceIndex()`
 
 ---
 
@@ -139,7 +139,7 @@ On tab switch, `DataChangeManager.saveState()` copies all changes into `QueryTab
 Each `SQLEditorCoordinator` registers for `NSWindow.didUpdateNotification` with `object: nil`, meaning every editor instance's closure fires on every window update cycle across all windows. With N query tabs, N closures fire per update cycle.
 
 **Fix options:**
-- [ ] Filter by `object: textView.window` after the editor's window is known
+- [x] Filter by `object: textView.window` after the editor's window is known — **Done**: notification handler early-returns when `notification.object` doesn't match the editor's own window
 - [ ] Or use KVO on the specific window's `firstResponder` instead
 
 ---
@@ -181,10 +181,10 @@ This is inherent to the native-tab architecture and not easily reducible without
 | # | Fix | Expected Savings | Effort | Status |
 |---|-----|-------------------|--------|--------|
 | 3 | Cross-window eviction + clear `InMemoryRowProvider` on evict | Reclaim ~90 MB per evicted tab | Medium | **Done** |
-| 2 | `InMemoryRowProvider` references `RowBuffer` instead of copying | -3–10 MB per tab | Medium | Open |
+| 2 | `InMemoryRowProvider` references `RowBuffer` instead of copying | -3–10 MB per tab | Medium | **Done** |
 | 9 | Remove `RowBuffer.sourceQuery`, use `tab.query` | -0–500 KB per tab | Low | **Done** |
 | 4 | Lazy plugin loading | -20–30 MB at launch | Low-Medium | **Done** |
-| 1 | Eliminate dedicated ping driver | -30–50 MB per connection | Medium | **Done** |
+| 1 | Eliminate dedicated ping driver + lazy metadata driver | -60–100 MB per connection | Medium | **Done** |
 
 ---
 

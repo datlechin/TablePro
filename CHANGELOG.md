@@ -33,6 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reduce memory: evict inactive native window-tab row data after 5s, re-fetch on focus
 - Reduce memory: lazy-load plugin bundles on first use instead of at startup (~20-30 MB saved)
 - Reduce memory: remove duplicate sourceQuery string from RowBuffer
+- Reduce memory: InMemoryRowProvider references RowBuffer directly instead of copying rows (~3-10 MB per tab)
+- Reduce memory: lazy-create metadata driver on first use instead of eagerly on connect (~30-50 MB per connection)
+- Reduce CPU: filter NSWindow.didUpdateNotification by editor's own window (N editors → 1 handler per update cycle)
 - Split DatabaseManager.sessionVersion into fine-grained connectionListVersion and connectionStatusVersion to reduce cascade re-renders
 - Extract AppState property reads into local lets in view bodies for explicit granular observation tracking
 - Reorganized project directory structure: Services, Utilities, Models split into domain-specific subdirectories
