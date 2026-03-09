@@ -314,26 +314,34 @@ final class RowOperationsManager {
         }
 
         let indicesToCopy = isTruncated ? Array(sortedIndices.prefix(Self.maxClipboardRows)) : sortedIndices
-        var lines: [String] = []
 
-        // Add header row if requested
+        let columnCount = resultRows.first?.values.count ?? 1
+        let estimatedRowLength = columnCount * 12
+        var result = ""
+        result.reserveCapacity(indicesToCopy.count * estimatedRowLength)
+
         if includeHeaders, !columns.isEmpty {
-            lines.append(columns.joined(separator: "\t"))
+            for (colIdx, col) in columns.enumerated() {
+                if colIdx > 0 { result.append("\t") }
+                result.append(col)
+            }
         }
 
         for rowIndex in indicesToCopy {
             guard rowIndex < resultRows.count else { continue }
             let row = resultRows[rowIndex]
-            let line = row.values.map { $0 ?? "NULL" }.joined(separator: "\t")
-            lines.append(line)
+            if !result.isEmpty { result.append("\n") }
+            for (colIdx, value) in row.values.enumerated() {
+                if colIdx > 0 { result.append("\t") }
+                result.append(value ?? "NULL")
+            }
         }
 
         if isTruncated {
-            lines.append("(truncated, showing first \(Self.maxClipboardRows) of \(totalSelected) rows)")
+            result.append("\n(truncated, showing first \(Self.maxClipboardRows) of \(totalSelected) rows)")
         }
 
-        let text = lines.joined(separator: "\n")
-        ClipboardService.shared.writeText(text)
+        ClipboardService.shared.writeText(result)
     }
 
     // MARK: - Paste Rows

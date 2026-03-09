@@ -71,24 +71,26 @@ actor SSHTunnelManager {
     private func startHealthCheck() {
         healthCheckTask = Task { [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(30))
+                try? await Task.sleep(for: .seconds(300))
                 guard !Task.isCancelled else { break }
                 await self?.checkTunnelHealth()
             }
         }
     }
 
-    /// Check if tunnels are still alive and attempt reconnection if needed
     private func checkTunnelHealth() async {
         for (connectionId, tunnel) in tunnels {
-            // Check if process is still running
             if !tunnel.process.isRunning {
-                Self.logger.warning("SSH tunnel for \(connectionId) died, attempting reconnection...")
-
-                // Notify DatabaseManager to reconnect
-                await notifyTunnelDied(connectionId: connectionId)
+                Self.logger.warning("SSH tunnel for \(connectionId) died (detected by fallback health check)")
+                await handleTunnelDeath(connectionId: connectionId)
             }
         }
+    }
+
+    private func handleTunnelDeath(connectionId: UUID) async {
+        guard tunnels.removeValue(forKey: connectionId) != nil else { return }
+        Self.processRegistry.withLock { $0.removeValue(forKey: connectionId) }
+        await notifyTunnelDied(connectionId: connectionId)
     }
 
     /// Notify that a tunnel has died (DatabaseManager should handle reconnection)
@@ -203,6 +205,12 @@ actor SSHTunnelManager {
             )
             tunnels[connectionId] = tunnel
             Self.processRegistry.withLock { $0[connectionId] = launch.process }
+
+            launch.process.terminationHandler = { [weak self] _ in
+                Task { [weak self] in
+                    await self?.handleTunnelDeath(connectionId: connectionId)
+                }
+            }
 
             return localPort
         }

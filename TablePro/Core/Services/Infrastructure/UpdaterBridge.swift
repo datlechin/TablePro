@@ -16,6 +16,11 @@ final class UpdaterBridge {
 
     @ObservationIgnored private var observation: NSKeyValueObservation?
 
+    deinit {
+        observation?.invalidate()
+        observation = nil
+    }
+
     init() {
         controller = SPUStandardUpdaterController(
             startingUpdater: true,

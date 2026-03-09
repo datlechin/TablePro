@@ -1352,11 +1352,11 @@ private extension MainContentCoordinator {
         connectionType: DatabaseType,
         schemaResult: SchemaResult?
     ) {
-        // Phase 2a: Fire-and-forget exact COUNT(*) to refine approximate count.
         let quotedTable = connectionType.quoteIdentifier(tableName)
         Task { [weak self] in
             guard let self else { return }
             try? await Task.sleep(nanoseconds: 200_000_000)
+            guard !self.isTearingDown else { return }
             guard let mainDriver = DatabaseManager.shared.driver(for: connectionId) else { return }
             let countResult = try? await mainDriver.execute(
                 query: "SELECT COUNT(*) FROM \(quotedTable)"
@@ -1383,6 +1383,7 @@ private extension MainContentCoordinator {
         Task { [weak self] in
             guard let self else { return }
             try? await Task.sleep(nanoseconds: 200_000_000)
+            guard !self.isTearingDown else { return }
 
             // Use schema if available, otherwise fetch column info for enum parsing
             let columnInfo: [ColumnInfo]

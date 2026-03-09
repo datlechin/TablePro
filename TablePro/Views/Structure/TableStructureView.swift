@@ -7,6 +7,7 @@
 //
 
 import AppKit
+import Combine
 import os
 import SwiftUI
 import UniformTypeIdentifiers
@@ -80,15 +81,22 @@ struct TableStructureView: View {
             AppState.shared.hasStructureChanges = newValue
         }
         .onReceive(NotificationCenter.default.publisher(for: .refreshData), perform: onRefreshData)
-        .onReceive(NotificationCenter.default.publisher(for: .saveStructureChanges)) { _ in
-            if structureChangeManager.hasChanges && selectedTab != .ddl {
-                Task {
-                    await executeSchemaChanges()
+        .onReceive(
+            Publishers.Merge(
+                NotificationCenter.default.publisher(for: .saveStructureChanges),
+                NotificationCenter.default.publisher(for: .previewStructureSQL)
+            )
+            .debounce(for: .milliseconds(50), scheduler: RunLoop.main)
+        ) { notification in
+            if notification.name == .saveStructureChanges {
+                if structureChangeManager.hasChanges && selectedTab != .ddl {
+                    Task {
+                        await executeSchemaChanges()
+                    }
                 }
+            } else {
+                generateStructurePreviewSQL()
             }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .previewStructureSQL)) { _ in
-            generateStructurePreviewSQL()
         }
         .onReceive(NotificationCenter.default.publisher(for: .copySelectedRows)) { _ in
             handleCopyRows(selectedRows)
@@ -96,11 +104,17 @@ struct TableStructureView: View {
         .onReceive(NotificationCenter.default.publisher(for: .pasteRows)) { _ in
             handlePaste()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .undoChange)) { _ in
-            handleUndo()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .redoChange)) { _ in
-            handleRedo()
+        .onReceive(
+            Publishers.Merge(
+                NotificationCenter.default.publisher(for: .undoChange),
+                NotificationCenter.default.publisher(for: .redoChange)
+            )
+        ) { notification in
+            if notification.name == .undoChange {
+                handleUndo()
+            } else {
+                handleRedo()
+            }
         }
     }
 

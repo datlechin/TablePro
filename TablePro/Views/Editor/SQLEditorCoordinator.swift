@@ -73,6 +73,27 @@ final class SQLEditorCoordinator: TextViewCoordinator {
         }
     }
 
+    private func cleanupMonitors() {
+        if let monitor = rightClickMonitor {
+            NSEvent.removeMonitor(monitor)
+            rightClickMonitor = nil
+        }
+        if let observer = editorSettingsObserver {
+            NotificationCenter.default.removeObserver(observer)
+            editorSettingsObserver = nil
+        }
+        if let observer = firstResponderObserver {
+            NotificationCenter.default.removeObserver(observer)
+            firstResponderObserver = nil
+        }
+        frameChangeWorkItem?.cancel()
+        frameChangeWorkItem = nil
+        if let monitor = clipboardMonitor {
+            NSEvent.removeMonitor(monitor)
+            clipboardMonitor = nil
+        }
+    }
+
     // MARK: - TextViewCoordinator
 
     func prepareCoordinator(controller: TextViewController) {
@@ -140,33 +161,12 @@ final class SQLEditorCoordinator: TextViewCoordinator {
     func destroy() {
         didDestroy = true
 
-        frameChangeWorkItem?.cancel()
-        frameChangeWorkItem = nil
-
         uninstallVimKeyInterceptor()
 
         inlineSuggestionManager?.uninstall()
         inlineSuggestionManager = nil
 
-        if let obs = editorSettingsObserver {
-            NotificationCenter.default.removeObserver(obs)
-            editorSettingsObserver = nil
-        }
-
-        if let monitor = rightClickMonitor {
-            NSEvent.removeMonitor(monitor)
-            rightClickMonitor = nil
-        }
-
-        if let monitor = clipboardMonitor {
-            NSEvent.removeMonitor(monitor)
-            clipboardMonitor = nil
-        }
-
-        if let observer = firstResponderObserver {
-            NotificationCenter.default.removeObserver(observer)
-            firstResponderObserver = nil
-        }
+        cleanupMonitors()
     }
 
     // MARK: - AI Context Menu
