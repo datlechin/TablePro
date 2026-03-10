@@ -73,8 +73,8 @@ jobs:
 
       - name: Resolve SPM dependencies
         run: |
-          # Clear stale SPM cache to avoid module resolution failures
-          rm -rf ~/.spm-cache/checkouts ~/.spm-cache/artifacts
+          # Nuke entire SPM cache to avoid stale build artifacts
+          rm -rf ~/.spm-cache
           xcodebuild -project TablePro.xcodeproj \
             -target "${{ steps.plugin-info.outputs.target }}" \
             -clonedSourcePackagesDirPath "$HOME/.spm-cache" \
