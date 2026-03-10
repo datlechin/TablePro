@@ -72,7 +72,9 @@ internal final class TabPersistenceCoordinator {
             return
         }
         let persisted = nonPreviewTabs.map { convertToPersistedTab($0) }
-        TabDiskActor.saveSync(connectionId: connectionId, tabs: persisted, selectedTabId: selectedTabId)
+        let normalizedSelectedId = nonPreviewTabs.contains(where: { $0.id == selectedTabId })
+            ? selectedTabId : nonPreviewTabs.first?.id
+        TabDiskActor.saveSync(connectionId: connectionId, tabs: persisted, selectedTabId: normalizedSelectedId)
     }
 
     // MARK: - Clear

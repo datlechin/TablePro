@@ -6,12 +6,11 @@
 //
 
 import Foundation
-import Testing
 @testable import TablePro
+import Testing
 
 @Suite("Preview Tab")
 struct PreviewTabTests {
-
     @Test("QueryTab isPreview defaults to false")
     func queryTabIsPreviewDefaultsFalse() {
         let tab = QueryTab(title: "Test", tabType: .query)
@@ -75,6 +74,20 @@ struct PreviewTabTests {
         )
         #expect(replaced == true)
         #expect(manager.selectedTab?.isPreview == false)
+    }
+
+    @Test("TabSettings decodes with missing enablePreviewTabs key (backward compat)")
+    func tabSettingsBackwardCompatDecoding() throws {
+        let json = Data("{}".utf8)
+        let decoded = try JSONDecoder().decode(TabSettings.self, from: json)
+        #expect(decoded.enablePreviewTabs == true)
+    }
+
+    @Test("TabSettings decodes with enablePreviewTabs set to false")
+    func tabSettingsDecodesExplicitFalse() throws {
+        let json = Data(#"{"enablePreviewTabs":false}"#.utf8)
+        let decoded = try JSONDecoder().decode(TabSettings.self, from: json)
+        #expect(decoded.enablePreviewTabs == false)
     }
 
     @Test("EditorTabPayload isPreview defaults to false")

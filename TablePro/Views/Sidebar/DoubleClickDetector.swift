@@ -45,23 +45,25 @@ final class SidebarDoubleClickView: NSView {
     override var acceptsFirstResponder: Bool { false }
 
     deinit {
-        SharedDoubleClickMonitor.shared.unregister(self)
+        MainActor.assumeIsolated {
+            SharedDoubleClickMonitor.shared.unregister(self)
+        }
     }
 }
 
 /// Single shared event monitor that dispatches double-clicks to registered views.
 /// Avoids O(n) monitors when many DoubleClickDetector overlays exist in the sidebar.
+/// All callers run on the main thread (NSView lifecycle + NSEvent monitor).
+@MainActor
 private final class SharedDoubleClickMonitor {
     static let shared = SharedDoubleClickMonitor()
 
     private var registeredViews = NSHashTable<SidebarDoubleClickView>.weakObjects()
     private var monitor: Any?
-    private let lock = NSLock()
 
     private init() {}
 
     func register(_ view: SidebarDoubleClickView) {
-        lock.lock()
         registeredViews.add(view)
         if monitor == nil {
             monitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseUp) { [weak self] event in
@@ -69,27 +71,20 @@ private final class SharedDoubleClickMonitor {
                 return event
             }
         }
-        lock.unlock()
     }
 
     func unregister(_ view: SidebarDoubleClickView) {
-        lock.lock()
         registeredViews.remove(view)
         if registeredViews.allObjects.isEmpty, let monitor {
             NSEvent.removeMonitor(monitor)
             self.monitor = nil
         }
-        lock.unlock()
     }
 
     private func handleMouseUp(_ event: NSEvent) {
         guard event.clickCount == 2 else { return }
 
-        lock.lock()
-        let views = registeredViews.allObjects
-        lock.unlock()
-
-        for view in views {
+        for view in registeredViews.allObjects {
             guard let viewWindow = view.window,
                   event.window === viewWindow else { continue }
             let locationInView = view.convert(event.locationInWindow, from: nil)
