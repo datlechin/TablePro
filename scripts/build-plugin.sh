@@ -23,16 +23,17 @@ build_plugin() {
 
     echo "Building $PLUGIN_TARGET ($arch)..." >&2
 
-    # Use a dedicated DerivedData path to avoid stale artifacts from other builds
+    # Use -scheme (not -target) with -derivedDataPath to ensure proper
+    # transitive SPM dependency resolution in explicit module builds
     DERIVED_DATA_DIR="build/DerivedData"
 
     if ! xcodebuild \
         -project "$PROJECT" \
-        -target "$PLUGIN_TARGET" \
+        -scheme "$PLUGIN_TARGET" \
         -configuration "$CONFIG" \
         -arch "$arch" \
         ONLY_ACTIVE_ARCH=YES \
-        CONFIGURATION_BUILD_DIR="$build_dir" \
+        CONFIGURATION_BUILD_DIR="$(pwd)/$build_dir" \
         CODE_SIGN_IDENTITY="$SIGN_IDENTITY" \
         CODE_SIGN_STYLE=Manual \
         DEVELOPMENT_TEAM="$TEAM_ID" \
