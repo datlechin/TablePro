@@ -184,7 +184,8 @@ final class PostgreSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
                 c.column_default,
                 c.collation_name,
                 pgd.description,
-                c.udt_name
+                c.udt_name,
+                CASE WHEN pk.column_name IS NOT NULL THEN 'YES' ELSE 'NO' END AS is_pk
             FROM information_schema.columns c
             LEFT JOIN pg_catalog.pg_statio_all_tables st
                 ON st.schemaname = c.table_schema
@@ -192,6 +193,16 @@ final class PostgreSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
             LEFT JOIN pg_catalog.pg_description pgd
                 ON pgd.objoid = st.relid
                 AND pgd.objsubid = c.ordinal_position
+            LEFT JOIN (
+                SELECT kcu.column_name
+                FROM information_schema.table_constraints tc
+                JOIN information_schema.key_column_usage kcu
+                    ON tc.constraint_name = kcu.constraint_name
+                    AND tc.table_schema = kcu.table_schema
+                WHERE tc.constraint_type = 'PRIMARY KEY'
+                    AND tc.table_schema = '\(escapedSchema)'
+                    AND tc.table_name = '\(escapeLiteral(table))'
+            ) pk ON c.column_name = pk.column_name
             WHERE c.table_schema = '\(escapedSchema)' AND c.table_name = '\(escapeLiteral(table))'
             ORDER BY c.ordinal_position
             """
@@ -214,6 +225,7 @@ final class PostgreSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
             let defaultValue = row[3]
             let collation = row.count > 4 ? row[4] : nil
             let comment = row.count > 5 ? row[5] : nil
+            let isPk = row.count > 7 && row[7] == "YES"
 
             let charset: String? = {
                 guard let coll = collation else { return nil }
@@ -227,7 +239,7 @@ final class PostgreSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
                 name: name,
                 dataType: dataType,
                 isNullable: isNullable,
-                isPrimaryKey: false,
+                isPrimaryKey: isPk,
                 defaultValue: defaultValue,
                 charset: charset,
                 collation: collation,
@@ -246,7 +258,8 @@ final class PostgreSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
                 c.column_default,
                 c.collation_name,
                 pgd.description,
-                c.udt_name
+                c.udt_name,
+                CASE WHEN pk.column_name IS NOT NULL THEN 'YES' ELSE 'NO' END AS is_pk
             FROM information_schema.columns c
             LEFT JOIN pg_catalog.pg_statio_all_tables st
                 ON st.schemaname = c.table_schema
@@ -254,6 +267,15 @@ final class PostgreSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
             LEFT JOIN pg_catalog.pg_description pgd
                 ON pgd.objoid = st.relid
                 AND pgd.objsubid = c.ordinal_position
+            LEFT JOIN (
+                SELECT kcu.table_name, kcu.column_name
+                FROM information_schema.table_constraints tc
+                JOIN information_schema.key_column_usage kcu
+                    ON tc.constraint_name = kcu.constraint_name
+                    AND tc.table_schema = kcu.table_schema
+                WHERE tc.constraint_type = 'PRIMARY KEY'
+                    AND tc.table_schema = '\(escapedSchema)'
+            ) pk ON c.table_name = pk.table_name AND c.column_name = pk.column_name
             WHERE c.table_schema = '\(escapedSchema)'
             ORDER BY c.table_name, c.ordinal_position
             """
@@ -278,6 +300,7 @@ final class PostgreSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
             let defaultValue = row[4]
             let collation = row.count > 5 ? row[5] : nil
             let comment = row.count > 6 ? row[6] : nil
+            let isPk = row.count > 8 && row[8] == "YES"
 
             let charset: String? = {
                 guard let coll = collation else { return nil }
@@ -291,7 +314,7 @@ final class PostgreSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
                 name: name,
                 dataType: dataType,
                 isNullable: isNullable,
-                isPrimaryKey: false,
+                isPrimaryKey: isPk,
                 defaultValue: defaultValue,
                 charset: charset,
                 collation: collation,

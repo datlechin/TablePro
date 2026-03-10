@@ -233,6 +233,19 @@ final class ClickHousePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     }
 
     func fetchAllColumns(schema: String?) async throws -> [String: [PluginColumnInfo]] {
+        let pkSql = """
+            SELECT name, primary_key FROM system.tables
+            WHERE database = currentDatabase() AND primary_key != ''
+            """
+        let pkResult = try await execute(query: pkSql)
+        var pkLookup: [String: Set<String>] = [:]
+        for row in pkResult.rows {
+            guard let tableName = row[safe: 0] ?? nil,
+                  let primaryKey = row[safe: 1] ?? nil else { continue }
+            let cols = Set(primaryKey.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) })
+            pkLookup[tableName] = cols
+        }
+
         let sql = """
             SELECT table, name, type, default_kind, default_expression, comment
             FROM system.columns
@@ -265,7 +278,7 @@ final class ClickHousePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
                 name: colName,
                 dataType: dataType,
                 isNullable: isNullable,
-                isPrimaryKey: false,
+                isPrimaryKey: pkLookup[tableName]?.contains(colName) == true,
                 defaultValue: defaultValue,
                 extra: extra,
                 comment: (comment?.isEmpty == false) ? comment : nil

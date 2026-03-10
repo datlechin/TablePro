@@ -461,18 +461,29 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         let esc = effectiveSchemaEscaped(schema)
         let sql = """
             SELECT
-                COLUMN_NAME,
-                DATA_TYPE,
-                CHARACTER_MAXIMUM_LENGTH,
-                NUMERIC_PRECISION,
-                NUMERIC_SCALE,
-                IS_NULLABLE,
-                COLUMN_DEFAULT,
-                COLUMNPROPERTY(OBJECT_ID(TABLE_SCHEMA + '.' + TABLE_NAME), COLUMN_NAME, 'IsIdentity') AS IS_IDENTITY
-            FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_NAME = '\(escapedTable)'
-              AND TABLE_SCHEMA = '\(esc)'
-            ORDER BY ORDINAL_POSITION
+                c.COLUMN_NAME,
+                c.DATA_TYPE,
+                c.CHARACTER_MAXIMUM_LENGTH,
+                c.NUMERIC_PRECISION,
+                c.NUMERIC_SCALE,
+                c.IS_NULLABLE,
+                c.COLUMN_DEFAULT,
+                COLUMNPROPERTY(OBJECT_ID(c.TABLE_SCHEMA + '.' + c.TABLE_NAME), c.COLUMN_NAME, 'IsIdentity') AS IS_IDENTITY,
+                CASE WHEN pk.COLUMN_NAME IS NOT NULL THEN 1 ELSE 0 END AS IS_PK
+            FROM INFORMATION_SCHEMA.COLUMNS c
+            LEFT JOIN (
+                SELECT kcu.COLUMN_NAME
+                FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc
+                JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE kcu
+                    ON tc.CONSTRAINT_NAME = kcu.CONSTRAINT_NAME
+                    AND tc.TABLE_SCHEMA = kcu.TABLE_SCHEMA
+                WHERE tc.CONSTRAINT_TYPE = 'PRIMARY KEY'
+                    AND tc.TABLE_SCHEMA = '\(esc)'
+                    AND tc.TABLE_NAME = '\(escapedTable)'
+            ) pk ON c.COLUMN_NAME = pk.COLUMN_NAME
+            WHERE c.TABLE_NAME = '\(escapedTable)'
+              AND c.TABLE_SCHEMA = '\(esc)'
+            ORDER BY c.ORDINAL_POSITION
             """
         let result = try await execute(query: sql)
         return result.rows.compactMap { row -> PluginColumnInfo? in
@@ -484,6 +495,7 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
             let isNullable = (row[safe: 5] ?? nil) == "YES"
             let defaultValue = row[safe: 6] ?? nil
             let isIdentity = (row[safe: 7] ?? nil) == "1"
+            let isPk = (row[safe: 8] ?? nil) == "1"
 
             let baseType = (dataType ?? "nvarchar").lowercased()
             let fixedSizeTypes: Set<String> = [
@@ -509,7 +521,7 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
                 name: name,
                 dataType: fullType,
                 isNullable: isNullable,
-                isPrimaryKey: false,
+                isPrimaryKey: isPk,
                 defaultValue: defaultValue,
                 extra: isIdentity ? "IDENTITY" : nil
             )
