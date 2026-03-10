@@ -47,12 +47,18 @@ final class MongoDBPluginDriver: PluginDatabaseDriver {
         )
 
         try await conn.connect()
-        mongoConnection = conn
 
         if currentDb.isEmpty {
-            let dbs = try await conn.listDatabases()
-            currentDb = dbs.first { !Self.systemDatabases.contains($0) } ?? dbs.first ?? ""
+            do {
+                let dbs = try await conn.listDatabases()
+                currentDb = dbs.first { !Self.systemDatabases.contains($0) } ?? dbs.first ?? ""
+            } catch {
+                conn.disconnect()
+                throw error
+            }
         }
+
+        mongoConnection = conn
     }
 
     func disconnect() {
