@@ -725,11 +725,6 @@ struct MainContentView: View {
     /// Navigation safety is guaranteed by `SidebarNavigationResult.resolve` returning `.skip`
     /// when the selected table matches the current tab.
     private func syncSidebarToCurrentTab() {
-        // Don't clear sidebar selection when the table list hasn't loaded yet.
-        // Clearing it prematurely triggers SidebarSyncAction to re-select on tables
-        // load, which causes a double-navigation race for Redis (and potentially others).
-        guard !tables.isEmpty else { return }
-
         let target: Set<TableInfo>
         if let currentTableName = tabManager.selectedTab?.tableName,
            let match = tables.first(where: { $0.name == currentTableName }) {
@@ -738,6 +733,10 @@ struct MainContentView: View {
             target = []
         }
         if sidebarState.selectedTables != target {
+            // Don't clear sidebar selection while the table list is still loading.
+            // Clearing it prematurely triggers SidebarSyncAction to re-select on
+            // tables load, causing a double-navigation race condition.
+            if target.isEmpty && tables.isEmpty { return }
             sidebarState.selectedTables = target
         }
     }

@@ -51,7 +51,7 @@ final class MongoDBPluginDriver: PluginDatabaseDriver {
 
         if currentDb.isEmpty {
             let dbs = try await conn.listDatabases()
-            currentDb = dbs.first { !Self.systemDatabases.contains($0) } ?? dbs.first ?? "test"
+            currentDb = dbs.first { !Self.systemDatabases.contains($0) } ?? dbs.first ?? ""
         }
     }
 

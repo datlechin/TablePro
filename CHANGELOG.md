@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- SSL/TLS always being enabled for MongoDB, Redis, and ClickHouse connections due to case mismatch in SSL mode string comparison (#249)
+- Redis sidebar click showing data briefly then going empty due to double-navigation race condition (#251)
+- MongoDB showing "Invalid database name: ''" when connecting without a database name
+
 ### Added
 
 - Safe mode levels: per-connection setting with 6 levels (Silent, Alert, Alert Full, Safe Mode, Safe Mode Full, Read-Only) replacing the boolean read-only toggle, with confirmation dialogs and Touch ID/password authentication for stricter levels

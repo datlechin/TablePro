@@ -16,7 +16,7 @@ private let logger = Logger(subsystem: "com.TablePro.PostgreSQLDriver", category
 // MARK: - SSL Configuration
 
 struct PQSSLConfig {
-    var mode: String = "disable"
+    var mode: String = "Disabled"
     var caCertificatePath: String = ""
     var clientCertificatePath: String = ""
     var clientKeyPath: String = ""

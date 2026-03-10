@@ -55,11 +55,11 @@ struct MariaDBPluginQueryResult {
 
 struct MySQLSSLConfig {
     enum Mode: String {
-        case disabled
-        case preferred
-        case required
-        case verifyCa = "verify_ca"
-        case verifyIdentity = "verify_identity"
+        case disabled = "Disabled"
+        case preferred = "Preferred"
+        case required = "Required"
+        case verifyCa = "Verify CA"
+        case verifyIdentity = "Verify Identity"
     }
 
     let mode: Mode
