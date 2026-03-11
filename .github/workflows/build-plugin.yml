@@ -149,39 +149,39 @@ jobs:
                 "$X86_64_URL" "$X86_SHA" "$MIN_APP_VERSION" \
                 "$ICON" "$HOMEPAGE" \
                 <<'PYTHON_SCRIPT'
-              import json, sys
+          import json, sys
 
-              bundle_id, name, version, summary = sys.argv[1:5]
-              db_type_ids = json.loads(sys.argv[5])
-              arm64_url, arm64_sha = sys.argv[6], sys.argv[7]
-              x86_64_url, x86_64_sha = sys.argv[8], sys.argv[9]
-              min_app_version, icon, homepage = sys.argv[10], sys.argv[11], sys.argv[12]
+          bundle_id, name, version, summary = sys.argv[1:5]
+          db_type_ids = json.loads(sys.argv[5])
+          arm64_url, arm64_sha = sys.argv[6], sys.argv[7]
+          x86_64_url, x86_64_sha = sys.argv[8], sys.argv[9]
+          min_app_version, icon, homepage = sys.argv[10], sys.argv[11], sys.argv[12]
 
-              with open("plugins.json", "r") as f:
-                  manifest = json.load(f)
+          with open("plugins.json", "r") as f:
+              manifest = json.load(f)
 
-              entry = {
-                  "id": bundle_id, "name": name, "version": version,
-                  "summary": summary,
-                  "author": {"name": "TablePro", "url": "https://tablepro.app"},
-                  "homepage": homepage, "category": "database-driver",
-                  "databaseTypeIds": db_type_ids,
-                  "downloadURL": arm64_url, "sha256": arm64_sha,
-                  "binaries": [
-                      {"architecture": "arm64", "downloadURL": arm64_url, "sha256": arm64_sha},
-                      {"architecture": "x86_64", "downloadURL": x86_64_url, "sha256": x86_64_sha}
-                  ],
-                  "minAppVersion": min_app_version,
-                  "minPluginKitVersion": 1,
-                  "iconName": icon, "isVerified": True
-              }
+          entry = {
+              "id": bundle_id, "name": name, "version": version,
+              "summary": summary,
+              "author": {"name": "TablePro", "url": "https://tablepro.app"},
+              "homepage": homepage, "category": "database-driver",
+              "databaseTypeIds": db_type_ids,
+              "downloadURL": arm64_url, "sha256": arm64_sha,
+              "binaries": [
+                  {"architecture": "arm64", "downloadURL": arm64_url, "sha256": arm64_sha},
+                  {"architecture": "x86_64", "downloadURL": x86_64_url, "sha256": x86_64_sha}
+              ],
+              "minAppVersion": min_app_version,
+              "minPluginKitVersion": 1,
+              "iconName": icon, "isVerified": True
+          }
 
-              manifest["plugins"] = [p for p in manifest["plugins"] if p["id"] != bundle_id]
-              manifest["plugins"].append(entry)
+          manifest["plugins"] = [p for p in manifest["plugins"] if p["id"] != bundle_id]
+          manifest["plugins"].append(entry)
 
-              with open("plugins.json", "w") as f:
-                  json.dump(manifest, f, indent=2)
-                  f.write("\n")
+          with open("plugins.json", "w") as f:
+              json.dump(manifest, f, indent=2)
+              f.write("\n")
           PYTHON_SCRIPT
 
               git config user.name "github-actions[bot]"
