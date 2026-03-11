@@ -437,6 +437,8 @@ extension MainContentCoordinator {
                 }
 
                 await loadSchema()
+
+                NotificationCenter.default.post(name: .refreshData, object: nil)
             } else if connection.type == .postgresql {
                 DatabaseManager.shared.updateSession(connectionId) { session in
                     session.connection.database = database

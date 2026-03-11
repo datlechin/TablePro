@@ -151,6 +151,16 @@ struct MainContentView: View {
                 connection: connection,
                 initialFileURL: coordinator.importFileURL
             )
+        case .quickSwitcher:
+            QuickSwitcherSheet(
+                isPresented: dismissBinding,
+                schemaProvider: coordinator.schemaProvider,
+                connectionId: connection.id,
+                databaseType: connection.type,
+                onSelect: { item in
+                    coordinator.handleQuickSwitcherSelection(item)
+                }
+            )
         }
     }
 

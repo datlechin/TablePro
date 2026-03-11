@@ -31,6 +31,7 @@ enum ActiveSheet: Identifiable {
     case databaseSwitcher
     case exportDialog
     case importDialog
+    case quickSwitcher
 
     var id: Self { self }
 }

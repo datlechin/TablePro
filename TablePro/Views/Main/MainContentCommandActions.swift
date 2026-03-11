@@ -520,6 +520,10 @@ final class MainContentCommandActions {
         coordinator?.activeSheet = .databaseSwitcher
     }
 
+    func openQuickSwitcher() {
+        coordinator?.activeSheet = .quickSwitcher
+    }
+
     // MARK: - Undo/Redo (Group A — Called Directly)
 
     func undoChange() {
