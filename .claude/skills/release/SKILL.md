@@ -85,11 +85,11 @@ and `CURRENT_PROJECT_VERSION = 1`:
 - **TableProPluginKit** framework
 - **Bundled plugins** (included in app bundle): MySQLDriverPlugin,
   PostgreSQLDriverPlugin, MSSQLDriverPlugin, MongoDBDriverPlugin,
-  SQLiteDriverPlugin, plus export/import plugins (CSV, JSON, SQL,
+  RedisDriverPlugin, plus export/import plugins (CSV, JSON, SQL,
   XLSX, MQL export; SQL import)
 - **Separate plugin bundles** (not included in app bundle, distributed
-  independently): RedisDriverPlugin, OracleDriverPlugin,
-  ClickHouseDriverPlugin, DuckDBDriverPlugin
+  independently): OracleDriverPlugin, ClickHouseDriverPlugin,
+  SQLiteDriverPlugin, DuckDBDriverPlugin
 
 Use `replace_all: true` for each edit — the main app target's version
 values are always unique (e.g., `MARKETING_VERSION = 0.16.1` and
@@ -232,7 +232,7 @@ Release: https://github.com/datlechin/TablePro/releases/tag/v<version>
 
 ## Plugin Releases
 
-Separate plugin bundles (Redis, Oracle, ClickHouse, DuckDB) are released
+Separate plugin bundles (Oracle, ClickHouse, SQLite, DuckDB) are released
 independently from the main app via a dedicated workflow
 (`.github/workflows/build-plugin.yml`).
 
