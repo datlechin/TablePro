@@ -4,15 +4,15 @@
 
 import Foundation
 
-struct SQLRowToStatementConverter {
-    let tableName: String
-    let columns: [String]
-    let primaryKeyColumn: String?
-    let databaseType: DatabaseType
+internal struct SQLRowToStatementConverter {
+    internal let tableName: String
+    internal let columns: [String]
+    internal let primaryKeyColumn: String?
+    internal let databaseType: DatabaseType
 
     private static let maxRows = 50_000
 
-    func generateInserts(rows: [[String?]]) -> String {
+    internal func generateInserts(rows: [[String?]]) -> String {
         let capped = rows.prefix(Self.maxRows)
         let quotedTable = quoteColumn(tableName)
         let quotedColumns = columns.map { quoteColumn($0) }.joined(separator: ", ")
@@ -23,7 +23,7 @@ struct SQLRowToStatementConverter {
         }.joined(separator: "\n")
     }
 
-    func generateUpdates(rows: [[String?]]) -> String {
+    internal func generateUpdates(rows: [[String?]]) -> String {
         let capped = rows.prefix(Self.maxRows)
 
         return capped.map { row in
@@ -39,9 +39,10 @@ struct SQLRowToStatementConverter {
         let setClause: String
         let whereClause: String
 
-        if let pkColumn = primaryKeyColumn {
-            let pkIndex = columns.firstIndex(of: pkColumn)
-            let pkValue = pkIndex.map { row.indices.contains($0) ? row[$0] : nil } ?? nil
+        if let pkColumn = primaryKeyColumn,
+           let pkIndex = columns.firstIndex(of: pkColumn),
+           row.indices.contains(pkIndex) {
+            let pkValue = row[pkIndex]
 
             let setClauses = columns.enumerated().compactMap { index, col -> String? in
                 guard col != pkColumn else { return nil }
@@ -83,7 +84,11 @@ struct SQLRowToStatementConverter {
         guard let value else {
             return "NULL"
         }
-        return "'\(value.replacingOccurrences(of: "'", with: "''"))'"
+        var escaped = value.replacingOccurrences(of: "'", with: "''")
+        if databaseType == .mysql || databaseType == .mariadb {
+            escaped = escaped.replacingOccurrences(of: "\\", with: "\\\\")
+        }
+        return "'\(escaped)'"
     }
 
     private func quoteColumn(_ name: String) -> String {

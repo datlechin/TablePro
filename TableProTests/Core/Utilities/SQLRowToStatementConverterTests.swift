@@ -138,6 +138,31 @@ struct SQLRowToStatementConverterTests {
         #expect(update == "UPDATE \"users\" SET \"name\" = 'Alice', \"email\" = 'alice@example.com' WHERE \"id\" = '1';")
     }
 
+    @Test("MySQL escapes backslashes in values")
+    func mysqlBackslashEscaping() {
+        let converter = makeConverter(databaseType: .mysql)
+        let result = converter.generateInserts(rows: [["1", "C:\\Users\\test", "a@b.com"]])
+        #expect(result == "INSERT INTO `users` (`id`, `name`, `email`) VALUES ('1', 'C:\\\\Users\\\\test', 'a@b.com');")
+    }
+
+    @Test("PostgreSQL does not escape backslashes")
+    func postgresqlNoBackslashEscaping() {
+        let converter = makeConverter(databaseType: .postgresql)
+        let result = converter.generateInserts(rows: [["1", "C:\\Users\\test", "a@b.com"]])
+        #expect(result == "INSERT INTO \"users\" (\"id\", \"name\", \"email\") VALUES ('1', 'C:\\Users\\test', 'a@b.com');")
+    }
+
+    @Test("UPDATE falls back to all-column WHERE when PK not in columns")
+    func updatePkNotInColumnsFallsBack() {
+        let converter = makeConverter(
+            columns: ["name", "email"],
+            primaryKeyColumn: "id",
+            databaseType: .mysql
+        )
+        let result = converter.generateUpdates(rows: [["Alice", "alice@example.com"]])
+        #expect(result == "UPDATE `users` SET `name` = 'Alice', `email` = 'alice@example.com' WHERE `name` = 'Alice' AND `email` = 'alice@example.com';")
+    }
+
     // MARK: - Edge Cases
 
     @Test("Empty rows input returns empty string")
