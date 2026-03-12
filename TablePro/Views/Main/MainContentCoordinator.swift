@@ -67,6 +67,12 @@ final class MainContentCoordinator {
     /// Direct reference to structure view actions — eliminates notification broadcasts
     weak var structureActions: StructureViewActionHandler?
 
+    /// Direct reference to AI chat viewmodel — eliminates notification broadcasts
+    weak var aiViewModel: AIChatViewModel?
+
+    /// Direct reference to right panel state — enables showing AI panel programmatically
+    @ObservationIgnored weak var rightPanelState: RightPanelState?
+
     // MARK: - Published State
 
     var schemaProvider: SQLSchemaProvider
@@ -266,6 +272,11 @@ final class MainContentCoordinator {
                 }
             }
         }
+    }
+
+    func showAIChatPanel() {
+        rightPanelState?.isPresented = true
+        rightPanelState?.activeTab = .aiChat
     }
 
     /// Set up the plugin driver for NoSQL query dispatch on the query builder and change manager.
@@ -586,6 +597,45 @@ final class MainContentCoordinator {
             }
         } else {
             executeQueryInternal(sql)
+        }
+    }
+
+    // MARK: - Editor Query Loading
+
+    func loadQueryIntoEditor(_ query: String) {
+        if let tabIndex = tabManager.selectedTabIndex,
+           tabIndex < tabManager.tabs.count,
+           tabManager.tabs[tabIndex].tabType == .query {
+            tabManager.tabs[tabIndex].query = query
+            tabManager.tabs[tabIndex].hasUserInteraction = true
+        } else {
+            let payload = EditorTabPayload(
+                connectionId: connection.id,
+                tabType: .query,
+                initialQuery: query
+            )
+            WindowOpener.shared.openNativeTab(payload)
+        }
+    }
+
+    func insertQueryFromAI(_ query: String) {
+        if let tabIndex = tabManager.selectedTabIndex,
+           tabIndex < tabManager.tabs.count,
+           tabManager.tabs[tabIndex].tabType == .query {
+            let existingQuery = tabManager.tabs[tabIndex].query
+            if existingQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                tabManager.tabs[tabIndex].query = query
+            } else {
+                tabManager.tabs[tabIndex].query = existingQuery + "\n\n" + query
+            }
+            tabManager.tabs[tabIndex].hasUserInteraction = true
+        } else {
+            let payload = EditorTabPayload(
+                connectionId: connection.id,
+                tabType: .query,
+                initialQuery: query
+            )
+            WindowOpener.shared.openNativeTab(payload)
         }
     }
 
@@ -1434,11 +1484,8 @@ private extension MainContentCoordinator {
                 window: NSApp.keyWindow
             )
             if wantsAIFix {
-                NotificationCenter.default.post(
-                    name: .aiFixError,
-                    object: nil,
-                    userInfo: ["query": queryCopy, "error": errorMessage]
-                )
+                showAIChatPanel()
+                aiViewModel?.handleFixError(query: queryCopy, error: errorMessage)
             }
         }
     }

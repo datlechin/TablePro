@@ -155,20 +155,40 @@ Created `StructureViewActionHandler` class with closure properties for each acti
 
 ## Phase 6: Replace Editor/AI Notifications with Direct References
 
-**Status:** Not started
+**Status:** Done
 
-### Editor notifications:
+Replaced 7 notifications with direct calls. Editor notifications use `@FocusedValue(\.commandActions)` or direct coordinator methods. AI notifications use `coordinator.aiViewModel` reference with typed action methods on `AIChatViewModel`. Context menu AI actions use closure chains through `SQLEditorCoordinator`.
 
-- [ ] `loadQueryIntoEditor` — posted by `HistoryPanelView`, `QuickSwitcher+`. Coordinator should have a method `loadQueryIntoEditor(_:)` called directly.
-- [ ] `insertQueryFromAI` — posted by `AIChatCodeBlockView`. AI panel needs a callback/delegate to the coordinator.
-- [ ] `newQueryTab` — posted by `HistoryPanelView`. Direct coordinator call.
-- [ ] `explainQuery` — posted by `QueryEditorView`. Direct coordinator call.
+### Editor notifications replaced:
 
-### AI notifications:
+- [x] `loadQueryIntoEditor` — `@FocusedValue` in `HistoryPanelView`, direct call in `QuickSwitcher`
+- [x] `insertQueryFromAI` — `@FocusedValue` in `AIChatCodeBlockView`
+- [x] `newQueryTab` — `@FocusedValue` in `HistoryPanelView` → `actions?.newTab(initialQuery:)`
+- [x] `explainQuery` — closure `onExplain` on `QueryEditorView`
 
-- [ ] `aiFixError` — posted by coordinator, received by `AIChatPanelView`. Could use a shared `AIChatViewModel` reference or `@FocusedValue`.
-- [ ] `aiExplainSelection` — posted by editor context menu, received by AI panel. Same approach.
-- [ ] `aiOptimizeSelection` — same.
+### AI notifications replaced:
+
+- [x] `aiFixError` — `coordinator.showAIChatPanel()` + `aiViewModel?.handleFixError()`
+- [x] `aiExplainSelection` — closure chain: `AIEditorContextMenu` → `SQLEditorCoordinator` → `SQLEditorView` → `QueryEditorView` → `MainEditorContentView` → coordinator
+- [x] `aiOptimizeSelection` — same closure chain as above
+
+### Files changed:
+
+- **Modified:** `MainContentCoordinator.swift` — added `loadQueryIntoEditor()`, `insertQueryFromAI()`, `aiViewModel`, `rightPanelState`, `showAIChatPanel()`
+- **Modified:** `MainContentCommandActions.swift` — added forwarding methods, removed 4 notification observers + 2 handlers
+- **Modified:** `HistoryPanelView.swift` — `@FocusedValue` replaces 2 notification posts
+- **Modified:** `MainContentCoordinator+QuickSwitcher.swift` — direct coordinator call
+- **Modified:** `AIChatCodeBlockView.swift` — `@FocusedValue` replaces notification post
+- **Modified:** `QueryEditorView.swift` — added `onExplain`, `onAIExplain`, `onAIOptimize` closures
+- **Modified:** `MainEditorContentView.swift` — wired all new closures
+- **Modified:** `AIChatViewModel.swift` — added `handleFixError()`, `handleExplainSelection()`, `handleOptimizeSelection()`
+- **Modified:** `MainContentView.swift` — wired `coordinator.aiViewModel` and `coordinator.rightPanelState`
+- **Modified:** `AIEditorContextMenu.swift` — closures replace notification posts
+- **Modified:** `SQLEditorCoordinator.swift` — added `onAIExplain`, `onAIOptimize` closures
+- **Modified:** `SQLEditorView.swift` — passes AI closures to coordinator
+- **Modified:** `AIChatPanelView.swift` — removed 3 `.onReceive` handlers and moved helpers to viewmodel
+- **Modified:** `AppNotifications.swift` — removed 5 notification definitions
+- **Modified:** `TableProApp.swift` — removed 2 notification definitions
 
 ---
 

@@ -48,6 +48,44 @@ final class AIChatViewModel {
     /// Query results summary from the active tab
     var queryResults: String?
 
+    // MARK: - AI Action Dispatch
+
+    private var queryLanguage: String {
+        switch connection?.type {
+        case .mongodb: return "javascript"
+        case .redis: return "bash"
+        default: return "sql"
+        }
+    }
+
+    private var queryTypeName: String {
+        switch connection?.type {
+        case .mongodb: return "MongoDB query"
+        case .redis: return "Redis command"
+        default: return "SQL query"
+        }
+    }
+
+    func handleFixError(query: String, error: String) {
+        startNewConversation()
+        let prompt = "Fix this \(queryTypeName) error:\n\nQuery:\n```\(queryLanguage)\n\(query)\n```\n\nError: \(error)"
+        sendWithContext(prompt: prompt, feature: .fixError)
+    }
+
+    func handleExplainSelection(_ selectedText: String) {
+        guard !selectedText.isEmpty else { return }
+        startNewConversation()
+        let prompt = "Explain this \(queryTypeName):\n```\(queryLanguage)\n\(selectedText)\n```"
+        sendWithContext(prompt: prompt, feature: .explainQuery)
+    }
+
+    func handleOptimizeSelection(_ selectedText: String) {
+        guard !selectedText.isEmpty else { return }
+        startNewConversation()
+        let prompt = "Optimize this \(queryTypeName):\n```\(queryLanguage)\n\(selectedText)\n```"
+        sendWithContext(prompt: prompt, feature: .optimizeQuery)
+    }
+
     // MARK: - Constants
 
     /// Maximum number of messages to keep in memory to prevent unbounded growth

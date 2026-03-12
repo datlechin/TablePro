@@ -192,7 +192,22 @@ struct MainEditorContentView: View {
                     onCloseTab: {
                         NSApp.keyWindow?.close()
                     },
-                    onExecuteQuery: { coordinator.runQuery() }
+                    onExecuteQuery: { coordinator.runQuery() },
+                    onExplain: { variant in
+                        if let variant {
+                            coordinator.runClickHouseExplain(variant: variant)
+                        } else {
+                            coordinator.runExplainQuery()
+                        }
+                    },
+                    onAIExplain: { text in
+                        coordinator.showAIChatPanel()
+                        coordinator.aiViewModel?.handleExplainSelection(text)
+                    },
+                    onAIOptimize: { text in
+                        coordinator.showAIChatPanel()
+                        coordinator.aiViewModel?.handleOptimizeSelection(text)
+                    }
                 )
             }
             .frame(minHeight: 100, idealHeight: 200)

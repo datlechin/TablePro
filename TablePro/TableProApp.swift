@@ -461,14 +461,8 @@ extension Notification.Name {
     static let copySelectedRows = Notification.Name("copySelectedRows")
     static let pasteRows = Notification.Name("pasteRows")
 
-    // Tab operations
-    static let newQueryTab = Notification.Name("newQueryTab")
-
     // Sidebar operations (still posted by SidebarView / ConnectionStatusView)
     static let openDatabaseSwitcher = Notification.Name("openDatabaseSwitcher")
-
-    // Query editor operations
-    static let explainQuery = Notification.Name("explainQuery")
 
     // File opening notifications
     static let openSQLFiles = Notification.Name("openSQLFiles")

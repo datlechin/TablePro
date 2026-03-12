@@ -43,6 +43,8 @@ final class SQLEditorCoordinator: TextViewCoordinator {
     @ObservationIgnored private var vimCursorManager: VimCursorManager?
     @ObservationIgnored var onCloseTab: (() -> Void)?
     @ObservationIgnored var onExecuteQuery: (() -> Void)?
+    @ObservationIgnored var onAIExplain: ((String) -> Void)?
+    @ObservationIgnored var onAIOptimize: ((String) -> Void)?
 
     /// Whether the editor text view is currently the first responder.
     /// Used to guard cursor propagation — when the find panel highlights
@@ -162,6 +164,8 @@ final class SQLEditorCoordinator: TextViewCoordinator {
             guard range.length > 0 else { return nil }
             return (textView.string as NSString).substring(with: range)
         }
+        menu.onExplainWithAI = { [weak self] text in self?.onAIExplain?(text) }
+        menu.onOptimizeWithAI = { [weak self] text in self?.onAIOptimize?(text) }
         contextMenu = menu
     }
 

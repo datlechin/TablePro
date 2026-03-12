@@ -28,10 +28,7 @@ extension MainContentCoordinator {
             }
 
         case .queryHistory:
-            NotificationCenter.default.post(
-                name: .loadQueryIntoEditor,
-                object: item.name
-            )
+            loadQueryIntoEditor(item.name)
         }
     }
 }

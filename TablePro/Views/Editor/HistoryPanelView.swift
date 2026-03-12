@@ -21,6 +21,7 @@ struct HistoryPanelView: View {
     @State private var searchTask: Task<Void, Never>?
     @State private var copyButtonTitle = "Copy Query"
     @State private var copyResetTask: Task<Void, Never>?
+    @FocusedValue(\.commandActions) private var actions
 
     private let dataProvider = HistoryDataProvider()
 
@@ -363,14 +364,11 @@ private extension HistoryPanelView {
     }
 
     func loadInEditor(_ entry: QueryHistoryEntry) {
-        NotificationCenter.default.post(
-            name: .loadQueryIntoEditor,
-            object: entry.query
-        )
+        actions?.loadQueryIntoEditor(entry.query)
     }
 
     func runInNewTab(_ entry: QueryHistoryEntry) {
-        NotificationCenter.default.post(name: .newQueryTab, object: entry.query)
+        actions?.newTab(initialQuery: entry.query)
     }
 
     // MARK: - Filter State Persistence

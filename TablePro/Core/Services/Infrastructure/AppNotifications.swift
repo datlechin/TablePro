@@ -10,17 +10,9 @@
 import Foundation
 
 extension Notification.Name {
-    // MARK: - Query Editor
-
-    static let aiFixError = Notification.Name("aiFixError")
-    static let aiExplainSelection = Notification.Name("aiExplainSelection")
-    static let aiOptimizeSelection = Notification.Name("aiOptimizeSelection")
-
     // MARK: - Query History
 
     static let queryHistoryDidUpdate = Notification.Name("queryHistoryDidUpdate")
-    static let loadQueryIntoEditor = Notification.Name("loadQueryIntoEditor")
-    static let insertQueryFromAI = Notification.Name("insertQueryFromAI")
 
     // MARK: - Connections
 

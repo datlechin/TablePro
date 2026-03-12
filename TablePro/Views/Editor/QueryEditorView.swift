@@ -22,6 +22,9 @@ struct QueryEditorView: View {
     var databaseType: DatabaseType?
     var onCloseTab: (() -> Void)?
     var onExecuteQuery: (() -> Void)?
+    var onExplain: ((ClickHouseExplainVariant?) -> Void)?
+    var onAIExplain: ((String) -> Void)?
+    var onAIOptimize: ((String) -> Void)?
 
     @State private var vimMode: VimMode = .normal
 
@@ -43,7 +46,9 @@ struct QueryEditorView: View {
                 databaseType: databaseType,
                 vimMode: $vimMode,
                 onCloseTab: onCloseTab,
-                onExecuteQuery: onExecuteQuery
+                onExecuteQuery: onExecuteQuery,
+                onAIExplain: onAIExplain,
+                onAIOptimize: onAIOptimize
             )
             .frame(minHeight: 100)
             .clipped()
@@ -87,11 +92,7 @@ struct QueryEditorView: View {
                 Menu {
                     ForEach(ClickHouseExplainVariant.allCases) { variant in
                         Button(variant.rawValue) {
-                            NotificationCenter.default.post(
-                                name: .explainQuery,
-                                object: nil,
-                                userInfo: ["variant": variant.rawValue]
-                            )
+                            onExplain?(variant)
                         }
                     }
                 } label: {
@@ -105,7 +106,7 @@ struct QueryEditorView: View {
                 .disabled(!hasQueryText)
             } else {
                 Button {
-                    NotificationCenter.default.post(name: .explainQuery, object: nil)
+                    onExplain?(nil)
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "chart.bar.doc.horizontal")

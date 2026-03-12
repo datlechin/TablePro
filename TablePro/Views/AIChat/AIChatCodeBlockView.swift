@@ -14,6 +14,7 @@ struct AIChatCodeBlockView: View {
     let language: String?
 
     @State private var isCopied: Bool = false
+    @FocusedValue(\.commandActions) private var actions
 
     var body: some View {
         GroupBox {
@@ -57,10 +58,7 @@ struct AIChatCodeBlockView: View {
 
             if isInsertable {
                 Button {
-                    NotificationCenter.default.post(
-                        name: .insertQueryFromAI,
-                        object: code
-                    )
+                    actions?.insertQueryFromAI(code)
                 } label: {
                     Label(String(localized: "Insert"), systemImage: "square.and.pencil")
                         .font(.caption2)

@@ -176,14 +176,6 @@ final class MainContentCommandActions {
             self.editingCell.wrappedValue = cell
         }
 
-        observeKeyWindowOnly(.explainQuery) { [weak self] notification in
-            if let variantRaw = notification.userInfo?["variant"] as? String,
-               let variant = ClickHouseExplainVariant(rawValue: variantRaw) {
-                self?.coordinator?.runClickHouseExplain(variant: variant)
-            } else {
-                self?.explainQuery()
-            }
-        }
         observeKeyWindowOnly(.openDatabaseSwitcher) { [weak self] _ in self?.openDatabaseSwitcher() }
     }
 
@@ -272,6 +264,16 @@ final class MainContentCommandActions {
             || !pendingDeletes.wrappedValue.isEmpty
         let hasSidebarEdits = rightPanelState.editState.hasEdits
         return hasEditedCells || hasPendingTableOps || hasSidebarEdits
+    }
+
+    // MARK: - Editor Query Loading (Group A — Called Directly)
+
+    func loadQueryIntoEditor(_ query: String) {
+        coordinator?.loadQueryIntoEditor(query)
+    }
+
+    func insertQueryFromAI(_ query: String) {
+        coordinator?.insertQueryFromAI(query)
     }
 
     // MARK: - Tab Operations (Group A — Called Directly)
@@ -511,65 +513,8 @@ final class MainContentCommandActions {
     // MARK: Tab Broadcasts
 
     private func setupTabBroadcastObservers() {
-        observeKeyWindowOnly(.newQueryTab) { [weak self] notification in
-            let initialQuery = notification.object as? String
-            self?.newTab(initialQuery: initialQuery)
-        }
-
-        observeKeyWindowOnly(.loadQueryIntoEditor) { [weak self] notification in
-            self?.handleLoadQueryIntoEditor(notification)
-        }
-
-        observeKeyWindowOnly(.insertQueryFromAI) { [weak self] notification in
-            self?.handleInsertQueryFromAI(notification)
-        }
-    }
-
-    private func handleLoadQueryIntoEditor(_ notification: Notification) {
-        guard let query = notification.object as? String,
-              let coordinator = coordinator else { return }
-
-        // If current window's tab is a query tab, load into it
-        if let tabIndex = coordinator.tabManager.selectedTabIndex,
-           tabIndex < coordinator.tabManager.tabs.count,
-           coordinator.tabManager.tabs[tabIndex].tabType == .query {
-            coordinator.tabManager.tabs[tabIndex].query = query
-            coordinator.tabManager.tabs[tabIndex].hasUserInteraction = true
-        } else {
-            // Open a new native tab with the query
-            let payload = EditorTabPayload(
-                connectionId: connection.id,
-                tabType: .query,
-                initialQuery: query
-            )
-            WindowOpener.shared.openNativeTab(payload)
-        }
-    }
-
-    private func handleInsertQueryFromAI(_ notification: Notification) {
-        guard let query = notification.object as? String,
-              let coordinator = coordinator else { return }
-
-        // If current window's tab is a query tab, append to it
-        if let tabIndex = coordinator.tabManager.selectedTabIndex,
-           tabIndex < coordinator.tabManager.tabs.count,
-           coordinator.tabManager.tabs[tabIndex].tabType == .query {
-            let existingQuery = coordinator.tabManager.tabs[tabIndex].query
-            if existingQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                coordinator.tabManager.tabs[tabIndex].query = query
-            } else {
-                coordinator.tabManager.tabs[tabIndex].query = existingQuery + "\n\n" + query
-            }
-            coordinator.tabManager.tabs[tabIndex].hasUserInteraction = true
-        } else {
-            // Open a new native tab with the query
-            let payload = EditorTabPayload(
-                connectionId: connection.id,
-                tabType: .query,
-                initialQuery: query
-            )
-            WindowOpener.shared.openNativeTab(payload)
-        }
+        // All tab notifications (newQueryTab, loadQueryIntoEditor, insertQueryFromAI)
+        // have been replaced with direct method calls via @FocusedValue.
     }
 
     // MARK: Database Broadcasts

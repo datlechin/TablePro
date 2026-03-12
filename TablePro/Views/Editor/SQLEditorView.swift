@@ -22,6 +22,8 @@ struct SQLEditorView: View {
     @Binding var vimMode: VimMode
     var onCloseTab: (() -> Void)?
     var onExecuteQuery: (() -> Void)?
+    var onAIExplain: ((String) -> Void)?
+    var onAIOptimize: ((String) -> Void)?
 
     @State private var editorState = SourceEditorState()
     @State private var completionAdapter: SQLCompletionAdapter?
@@ -90,6 +92,8 @@ struct SQLEditorView: View {
                 coordinator.schemaProvider = schemaProvider
                 coordinator.onCloseTab = onCloseTab
                 coordinator.onExecuteQuery = onExecuteQuery
+                coordinator.onAIExplain = onAIExplain
+                coordinator.onAIOptimize = onAIOptimize
             }
         } else {
             Color(nsColor: .textBackgroundColor)
@@ -100,6 +104,8 @@ struct SQLEditorView: View {
                     coordinator.schemaProvider = schemaProvider
                     coordinator.onCloseTab = onCloseTab
                     coordinator.onExecuteQuery = onExecuteQuery
+                    coordinator.onAIExplain = onAIExplain
+                    coordinator.onAIOptimize = onAIOptimize
                     editorReady = true
                 }
             }

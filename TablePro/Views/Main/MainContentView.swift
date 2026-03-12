@@ -199,6 +199,8 @@ struct MainContentView: View {
                 updateToolbarPendingState()
                 updateInspectorContext()
                 rightPanelState.aiViewModel.schemaProvider = coordinator.schemaProvider
+                coordinator.aiViewModel = rightPanelState.aiViewModel
+                coordinator.rightPanelState = rightPanelState
 
                 // Register NSWindow reference and set per-connection tab grouping
                 DispatchQueue.main.async {
