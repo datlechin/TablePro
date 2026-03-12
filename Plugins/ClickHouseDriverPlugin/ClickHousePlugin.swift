@@ -90,7 +90,7 @@ final class ClickHousePlugin: NSObject, TableProPlugin, DriverPlugin {
         ],
         regexSyntax: .match,
         booleanLiteralStyle: .numeric,
-        likeEscapeStyle: .explicit,
+        likeEscapeStyle: .implicit,
         paginationStyle: .limit
     )
 

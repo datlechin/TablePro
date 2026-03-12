@@ -321,7 +321,7 @@ final class SQLCompletionProvider {
                 items += dataTypeKeywords()
             } else {
                 items = filterKeywords(["IF NOT EXISTS"])
-                if let options = cachedDialect?.tableOptions, !options.isEmpty {
+                if let options = cachedDialect?.tableOptions {
                     items += filterKeywords(options)
                 } else {
                     items += filterKeywords([

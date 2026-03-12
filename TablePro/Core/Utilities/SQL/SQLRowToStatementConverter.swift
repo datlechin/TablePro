@@ -10,22 +10,42 @@ internal struct SQLRowToStatementConverter {
     internal let primaryKeyColumn: String?
     internal let databaseType: DatabaseType
     private let quoteIdentifierFn: (String) -> String
+    private let escapeStringFn: (String) -> String
 
     init(
         tableName: String,
         columns: [String],
         primaryKeyColumn: String?,
         databaseType: DatabaseType,
-        quoteIdentifier: ((String) -> String)? = nil
+        quoteIdentifier: ((String) -> String)? = nil,
+        escapeStringLiteral: ((String) -> String)? = nil
     ) {
         self.tableName = tableName
         self.columns = columns
         self.primaryKeyColumn = primaryKeyColumn
         self.databaseType = databaseType
         self.quoteIdentifierFn = quoteIdentifier ?? databaseType.quoteIdentifier
+        self.escapeStringFn = escapeStringLiteral ?? Self.defaultEscapeFunction(for: databaseType)
     }
 
     private static let maxRows = 50_000
+
+    /// Fallback escape function when no plugin driver is available.
+    /// MySQL/MariaDB/ClickHouse need backslash escaping; others use ANSI SQL.
+    private static func defaultEscapeFunction(for databaseType: DatabaseType) -> (String) -> String {
+        switch databaseType {
+        case .mysql, .mariadb, .clickhouse:
+            return { value in
+                var result = value
+                result = result.replacingOccurrences(of: "\\", with: "\\\\")
+                result = result.replacingOccurrences(of: "'", with: "''")
+                result = result.replacingOccurrences(of: "\0", with: "\\0")
+                return result
+            }
+        default:
+            return SQLEscaping.escapeStringLiteral
+        }
+    }
 
     internal func generateInserts(rows: [[String?]]) -> String {
         let capped = rows.prefix(Self.maxRows)
@@ -99,10 +119,7 @@ internal struct SQLRowToStatementConverter {
         guard let value else {
             return "NULL"
         }
-        var escaped = value.replacingOccurrences(of: "'", with: "''")
-        if databaseType == .mysql || databaseType == .mariadb {
-            escaped = escaped.replacingOccurrences(of: "\\", with: "\\\\")
-        }
+        let escaped = escapeStringFn(value)
         return "'\(escaped)'"
     }
 

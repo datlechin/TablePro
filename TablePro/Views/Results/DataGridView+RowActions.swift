@@ -105,13 +105,14 @@ extension TableViewCoordinator {
 
     func copyRowsAsInsert(at indices: Set<Int>) {
         guard let tableName, let databaseType else { return }
-        let quoteFn = resolveQuoteIdentifier()
+        let driver = resolveDriver()
         let converter = SQLRowToStatementConverter(
             tableName: tableName,
             columns: rowProvider.columns,
             primaryKeyColumn: primaryKeyColumn,
             databaseType: databaseType,
-            quoteIdentifier: quoteFn
+            quoteIdentifier: driver?.quoteIdentifier,
+            escapeStringLiteral: driver?.escapeStringLiteral
         )
         let rows = indices.sorted().compactMap { rowProvider.rowValues(at: $0) }
         guard !rows.isEmpty else { return }
@@ -120,22 +121,22 @@ extension TableViewCoordinator {
 
     func copyRowsAsUpdate(at indices: Set<Int>) {
         guard let tableName, let databaseType else { return }
-        let quoteFn = resolveQuoteIdentifier()
+        let driver = resolveDriver()
         let converter = SQLRowToStatementConverter(
             tableName: tableName,
             columns: rowProvider.columns,
             primaryKeyColumn: primaryKeyColumn,
             databaseType: databaseType,
-            quoteIdentifier: quoteFn
+            quoteIdentifier: driver?.quoteIdentifier,
+            escapeStringLiteral: driver?.escapeStringLiteral
         )
         let rows = indices.sorted().compactMap { rowProvider.rowValues(at: $0) }
         guard !rows.isEmpty else { return }
         ClipboardService.shared.writeText(converter.generateUpdates(rows: rows))
     }
 
-    private func resolveQuoteIdentifier() -> ((String) -> String)? {
+    private func resolveDriver() -> (any DatabaseDriver)? {
         guard let connectionId else { return nil }
-        let driver = DatabaseManager.shared.driver(for: connectionId)
-        return driver?.quoteIdentifier
+        return DatabaseManager.shared.driver(for: connectionId)
     }
 }

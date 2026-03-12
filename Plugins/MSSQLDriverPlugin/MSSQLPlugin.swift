@@ -1262,7 +1262,7 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     // MARK: - Query Building Helpers
 
     private func mssqlQuoteIdentifier(_ identifier: String) -> String {
-        "[\(identifier.replacingOccurrences(of: "]", with: "]]"))]"
+        quoteIdentifier(identifier)
     }
 
     private func mssqlBuildOrderByClause(

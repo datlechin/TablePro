@@ -50,7 +50,7 @@ struct FilterSQLGenerator {
             return SQLDialectDescriptor(
                 identifierQuote: "`", keywords: [], functions: [], dataTypes: [],
                 regexSyntax: .match, booleanLiteralStyle: .numeric,
-                likeEscapeStyle: .explicit, paginationStyle: .limit
+                likeEscapeStyle: .implicit, paginationStyle: .limit
             )
         case .mssql:
             return SQLDialectDescriptor(
@@ -264,10 +264,17 @@ struct FilterSQLGenerator {
     /// Escape special characters in string values
     private func escapeStringValue(_ value: String) -> String {
         // Fast path: most values have no special chars
-        guard value.contains("\\") || value.contains("'") else { return value }
-        return value
-            .replacingOccurrences(of: "\\", with: "\\\\")
-            .replacingOccurrences(of: "'", with: "''")
+        if dialect.likeEscapeStyle == .implicit {
+            // MySQL/MariaDB/ClickHouse: backslash is significant in string literals
+            guard value.contains("\\") || value.contains("'") else { return value }
+            return value
+                .replacingOccurrences(of: "\\", with: "\\\\")
+                .replacingOccurrences(of: "'", with: "''")
+        } else {
+            // ANSI SQL: only single-quote needs escaping
+            guard value.contains("'") else { return value }
+            return value.replacingOccurrences(of: "'", with: "''")
+        }
     }
 
     private func escapeLikeWildcards(_ value: String) -> String {
