@@ -489,6 +489,16 @@
         }
       }
     },
+    "%@: %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$lld"
+          }
+        }
+      }
+    },
     "%@." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4886,6 +4896,7 @@
       }
     },
     "Database Index: %lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -12951,6 +12962,7 @@
       }
     },
     "Redis" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -16781,6 +16793,9 @@
           }
         }
       }
+    },
+    "Unsupported schema operation: %@" : {
+
     },
     "Untitled" : {
       "localizations" : {

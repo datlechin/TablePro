@@ -73,7 +73,15 @@ final class MySQLPlugin: NSObject, TableProPlugin, DriverPlugin {
             "BLOB", "TINYBLOB", "MEDIUMBLOB", "LONGBLOB",
             "DATE", "TIME", "DATETIME", "TIMESTAMP", "YEAR",
             "ENUM", "SET", "JSON", "BOOL", "BOOLEAN"
-        ]
+        ],
+        tableOptions: [
+            "ENGINE=InnoDB", "DEFAULT CHARSET=utf8mb4", "COLLATE=utf8mb4_unicode_ci",
+            "AUTO_INCREMENT=", "COMMENT=", "ROW_FORMAT="
+        ],
+        regexSyntax: .regexp,
+        booleanLiteralStyle: .numeric,
+        likeEscapeStyle: .implicit,
+        paginationStyle: .limit
     )
 
     func createDriver(config: DriverConnectionConfig) -> any PluginDatabaseDriver {

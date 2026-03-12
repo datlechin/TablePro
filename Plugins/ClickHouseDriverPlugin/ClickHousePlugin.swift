@@ -84,7 +84,14 @@ final class ClickHousePlugin: NSObject, TableProPlugin, DriverPlugin {
             "ENUM8", "ENUM16",
             "IPV4", "IPV6",
             "JSON", "BOOL"
-        ]
+        ],
+        tableOptions: [
+            "ENGINE=MergeTree()", "ORDER BY", "PARTITION BY", "SETTINGS"
+        ],
+        regexSyntax: .match,
+        booleanLiteralStyle: .numeric,
+        likeEscapeStyle: .explicit,
+        paginationStyle: .limit
     )
 
     func createDriver(config: DriverConnectionConfig) -> any PluginDatabaseDriver {
@@ -134,6 +141,25 @@ final class ClickHousePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     var serverVersion: String? { _serverVersion }
     var supportsSchemas: Bool { false }
     var supportsTransactions: Bool { false }
+
+    func quoteIdentifier(_ name: String) -> String {
+        let escaped = name.replacingOccurrences(of: "`", with: "``")
+        return "`\(escaped)`"
+    }
+
+    func escapeStringLiteral(_ value: String) -> String {
+        var result = value
+        result = result.replacingOccurrences(of: "\\", with: "\\\\")
+        result = result.replacingOccurrences(of: "'", with: "''")
+        result = result.replacingOccurrences(of: "\n", with: "\\n")
+        result = result.replacingOccurrences(of: "\r", with: "\\r")
+        result = result.replacingOccurrences(of: "\t", with: "\\t")
+        result = result.replacingOccurrences(of: "\0", with: "\\0")
+        result = result.replacingOccurrences(of: "\u{08}", with: "\\b")
+        result = result.replacingOccurrences(of: "\u{0C}", with: "\\f")
+        result = result.replacingOccurrences(of: "\u{1A}", with: "\\Z")
+        return result
+    }
     func beginTransaction() async throws {}
     func commitTransaction() async throws {}
     func rollbackTransaction() async throws {}

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Moved string literal escaping into plugin drivers via `escapeStringLiteral` on `PluginDatabaseDriver` and `DatabaseDriver` protocols; `SQLEscaping.escapeStringLiteral` now uses ANSI SQL escaping only (doubles single quotes, strips null bytes)
+- SQL autocomplete data types and CREATE TABLE options now use plugin-provided dialect data instead of hardcoded per-database switches
+- `FilterSQLGenerator` now uses `SQLDialectDescriptor` data (regex syntax, boolean literals, LIKE escape style, pagination style) instead of `DatabaseType` switch statements
+
 ### Added
 
 - `SQLDialectDescriptor` in TableProPluginKit: plugins can now self-describe their SQL dialect (keywords, functions, data types, identifier quoting), with `SQLDialectFactory` preferring plugin-provided dialect info over built-in structs
@@ -27,10 +33,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pre-connect script: run a shell command before each connection (e.g., to refresh credentials or update ~/.pgpass)
 - `ParameterStyle` enum in TableProPluginKit: plugins declare `?` or `$1` placeholder style via `parameterStyle` property on `PluginDatabaseDriver`
 - DML statement generation in ClickHouse, MSSQL, and Oracle plugins via `generateStatements()` for database-specific UPDATE/DELETE syntax
+- `quoteIdentifier` method on `PluginDatabaseDriver` and `DatabaseDriver` protocols: plugins provide database-specific identifier quoting (backticks for MySQL/SQLite/ClickHouse, brackets for MSSQL, double-quotes for PostgreSQL/Oracle/DuckDB, passthrough for MongoDB/Redis)
 
 ### Changed
 
 - Moved MSSQL and Oracle pagination query building (`OFFSET...FETCH NEXT`) from `TableQueryBuilder` into their respective plugin drivers via `buildBrowseQuery`/`buildFilteredQuery`/`buildQuickSearchQuery`/`buildCombinedQuery` hooks
+- Moved identifier quoting from `DatabaseType` into plugin drivers via `quoteIdentifier` method on `PluginDatabaseDriver` protocol, with each plugin providing its own quoting style (backtick, bracket, double-quote, or passthrough)
 
 ### Fixed
 

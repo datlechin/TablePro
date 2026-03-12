@@ -25,13 +25,15 @@ final class SQLCompletionAdapter: CodeSuggestionDelegate {
 
     init(schemaProvider: SQLSchemaProvider?, databaseType: DatabaseType? = nil) {
         if let provider = schemaProvider {
-            self.completionEngine = CompletionEngine(schemaProvider: provider, databaseType: databaseType)
+            let dialect = databaseType.flatMap { PluginManager.shared.sqlDialect(for: $0) }
+            self.completionEngine = CompletionEngine(schemaProvider: provider, databaseType: databaseType, dialect: dialect)
         }
     }
 
     /// Update the schema provider (e.g. when connection changes)
     func updateSchemaProvider(_ provider: SQLSchemaProvider, databaseType: DatabaseType? = nil) {
-        self.completionEngine = CompletionEngine(schemaProvider: provider, databaseType: databaseType)
+        let dialect = databaseType.flatMap { PluginManager.shared.sqlDialect(for: $0) }
+        self.completionEngine = CompletionEngine(schemaProvider: provider, databaseType: databaseType, dialect: dialect)
     }
 
     // MARK: - CodeSuggestionDelegate

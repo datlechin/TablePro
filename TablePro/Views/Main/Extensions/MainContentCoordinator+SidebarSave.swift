@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import TableProPluginKit
 
 extension MainContentCoordinator {
     // MARK: - Sidebar Save
@@ -43,7 +44,8 @@ extension MainContentCoordinator {
                 tableName: tableName,
                 columns: tab.resultColumns,
                 primaryKeyColumn: changeManager.primaryKeyColumn,
-                databaseType: connection.type
+                databaseType: connection.type,
+                quoteIdentifier: changeManager.pluginDriver?.quoteIdentifier
             )
 
             var statements: [ParameterizedStatement] = []

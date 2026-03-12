@@ -23,6 +23,8 @@ final class RedisPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         redisConnection?.serverVersion()
     }
 
+    func quoteIdentifier(_ name: String) -> String { name }
+
     init(config: DriverConnectionConfig) {
         self.config = config
     }

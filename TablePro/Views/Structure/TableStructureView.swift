@@ -746,7 +746,7 @@ struct TableStructureView: View {
                     }
                     for enumType in enumTypes {
                         let quotedName = "\"\(enumType.name.replacingOccurrences(of: "\"", with: "\"\""))\""
-                        let quotedLabels = enumType.labels.map { "'\(SQLEscaping.escapeStringLiteral($0, databaseType: .postgresql))'" }
+                        let quotedLabels = enumType.labels.map { "'\(SQLEscaping.escapeStringLiteral($0))'" }
                         preamble += "CREATE TYPE \(quotedName) AS ENUM (\(quotedLabels.joined(separator: ", ")));\n"
                     }
                     ddlStatement = preamble + "\n" + baseDDL

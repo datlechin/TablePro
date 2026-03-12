@@ -27,6 +27,14 @@ struct TableQueryBuilder {
         pluginDriver = driver
     }
 
+    // MARK: - Identifier Quoting
+
+    private func quote(_ name: String) -> String {
+        if let pluginDriver { return pluginDriver.quoteIdentifier(name) }
+        let escaped = name.replacingOccurrences(of: "\"", with: "\"\"")
+        return "\"\(escaped)\""
+    }
+
     // MARK: - Query Building
 
     func buildBaseQuery(
@@ -46,7 +54,7 @@ struct TableQueryBuilder {
             }
         }
 
-        let quotedTable = databaseType.quoteIdentifier(tableName)
+        let quotedTable = quote(tableName)
         var query = "SELECT * FROM \(quotedTable)"
 
         if let orderBy = buildOrderByClause(sortState: sortState, columns: columns) {
@@ -80,7 +88,7 @@ struct TableQueryBuilder {
             }
         }
 
-        let quotedTable = databaseType.quoteIdentifier(tableName)
+        let quotedTable = quote(tableName)
         return "SELECT * FROM \(quotedTable) LIMIT \(limit) OFFSET \(offset)"
     }
 
@@ -102,7 +110,7 @@ struct TableQueryBuilder {
             }
         }
 
-        let quotedTable = databaseType.quoteIdentifier(tableName)
+        let quotedTable = quote(tableName)
         return "SELECT * FROM \(quotedTable) LIMIT \(limit) OFFSET \(offset)"
     }
 
@@ -132,7 +140,7 @@ struct TableQueryBuilder {
             }
         }
 
-        let quotedTable = databaseType.quoteIdentifier(tableName)
+        let quotedTable = quote(tableName)
         return "SELECT * FROM \(quotedTable) LIMIT \(limit) OFFSET \(offset)"
     }
 
@@ -143,7 +151,7 @@ struct TableQueryBuilder {
     ) -> String {
         var query = removeOrderBy(from: baseQuery)
         let direction = ascending ? "ASC" : "DESC"
-        let quotedColumn = databaseType.quoteIdentifier(columnName)
+        let quotedColumn = quote(columnName)
         let orderByClause = "ORDER BY \(quotedColumn) \(direction)"
 
         if let limitRange = query.range(of: "LIMIT", options: .caseInsensitive) {
@@ -211,7 +219,7 @@ struct TableQueryBuilder {
             guard sortCol.columnIndex >= 0, sortCol.columnIndex < columns.count else { return nil }
             let columnName = columns[sortCol.columnIndex]
             let direction = sortCol.direction == .ascending ? "ASC" : "DESC"
-            let quotedColumn = databaseType.quoteIdentifier(columnName)
+            let quotedColumn = quote(columnName)
             return "\(quotedColumn) \(direction)"
         }
 

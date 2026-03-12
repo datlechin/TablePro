@@ -25,19 +25,22 @@ struct SQLStatementGenerator {
     let primaryKeyColumn: String?
     let databaseType: DatabaseType
     let parameterStyle: ParameterStyle
+    private let quoteIdentifierFn: (String) -> String
 
     init(
         tableName: String,
         columns: [String],
         primaryKeyColumn: String?,
         databaseType: DatabaseType,
-        parameterStyle: ParameterStyle? = nil
+        parameterStyle: ParameterStyle? = nil,
+        quoteIdentifier: ((String) -> String)? = nil
     ) {
         self.tableName = tableName
         self.columns = columns
         self.primaryKeyColumn = primaryKeyColumn
         self.databaseType = databaseType
         self.parameterStyle = parameterStyle ?? Self.defaultParameterStyle(for: databaseType)
+        self.quoteIdentifierFn = quoteIdentifier ?? databaseType.quoteIdentifier
     }
 
     private static func defaultParameterStyle(for databaseType: DatabaseType) -> ParameterStyle {
@@ -156,7 +159,7 @@ struct SQLStatementGenerator {
             guard index < columns.count else { continue }
             let columnName = columns[index]
 
-            nonDefaultColumns.append(databaseType.quoteIdentifier(columnName))
+            nonDefaultColumns.append(quoteIdentifierFn(columnName))
 
             if let val = value {
                 if isSQLFunctionExpression(val) {
@@ -177,7 +180,7 @@ struct SQLStatementGenerator {
         let placeholders = placeholderParts.joined(separator: ", ")
 
         let sql =
-            "INSERT INTO \(databaseType.quoteIdentifier(tableName)) (\(columnList)) VALUES (\(placeholders))"
+            "INSERT INTO \(quoteIdentifierFn(tableName)) (\(columnList)) VALUES (\(placeholders))"
 
         return ParameterizedStatement(sql: sql, parameters: bindParameters)
     }
@@ -196,7 +199,7 @@ struct SQLStatementGenerator {
         guard !nonDefaultChanges.isEmpty else { return nil }
 
         let columnNames = nonDefaultChanges.map {
-            databaseType.quoteIdentifier($0.columnName)
+            quoteIdentifierFn($0.columnName)
         }.joined(separator: ", ")
 
         var parameters: [Any?] = []
@@ -214,7 +217,7 @@ struct SQLStatementGenerator {
         }.joined(separator: ", ")
 
         let sql =
-            "INSERT INTO \(databaseType.quoteIdentifier(tableName)) (\(columnNames)) VALUES (\(placeholders))"
+            "INSERT INTO \(quoteIdentifierFn(tableName)) (\(columnNames)) VALUES (\(placeholders))"
 
         return ParameterizedStatement(sql: sql, parameters: parameters)
     }
@@ -234,20 +237,20 @@ struct SQLStatementGenerator {
         var parameters: [Any?] = []
         let setClauses = change.cellChanges.map { cellChange -> String in
             if cellChange.newValue == "__DEFAULT__" {
-                return "\(databaseType.quoteIdentifier(cellChange.columnName)) = DEFAULT"
+                return "\(quoteIdentifierFn(cellChange.columnName)) = DEFAULT"
             } else if let newValue = cellChange.newValue {
                 if isSQLFunctionExpression(newValue) {
                     return
-                        "\(databaseType.quoteIdentifier(cellChange.columnName)) = \(newValue.trimmingCharacters(in: .whitespaces).uppercased())"
+                        "\(quoteIdentifierFn(cellChange.columnName)) = \(newValue.trimmingCharacters(in: .whitespaces).uppercased())"
                 } else {
                     parameters.append(newValue)
                     return
-                        "\(databaseType.quoteIdentifier(cellChange.columnName)) = \(placeholder(at: parameters.count - 1))"
+                        "\(quoteIdentifierFn(cellChange.columnName)) = \(placeholder(at: parameters.count - 1))"
                 }
             } else {
                 parameters.append(nil)
                 return
-                    "\(databaseType.quoteIdentifier(cellChange.columnName)) = \(placeholder(at: parameters.count - 1))"
+                    "\(quoteIdentifierFn(cellChange.columnName)) = \(placeholder(at: parameters.count - 1))"
             }
         }.joined(separator: ", ")
 
@@ -271,9 +274,9 @@ struct SQLStatementGenerator {
 
             parameters.append(pkValue)
             let whereClause =
-                "\(databaseType.quoteIdentifier(pkColumn)) = \(placeholder(at: parameters.count - 1))"
+                "\(quoteIdentifierFn(pkColumn)) = \(placeholder(at: parameters.count - 1))"
             let sql =
-                "UPDATE \(databaseType.quoteIdentifier(tableName)) SET \(setClauses) WHERE \(whereClause)"
+                "UPDATE \(quoteIdentifierFn(tableName)) SET \(setClauses) WHERE \(whereClause)"
             return ParameterizedStatement(sql: sql, parameters: parameters)
         } else {
             guard let originalRow = change.originalRow else {
@@ -287,7 +290,7 @@ struct SQLStatementGenerator {
             for (index, columnName) in columns.enumerated() {
                 guard index < originalRow.count else { continue }
                 let value = originalRow[index]
-                let quotedColumn = databaseType.quoteIdentifier(columnName)
+                let quotedColumn = quoteIdentifierFn(columnName)
                 if let value = value {
                     parameters.append(value)
                     conditions.append("\(quotedColumn) = \(placeholder(at: parameters.count - 1))")
@@ -300,7 +303,7 @@ struct SQLStatementGenerator {
 
             let whereClause = conditions.joined(separator: " AND ")
             let sql =
-                "UPDATE \(databaseType.quoteIdentifier(tableName)) SET \(setClauses) WHERE \(whereClause)"
+                "UPDATE \(quoteIdentifierFn(tableName)) SET \(setClauses) WHERE \(whereClause)"
 
             return ParameterizedStatement(sql: sql, parameters: parameters)
         }
@@ -327,13 +330,13 @@ struct SQLStatementGenerator {
 
                 parameters.append(originalRow[pkIndex])
                 return
-                    "\(databaseType.quoteIdentifier(pkColumn)) = \(placeholder(at: parameters.count - 1))"
+                    "\(quoteIdentifierFn(pkColumn)) = \(placeholder(at: parameters.count - 1))"
             }
 
             guard !conditions.isEmpty else { return nil }
 
             let whereClause = conditions.joined(separator: " OR ")
-            let sql = "DELETE FROM \(databaseType.quoteIdentifier(tableName)) WHERE \(whereClause)"
+            let sql = "DELETE FROM \(quoteIdentifierFn(tableName)) WHERE \(whereClause)"
 
             return ParameterizedStatement(sql: sql, parameters: parameters)
         }
@@ -354,7 +357,7 @@ struct SQLStatementGenerator {
             guard index < originalRow.count else { continue }
 
             let value = originalRow[index]
-            let quotedColumn = databaseType.quoteIdentifier(columnName)
+            let quotedColumn = quoteIdentifierFn(columnName)
 
             if let value = value {
                 parameters.append(value)
@@ -367,7 +370,7 @@ struct SQLStatementGenerator {
         guard !conditions.isEmpty else { return nil }
 
         let whereClause = conditions.joined(separator: " AND ")
-        let sql = "DELETE FROM \(databaseType.quoteIdentifier(tableName)) WHERE \(whereClause)"
+        let sql = "DELETE FROM \(quoteIdentifierFn(tableName)) WHERE \(whereClause)"
 
         return ParameterizedStatement(sql: sql, parameters: parameters)
     }

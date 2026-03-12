@@ -71,7 +71,14 @@ final class SQLitePlugin: NSObject, TableProPlugin, DriverPlugin {
             "NVARCHAR", "CLOB",
             "DOUBLE", "PRECISION", "FLOAT",
             "DECIMAL", "BOOLEAN", "DATE", "DATETIME"
-        ]
+        ],
+        tableOptions: [
+            "WITHOUT ROWID", "STRICT"
+        ],
+        regexSyntax: .unsupported,
+        booleanLiteralStyle: .numeric,
+        likeEscapeStyle: .explicit,
+        paginationStyle: .limit
     )
 
     func createDriver(config: DriverConnectionConfig) -> any PluginDatabaseDriver {
@@ -316,6 +323,11 @@ final class SQLitePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     var serverVersion: String? { String(cString: sqlite3_libversion()) }
     var supportsSchemas: Bool { false }
     var supportsTransactions: Bool { true }
+
+    func quoteIdentifier(_ name: String) -> String {
+        let escaped = name.replacingOccurrences(of: "`", with: "``")
+        return "`\(escaped)`"
+    }
 
     init(config: DriverConnectionConfig) {
         self.config = config
@@ -649,10 +661,6 @@ final class SQLitePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
             return NSString(string: path).expandingTildeInPath
         }
         return path
-    }
-
-    private func escapeStringLiteral(_ value: String) -> String {
-        value.replacingOccurrences(of: "'", with: "''")
     }
 
     private func stripLimitOffset(from query: String) -> String {

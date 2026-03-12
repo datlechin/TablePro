@@ -218,10 +218,10 @@ final class ExportService {
             let unionParts = batch.map { table -> String in
                 let tableRef: String
                 if table.databaseName.isEmpty {
-                    tableRef = databaseType.quoteIdentifier(table.name)
+                    tableRef = driver.quoteIdentifier(table.name)
                 } else {
-                    let quotedDb = databaseType.quoteIdentifier(table.databaseName)
-                    let quotedTable = databaseType.quoteIdentifier(table.name)
+                    let quotedDb = driver.quoteIdentifier(table.databaseName)
+                    let quotedTable = driver.quoteIdentifier(table.name)
                     tableRef = "\(quotedDb).\(quotedTable)"
                 }
                 return "SELECT COUNT(*) AS c FROM \(tableRef)"
@@ -240,10 +240,10 @@ final class ExportService {
                     do {
                         let tableRef: String
                         if table.databaseName.isEmpty {
-                            tableRef = databaseType.quoteIdentifier(table.name)
+                            tableRef = driver.quoteIdentifier(table.name)
                         } else {
-                            let quotedDb = databaseType.quoteIdentifier(table.databaseName)
-                            let quotedTable = databaseType.quoteIdentifier(table.name)
+                            let quotedDb = driver.quoteIdentifier(table.databaseName)
+                            let quotedTable = driver.quoteIdentifier(table.name)
                             tableRef = "\(quotedDb).\(quotedTable)"
                         }
                         let result = try await driver.execute(query: "SELECT COUNT(*) FROM \(tableRef)")

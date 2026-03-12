@@ -50,11 +50,11 @@ final class ExportDataSourceAdapter: PluginExportDataSource, @unchecked Sendable
     }
 
     func quoteIdentifier(_ identifier: String) -> String {
-        dbType.quoteIdentifier(identifier)
+        driver.quoteIdentifier(identifier)
     }
 
     func escapeStringLiteral(_ value: String) -> String {
-        SQLEscaping.escapeStringLiteral(value, databaseType: dbType)
+        driver.escapeStringLiteral(value)
     }
 
     func fetchApproximateRowCount(table: String, databaseName: String) async throws -> Int? {
@@ -75,10 +75,10 @@ final class ExportDataSourceAdapter: PluginExportDataSource, @unchecked Sendable
 
     private func qualifiedTableRef(table: String, databaseName: String) -> String {
         if databaseName.isEmpty {
-            return dbType.quoteIdentifier(table)
+            return driver.quoteIdentifier(table)
         } else {
-            let quotedDb = dbType.quoteIdentifier(databaseName)
-            let quotedTable = dbType.quoteIdentifier(table)
+            let quotedDb = driver.quoteIdentifier(databaseName)
+            let quotedTable = driver.quoteIdentifier(table)
             return "\(quotedDb).\(quotedTable)"
         }
     }

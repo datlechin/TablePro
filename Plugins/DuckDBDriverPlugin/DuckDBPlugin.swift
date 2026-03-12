@@ -88,7 +88,11 @@ final class DuckDBPlugin: NSObject, TableProPlugin, DriverPlugin {
             "DATE", "TIME", "TIMESTAMP", "TIMESTAMP WITH TIME ZONE", "INTERVAL",
             "UUID", "JSON",
             "LIST", "MAP", "STRUCT", "UNION", "ENUM", "BIT"
-        ]
+        ],
+        regexSyntax: .regexpMatches,
+        booleanLiteralStyle: .truefalse,
+        likeEscapeStyle: .explicit,
+        paginationStyle: .limit
     )
 
     func createDriver(config: DriverConnectionConfig) -> any PluginDatabaseDriver {

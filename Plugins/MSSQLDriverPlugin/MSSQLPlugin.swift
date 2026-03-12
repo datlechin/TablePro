@@ -80,7 +80,14 @@ final class MSSQLPlugin: NSObject, TableProPlugin, DriverPlugin {
             "DATE", "TIME", "DATETIME", "DATETIME2", "SMALLDATETIME", "DATETIMEOFFSET",
             "BIT", "UNIQUEIDENTIFIER", "XML", "SQL_VARIANT",
             "ROWVERSION", "TIMESTAMP", "HIERARCHYID"
-        ]
+        ],
+        tableOptions: [
+            "ON", "CLUSTERED", "NONCLUSTERED", "WITH", "TEXTIMAGE_ON"
+        ],
+        regexSyntax: .unsupported,
+        booleanLiteralStyle: .numeric,
+        likeEscapeStyle: .explicit,
+        paginationStyle: .offsetFetch
     )
 
     func createDriver(config: DriverConnectionConfig) -> any PluginDatabaseDriver {
@@ -415,6 +422,11 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     var serverVersion: String? { _serverVersion }
     var supportsSchemas: Bool { true }
     var supportsTransactions: Bool { true }
+
+    func quoteIdentifier(_ name: String) -> String {
+        let escaped = name.replacingOccurrences(of: "]", with: "]]")
+        return "[\(escaped)]"
+    }
 
     init(config: DriverConnectionConfig) {
         self.config = config

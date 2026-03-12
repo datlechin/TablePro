@@ -431,7 +431,12 @@ struct QueryTab: Identifiable, Equatable {
 
     /// Build a clean base query for a table tab (no filters/sort).
     /// Used when restoring table tabs from persistence to avoid stale WHERE clauses.
-    @MainActor static func buildBaseTableQuery(tableName: String, databaseType: DatabaseType) -> String {
+    @MainActor static func buildBaseTableQuery(
+        tableName: String,
+        databaseType: DatabaseType,
+        quoteIdentifier: ((String) -> String)? = nil
+    ) -> String {
+        let quote = quoteIdentifier ?? databaseType.quoteIdentifier
         let pageSize = AppSettingsManager.shared.dataGrid.defaultPageSize
         if databaseType == .mongodb {
             let escaped = tableName.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
@@ -439,13 +444,13 @@ struct QueryTab: Identifiable, Equatable {
         } else if databaseType == .redis {
             return "SCAN 0 MATCH * COUNT \(pageSize)"
         } else if databaseType == .mssql {
-            let quotedName = databaseType.quoteIdentifier(tableName)
+            let quotedName = quote(tableName)
             return "SELECT * FROM \(quotedName) ORDER BY (SELECT NULL) OFFSET 0 ROWS FETCH NEXT \(pageSize) ROWS ONLY;"
         } else if databaseType == .oracle {
-            let quotedName = databaseType.quoteIdentifier(tableName)
+            let quotedName = quote(tableName)
             return "SELECT * FROM \(quotedName) ORDER BY 1 OFFSET 0 ROWS FETCH NEXT \(pageSize) ROWS ONLY;"
         } else {
-            let quotedName = databaseType.quoteIdentifier(tableName)
+            let quotedName = quote(tableName)
             return "SELECT * FROM \(quotedName) LIMIT \(pageSize);"
         }
     }
@@ -534,7 +539,12 @@ final class QueryTabManager {
         selectedTabId = newTab.id
     }
 
-    func addTableTab(tableName: String, databaseType: DatabaseType = .mysql, databaseName: String = "") {
+    func addTableTab(
+        tableName: String,
+        databaseType: DatabaseType = .mysql,
+        databaseName: String = "",
+        quoteIdentifier: ((String) -> String)? = nil
+    ) {
         // Check if table tab already exists (match on databaseName)
         if let existingTab = tabs.first(where: {
             $0.tabType == .table && $0.tableName == tableName && $0.databaseName == databaseName
@@ -544,7 +554,9 @@ final class QueryTabManager {
         }
 
         let pageSize = AppSettingsManager.shared.dataGrid.defaultPageSize
-        let query = QueryTab.buildBaseTableQuery(tableName: tableName, databaseType: databaseType)
+        let query = QueryTab.buildBaseTableQuery(
+            tableName: tableName, databaseType: databaseType, quoteIdentifier: quoteIdentifier
+        )
         var newTab = QueryTab(
             title: tableName,
             query: query,
@@ -557,9 +569,16 @@ final class QueryTabManager {
         selectedTabId = newTab.id
     }
 
-    func addPreviewTableTab(tableName: String, databaseType: DatabaseType = .mysql, databaseName: String = "") {
+    func addPreviewTableTab(
+        tableName: String,
+        databaseType: DatabaseType = .mysql,
+        databaseName: String = "",
+        quoteIdentifier: ((String) -> String)? = nil
+    ) {
         let pageSize = AppSettingsManager.shared.dataGrid.defaultPageSize
-        let query = QueryTab.buildBaseTableQuery(tableName: tableName, databaseType: databaseType)
+        let query = QueryTab.buildBaseTableQuery(
+            tableName: tableName, databaseType: databaseType, quoteIdentifier: quoteIdentifier
+        )
         var newTab = QueryTab(
             title: tableName,
             query: query,
@@ -580,7 +599,8 @@ final class QueryTabManager {
     func replaceTabContent(
         tableName: String, databaseType: DatabaseType = .mysql,
         isView: Bool = false, databaseName: String = "",
-        isPreview: Bool = false
+        isPreview: Bool = false,
+        quoteIdentifier: ((String) -> String)? = nil
     ) -> Bool {
         guard let selectedId = selectedTabId,
               let selectedIndex = tabs.firstIndex(where: { $0.id == selectedId })
@@ -588,23 +608,12 @@ final class QueryTabManager {
             return false
         }
 
+        let query = QueryTab.buildBaseTableQuery(
+            tableName: tableName,
+            databaseType: databaseType,
+            quoteIdentifier: quoteIdentifier
+        )
         let pageSize = AppSettingsManager.shared.dataGrid.defaultPageSize
-        let query: String
-        if databaseType == .mongodb {
-            let escaped = tableName.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
-            query = "db[\"\(escaped)\"].find({}).limit(\(pageSize))"
-        } else if databaseType == .redis {
-            query = "SCAN 0 MATCH * COUNT \(pageSize)"
-        } else if databaseType == .mssql {
-            let quotedName = databaseType.quoteIdentifier(tableName)
-            query = "SELECT * FROM \(quotedName) ORDER BY (SELECT NULL) OFFSET 0 ROWS FETCH NEXT \(pageSize) ROWS ONLY;"
-        } else if databaseType == .oracle {
-            let quotedName = databaseType.quoteIdentifier(tableName)
-            query = "SELECT * FROM \(quotedName) ORDER BY 1 OFFSET 0 ROWS FETCH NEXT \(pageSize) ROWS ONLY;"
-        } else {
-            let quotedName = databaseType.quoteIdentifier(tableName)
-            query = "SELECT * FROM \(quotedName) LIMIT \(pageSize);"
-        }
 
         // Build locally and write back once to avoid 14 CoW copies (UI-11).
         var tab = tabs[selectedIndex]

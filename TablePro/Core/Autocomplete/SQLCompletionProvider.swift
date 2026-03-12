@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import TableProPluginKit
 
 /// Main provider for SQL autocomplete suggestions
 final class SQLCompletionProvider {
@@ -14,6 +15,7 @@ final class SQLCompletionProvider {
     private let contextAnalyzer = SQLContextAnalyzer()
     private let schemaProvider: SQLSchemaProvider
     private var databaseType: DatabaseType?
+    private var cachedDialect: SQLDialectDescriptor?
 
     /// Minimum prefix length to trigger suggestions
     private let minPrefixLength = 1
@@ -23,14 +25,16 @@ final class SQLCompletionProvider {
 
     // MARK: - Init
 
-    init(schemaProvider: SQLSchemaProvider, databaseType: DatabaseType? = nil) {
+    init(schemaProvider: SQLSchemaProvider, databaseType: DatabaseType? = nil, dialect: SQLDialectDescriptor? = nil) {
         self.schemaProvider = schemaProvider
         self.databaseType = databaseType
+        self.cachedDialect = dialect
     }
 
     /// Update the database type for context-aware completions
-    func setDatabaseType(_ type: DatabaseType) {
+    func setDatabaseType(_ type: DatabaseType, dialect: SQLDialectDescriptor? = nil) {
         self.databaseType = type
+        self.cachedDialect = dialect
     }
 
     // MARK: - Public API
@@ -316,31 +320,12 @@ final class SQLCompletionProvider {
                 ])
                 items += dataTypeKeywords()
             } else {
-                // Pre-paren (CREATE TABLE ...) or post-paren (CREATE TABLE (...) ...)
-                items = filterKeywords([
-                    "IF NOT EXISTS",
-                ])
-                // Database-specific table options (for post-paren context)
-                switch databaseType {
-                case .mysql, .mariadb:
+                items = filterKeywords(["IF NOT EXISTS"])
+                if let options = cachedDialect?.tableOptions, !options.isEmpty {
+                    items += filterKeywords(options)
+                } else {
                     items += filterKeywords([
-                        "ENGINE", "CHARSET", "COLLATE", "COMMENT",
-                        "AUTO_INCREMENT", "ROW_FORMAT", "DEFAULT CHARSET",
-                    ])
-                case .postgresql, .redshift:
-                    items += filterKeywords([
-                        "TABLESPACE", "INHERITS", "PARTITION BY",
-                        "WITH", "WITHOUT OIDS",
-                    ])
-                case .mssql:
-                    items += filterKeywords([
-                        "ON", "CLUSTERED", "NONCLUSTERED",
-                        "WITH", "TEXTIMAGE_ON",
-                    ])
-                default:
-                    items += filterKeywords([
-                        "ENGINE", "CHARSET", "COLLATE", "COMMENT",
-                        "TABLESPACE",
+                        "ENGINE", "CHARSET", "COLLATE", "COMMENT", "TABLESPACE"
                     ])
                 }
             }
@@ -466,141 +451,48 @@ final class SQLCompletionProvider {
     }
 
     /// SQL data type keywords (database-aware), with a slight priority boost
-    /// so they sort before generic constraint keywords in CREATE TABLE context
+    /// so they sort before generic constraint keywords in CREATE TABLE context.
+    /// Uses plugin-provided dialect data when available; falls back to common SQL types.
     private func dataTypeKeywords() -> [SQLCompletionItem] {
-        var types: [String] = [
-            // Common numeric types (all databases)
-            "INT", "INTEGER", "BIGINT", "SMALLINT", "TINYINT",
-            "DECIMAL", "NUMERIC", "FLOAT", "DOUBLE", "REAL",
-            // Common string types
-            "VARCHAR", "CHAR", "TEXT",
-            // Common date/time types
-            "DATE", "TIME", "DATETIME", "TIMESTAMP",
-            // Boolean
-            "BOOLEAN", "BOOL",
-        ]
-
-        // Add database-specific types
-        switch databaseType {
-        case .mysql, .mariadb:
-            types += [
-                "MEDIUMINT", "DOUBLE PRECISION",
-                "TINYTEXT", "MEDIUMTEXT", "LONGTEXT",
-                "BLOB", "TINYBLOB", "MEDIUMBLOB", "LONGBLOB",
-                "YEAR", "ENUM", "SET", "JSON",
-                "BINARY", "VARBINARY",
-            ]
-
-        case .postgresql, .redshift:
-            types += [
-                "BIGSERIAL", "SERIAL", "SMALLSERIAL",
-                "DOUBLE PRECISION", "MONEY",
-                "CHARACTER", "CHARACTER VARYING", "CLOB",
-                "BYTEA", "UUID", "JSON", "JSONB", "XML", "ARRAY",
-                "TIMESTAMPTZ", "TIMETZ", "INTERVAL",
-                "POINT", "LINE", "LSEG", "BOX", "PATH", "POLYGON", "CIRCLE",
-                "INET", "CIDR", "MACADDR", "MACADDR8",
-            ]
-
-        case .mssql:
-            types += [
-                "NVARCHAR", "NCHAR", "NTEXT",
-                "MONEY", "SMALLMONEY",
-                "DATETIMEOFFSET", "DATETIME2", "SMALLDATETIME",
-                "BINARY", "VARBINARY", "IMAGE",
-                "UNIQUEIDENTIFIER", "XML", "SQL_VARIANT",
-                "ROWVERSION", "HIERARCHYID",
-            ]
-
-        case .oracle:
-            types += [
-                "NUMBER", "BINARY_FLOAT", "BINARY_DOUBLE",
-                "VARCHAR2", "NVARCHAR2", "NCHAR", "NCLOB",
-                "CLOB", "LONG", "RAW", "LONG RAW", "BFILE",
-                "TIMESTAMP WITH TIME ZONE", "TIMESTAMP WITH LOCAL TIME ZONE",
-                "INTERVAL YEAR TO MONTH", "INTERVAL DAY TO SECOND",
-                "ROWID", "UROWID", "XMLTYPE", "SDO_GEOMETRY",
-            ]
-
-        case .clickhouse:
-            types += [
-                "UInt8", "UInt16", "UInt32", "UInt64", "UInt128", "UInt256",
-                "Int8", "Int16", "Int32", "Int64", "Int128", "Int256",
-                "Float32", "Float64",
-                "Decimal32", "Decimal64", "Decimal128", "Decimal256",
-                "String", "FixedString", "UUID",
-                "Date32", "DateTime64",
-                "Array", "Tuple", "Map", "Nested",
-                "Nullable", "LowCardinality",
-                "Enum8", "Enum16",
-                "IPv4", "IPv6",
-                "JSON", "Bool",
-            ]
-
-
-        case .sqlite:
-            types += [
-                "BLOB",
-            ]
-
-        case .duckdb:
-            types += [
-                "HUGEINT", "TINYINT", "SMALLINT", "REAL", "NUMERIC",
-                "CHAR", "BPCHAR",
-                "BLOB", "BYTEA",
-                "TIMESTAMP WITH TIME ZONE",
-                "LIST", "MAP", "STRUCT", "UNION", "ENUM", "UUID", "JSON", "BIT", "INTERVAL",
-            ]
-
-        case .mongodb:
-            // MongoDB types are case-sensitive — return directly without uppercasing
-            let mongoTypes = [
+        // MongoDB and Redis use case-sensitive, non-SQL types
+        if databaseType == .mongodb {
+            return [
                 "ObjectId", "String", "Int32", "Int64", "Double", "Decimal128",
                 "Boolean", "Date", "Timestamp", "BinData", "Array", "Object",
-                "Null", "Regex", "UUID",
-            ]
-            return mongoTypes.map { typeName in
-                var item = SQLCompletionItem(
-                    label: typeName,
-                    kind: .keyword,
-                    insertText: typeName
-                )
+                "Null", "Regex", "UUID"
+            ].map { typeName in
+                var item = SQLCompletionItem(label: typeName, kind: .keyword, insertText: typeName)
                 item.sortPriority = 380
                 return item
             }
-
-        case .redis:
-            let redisTypes = [
-                "String", "List", "Set", "Sorted Set", "Hash", "Stream",
-            ]
-            return redisTypes.map { typeName in
-                var item = SQLCompletionItem(
-                    label: typeName,
-                    kind: .keyword,
-                    insertText: typeName
-                )
+        }
+        if databaseType == .redis {
+            return [
+                "String", "List", "Set", "Sorted Set", "Hash", "Stream"
+            ].map { typeName in
+                var item = SQLCompletionItem(label: typeName, kind: .keyword, insertText: typeName)
                 item.sortPriority = 380
                 return item
             }
-
-        case .none:
-            // Include all types if database type is unknown
-            types += [
-                "MEDIUMINT", "DOUBLE PRECISION",
-                "TINYTEXT", "MEDIUMTEXT", "LONGTEXT",
-                "BLOB", "TINYBLOB", "MEDIUMBLOB", "LONGBLOB",
-                "CLOB", "NCHAR", "NVARCHAR",
-                "YEAR", "INTERVAL", "TIMESTAMPTZ", "TIMETZ",
-                "BIT", "JSON", "JSONB", "XML", "ARRAY",
-                "UUID", "BINARY", "VARBINARY", "BYTEA",
-                "ENUM", "SET",
-                "SERIAL", "BIGSERIAL", "SMALLSERIAL", "MONEY",
-                "POINT", "LINE", "LSEG", "BOX", "PATH", "POLYGON", "CIRCLE",
-                "INET", "CIDR", "MACADDR", "MACADDR8",
-            ]
         }
 
-        return types.map { typeName in
+        if let descriptor = cachedDialect, !descriptor.dataTypes.isEmpty {
+            return descriptor.dataTypes.sorted().map { typeName in
+                var item = SQLCompletionItem(label: typeName, kind: .keyword, insertText: typeName)
+                item.sortPriority = 380
+                return item
+            }
+        }
+
+        let commonTypes: [String] = [
+            "INT", "INTEGER", "BIGINT", "SMALLINT", "TINYINT",
+            "DECIMAL", "NUMERIC", "FLOAT", "DOUBLE", "REAL",
+            "VARCHAR", "CHAR", "TEXT",
+            "DATE", "TIME", "DATETIME", "TIMESTAMP",
+            "BOOLEAN", "BOOL",
+            "BLOB", "JSON", "UUID"
+        ]
+        return commonTypes.map { typeName in
             var item = SQLCompletionItem.keyword(typeName)
             item.sortPriority = 380
             return item

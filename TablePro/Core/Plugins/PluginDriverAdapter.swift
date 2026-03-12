@@ -46,7 +46,7 @@ final class PluginDriverAdapter: DatabaseDriver, SchemaSwitchable {
         return pluginDriver
     }
     var currentSchema: String { pluginDriver.currentSchema ?? connection.username }
-    var escapedSchema: String { SQLEscaping.escapeStringLiteral(currentSchema, databaseType: connection.type) }
+    var escapedSchema: String { pluginDriver.escapeStringLiteral(currentSchema) }
 
     private static let logger = Logger(subsystem: "com.TablePro", category: "PluginDriverAdapter")
 
@@ -354,6 +354,16 @@ final class PluginDriverAdapter: DatabaseDriver, SchemaSwitchable {
 
     func buildExplainQuery(_ sql: String) -> String? {
         pluginDriver.buildExplainQuery(sql)
+    }
+
+    // MARK: - Identifier Quoting
+
+    func quoteIdentifier(_ name: String) -> String {
+        pluginDriver.quoteIdentifier(name)
+    }
+
+    func escapeStringLiteral(_ value: String) -> String {
+        pluginDriver.escapeStringLiteral(value)
     }
 
     // MARK: - Result Mapping

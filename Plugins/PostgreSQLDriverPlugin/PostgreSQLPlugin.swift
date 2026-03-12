@@ -81,7 +81,14 @@ final class PostgreSQLPlugin: NSObject, TableProPlugin, DriverPlugin {
             "CHAR", "CHARACTER", "VARCHAR", "TEXT",
             "DATE", "TIME", "TIMESTAMP", "TIMESTAMPTZ", "INTERVAL",
             "BOOLEAN", "BOOL", "JSON", "JSONB", "UUID", "BYTEA", "ARRAY"
-        ]
+        ],
+        tableOptions: [
+            "INHERITS", "PARTITION BY", "TABLESPACE", "WITH", "WITHOUT OIDS"
+        ],
+        regexSyntax: .tilde,
+        booleanLiteralStyle: .truefalse,
+        likeEscapeStyle: .explicit,
+        paginationStyle: .limit
     )
 
     static func driverVariant(for databaseTypeId: String) -> String? {

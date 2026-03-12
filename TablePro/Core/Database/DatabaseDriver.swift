@@ -140,6 +140,12 @@ protocol DatabaseDriver: AnyObject {
 
     /// Access to the underlying plugin driver for query building dispatch
     var queryBuildingPluginDriver: (any PluginDatabaseDriver)? { get }
+
+    /// Quote an identifier (table or column name) using the driver's quoting style
+    func quoteIdentifier(_ name: String) -> String
+
+    /// Escape a string value for safe use in SQL string literals
+    func escapeStringLiteral(_ value: String) -> String
 }
 
 // MARK: - Schema Switching
@@ -159,6 +165,19 @@ extension DatabaseDriver {
     var serverVersion: String? { nil }
 
     var queryBuildingPluginDriver: (any PluginDatabaseDriver)? { nil }
+
+    func quoteIdentifier(_ name: String) -> String {
+        let q = "\""
+        let escaped = name.replacingOccurrences(of: q, with: q + q)
+        return "\(q)\(escaped)\(q)"
+    }
+
+    func escapeStringLiteral(_ value: String) -> String {
+        var result = value
+        result = result.replacingOccurrences(of: "'", with: "''")
+        result = result.replacingOccurrences(of: "\0", with: "")
+        return result
+    }
 
     func testConnection() async throws -> Bool {
         try await connect()

@@ -11,6 +11,73 @@ import TableProPluginKit
 /// Generates SQL WHERE clauses from filter definitions
 struct FilterSQLGenerator {
     let databaseType: DatabaseType
+    private let dialect: SQLDialectDescriptor
+    private let quoteIdentifierFn: (String) -> String
+
+    init(
+        databaseType: DatabaseType,
+        dialect: SQLDialectDescriptor? = nil,
+        quoteIdentifier: ((String) -> String)? = nil
+    ) {
+        self.databaseType = databaseType
+        self.dialect = dialect ?? Self.fallbackDialect(for: databaseType)
+        self.quoteIdentifierFn = quoteIdentifier ?? databaseType.quoteIdentifier
+    }
+
+    /// Fallback dialect properties when no plugin-provided descriptor is available.
+    /// Preserves pre-existing behavior for each database type.
+    private static func fallbackDialect(for databaseType: DatabaseType) -> SQLDialectDescriptor {
+        switch databaseType {
+        case .mysql, .mariadb:
+            return SQLDialectDescriptor(
+                identifierQuote: "`", keywords: [], functions: [], dataTypes: [],
+                regexSyntax: .regexp, booleanLiteralStyle: .numeric,
+                likeEscapeStyle: .implicit, paginationStyle: .limit
+            )
+        case .postgresql, .redshift:
+            return SQLDialectDescriptor(
+                identifierQuote: "\"", keywords: [], functions: [], dataTypes: [],
+                regexSyntax: .tilde, booleanLiteralStyle: .truefalse,
+                likeEscapeStyle: .explicit, paginationStyle: .limit
+            )
+        case .sqlite:
+            return SQLDialectDescriptor(
+                identifierQuote: "`", keywords: [], functions: [], dataTypes: [],
+                regexSyntax: .unsupported, booleanLiteralStyle: .numeric,
+                likeEscapeStyle: .explicit, paginationStyle: .limit
+            )
+        case .clickhouse:
+            return SQLDialectDescriptor(
+                identifierQuote: "`", keywords: [], functions: [], dataTypes: [],
+                regexSyntax: .match, booleanLiteralStyle: .numeric,
+                likeEscapeStyle: .explicit, paginationStyle: .limit
+            )
+        case .mssql:
+            return SQLDialectDescriptor(
+                identifierQuote: "[", keywords: [], functions: [], dataTypes: [],
+                regexSyntax: .unsupported, booleanLiteralStyle: .numeric,
+                likeEscapeStyle: .explicit, paginationStyle: .offsetFetch
+            )
+        case .oracle:
+            return SQLDialectDescriptor(
+                identifierQuote: "\"", keywords: [], functions: [], dataTypes: [],
+                regexSyntax: .regexpLike, booleanLiteralStyle: .numeric,
+                likeEscapeStyle: .explicit, paginationStyle: .offsetFetch
+            )
+        case .duckdb:
+            return SQLDialectDescriptor(
+                identifierQuote: "\"", keywords: [], functions: [], dataTypes: [],
+                regexSyntax: .regexpMatches, booleanLiteralStyle: .truefalse,
+                likeEscapeStyle: .explicit, paginationStyle: .limit
+            )
+        case .mongodb, .redis:
+            return SQLDialectDescriptor(
+                identifierQuote: "`", keywords: [], functions: [], dataTypes: [],
+                regexSyntax: .unsupported, booleanLiteralStyle: .numeric,
+                likeEscapeStyle: .explicit, paginationStyle: .limit
+            )
+        }
+    }
 
     // MARK: - Public API
 
@@ -38,7 +105,7 @@ struct FilterSQLGenerator {
             return "(\(rawSQL))"
         }
 
-        let quotedColumn = databaseType.quoteIdentifier(filter.columnName)
+        let quotedColumn = quoteIdentifierFn(filter.columnName)
 
         switch filter.filterOperator {
         case .equal:
@@ -102,14 +169,14 @@ struct FilterSQLGenerator {
             return "\(quotedColumn) BETWEEN \(escapeValue(filter.value)) AND \(escapeValue(secondValue))"
 
         case .regex:
-            // MongoDB filters are handled natively by MongoDBQueryBuilder
+            // MongoDB/Redis filters are handled natively by their query builders
             if databaseType == .mongodb || databaseType == .redis { return nil }
-            // SQLite doesn't support REGEXP without a custom function; fall back to LIKE
-            if databaseType == .sqlite {
+            let syntax = dialect.regexSyntax
+            if syntax == .unsupported {
                 let escaped = escapeSQLQuote(filter.value)
                 return "\(quotedColumn) LIKE '%\(escaped)%'"
             }
-            if databaseType == .clickhouse {
+            if syntax == .match {
                 let escapedPattern = escapeStringValue(filter.value)
                 return "match(\(quotedColumn), '\(escapedPattern)')"
             }
@@ -120,15 +187,11 @@ struct FilterSQLGenerator {
     // MARK: - LIKE Conditions
 
     /// Database-specific ESCAPE clause for LIKE patterns.
-    /// MySQL/MariaDB default to `\` as the LIKE escape character, so no clause needed.
-    /// PostgreSQL and SQLite require an explicit ESCAPE declaration.
+    /// Implicit style (MySQL/MariaDB): backslash is the default LIKE escape, no clause needed.
+    /// Explicit style: requires an ESCAPE declaration.
     private var likeEscapeClause: String {
-        switch databaseType {
-        case .mysql, .mariadb:
-            return ""
-        case .postgresql, .redshift, .sqlite, .mongodb, .redis, .mssql, .oracle, .clickhouse, .duckdb:
-            return " ESCAPE '\\'"
-        }
+        if dialect.likeEscapeStyle == .implicit { return "" }
+        return " ESCAPE '\\'"
     }
 
     private func generateLikeCondition(column: String, pattern: String) -> String {
@@ -141,19 +204,23 @@ struct FilterSQLGenerator {
         return "\(column) NOT LIKE '\(quotedPattern)'\(likeEscapeClause)"
     }
 
-    // MARK: - REGEX Conditions (Database-Specific)
+    // MARK: - REGEX Conditions
 
     private func generateRegexCondition(column: String, pattern: String) -> String {
         let escapedPattern = escapeStringValue(pattern)
 
-        switch databaseType {
-        case .mysql, .mariadb:
+        switch dialect.regexSyntax {
+        case .regexp:
             return "\(column) REGEXP '\(escapedPattern)'"
-        case .postgresql, .redshift:
+        case .tilde:
             return "\(column) ~ '\(escapedPattern)'"
-        case .duckdb:
+        case .regexpMatches:
             return "regexp_matches(\(column), '\(escapedPattern)')"
-        case .sqlite, .mongodb, .redis, .mssql, .oracle, .clickhouse:
+        case .regexpLike:
+            return "REGEXP_LIKE(\(column), '\(escapedPattern)')"
+        case .match:
+            return "match(\(column), '\(escapedPattern)')"
+        case .unsupported:
             return "\(column) LIKE '%\(escapedPattern)%'"
         }
     }
@@ -171,10 +238,10 @@ struct FilterSQLGenerator {
 
         // Check for boolean literals
         if trimmed.caseInsensitiveCompare("TRUE") == .orderedSame {
-            return databaseType == .postgresql || databaseType == .redshift || databaseType == .duckdb ? "TRUE" : "1"
+            return dialect.booleanLiteralStyle == .truefalse ? "TRUE" : "1"
         }
         if trimmed.caseInsensitiveCompare("FALSE") == .orderedSame {
-            return databaseType == .postgresql || databaseType == .redshift || databaseType == .duckdb ? "FALSE" : "0"
+            return dialect.booleanLiteralStyle == .truefalse ? "FALSE" : "0"
         }
 
         // Try to detect numeric values
@@ -206,8 +273,7 @@ struct FilterSQLGenerator {
     private func escapeLikeWildcards(_ value: String) -> String {
         guard value.contains("\\") || value.contains("%") || value.contains("_") else { return value }
 
-        switch databaseType {
-        case .mysql, .mariadb:
+        if dialect.likeEscapeStyle == .implicit {
             // MySQL uses \ as both string escape and default LIKE escape.
             // Need double backslash in SQL string so string layer yields single \
             // which LIKE then uses as escape char.
@@ -215,12 +281,11 @@ struct FilterSQLGenerator {
                 .replacingOccurrences(of: "\\", with: "\\\\\\\\")
                 .replacingOccurrences(of: "%", with: "\\\\%")
                 .replacingOccurrences(of: "_", with: "\\\\_")
-        default:
-            return value
-                .replacingOccurrences(of: "\\", with: "\\\\")
-                .replacingOccurrences(of: "%", with: "\\%")
-                .replacingOccurrences(of: "_", with: "\\_")
         }
+        return value
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "%", with: "\\%")
+            .replacingOccurrences(of: "_", with: "\\_")
     }
 
     // MARK: - List Parsing
@@ -259,7 +324,7 @@ extension FilterSQLGenerator {
             }
         }
 
-        let quotedTable = databaseType.quoteIdentifier(tableName)
+        let quotedTable = quoteIdentifierFn(tableName)
         var sql = "SELECT * FROM \(quotedTable)"
 
         let whereClause = generateWhereClause(from: filters)
@@ -267,12 +332,10 @@ extension FilterSQLGenerator {
             sql += "\n\(whereClause)"
         }
 
-        switch databaseType {
-        case .oracle:
-            sql += "\nORDER BY 1 OFFSET 0 ROWS FETCH NEXT \(limit) ROWS ONLY"
-        case .mssql:
-            sql += "\nORDER BY (SELECT NULL) OFFSET 0 ROWS FETCH NEXT \(limit) ROWS ONLY"
-        default:
+        if dialect.paginationStyle == .offsetFetch {
+            let orderBy = databaseType == .oracle ? "ORDER BY 1" : "ORDER BY (SELECT NULL)"
+            sql += "\n\(orderBy) OFFSET 0 ROWS FETCH NEXT \(limit) ROWS ONLY"
+        } else {
             sql += "\nLIMIT \(limit)"
         }
         return sql

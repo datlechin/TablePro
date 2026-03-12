@@ -9,6 +9,21 @@ internal struct SQLRowToStatementConverter {
     internal let columns: [String]
     internal let primaryKeyColumn: String?
     internal let databaseType: DatabaseType
+    private let quoteIdentifierFn: (String) -> String
+
+    init(
+        tableName: String,
+        columns: [String],
+        primaryKeyColumn: String?,
+        databaseType: DatabaseType,
+        quoteIdentifier: ((String) -> String)? = nil
+    ) {
+        self.tableName = tableName
+        self.columns = columns
+        self.primaryKeyColumn = primaryKeyColumn
+        self.databaseType = databaseType
+        self.quoteIdentifierFn = quoteIdentifier ?? databaseType.quoteIdentifier
+    }
 
     private static let maxRows = 50_000
 
@@ -92,6 +107,6 @@ internal struct SQLRowToStatementConverter {
     }
 
     private func quoteColumn(_ name: String) -> String {
-        databaseType.quoteIdentifier(name)
+        quoteIdentifierFn(name)
     }
 }

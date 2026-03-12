@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import TableProPluginKit
 
 /// Completion context returned by the engine
 struct CompletionContext {
@@ -29,8 +30,8 @@ final class CompletionEngine {
 
     // MARK: - Initialization
 
-    init(schemaProvider: SQLSchemaProvider, databaseType: DatabaseType? = nil) {
-        self.provider = SQLCompletionProvider(schemaProvider: schemaProvider, databaseType: databaseType)
+    init(schemaProvider: SQLSchemaProvider, databaseType: DatabaseType? = nil, dialect: SQLDialectDescriptor? = nil) {
+        self.provider = SQLCompletionProvider(schemaProvider: schemaProvider, databaseType: databaseType, dialect: dialect)
     }
 
     // MARK: - Public API

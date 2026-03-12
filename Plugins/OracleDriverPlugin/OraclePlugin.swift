@@ -79,7 +79,14 @@ final class OraclePlugin: NSObject, TableProPlugin, DriverPlugin {
             "DATE", "TIMESTAMP", "TIMESTAMP WITH TIME ZONE", "TIMESTAMP WITH LOCAL TIME ZONE",
             "INTERVAL YEAR TO MONTH", "INTERVAL DAY TO SECOND",
             "BOOLEAN", "ROWID", "UROWID", "XMLTYPE", "SDO_GEOMETRY"
-        ]
+        ],
+        tableOptions: [
+            "TABLESPACE", "PCTFREE", "INITRANS"
+        ],
+        regexSyntax: .regexpLike,
+        booleanLiteralStyle: .numeric,
+        likeEscapeStyle: .explicit,
+        paginationStyle: .offsetFetch
     )
 
     func createDriver(config: DriverConnectionConfig) -> any PluginDatabaseDriver {

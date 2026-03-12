@@ -674,7 +674,8 @@ final class DataChangeManager {
             tableName: tableName,
             columns: columns,
             primaryKeyColumn: primaryKeyColumn,
-            databaseType: databaseType
+            databaseType: databaseType,
+            quoteIdentifier: pluginDriver?.quoteIdentifier
         )
         let statements = generator.generateStatements(
             from: changes,

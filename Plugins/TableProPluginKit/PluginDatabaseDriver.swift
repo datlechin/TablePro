@@ -110,6 +110,12 @@ public protocol PluginDatabaseDriver: AnyObject, Sendable {
 
     // EXPLAIN query building (optional)
     func buildExplainQuery(_ sql: String) -> String?
+
+    // Identifier quoting
+    func quoteIdentifier(_ name: String) -> String
+
+    // String escaping
+    func escapeStringLiteral(_ value: String) -> String
 }
 
 public extension PluginDatabaseDriver {
@@ -217,6 +223,18 @@ public extension PluginDatabaseDriver {
     func foreignKeyEnableStatements() -> [String]? { nil }
 
     func buildExplainQuery(_ sql: String) -> String? { nil }
+
+    func quoteIdentifier(_ name: String) -> String {
+        let escaped = name.replacingOccurrences(of: "\"", with: "\"\"")
+        return "\"\(escaped)\""
+    }
+
+    func escapeStringLiteral(_ value: String) -> String {
+        var result = value
+        result = result.replacingOccurrences(of: "'", with: "''")
+        result = result.replacingOccurrences(of: "\0", with: "")
+        return result
+    }
 
     func executeParameterized(query: String, parameters: [String?]) async throws -> PluginQueryResult {
         guard !parameters.isEmpty else {

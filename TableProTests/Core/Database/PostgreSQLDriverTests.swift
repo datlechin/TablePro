@@ -16,54 +16,35 @@ import Testing
 @Suite("PostgreSQL SQL Escaping Correctness")
 struct PostgreSQLSQLEscapingCorrectness {
 
-    @Test("Backslash in table name — MySQL doubles backslashes, PostgreSQL preserves them")
-    func backslashInTableName() {
+    @Test("ANSI escaping preserves backslashes")
+    func backslashPreserved() {
         let input = "test\\table"
-        let mysql = SQLEscaping.escapeStringLiteral(input, databaseType: .mysql)
-        let postgresql = SQLEscaping.escapeStringLiteral(input, databaseType: .postgresql)
-
-        #expect(mysql == "test\\\\table")
-        #expect(postgresql == "test\\table")
-        #expect(mysql != postgresql, "MySQL and PostgreSQL escaping must differ for backslashes")
+        let result = SQLEscaping.escapeStringLiteral(input)
+        #expect(result == "test\\table")
     }
 
-    @Test("Newline in value — MySQL escapes to \\n, PostgreSQL preserves literal newline")
-    func newlineInValue() {
+    @Test("ANSI escaping preserves literal newlines")
+    func newlinePreserved() {
         let input = "line1\nline2"
-        let mysql = SQLEscaping.escapeStringLiteral(input, databaseType: .mysql)
-        let postgresql = SQLEscaping.escapeStringLiteral(input, databaseType: .postgresql)
-
-        #expect(mysql == "line1\\nline2")
-        #expect(postgresql == "line1\nline2")
-        #expect(mysql != postgresql, "MySQL and PostgreSQL escaping must differ for newlines")
+        let result = SQLEscaping.escapeStringLiteral(input)
+        #expect(result == "line1\nline2")
     }
 
-    @Test("Tab in value — MySQL escapes to \\t, PostgreSQL preserves literal tab")
-    func tabInValue() {
+    @Test("ANSI escaping preserves literal tabs")
+    func tabPreserved() {
         let input = "col1\tcol2"
-        let mysql = SQLEscaping.escapeStringLiteral(input, databaseType: .mysql)
-        let postgresql = SQLEscaping.escapeStringLiteral(input, databaseType: .postgresql)
-
-        #expect(mysql == "col1\\tcol2")
-        #expect(postgresql == "col1\tcol2")
-        #expect(mysql != postgresql, "MySQL and PostgreSQL escaping must differ for tabs")
+        let result = SQLEscaping.escapeStringLiteral(input)
+        #expect(result == "col1\tcol2")
     }
 
-    @Test("Combined special chars — backslash and quote produce different results per DB type")
+    @Test("ANSI escaping doubles single quotes and preserves control chars")
     func combinedSpecialChars() {
         let input = "it's a \\path\n"
-        let mysql = SQLEscaping.escapeStringLiteral(input, databaseType: .mysql)
-        let postgresql = SQLEscaping.escapeStringLiteral(input, databaseType: .postgresql)
+        let result = SQLEscaping.escapeStringLiteral(input)
 
-        #expect(mysql.contains("\\\\"), "MySQL should double backslashes")
-        #expect(mysql.contains("\\n"), "MySQL should escape newlines")
-        #expect(!postgresql.contains("\\\\"), "PostgreSQL should not double backslashes")
-        #expect(postgresql.contains("\n"), "PostgreSQL should preserve literal newlines")
-
-        #expect(mysql.contains("''"), "MySQL should double single quotes")
-        #expect(postgresql.contains("''"), "PostgreSQL should double single quotes")
-
-        #expect(mysql != postgresql, "MySQL and PostgreSQL escaping must differ for combined special chars")
+        #expect(!result.contains("\\\\"), "ANSI escaping should not double backslashes")
+        #expect(result.contains("\n"), "ANSI escaping should preserve literal newlines")
+        #expect(result.contains("''"), "ANSI escaping should double single quotes")
     }
 }
 
@@ -274,7 +255,7 @@ struct DDLLoadingFlowTests {
         }
         for enumType in enumTypes {
             let quotedName = "\"\(enumType.name.replacingOccurrences(of: "\"", with: "\"\""))\""
-            let quotedLabels = enumType.labels.map { "'\(SQLEscaping.escapeStringLiteral($0, databaseType: .postgresql))'" }
+            let quotedLabels = enumType.labels.map { "'\(SQLEscaping.escapeStringLiteral($0))'" }
             preamble += "CREATE TYPE \(quotedName) AS ENUM (\(quotedLabels.joined(separator: ", ")));\n"
         }
 

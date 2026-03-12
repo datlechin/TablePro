@@ -32,6 +32,8 @@ extension MainContentCoordinator {
     ) -> [String] {
         var statements: [String] = []
         let dbType = connection.type
+        let driver = DatabaseManager.shared.driver(for: connectionId)
+        let quote: (String) -> String = driver?.quoteIdentifier ?? dbType.quoteIdentifier
 
         // Sort tables for consistent execution order
         let sortedTruncates = truncates.sorted()
@@ -47,7 +49,7 @@ extension MainContentCoordinator {
         }
 
         for tableName in sortedTruncates {
-            let quotedName = dbType.quoteIdentifier(tableName)
+            let quotedName = quote(tableName)
             let tableOptions = options[tableName] ?? TableOperationOptions()
             statements.append(contentsOf: truncateStatements(
                 tableName: tableName, quotedName: quotedName, options: tableOptions, dbType: dbType
@@ -60,7 +62,7 @@ extension MainContentCoordinator {
         }()
 
         for tableName in sortedDeletes {
-            let quotedName = dbType.quoteIdentifier(tableName)
+            let quotedName = quote(tableName)
             let tableOptions = options[tableName] ?? TableOperationOptions()
             let stmt = dropTableStatement(
                 tableName: tableName, quotedName: quotedName,

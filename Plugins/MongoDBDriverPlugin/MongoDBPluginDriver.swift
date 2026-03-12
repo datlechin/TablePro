@@ -20,6 +20,7 @@ final class MongoDBPluginDriver: PluginDatabaseDriver {
     func beginTransaction() async throws {}
     func commitTransaction() async throws {}
     func rollbackTransaction() async throws {}
+    func quoteIdentifier(_ name: String) -> String { name }
 
     init(config: DriverConnectionConfig) {
         self.config = config

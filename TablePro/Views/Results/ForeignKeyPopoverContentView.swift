@@ -115,8 +115,8 @@ struct ForeignKeyPopoverContentView: View {
             return
         }
 
-        let quotedTable = databaseType.quoteIdentifier(fkInfo.referencedTable)
-        let quotedColumn = databaseType.quoteIdentifier(fkInfo.referencedColumn)
+        let quotedTable = driver.quoteIdentifier(fkInfo.referencedTable)
+        let quotedColumn = driver.quoteIdentifier(fkInfo.referencedColumn)
 
         // Try to find a display column (first text-like column that isn't the FK column)
         var displayColumn: String?
@@ -140,7 +140,7 @@ struct ForeignKeyPopoverContentView: View {
             limitSuffix = "LIMIT \(Self.maxFetchRows)"
         }
         if let displayCol = displayColumn {
-            let quotedDisplay = databaseType.quoteIdentifier(displayCol)
+            let quotedDisplay = driver.quoteIdentifier(displayCol)
             query = "SELECT \(quotedColumn), \(quotedDisplay) FROM \(quotedTable) ORDER BY \(quotedColumn) \(limitSuffix)"
         } else {
             query = "SELECT DISTINCT \(quotedColumn) FROM \(quotedTable) ORDER BY \(quotedColumn) \(limitSuffix)"
