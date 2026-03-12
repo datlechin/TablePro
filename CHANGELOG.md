@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MSSQL query cancellation (`cancelQuery`) and lock timeout (`applyQueryTimeout`) support
 - `~/.pgpass` file support for PostgreSQL/Redshift connections with live validation in the connection form
 - Pre-connect script: run a shell command before each connection (e.g., to refresh credentials or update ~/.pgpass)
+- `ParameterStyle` enum in TableProPluginKit: plugins declare `?` or `$1` placeholder style via `parameterStyle` property on `PluginDatabaseDriver`
+- DML statement generation in ClickHouse, MSSQL, and Oracle plugins via `generateStatements()` for database-specific UPDATE/DELETE syntax
 
 ### Fixed
 

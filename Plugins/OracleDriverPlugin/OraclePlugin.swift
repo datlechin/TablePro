@@ -541,6 +541,133 @@ final class OraclePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         return PluginDatabaseMetadata(name: database)
     }
 
+    // MARK: - DML Statement Generation
+
+    func generateStatements(
+        table: String,
+        columns: [String],
+        changes: [PluginRowChange],
+        insertedRowData: [Int: [String?]],
+        deletedRowIndices: Set<Int>,
+        insertedRowIndices: Set<Int>
+    ) -> [(statement: String, parameters: [String?])]? {
+        var statements: [(statement: String, parameters: [String?])] = []
+
+        for change in changes {
+            switch change.type {
+            case .insert:
+                guard insertedRowIndices.contains(change.rowIndex) else { continue }
+                if let values = insertedRowData[change.rowIndex] {
+                    if let stmt = generateOracleInsert(table: table, columns: columns, values: values) {
+                        statements.append(stmt)
+                    }
+                }
+            case .update:
+                if let stmt = generateOracleUpdate(table: table, columns: columns, change: change) {
+                    statements.append(stmt)
+                }
+            case .delete:
+                guard deletedRowIndices.contains(change.rowIndex) else { continue }
+                if let stmt = generateOracleDelete(table: table, columns: columns, change: change) {
+                    statements.append(stmt)
+                }
+            }
+        }
+
+        return statements.isEmpty ? nil : statements
+    }
+
+    private func escapeOracleIdentifier(_ name: String) -> String {
+        "\"\(name.replacingOccurrences(of: "\"", with: "\"\""))\""
+    }
+
+    private func generateOracleInsert(
+        table: String,
+        columns: [String],
+        values: [String?]
+    ) -> (statement: String, parameters: [String?])? {
+        var nonDefaultColumns: [String] = []
+        var parameters: [String?] = []
+
+        for (index, value) in values.enumerated() {
+            if value == "__DEFAULT__" { continue }
+            guard index < columns.count else { continue }
+            nonDefaultColumns.append(escapeOracleIdentifier(columns[index]))
+            parameters.append(value)
+        }
+
+        guard !nonDefaultColumns.isEmpty else { return nil }
+
+        let columnList = nonDefaultColumns.joined(separator: ", ")
+        let placeholders = parameters.map { _ in "?" }.joined(separator: ", ")
+        let sql = "INSERT INTO \(escapeOracleIdentifier(table)) (\(columnList)) VALUES (\(placeholders))"
+        return (statement: sql, parameters: parameters)
+    }
+
+    private func generateOracleUpdate(
+        table: String,
+        columns: [String],
+        change: PluginRowChange
+    ) -> (statement: String, parameters: [String?])? {
+        guard !change.cellChanges.isEmpty, let originalRow = change.originalRow else { return nil }
+
+        let escapedTable = escapeOracleIdentifier(table)
+        var parameters: [String?] = []
+
+        let setClauses = change.cellChanges.map { cellChange -> String in
+            let col = escapeOracleIdentifier(cellChange.columnName)
+            parameters.append(cellChange.newValue)
+            return "\(col) = ?"
+        }.joined(separator: ", ")
+
+        var conditions: [String] = []
+        for (index, columnName) in columns.enumerated() {
+            guard index < originalRow.count else { continue }
+            let col = escapeOracleIdentifier(columnName)
+            if let value = originalRow[index] {
+                parameters.append(value)
+                conditions.append("\(col) = ?")
+            } else {
+                conditions.append("\(col) IS NULL")
+            }
+        }
+
+        guard !conditions.isEmpty else { return nil }
+
+        let whereClause = conditions.joined(separator: " AND ")
+        let sql = "UPDATE \(escapedTable) SET \(setClauses) WHERE \(whereClause) AND ROWNUM = 1"
+        return (statement: sql, parameters: parameters)
+    }
+
+    private func generateOracleDelete(
+        table: String,
+        columns: [String],
+        change: PluginRowChange
+    ) -> (statement: String, parameters: [String?])? {
+        guard let originalRow = change.originalRow else { return nil }
+
+        let escapedTable = escapeOracleIdentifier(table)
+        var parameters: [String?] = []
+        var conditions: [String] = []
+
+        for (index, columnName) in columns.enumerated() {
+            guard index < originalRow.count else { continue }
+            let col = escapeOracleIdentifier(columnName)
+            if let value = originalRow[index] {
+                parameters.append(value)
+                conditions.append("\(col) = ?")
+            } else {
+                conditions.append("\(col) IS NULL")
+            }
+        }
+
+        guard !conditions.isEmpty else { return nil }
+
+        let whereClause = conditions.joined(separator: " AND ")
+        let sql = "DELETE FROM \(escapedTable) WHERE \(whereClause) AND ROWNUM = 1"
+        return (statement: sql, parameters: parameters)
+    }
+
     // MARK: - Schema Switching
 
     func switchSchema(to schema: String) async throws {

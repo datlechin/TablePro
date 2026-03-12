@@ -435,6 +435,187 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         )
     }
 
+    // MARK: - DML Statement Generation
+
+    func generateStatements(
+        table: String,
+        columns: [String],
+        changes: [PluginRowChange],
+        insertedRowData: [Int: [String?]],
+        deletedRowIndices: Set<Int>,
+        insertedRowIndices: Set<Int>
+    ) -> [(statement: String, parameters: [String?])]? {
+        var statements: [(statement: String, parameters: [String?])] = []
+
+        var deleteChanges: [PluginRowChange] = []
+
+        for change in changes {
+            switch change.type {
+            case .insert:
+                guard insertedRowIndices.contains(change.rowIndex) else { continue }
+                if let values = insertedRowData[change.rowIndex] {
+                    if let stmt = generateMssqlInsert(table: table, columns: columns, values: values) {
+                        statements.append(stmt)
+                    }
+                }
+            case .update:
+                if let stmt = generateMssqlUpdate(table: table, columns: columns, change: change) {
+                    statements.append(stmt)
+                }
+            case .delete:
+                guard deletedRowIndices.contains(change.rowIndex) else { continue }
+                deleteChanges.append(change)
+            }
+        }
+
+        if !deleteChanges.isEmpty {
+            let hasPk = deleteChanges.allSatisfy { change in
+                change.cellChanges.contains { $0.columnName == columns.first }
+            }
+            if hasPk, let batchStmt = generateMssqlBatchDelete(table: table, columns: columns, changes: deleteChanges) {
+                statements.append(batchStmt)
+            } else {
+                for change in deleteChanges {
+                    if let stmt = generateMssqlDelete(table: table, columns: columns, change: change) {
+                        statements.append(stmt)
+                    }
+                }
+            }
+        }
+
+        return statements.isEmpty ? nil : statements
+    }
+
+    private func generateMssqlInsert(
+        table: String,
+        columns: [String],
+        values: [String?]
+    ) -> (statement: String, parameters: [String?])? {
+        var nonDefaultColumns: [String] = []
+        var parameters: [String?] = []
+
+        for (index, value) in values.enumerated() {
+            if value == "__DEFAULT__" { continue }
+            guard index < columns.count else { continue }
+            nonDefaultColumns.append("[\(columns[index].replacingOccurrences(of: "]", with: "]]"))]")
+            parameters.append(value)
+        }
+
+        guard !nonDefaultColumns.isEmpty else { return nil }
+
+        let columnList = nonDefaultColumns.joined(separator: ", ")
+        let placeholders = parameters.map { _ in "?" }.joined(separator: ", ")
+        let escapedTable = "[\(table.replacingOccurrences(of: "]", with: "]]"))]"
+        let sql = "INSERT INTO \(escapedTable) (\(columnList)) VALUES (\(placeholders))"
+        return (statement: sql, parameters: parameters)
+    }
+
+    private func generateMssqlUpdate(
+        table: String,
+        columns: [String],
+        change: PluginRowChange
+    ) -> (statement: String, parameters: [String?])? {
+        guard !change.cellChanges.isEmpty else { return nil }
+
+        let escapedTable = "[\(table.replacingOccurrences(of: "]", with: "]]"))]"
+        var parameters: [String?] = []
+
+        let setClauses = change.cellChanges.map { cellChange -> String in
+            let col = "[\(cellChange.columnName.replacingOccurrences(of: "]", with: "]]"))]"
+            parameters.append(cellChange.newValue)
+            return "\(col) = ?"
+        }.joined(separator: ", ")
+
+        // Check if we have original row data to identify by PK or all columns
+        guard let originalRow = change.originalRow else { return nil }
+
+        // Use all columns as WHERE clause for safety
+        var conditions: [String] = []
+        for (index, columnName) in columns.enumerated() {
+            guard index < originalRow.count else { continue }
+            let col = "[\(columnName.replacingOccurrences(of: "]", with: "]]"))]"
+            if let value = originalRow[index] {
+                parameters.append(value)
+                conditions.append("\(col) = ?")
+            } else {
+                conditions.append("\(col) IS NULL")
+            }
+        }
+
+        guard !conditions.isEmpty else { return nil }
+
+        let whereClause = conditions.joined(separator: " AND ")
+
+        // Without a reliable PK, use UPDATE TOP (1) for safety
+        let sql = "UPDATE TOP (1) \(escapedTable) SET \(setClauses) WHERE \(whereClause)"
+        return (statement: sql, parameters: parameters)
+    }
+
+    private func generateMssqlBatchDelete(
+        table: String,
+        columns: [String],
+        changes: [PluginRowChange]
+    ) -> (statement: String, parameters: [String?])? {
+        guard !changes.isEmpty else { return nil }
+
+        let escapedTable = "[\(table.replacingOccurrences(of: "]", with: "]]"))]"
+        var parameters: [String?] = []
+        var conditions: [String] = []
+
+        for change in changes {
+            guard let originalRow = change.originalRow else { return nil }
+            var rowConditions: [String] = []
+            for (index, columnName) in columns.enumerated() {
+                guard index < originalRow.count else { continue }
+                let col = "[\(columnName.replacingOccurrences(of: "]", with: "]]"))]"
+                if let value = originalRow[index] {
+                    parameters.append(value)
+                    rowConditions.append("\(col) = ?")
+                } else {
+                    rowConditions.append("\(col) IS NULL")
+                }
+            }
+            if !rowConditions.isEmpty {
+                conditions.append("(\(rowConditions.joined(separator: " AND ")))")
+            }
+        }
+
+        guard !conditions.isEmpty else { return nil }
+
+        let whereClause = conditions.joined(separator: " OR ")
+        let sql = "DELETE FROM \(escapedTable) WHERE \(whereClause)"
+        return (statement: sql, parameters: parameters)
+    }
+
+    private func generateMssqlDelete(
+        table: String,
+        columns: [String],
+        change: PluginRowChange
+    ) -> (statement: String, parameters: [String?])? {
+        guard let originalRow = change.originalRow else { return nil }
+
+        let escapedTable = "[\(table.replacingOccurrences(of: "]", with: "]]"))]"
+        var parameters: [String?] = []
+        var conditions: [String] = []
+
+        for (index, columnName) in columns.enumerated() {
+            guard index < originalRow.count else { continue }
+            let col = "[\(columnName.replacingOccurrences(of: "]", with: "]]"))]"
+            if let value = originalRow[index] {
+                parameters.append(value)
+                conditions.append("\(col) = ?")
+            } else {
+                conditions.append("\(col) IS NULL")
+            }
+        }
+
+        guard !conditions.isEmpty else { return nil }
+
+        let whereClause = conditions.joined(separator: " AND ")
+        let sql = "DELETE TOP (1) FROM \(escapedTable) WHERE \(whereClause)"
+        return (statement: sql, parameters: parameters)
+    }
+
     func cancelQuery() throws {
         freeTDSConn?.cancelCurrentQuery()
     }
