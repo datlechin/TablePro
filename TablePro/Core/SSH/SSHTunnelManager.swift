@@ -90,18 +90,7 @@ actor SSHTunnelManager {
     private func handleTunnelDeath(connectionId: UUID) async {
         guard tunnels.removeValue(forKey: connectionId) != nil else { return }
         Self.processRegistry.withLock { $0[connectionId] = nil }
-        await notifyTunnelDied(connectionId: connectionId)
-    }
-
-    /// Notify that a tunnel has died (DatabaseManager should handle reconnection)
-    private func notifyTunnelDied(connectionId: UUID) async {
-        await MainActor.run {
-            NotificationCenter.default.post(
-                name: .sshTunnelDied,
-                object: nil,
-                userInfo: ["connectionId": connectionId]
-            )
-        }
+        await DatabaseManager.shared.handleSSHTunnelDied(connectionId: connectionId)
     }
 
     /// Create an SSH tunnel for a database connection

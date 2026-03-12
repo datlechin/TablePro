@@ -149,11 +149,9 @@ internal final class WindowLifecycleMonitor {
 
         let hasRemainingWindows = entries.values.contains { $0.connectionId == closedConnectionId }
         if !hasRemainingWindows {
-            NotificationCenter.default.post(
-                name: .lastWindowDidClose,
-                object: nil,
-                userInfo: ["connectionId": closedConnectionId]
-            )
+            Task {
+                await DatabaseManager.shared.disconnectSession(closedConnectionId)
+            }
         }
     }
 }

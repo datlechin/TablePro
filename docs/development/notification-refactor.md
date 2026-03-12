@@ -194,20 +194,20 @@ Replaced 7 notifications with direct calls. Editor notifications use `@FocusedVa
 
 ## Phase 7: Replace Window Lifecycle Notifications
 
-**Status:** Not started
+**Status:** Done
 
-### Keep (AppKit → SwiftUI bridge, no alternative):
+Replaced 2 singleton-to-singleton notifications with direct method calls. `SSHTunnelManager` calls `DatabaseManager.shared.handleSSHTunnelDied(connectionId:)` directly. `WindowLifecycleMonitor` calls `DatabaseManager.shared.disconnectSession(_:)` directly. Removed notification observers and cleanup from `DatabaseManager`.
 
-- `openMainWindow` — `AppDelegate` → SwiftUI `openWindow`
-- `openWelcomeWindow` — same
-- `mainWindowWillClose` — `NSWindowDelegate` → tab persistence
+### Replaced:
 
-### Replace:
+- [x] `lastWindowDidClose` — `WindowLifecycleMonitor` calls `DatabaseManager.shared.disconnectSession(_:)` directly
+- [x] `sshTunnelDied` — `SSHTunnelManager` calls `DatabaseManager.shared.handleSSHTunnelDied(connectionId:)` directly
 
-- [ ] `lastWindowDidClose` — `WindowLifecycleMonitor` → `DatabaseManager`. Use a direct callback/delegate.
-- [ ] `sshTunnelDied` — `SSHTunnelManager` → `DatabaseManager`. Use a closure callback set at tunnel creation.
-- [ ] `connectionUpdated` — `ConnectionFormView` → `WelcomeWindowView`. Use `@Observable ConnectionStorage`.
-- [ ] `newConnection` — menu → welcome/content view. Use `@FocusedValue` or `@Environment(\.openWindow)`.
+### Kept (cross-scene broadcasts, no shared reference):
+
+- `connectionUpdated` — `ConnectionFormView`/`AppDelegate` → `WelcomeWindowView`
+- `newConnection` — `TableProApp` → `WelcomeWindowView`/`ContentView`
+- `databaseDidConnect` — `DatabaseManager` → `MainContentCommandActions`
 
 ---
 

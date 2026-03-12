@@ -19,8 +19,4 @@ extension Notification.Name {
     static let connectionUpdated = Notification.Name("connectionUpdated")
     static let databaseDidConnect = Notification.Name("databaseDidConnect")
 
-    // MARK: - SSH
-
-    static let sshTunnelDied = Notification.Name("sshTunnelDied")
-    static let lastWindowDidClose = Notification.Name("lastWindowDidClose")
 }

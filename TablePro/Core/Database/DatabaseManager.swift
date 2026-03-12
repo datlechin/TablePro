@@ -66,46 +66,7 @@ final class DatabaseManager {
         currentSession?.status ?? .disconnected
     }
 
-    @ObservationIgnored nonisolated(unsafe) private var sshTunnelObserver: NSObjectProtocol?
-    @ObservationIgnored nonisolated(unsafe) private var lastWindowCloseObserver: NSObjectProtocol?
-
-    private init() {
-        // Observe SSH tunnel failures
-        sshTunnelObserver = NotificationCenter.default.addObserver(
-            forName: .sshTunnelDied,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let connectionId = notification.userInfo?["connectionId"] as? UUID else { return }
-            guard let self else { return }
-
-            Task { @MainActor in
-                await self.handleSSHTunnelDied(connectionId: connectionId)
-            }
-        }
-
-        lastWindowCloseObserver = NotificationCenter.default.addObserver(
-            forName: .lastWindowDidClose,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let connectionId = notification.userInfo?["connectionId"] as? UUID else { return }
-            guard let self else { return }
-
-            Task { @MainActor in
-                await self.disconnectSession(connectionId)
-            }
-        }
-    }
-
-    deinit {
-        if let sshTunnelObserver {
-            NotificationCenter.default.removeObserver(sshTunnelObserver)
-        }
-        if let lastWindowCloseObserver {
-            NotificationCenter.default.removeObserver(lastWindowCloseObserver)
-        }
-    }
+    private init() {}
 
     // MARK: - Session Management
 
@@ -622,7 +583,7 @@ final class DatabaseManager {
     // MARK: - SSH Tunnel Recovery
 
     /// Handle SSH tunnel death by attempting reconnection with exponential backoff
-    private func handleSSHTunnelDied(connectionId: UUID) async {
+    func handleSSHTunnelDied(connectionId: UUID) async {
         guard let session = activeSessions[connectionId] else { return }
 
         Self.logger.warning("SSH tunnel died for connection: \(session.connection.name)")
