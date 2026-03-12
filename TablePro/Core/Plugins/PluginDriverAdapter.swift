@@ -13,10 +13,10 @@ final class PluginDriverAdapter: DatabaseDriver, SchemaSwitchable {
     private let pluginDriver: any PluginDatabaseDriver
 
     var serverVersion: String? { pluginDriver.serverVersion }
-    var noSqlPluginDriver: (any PluginDatabaseDriver)? {
-        // Only expose plugin driver for NoSQL dispatch if it actually handles query building.
-        // SQL drivers (MySQL, PostgreSQL, etc.) return nil from buildBrowseQuery and should
-        // use standard SQL query rewriting for sort/filter instead.
+    var queryBuildingPluginDriver: (any PluginDatabaseDriver)? {
+        // Expose plugin driver for query building dispatch if it implements the hooks.
+        // SQL drivers without custom pagination (MySQL, PostgreSQL, etc.) return nil
+        // from buildBrowseQuery and use standard SQL query rewriting instead.
         guard pluginDriver.buildBrowseQuery(
             table: "_probe", sortColumns: [], columns: [], limit: 1, offset: 0
         ) != nil else {

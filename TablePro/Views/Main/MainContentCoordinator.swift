@@ -279,14 +279,14 @@ final class MainContentCoordinator {
         rightPanelState?.activeTab = .aiChat
     }
 
-    /// Set up the plugin driver for NoSQL query dispatch on the query builder and change manager.
+    /// Set up the plugin driver for query building dispatch on the query builder and change manager.
     private func setupPluginDriver() {
         guard let driver = DatabaseManager.shared.driver(for: connectionId) else { return }
-        let noSqlDriver = driver.noSqlPluginDriver
-        queryBuilder.setPluginDriver(noSqlDriver)
-        changeManager.pluginDriver = noSqlDriver
+        let pluginDriver = driver.queryBuildingPluginDriver
+        queryBuilder.setPluginDriver(pluginDriver)
+        changeManager.pluginDriver = pluginDriver
         // Remove observer once successfully set up
-        if noSqlDriver != nil, let observer = pluginDriverObserver {
+        if pluginDriver != nil, let observer = pluginDriverObserver {
             NotificationCenter.default.removeObserver(observer)
             pluginDriverObserver = nil
         }
