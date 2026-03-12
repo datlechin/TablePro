@@ -11,7 +11,7 @@ import TableProPluginKit
 import Testing
 
 /// Mock plugin driver that returns custom DDL for specific operations.
-/// Methods return nil by default (triggering fallback), unless overridden via closures.
+/// Methods return nil by default (operation skipped), unless overridden via closures.
 private final class MockPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     var addColumnHandler: ((String, PluginColumnDefinition) -> String?)?
     var modifyColumnHandler: ((String, PluginColumnDefinition, PluginColumnDefinition) -> String?)?
@@ -144,45 +144,36 @@ struct SchemaStatementGeneratorPluginTests {
         )
     }
 
-    // MARK: - Fallback Tests (plugin returns nil)
+    // MARK: - Nil Return Tests (plugin returns nil -> change skipped)
 
-    @Test("Add column falls back to default when plugin returns nil")
-    func addColumnFallback() throws {
+    @Test("Add column is skipped when plugin returns nil")
+    func addColumnSkippedWhenNil() throws {
         let mock = MockPluginDriver()
-        let generator = SchemaStatementGenerator(
-            tableName: "users", databaseType: .mysql, pluginDriver: mock
-        )
+        let generator = SchemaStatementGenerator(tableName: "users", pluginDriver: mock)
         let column = makeColumn()
         let stmts = try generator.generate(changes: [.addColumn(column)])
 
-        #expect(stmts.count == 1)
-        #expect(stmts[0].sql.contains("ADD COLUMN"))
-        #expect(stmts[0].sql.contains("`email`"))
+        #expect(stmts.isEmpty)
     }
 
-    @Test("Drop column falls back to default when plugin returns nil")
-    func dropColumnFallback() throws {
+    @Test("Drop column is skipped when plugin returns nil")
+    func dropColumnSkippedWhenNil() throws {
         let mock = MockPluginDriver()
-        let generator = SchemaStatementGenerator(
-            tableName: "users", databaseType: .mysql, pluginDriver: mock
-        )
+        let generator = SchemaStatementGenerator(tableName: "users", pluginDriver: mock)
         let column = makeColumn()
         let stmts = try generator.generate(changes: [.deleteColumn(column)])
 
-        #expect(stmts.count == 1)
-        #expect(stmts[0].sql.contains("DROP COLUMN"))
+        #expect(stmts.isEmpty)
     }
 
-    @Test("No plugin driver uses default generation")
-    func noPluginDriverDefault() throws {
-        let generator = SchemaStatementGenerator(
-            tableName: "users", databaseType: .postgresql
-        )
+    @Test("Add index is skipped when plugin returns nil")
+    func addIndexSkippedWhenNil() throws {
+        let mock = MockPluginDriver()
+        let generator = SchemaStatementGenerator(tableName: "users", pluginDriver: mock)
         let index = makeIndex()
         let stmts = try generator.generate(changes: [.addIndex(index)])
 
-        #expect(stmts.count == 1)
-        #expect(stmts[0].sql.contains("CREATE INDEX"))
+        #expect(stmts.isEmpty)
     }
 
     // MARK: - Plugin Override Tests
@@ -194,15 +185,12 @@ struct SchemaStatementGeneratorPluginTests {
             "ALTER TABLE \(table) ADD \(col.name) \(col.dataType) CUSTOM_SYNTAX"
         }
 
-        let generator = SchemaStatementGenerator(
-            tableName: "users", databaseType: .mysql, pluginDriver: mock
-        )
+        let generator = SchemaStatementGenerator(tableName: "users", pluginDriver: mock)
         let column = makeColumn()
         let stmts = try generator.generate(changes: [.addColumn(column)])
 
         #expect(stmts.count == 1)
         #expect(stmts[0].sql.contains("CUSTOM_SYNTAX"))
-        #expect(!stmts[0].sql.contains("ADD COLUMN"))
     }
 
     @Test("Modify column uses plugin SQL when provided")
@@ -212,9 +200,7 @@ struct SchemaStatementGeneratorPluginTests {
             "ALTER TABLE users CHANGE \(oldCol.name) TO \(newCol.name) PLUGIN_MODIFY"
         }
 
-        let generator = SchemaStatementGenerator(
-            tableName: "users", databaseType: .mysql, pluginDriver: mock
-        )
+        let generator = SchemaStatementGenerator(tableName: "users", pluginDriver: mock)
         let oldCol = makeColumn(name: "email")
         let newCol = makeColumn(name: "email_address")
         let stmts = try generator.generate(changes: [.modifyColumn(old: oldCol, new: newCol)])
@@ -230,9 +216,7 @@ struct SchemaStatementGeneratorPluginTests {
             "ALTER TABLE \(table) DROP \(colName) IF EXISTS"
         }
 
-        let generator = SchemaStatementGenerator(
-            tableName: "users", databaseType: .mysql, pluginDriver: mock
-        )
+        let generator = SchemaStatementGenerator(tableName: "users", pluginDriver: mock)
         let column = makeColumn()
         let stmts = try generator.generate(changes: [.deleteColumn(column)])
 
@@ -247,9 +231,7 @@ struct SchemaStatementGeneratorPluginTests {
             "CREATE INDEX \(idx.name) ON \(table) PLUGIN_INDEX"
         }
 
-        let generator = SchemaStatementGenerator(
-            tableName: "users", databaseType: .mysql, pluginDriver: mock
-        )
+        let generator = SchemaStatementGenerator(tableName: "users", pluginDriver: mock)
         let index = makeIndex()
         let stmts = try generator.generate(changes: [.addIndex(index)])
 
@@ -264,9 +246,7 @@ struct SchemaStatementGeneratorPluginTests {
             "DROP INDEX IF EXISTS \(indexName)"
         }
 
-        let generator = SchemaStatementGenerator(
-            tableName: "users", databaseType: .mysql, pluginDriver: mock
-        )
+        let generator = SchemaStatementGenerator(tableName: "users", pluginDriver: mock)
         let index = makeIndex()
         let stmts = try generator.generate(changes: [.deleteIndex(index)])
 
@@ -281,9 +261,7 @@ struct SchemaStatementGeneratorPluginTests {
             "ALTER TABLE \(table) ADD FK \(fk.name) PLUGIN_FK"
         }
 
-        let generator = SchemaStatementGenerator(
-            tableName: "users", databaseType: .mysql, pluginDriver: mock
-        )
+        let generator = SchemaStatementGenerator(tableName: "users", pluginDriver: mock)
         let fk = makeForeignKey()
         let stmts = try generator.generate(changes: [.addForeignKey(fk)])
 
@@ -298,9 +276,7 @@ struct SchemaStatementGeneratorPluginTests {
             "ALTER TABLE users DROP CONSTRAINT \(constraintName) PLUGIN_DROP_FK"
         }
 
-        let generator = SchemaStatementGenerator(
-            tableName: "users", databaseType: .mysql, pluginDriver: mock
-        )
+        let generator = SchemaStatementGenerator(tableName: "users", pluginDriver: mock)
         let fk = makeForeignKey()
         let stmts = try generator.generate(changes: [.deleteForeignKey(fk)])
 
@@ -318,9 +294,7 @@ struct SchemaStatementGeneratorPluginTests {
             ]
         }
 
-        let generator = SchemaStatementGenerator(
-            tableName: "users", databaseType: .mysql, pluginDriver: mock
-        )
+        let generator = SchemaStatementGenerator(tableName: "users", pluginDriver: mock)
         let stmts = try generator.generate(changes: [.modifyPrimaryKey(old: ["id"], new: ["id", "tenant_id"])])
 
         #expect(stmts.count == 1)
@@ -328,19 +302,17 @@ struct SchemaStatementGeneratorPluginTests {
         #expect(stmts[0].isDestructive)
     }
 
-    // MARK: - Mixed Override/Fallback
+    // MARK: - Mixed Override/Nil
 
-    @Test("Plugin overrides some operations while others fall back")
-    func mixedPluginAndFallback() throws {
+    @Test("Plugin overrides some operations while others are skipped")
+    func mixedPluginAndSkipped() throws {
         let mock = MockPluginDriver()
         mock.addColumnHandler = { _, col in
             "PLUGIN_ADD_COL \(col.name)"
         }
-        // dropColumnHandler is nil, so drop falls back to default
+        // dropColumnHandler is nil, so drop is skipped
 
-        let generator = SchemaStatementGenerator(
-            tableName: "users", databaseType: .mysql, pluginDriver: mock
-        )
+        let generator = SchemaStatementGenerator(tableName: "users", pluginDriver: mock)
 
         let addCol = makeColumn(name: "age", dataType: "INT")
         let dropCol = makeColumn(name: "old_field")
@@ -350,15 +322,176 @@ struct SchemaStatementGeneratorPluginTests {
             .deleteColumn(dropCol)
         ])
 
+        // Only the add column statement is generated (drop was skipped)
+        #expect(stmts.count == 1)
+        #expect(stmts[0].sql.contains("PLUGIN_ADD_COL"))
+    }
+
+    // MARK: - Modify Index/FK (drop+recreate via plugin)
+
+    @Test("Modify index generates drop and create via plugin")
+    func modifyIndexViaPlugin() throws {
+        let mock = MockPluginDriver()
+        mock.dropIndexHandler = { _, indexName in
+            "DROP INDEX \(indexName)"
+        }
+        mock.addIndexHandler = { table, idx in
+            "CREATE INDEX \(idx.name) ON \(table) (\(idx.columns.joined(separator: ", ")))"
+        }
+
+        let generator = SchemaStatementGenerator(tableName: "users", pluginDriver: mock)
+        let oldIndex = makeIndex(name: "idx_email", columns: ["email"])
+        let newIndex = makeIndex(name: "idx_email", columns: ["email", "name"], isUnique: true)
+        let stmts = try generator.generate(changes: [.modifyIndex(old: oldIndex, new: newIndex)])
+
+        #expect(stmts.count == 1)
+        #expect(stmts[0].sql.contains("DROP INDEX"))
+        #expect(stmts[0].sql.contains("CREATE INDEX"))
+    }
+
+    @Test("Modify index is skipped when drop returns nil")
+    func modifyIndexSkippedWhenDropNil() throws {
+        let mock = MockPluginDriver()
+        mock.addIndexHandler = { table, idx in
+            "CREATE INDEX \(idx.name) ON \(table)"
+        }
+        // dropIndexHandler is nil
+
+        let generator = SchemaStatementGenerator(tableName: "users", pluginDriver: mock)
+        let oldIndex = makeIndex(name: "idx_email")
+        let newIndex = makeIndex(name: "idx_email", columns: ["email", "name"])
+        let stmts = try generator.generate(changes: [.modifyIndex(old: oldIndex, new: newIndex)])
+
+        #expect(stmts.isEmpty)
+    }
+
+    @Test("Modify foreign key generates drop and create via plugin")
+    func modifyForeignKeyViaPlugin() throws {
+        let mock = MockPluginDriver()
+        mock.dropForeignKeyHandler = { _, name in
+            "ALTER TABLE users DROP CONSTRAINT \(name)"
+        }
+        mock.addForeignKeyHandler = { table, fk in
+            "ALTER TABLE \(table) ADD CONSTRAINT \(fk.name) FOREIGN KEY"
+        }
+
+        let generator = SchemaStatementGenerator(tableName: "users", pluginDriver: mock)
+        let oldFK = makeForeignKey(name: "fk_role")
+        let newFK = makeForeignKey(name: "fk_role", refColumns: ["role_id"])
+        let stmts = try generator.generate(changes: [.modifyForeignKey(old: oldFK, new: newFK)])
+
+        #expect(stmts.count == 1)
+        #expect(stmts[0].sql.contains("DROP CONSTRAINT"))
+        #expect(stmts[0].sql.contains("ADD CONSTRAINT"))
+    }
+
+    // MARK: - Dependency Ordering
+
+    @Test("Dependency ordering: FK drops before column drops")
+    func dependencyOrderingFKBeforeColumn() throws {
+        let mock = MockPluginDriver()
+        mock.dropColumnHandler = { table, colName in
+            "ALTER TABLE \(table) DROP COLUMN \(colName)"
+        }
+        mock.dropForeignKeyHandler = { _, name in
+            "ALTER TABLE users DROP FOREIGN KEY \(name)"
+        }
+
+        let generator = SchemaStatementGenerator(tableName: "users", pluginDriver: mock)
+        let column = makeColumn(name: "role_id")
+        let fk = makeForeignKey(name: "fk_role", columns: ["role_id"])
+        let stmts = try generator.generate(changes: [
+            .deleteColumn(column),
+            .deleteForeignKey(fk)
+        ])
+
         #expect(stmts.count == 2)
+        #expect(stmts[0].sql.contains("DROP FOREIGN KEY"))
+        #expect(stmts[1].sql.contains("DROP COLUMN"))
+    }
 
-        // Drop comes first due to dependency ordering
-        let dropStmt = stmts[0]
-        #expect(dropStmt.sql.contains("DROP COLUMN"))
-        #expect(!dropStmt.sql.contains("PLUGIN"))
+    @Test("All statements end with semicolon")
+    func allStatementsEndWithSemicolon() throws {
+        let mock = MockPluginDriver()
+        mock.addColumnHandler = { table, col in
+            "ALTER TABLE \(table) ADD COLUMN \(col.name) \(col.dataType)"
+        }
+        mock.addIndexHandler = { table, idx in
+            "CREATE INDEX \(idx.name) ON \(table)"
+        }
+        mock.addForeignKeyHandler = { table, fk in
+            "ALTER TABLE \(table) ADD CONSTRAINT \(fk.name) FOREIGN KEY"
+        }
 
-        // Add uses plugin override
-        let addStmt = stmts[1]
-        #expect(addStmt.sql.contains("PLUGIN_ADD_COL"))
+        let generator = SchemaStatementGenerator(tableName: "users", pluginDriver: mock)
+        let column = makeColumn(name: "field1")
+        let index = makeIndex(name: "idx_field1", columns: ["field1"])
+        let fk = makeForeignKey(name: "fk_field1", columns: ["field1"], refTable: "other", refColumns: ["id"])
+
+        let stmts = try generator.generate(changes: [
+            .addColumn(column),
+            .addIndex(index),
+            .addForeignKey(fk)
+        ])
+
+        for stmt in stmts {
+            #expect(stmt.sql.hasSuffix(";"))
+        }
+    }
+
+    @Test("Modify column with type change is destructive")
+    func modifyColumnTypeChangeDestructive() throws {
+        let mock = MockPluginDriver()
+        mock.modifyColumnHandler = { _, oldCol, newCol in
+            "ALTER TABLE users MODIFY COLUMN \(newCol.name) \(newCol.dataType)"
+        }
+
+        let generator = SchemaStatementGenerator(tableName: "users", pluginDriver: mock)
+        let oldCol = makeColumn(name: "count", dataType: "INT")
+        let newCol = makeColumn(name: "count", dataType: "BIGINT")
+        let stmts = try generator.generate(changes: [.modifyColumn(old: oldCol, new: newCol)])
+
+        #expect(stmts.count == 1)
+        #expect(stmts[0].isDestructive == true)
+    }
+
+    @Test("Add column is not destructive")
+    func addColumnNotDestructive() throws {
+        let mock = MockPluginDriver()
+        mock.addColumnHandler = { table, col in
+            "ALTER TABLE \(table) ADD COLUMN \(col.name) \(col.dataType)"
+        }
+
+        let generator = SchemaStatementGenerator(tableName: "users", pluginDriver: mock)
+        let column = makeColumn(name: "new_field")
+        let stmts = try generator.generate(changes: [.addColumn(column)])
+
+        #expect(stmts[0].isDestructive == false)
+    }
+
+    @Test("Modify primary key is destructive")
+    func modifyPrimaryKeyIsDestructive() throws {
+        let mock = MockPluginDriver()
+        mock.modifyPrimaryKeyHandler = { table, _, newCols in
+            [
+                "ALTER TABLE \(table) DROP PRIMARY KEY",
+                "ALTER TABLE \(table) ADD PRIMARY KEY (\(newCols.joined(separator: ", ")))"
+            ]
+        }
+
+        let generator = SchemaStatementGenerator(tableName: "users", pluginDriver: mock)
+        let stmts = try generator.generate(changes: [.modifyPrimaryKey(old: ["id"], new: ["id", "tenant_id"])])
+
+        #expect(stmts.count == 1)
+        #expect(stmts[0].isDestructive == true)
+    }
+
+    @Test("Empty changes produces empty result")
+    func emptyChanges() throws {
+        let mock = MockPluginDriver()
+        let generator = SchemaStatementGenerator(tableName: "users", pluginDriver: mock)
+        let stmts = try generator.generate(changes: [])
+
+        #expect(stmts.isEmpty)
     }
 }

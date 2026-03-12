@@ -679,26 +679,9 @@ final class MainContentCoordinator {
             return
         }
 
-        // Build database-specific EXPLAIN query via plugin, with fallback
-        let explainSQL: String
-        if let adapter = DatabaseManager.shared.driver(for: connectionId) as? PluginDriverAdapter,
-           let pluginExplain = adapter.buildExplainQuery(stmt) {
-            explainSQL = pluginExplain
-        } else {
-            switch connection.type {
-            case .mssql, .oracle:
-                return
-            case .sqlite:
-                explainSQL = "EXPLAIN QUERY PLAN \(stmt)"
-            case .mysql, .mariadb, .postgresql, .redshift, .duckdb:
-                explainSQL = "EXPLAIN \(stmt)"
-            case .mongodb:
-                explainSQL = Self.buildMongoExplain(for: stmt)
-            case .redis:
-                explainSQL = Self.buildRedisDebugCommand(for: stmt)
-            case .clickhouse:
-                return
-            }
+        guard let adapter = DatabaseManager.shared.driver(for: connectionId) as? PluginDriverAdapter,
+              let explainSQL = adapter.buildExplainQuery(stmt) else {
+            return
         }
 
         let level = connection.safeModeLevel

@@ -687,13 +687,12 @@ final class DatabaseManager {
             driver: driver
         )
 
-        // Extract plugin driver for DDL delegation (nil for non-plugin drivers)
-        let resolvedPluginDriver = (driver as? PluginDriverAdapter)?.schemaPluginDriver
+        guard let resolvedPluginDriver = (driver as? PluginDriverAdapter)?.schemaPluginDriver else {
+            throw DatabaseError.unsupportedOperation
+        }
 
-        // Generate SQL statements
         let generator = SchemaStatementGenerator(
             tableName: tableName,
-            databaseType: databaseType,
             primaryKeyConstraintName: pkConstraintName,
             pluginDriver: resolvedPluginDriver
         )

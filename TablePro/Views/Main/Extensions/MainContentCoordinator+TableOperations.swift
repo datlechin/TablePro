@@ -37,10 +37,7 @@ extension MainContentCoordinator {
         let sortedTruncates = truncates.sorted()
         let sortedDeletes = deletes.sorted()
 
-        // Check if any operation needs FK disabled (not applicable to PostgreSQL or MSSQL)
-        let fkApplicable = dbType != .postgresql && dbType != .clickhouse
-            && dbType != .mssql && dbType != .oracle && dbType != .duckdb
-        let needsDisableFK = includeFKHandling && fkApplicable && truncates.union(deletes).contains { tableName in
+        let needsDisableFK = includeFKHandling && truncates.union(deletes).contains { tableName in
             options[tableName]?.ignoreForeignKeys == true
         }
 
@@ -65,10 +62,13 @@ extension MainContentCoordinator {
         for tableName in sortedDeletes {
             let quotedName = dbType.quoteIdentifier(tableName)
             let tableOptions = options[tableName] ?? TableOperationOptions()
-            statements.append(dropTableStatement(
+            let stmt = dropTableStatement(
                 tableName: tableName, quotedName: quotedName,
                 isView: viewNames.contains(tableName), options: tableOptions, dbType: dbType
-            ))
+            )
+            if !stmt.isEmpty {
+                statements.append(stmt)
+            }
         }
 
         // FK re-enable must be OUTSIDE transaction to ensure it runs even on rollback
@@ -81,106 +81,47 @@ extension MainContentCoordinator {
 
     // MARK: - Foreign Key Handling
 
-    /// Returns SQL statements to disable foreign key checks for the database type.
-    /// Tries plugin-provided statements first, falls back to built-in switch.
-    /// - Note: PostgreSQL doesn't support globally disabling FK checks; use CASCADE instead.
     func fkDisableStatements(for dbType: DatabaseType) -> [String] {
-        if let adapter = currentPluginDriverAdapter,
-           let stmts = adapter.foreignKeyDisableStatements() {
-            return stmts
+        guard let adapter = currentPluginDriverAdapter,
+              let stmts = adapter.foreignKeyDisableStatements() else {
+            return []
         }
-        switch dbType {
-        case .mysql, .mariadb: return ["SET FOREIGN_KEY_CHECKS=0"]
-        case .postgresql, .redshift, .clickhouse, .mongodb, .redis, .mssql, .oracle, .duckdb: return []
-        case .sqlite: return ["PRAGMA foreign_keys = OFF"]
-        }
+        return stmts
     }
 
-    /// Returns SQL statements to re-enable foreign key checks for the database type.
-    /// Tries plugin-provided statements first, falls back to built-in switch.
     func fkEnableStatements(for dbType: DatabaseType) -> [String] {
-        if let adapter = currentPluginDriverAdapter,
-           let stmts = adapter.foreignKeyEnableStatements() {
-            return stmts
-        }
-        switch dbType {
-        case .mysql, .mariadb:
-            return ["SET FOREIGN_KEY_CHECKS=1"]
-        case .postgresql, .redshift, .clickhouse, .mongodb, .redis, .mssql, .oracle, .duckdb:
+        guard let adapter = currentPluginDriverAdapter,
+              let stmts = adapter.foreignKeyEnableStatements() else {
             return []
-        case .sqlite:
-            return ["PRAGMA foreign_keys = ON"]
         }
+        return stmts
     }
 
     // MARK: - Private SQL Builders
 
-    /// Generates TRUNCATE/DELETE statements for a table.
-    /// Tries plugin-provided statements first, falls back to built-in switch.
-    /// - Note: SQLite uses DELETE and resets auto-increment via sqlite_sequence.
     private func truncateStatements(
         tableName: String, quotedName: String, options: TableOperationOptions, dbType: DatabaseType
     ) -> [String] {
-        if let adapter = currentPluginDriverAdapter,
-           let stmts = adapter.truncateTableStatements(
-               table: tableName, schema: nil, cascade: options.cascade
-           ) {
-            return stmts
+        guard let adapter = currentPluginDriverAdapter,
+              let stmts = adapter.truncateTableStatements(
+                  table: tableName, schema: nil, cascade: options.cascade
+              ) else {
+            return []
         }
-        switch dbType {
-        case .mysql, .mariadb, .clickhouse, .duckdb:
-            return ["TRUNCATE TABLE \(quotedName)"]
-        case .postgresql, .redshift:
-            let cascade = options.cascade ? " CASCADE" : ""
-            return ["TRUNCATE TABLE \(quotedName)\(cascade)"]
-        case .mssql, .oracle:
-            return ["TRUNCATE TABLE \(quotedName)"]
-        case .sqlite:
-            // DELETE FROM + reset auto-increment counter for true TRUNCATE semantics.
-            // Note: quotedName uses backticks (via quoteIdentifier) for SQL identifiers,
-            // while escapedName uses single-quote escaping for string literals in the
-            // sqlite_sequence query. These are different SQL quoting mechanisms for
-            // different purposes (identifier vs string literal).
-            let escapedName = tableName.replacingOccurrences(of: "'", with: "''")
-            return [
-                "DELETE FROM \(quotedName)",
-                // sqlite_sequence may not exist if no table has AUTOINCREMENT.
-                // This DELETE will succeed silently if the table isn't in sqlite_sequence.
-                "DELETE FROM sqlite_sequence WHERE name = '\(escapedName)'"
-            ]
-        case .mongodb:
-            let escaped = tableName.replacingOccurrences(of: "\\", with: "\\\\")
-                .replacingOccurrences(of: "\"", with: "\\\"")
-            return ["db[\"\(escaped)\"].deleteMany({})"]
-        case .redis:
-            return ["FLUSHDB"]
-        }
+        return stmts
     }
 
-    /// Generates DROP TABLE/VIEW statement with optional CASCADE.
-    /// Tries plugin-provided statement first, falls back to built-in switch.
     private func dropTableStatement(
         tableName: String, quotedName: String, isView: Bool,
         options: TableOperationOptions, dbType: DatabaseType
     ) -> String {
         let keyword = isView ? "VIEW" : "TABLE"
-        if let adapter = currentPluginDriverAdapter,
-           let stmt = adapter.dropObjectStatement(
-               name: tableName, objectType: keyword, schema: nil, cascade: options.cascade
-           ) {
-            return stmt
+        guard let adapter = currentPluginDriverAdapter,
+              let stmt = adapter.dropObjectStatement(
+                  name: tableName, objectType: keyword, schema: nil, cascade: options.cascade
+              ) else {
+            return ""
         }
-        switch dbType {
-        case .postgresql, .redshift:
-            return "DROP \(keyword) \(quotedName)\(options.cascade ? " CASCADE" : "")"
-        case .mysql, .mariadb, .clickhouse, .sqlite, .mssql, .oracle, .duckdb:
-            return "DROP \(keyword) \(quotedName)"
-        case .mongodb:
-            let escaped = tableName.replacingOccurrences(of: "\\", with: "\\\\")
-                .replacingOccurrences(of: "\"", with: "\\\"")
-            return "db[\"\(escaped)\"].drop()"
-        case .redis:
-            return "DEL \(tableName)"
-        }
+        return stmt
     }
 }

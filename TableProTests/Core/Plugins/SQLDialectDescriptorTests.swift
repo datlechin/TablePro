@@ -80,26 +80,4 @@ final class SQLDialectDescriptorTests: XCTestCase {
         XCTAssertTrue(adapter.isDataType("int"))
         XCTAssertFalse(adapter.isDataType("NONEXISTENT"))
     }
-
-    // MARK: - Built-in Dialect Fallback
-
-    @MainActor
-    func testBuiltInDialectFallback() {
-        let mysqlDialect = SQLDialectFactory.builtInDialect(for: .mysql)
-        XCTAssertEqual(mysqlDialect.identifierQuote, "`")
-        XCTAssertFalse(mysqlDialect.keywords.isEmpty)
-        XCTAssertFalse(mysqlDialect.functions.isEmpty)
-        XCTAssertFalse(mysqlDialect.dataTypes.isEmpty)
-
-        let pgDialect = SQLDialectFactory.builtInDialect(for: .postgresql)
-        XCTAssertEqual(pgDialect.identifierQuote, "\"")
-        XCTAssertTrue(pgDialect.keywords.contains("ILIKE"))
-
-        let mssqlDialect = SQLDialectFactory.builtInDialect(for: .mssql)
-        XCTAssertEqual(mssqlDialect.identifierQuote, "[")
-
-        let oracleDialect = SQLDialectFactory.builtInDialect(for: .oracle)
-        XCTAssertEqual(oracleDialect.identifierQuote, "\"")
-        XCTAssertTrue(oracleDialect.keywords.contains("ROWNUM"))
-    }
 }

@@ -533,10 +533,14 @@ struct TableStructureView: View {
             return
         }
 
-        let pluginDriver = (DatabaseManager.shared.driver(for: connection.id) as? PluginDriverAdapter)?.schemaPluginDriver
+        guard let pluginDriver = (DatabaseManager.shared.driver(for: connection.id) as? PluginDriverAdapter)?.schemaPluginDriver else {
+            toolbarState.previewStatements = ["-- Error: no plugin driver available for DDL generation"]
+            toolbarState.showSQLReviewPopover = true
+            return
+        }
+
         let generator = SchemaStatementGenerator(
             tableName: tableName,
-            databaseType: getDatabaseType(),
             pluginDriver: pluginDriver
         )
 
