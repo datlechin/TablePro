@@ -525,6 +525,12 @@ final class ClickHousePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         lock.unlock()
     }
 
+    // MARK: - EXPLAIN
+
+    func buildExplainQuery(_ sql: String) -> String? {
+        "EXPLAIN \(sql)"
+    }
+
     // MARK: - Kill Query
 
     private func killQuery(queryId: String) {

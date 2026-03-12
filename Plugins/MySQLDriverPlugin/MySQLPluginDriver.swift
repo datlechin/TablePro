@@ -577,6 +577,12 @@ final class MySQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         }
     }
 
+    // MARK: - EXPLAIN
+
+    func buildExplainQuery(_ sql: String) -> String? {
+        "EXPLAIN \(sql)"
+    }
+
     // MARK: - Private Helpers
 
     private func extractTableName(from query: String) -> String? {

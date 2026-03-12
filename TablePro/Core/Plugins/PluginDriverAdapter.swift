@@ -273,6 +273,12 @@ final class PluginDriverAdapter: DatabaseDriver, SchemaSwitchable {
         try await pluginDriver.switchDatabase(to: database)
     }
 
+    // MARK: - EXPLAIN
+
+    func buildExplainQuery(_ sql: String) -> String? {
+        pluginDriver.buildExplainQuery(sql)
+    }
+
     // MARK: - Result Mapping
 
     private func mapQueryResult(_ pluginResult: PluginQueryResult) -> QueryResult {

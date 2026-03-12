@@ -764,6 +764,12 @@ final class DuckDBPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         throw DuckDBPluginError.unsupportedOperation
     }
 
+    // MARK: - EXPLAIN
+
+    func buildExplainQuery(_ sql: String) -> String? {
+        "EXPLAIN \(sql)"
+    }
+
     // MARK: - Private Helpers
 
     nonisolated private func setInterruptHandle(_ handle: duckdb_connection?) {
