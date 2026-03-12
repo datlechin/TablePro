@@ -720,6 +720,201 @@ final class OraclePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         _currentSchema = schema
     }
 
+    // MARK: - Query Building
+
+    func buildBrowseQuery(
+        table: String,
+        sortColumns: [(columnIndex: Int, ascending: Bool)],
+        columns: [String],
+        limit: Int,
+        offset: Int
+    ) -> String? {
+        let quotedTable = oracleQuoteIdentifier(table)
+        var query = "SELECT * FROM \(quotedTable)"
+        let orderBy = oracleBuildOrderByClause(sortColumns: sortColumns, columns: columns)
+            ?? "ORDER BY 1"
+        query += " \(orderBy) OFFSET \(offset) ROWS FETCH NEXT \(limit) ROWS ONLY"
+        return query
+    }
+
+    func buildFilteredQuery(
+        table: String,
+        filters: [(column: String, op: String, value: String)],
+        logicMode: String,
+        sortColumns: [(columnIndex: Int, ascending: Bool)],
+        columns: [String],
+        limit: Int,
+        offset: Int
+    ) -> String? {
+        let quotedTable = oracleQuoteIdentifier(table)
+        var query = "SELECT * FROM \(quotedTable)"
+        let whereClause = oracleBuildWhereClause(filters: filters, logicMode: logicMode)
+        if !whereClause.isEmpty {
+            query += " WHERE \(whereClause)"
+        }
+        let orderBy = oracleBuildOrderByClause(sortColumns: sortColumns, columns: columns)
+            ?? "ORDER BY 1"
+        query += " \(orderBy) OFFSET \(offset) ROWS FETCH NEXT \(limit) ROWS ONLY"
+        return query
+    }
+
+    func buildQuickSearchQuery(
+        table: String,
+        searchText: String,
+        columns: [String],
+        sortColumns: [(columnIndex: Int, ascending: Bool)],
+        limit: Int,
+        offset: Int
+    ) -> String? {
+        let quotedTable = oracleQuoteIdentifier(table)
+        var query = "SELECT * FROM \(quotedTable)"
+        let escapedSearch = oracleEscapeForLike(searchText)
+        let conditions = columns.map { column -> String in
+            let quotedColumn = oracleQuoteIdentifier(column)
+            return "CAST(\(quotedColumn) AS VARCHAR2(4000)) LIKE '%\(escapedSearch)%' ESCAPE '\\'"
+        }
+        if !conditions.isEmpty {
+            query += " WHERE (" + conditions.joined(separator: " OR ") + ")"
+        }
+        let orderBy = oracleBuildOrderByClause(sortColumns: sortColumns, columns: columns)
+            ?? "ORDER BY 1"
+        query += " \(orderBy) OFFSET \(offset) ROWS FETCH NEXT \(limit) ROWS ONLY"
+        return query
+    }
+
+    func buildCombinedQuery(
+        table: String,
+        filters: [(column: String, op: String, value: String)],
+        logicMode: String,
+        searchText: String,
+        searchColumns: [String],
+        sortColumns: [(columnIndex: Int, ascending: Bool)],
+        columns: [String],
+        limit: Int,
+        offset: Int
+    ) -> String? {
+        let quotedTable = oracleQuoteIdentifier(table)
+        var query = "SELECT * FROM \(quotedTable)"
+        let filterConditions = oracleBuildWhereClause(filters: filters, logicMode: logicMode)
+        let escapedSearch = oracleEscapeForLike(searchText)
+        let searchConditions = searchColumns.map { column -> String in
+            let quotedColumn = oracleQuoteIdentifier(column)
+            return "CAST(\(quotedColumn) AS VARCHAR2(4000)) LIKE '%\(escapedSearch)%' ESCAPE '\\'"
+        }
+        let searchClause = searchConditions.isEmpty
+            ? "" : "(" + searchConditions.joined(separator: " OR ") + ")"
+        var whereParts: [String] = []
+        if !filterConditions.isEmpty {
+            whereParts.append("(\(filterConditions))")
+        }
+        if !searchClause.isEmpty {
+            whereParts.append(searchClause)
+        }
+        if !whereParts.isEmpty {
+            query += " WHERE " + whereParts.joined(separator: " AND ")
+        }
+        let orderBy = oracleBuildOrderByClause(sortColumns: sortColumns, columns: columns)
+            ?? "ORDER BY 1"
+        query += " \(orderBy) OFFSET \(offset) ROWS FETCH NEXT \(limit) ROWS ONLY"
+        return query
+    }
+
+    // MARK: - Query Building Helpers
+
+    private func oracleQuoteIdentifier(_ identifier: String) -> String {
+        "\"\(identifier.replacingOccurrences(of: "\"", with: "\"\""))\""
+    }
+
+    private func oracleBuildOrderByClause(
+        sortColumns: [(columnIndex: Int, ascending: Bool)],
+        columns: [String]
+    ) -> String? {
+        let parts = sortColumns.compactMap { sortCol -> String? in
+            guard sortCol.columnIndex >= 0, sortCol.columnIndex < columns.count else { return nil }
+            let columnName = columns[sortCol.columnIndex]
+            let direction = sortCol.ascending ? "ASC" : "DESC"
+            let quotedColumn = oracleQuoteIdentifier(columnName)
+            return "\(quotedColumn) \(direction)"
+        }
+        guard !parts.isEmpty else { return nil }
+        return "ORDER BY " + parts.joined(separator: ", ")
+    }
+
+    private func oracleEscapeForLike(_ text: String) -> String {
+        text
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "%", with: "\\%")
+            .replacingOccurrences(of: "_", with: "\\_")
+            .replacingOccurrences(of: "'", with: "''")
+    }
+
+    private func oracleEscapeValue(_ value: String) -> String {
+        let trimmed = value.trimmingCharacters(in: .whitespaces)
+        if trimmed.caseInsensitiveCompare("NULL") == .orderedSame { return "NULL" }
+        if Int(trimmed) != nil || Double(trimmed) != nil { return trimmed }
+        return "'\(trimmed.replacingOccurrences(of: "'", with: "''"))'"
+    }
+
+    private func oracleBuildWhereClause(
+        filters: [(column: String, op: String, value: String)],
+        logicMode: String
+    ) -> String {
+        let conditions = filters.compactMap { filter -> String? in
+            oracleBuildFilterCondition(column: filter.column, op: filter.op, value: filter.value)
+        }
+        guard !conditions.isEmpty else { return "" }
+        let separator = logicMode == "and" ? " AND " : " OR "
+        return conditions.joined(separator: separator)
+    }
+
+    private func oracleBuildFilterCondition(column: String, op: String, value: String) -> String? {
+        let quoted = oracleQuoteIdentifier(column)
+        switch op {
+        case "=": return "\(quoted) = \(oracleEscapeValue(value))"
+        case "!=": return "\(quoted) != \(oracleEscapeValue(value))"
+        case ">": return "\(quoted) > \(oracleEscapeValue(value))"
+        case ">=": return "\(quoted) >= \(oracleEscapeValue(value))"
+        case "<": return "\(quoted) < \(oracleEscapeValue(value))"
+        case "<=": return "\(quoted) <= \(oracleEscapeValue(value))"
+        case "IS NULL": return "\(quoted) IS NULL"
+        case "IS NOT NULL": return "\(quoted) IS NOT NULL"
+        case "IS EMPTY": return "(\(quoted) IS NULL OR \(quoted) = '')"
+        case "IS NOT EMPTY": return "(\(quoted) IS NOT NULL AND \(quoted) != '')"
+        case "CONTAINS":
+            let escaped = oracleEscapeForLike(value)
+            return "\(quoted) LIKE '%\(escaped)%' ESCAPE '\\'"
+        case "NOT CONTAINS":
+            let escaped = oracleEscapeForLike(value)
+            return "\(quoted) NOT LIKE '%\(escaped)%' ESCAPE '\\'"
+        case "STARTS WITH":
+            let escaped = oracleEscapeForLike(value)
+            return "\(quoted) LIKE '\(escaped)%' ESCAPE '\\'"
+        case "ENDS WITH":
+            let escaped = oracleEscapeForLike(value)
+            return "\(quoted) LIKE '%\(escaped)' ESCAPE '\\'"
+        case "IN":
+            let values = value.split(separator: ",")
+                .map { oracleEscapeValue($0.trimmingCharacters(in: .whitespaces)) }
+                .joined(separator: ", ")
+            return values.isEmpty ? nil : "\(quoted) IN (\(values))"
+        case "NOT IN":
+            let values = value.split(separator: ",")
+                .map { oracleEscapeValue($0.trimmingCharacters(in: .whitespaces)) }
+                .joined(separator: ", ")
+            return values.isEmpty ? nil : "\(quoted) NOT IN (\(values))"
+        case "BETWEEN":
+            let parts = value.split(separator: ",", maxSplits: 1)
+            guard parts.count == 2 else { return nil }
+            let v1 = oracleEscapeValue(parts[0].trimmingCharacters(in: .whitespaces))
+            let v2 = oracleEscapeValue(parts[1].trimmingCharacters(in: .whitespaces))
+            return "\(quoted) BETWEEN \(v1) AND \(v2)"
+        case "REGEX":
+            let escaped = value.replacingOccurrences(of: "'", with: "''")
+            return "\(quoted) LIKE '%\(escaped)%'"
+        default: return nil
+        }
+    }
+
     // MARK: - Private Helpers
 
     private func buildOracleFullType(

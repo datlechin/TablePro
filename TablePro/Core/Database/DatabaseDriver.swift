@@ -138,8 +138,8 @@ protocol DatabaseDriver: AnyObject {
     /// Rollback the current transaction
     func rollbackTransaction() async throws
 
-    /// Access to the underlying plugin driver for NoSQL query dispatch
-    var noSqlPluginDriver: (any PluginDatabaseDriver)? { get }
+    /// Access to the underlying plugin driver for query building dispatch
+    var queryBuildingPluginDriver: (any PluginDatabaseDriver)? { get }
 }
 
 // MARK: - Schema Switching
@@ -158,7 +158,7 @@ extension DatabaseDriver {
     /// Override in drivers that support version querying
     var serverVersion: String? { nil }
 
-    var noSqlPluginDriver: (any PluginDatabaseDriver)? { nil }
+    var queryBuildingPluginDriver: (any PluginDatabaseDriver)? { nil }
 
     func testConnection() async throws -> Bool {
         try await connect()

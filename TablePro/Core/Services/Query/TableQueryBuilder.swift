@@ -44,7 +44,7 @@ struct TableQueryBuilder {
         limit: Int = 200,
         offset: Int = 0
     ) -> String {
-        // Try plugin dispatch first (handles MongoDB, Redis, and any future NoSQL plugins)
+        // Try plugin dispatch first (handles plugins with custom query building)
         if let pluginDriver {
             let sortCols = sortColumnsAsTuples(sortState)
             if let result = pluginDriver.buildBrowseQuery(
@@ -53,20 +53,6 @@ struct TableQueryBuilder {
             ) {
                 return result
             }
-        }
-
-        if databaseType == .mssql {
-            return buildMSSQLBaseQuery(
-                tableName: tableName, sortState: sortState,
-                columns: columns, limit: limit, offset: offset
-            )
-        }
-
-        if databaseType == .oracle {
-            return buildOracleBaseQuery(
-                tableName: tableName, sortState: sortState,
-                columns: columns, limit: limit, offset: offset
-            )
         }
 
         let quotedTable = databaseType.quoteIdentifier(tableName)
@@ -100,7 +86,7 @@ struct TableQueryBuilder {
         limit: Int = 200,
         offset: Int = 0
     ) -> String {
-        // Try plugin dispatch first (handles MongoDB, Redis, and any future NoSQL plugins)
+        // Try plugin dispatch first (handles plugins with custom query building)
         if let pluginDriver {
             let sortCols = sortColumnsAsTuples(sortState)
             let filterTuples = filters
@@ -113,30 +99,6 @@ struct TableQueryBuilder {
             ) {
                 return result
             }
-        }
-
-        if databaseType == .mssql {
-            return buildMSSQLFilteredQuery(
-                tableName: tableName,
-                filters: filters,
-                logicMode: logicMode,
-                sortState: sortState,
-                columns: columns,
-                limit: limit,
-                offset: offset
-            )
-        }
-
-        if databaseType == .oracle {
-            return buildOracleFilteredQuery(
-                tableName: tableName,
-                filters: filters,
-                logicMode: logicMode,
-                sortState: sortState,
-                columns: columns,
-                limit: limit,
-                offset: offset
-            )
         }
 
         let quotedTable = databaseType.quoteIdentifier(tableName)
@@ -175,7 +137,7 @@ struct TableQueryBuilder {
         limit: Int = 200,
         offset: Int = 0
     ) -> String {
-        // Try plugin dispatch first (handles MongoDB, Redis, and any future NoSQL plugins)
+        // Try plugin dispatch first (handles plugins with custom query building)
         if let pluginDriver {
             let sortCols = sortColumnsAsTuples(sortState)
             if let result = pluginDriver.buildQuickSearchQuery(
@@ -184,20 +146,6 @@ struct TableQueryBuilder {
             ) {
                 return result
             }
-        }
-
-        if databaseType == .mssql {
-            return buildMSSQLQuickSearchQuery(
-                tableName: tableName, searchText: searchText, columns: columns,
-                sortState: sortState, limit: limit, offset: offset
-            )
-        }
-
-        if databaseType == .oracle {
-            return buildOracleQuickSearchQuery(
-                tableName: tableName, searchText: searchText, columns: columns,
-                sortState: sortState, limit: limit, offset: offset
-            )
         }
 
         let quotedTable = databaseType.quoteIdentifier(tableName)
@@ -246,7 +194,7 @@ struct TableQueryBuilder {
         limit: Int = 200,
         offset: Int = 0
     ) -> String {
-        // Try plugin dispatch first (handles MongoDB, Redis, and any future NoSQL plugins)
+        // Try plugin dispatch first (handles plugins with custom query building)
         if let pluginDriver {
             let sortCols = sortColumnsAsTuples(sortState)
             let filterTuples = filters
@@ -260,22 +208,6 @@ struct TableQueryBuilder {
             ) {
                 return result
             }
-        }
-
-        if databaseType == .mssql {
-            return buildMSSQLCombinedQuery(
-                tableName: tableName, filters: filters, logicMode: logicMode,
-                searchText: searchText, searchColumns: searchColumns,
-                sortState: sortState, columns: columns, limit: limit, offset: offset
-            )
-        }
-
-        if databaseType == .oracle {
-            return buildOracleCombinedQuery(
-                tableName: tableName, filters: filters, logicMode: logicMode,
-                searchText: searchText, searchColumns: searchColumns,
-                sortState: sortState, columns: columns, limit: limit, offset: offset
-            )
         }
 
         let quotedTable = databaseType.quoteIdentifier(tableName)
@@ -489,205 +421,5 @@ struct TableQueryBuilder {
         case .oracle:
             return "CAST(\(column) AS VARCHAR2(4000)) LIKE '%\(searchText)%' ESCAPE '\\'"
         }
-    }
-
-    // MARK: - MSSQL Query Helpers
-
-    private func buildMSSQLBaseQuery(
-        tableName: String,
-        sortState: SortState?,
-        columns: [String],
-        limit: Int,
-        offset: Int
-    ) -> String {
-        let quotedTable = databaseType.quoteIdentifier(tableName)
-        var query = "SELECT * FROM \(quotedTable)"
-        let orderBy = buildOrderByClause(sortState: sortState, columns: columns)
-            ?? "ORDER BY (SELECT NULL)"
-        query += " \(orderBy) OFFSET \(offset) ROWS FETCH NEXT \(limit) ROWS ONLY"
-        return query
-    }
-
-    private func buildMSSQLFilteredQuery(
-        tableName: String,
-        filters: [TableFilter],
-        logicMode: FilterLogicMode,
-        sortState: SortState?,
-        columns: [String],
-        limit: Int,
-        offset: Int
-    ) -> String {
-        let quotedTable = databaseType.quoteIdentifier(tableName)
-        var query = "SELECT * FROM \(quotedTable)"
-        let generator = FilterSQLGenerator(databaseType: databaseType)
-        let whereClause = generator.generateWhereClause(from: filters, logicMode: logicMode)
-        if !whereClause.isEmpty {
-            query += " \(whereClause)"
-        }
-        let orderBy = buildOrderByClause(sortState: sortState, columns: columns)
-            ?? "ORDER BY (SELECT NULL)"
-        query += " \(orderBy) OFFSET \(offset) ROWS FETCH NEXT \(limit) ROWS ONLY"
-        return query
-    }
-
-    private func buildMSSQLQuickSearchQuery(
-        tableName: String,
-        searchText: String,
-        columns: [String],
-        sortState: SortState?,
-        limit: Int,
-        offset: Int
-    ) -> String {
-        let quotedTable = databaseType.quoteIdentifier(tableName)
-        var query = "SELECT * FROM \(quotedTable)"
-        let escapedSearch = escapeForLike(searchText)
-        let conditions = columns.map { column -> String in
-            let quotedColumn = databaseType.quoteIdentifier(column)
-            return buildLikeCondition(column: quotedColumn, searchText: escapedSearch)
-        }
-        if !conditions.isEmpty {
-            query += " WHERE (" + conditions.joined(separator: " OR ") + ")"
-        }
-        let orderBy = buildOrderByClause(sortState: sortState, columns: columns)
-            ?? "ORDER BY (SELECT NULL)"
-        query += " \(orderBy) OFFSET \(offset) ROWS FETCH NEXT \(limit) ROWS ONLY"
-        return query
-    }
-
-    private func buildMSSQLCombinedQuery(
-        tableName: String,
-        filters: [TableFilter],
-        logicMode: FilterLogicMode,
-        searchText: String,
-        searchColumns: [String],
-        sortState: SortState?,
-        columns: [String],
-        limit: Int,
-        offset: Int
-    ) -> String {
-        let quotedTable = databaseType.quoteIdentifier(tableName)
-        var query = "SELECT * FROM \(quotedTable)"
-        let generator = FilterSQLGenerator(databaseType: databaseType)
-        let filterConditions = generator.generateConditions(from: filters, logicMode: logicMode)
-        let escapedSearch = escapeForLike(searchText)
-        let searchConditions = searchColumns.map { column -> String in
-            let quotedColumn = databaseType.quoteIdentifier(column)
-            return buildLikeCondition(column: quotedColumn, searchText: escapedSearch)
-        }
-        let searchClause = searchConditions.isEmpty ? "" : "(" + searchConditions.joined(separator: " OR ") + ")"
-        var whereParts: [String] = []
-        if !filterConditions.isEmpty {
-            whereParts.append("(\(filterConditions))")
-        }
-        if !searchClause.isEmpty {
-            whereParts.append(searchClause)
-        }
-        if !whereParts.isEmpty {
-            query += " WHERE " + whereParts.joined(separator: " AND ")
-        }
-        let orderBy = buildOrderByClause(sortState: sortState, columns: columns)
-            ?? "ORDER BY (SELECT NULL)"
-        query += " \(orderBy) OFFSET \(offset) ROWS FETCH NEXT \(limit) ROWS ONLY"
-        return query
-    }
-
-    // MARK: - Oracle Query Helpers
-
-    private func buildOracleBaseQuery(
-        tableName: String,
-        sortState: SortState?,
-        columns: [String],
-        limit: Int,
-        offset: Int
-    ) -> String {
-        let quotedTable = databaseType.quoteIdentifier(tableName)
-        var query = "SELECT * FROM \(quotedTable)"
-        let orderBy = buildOrderByClause(sortState: sortState, columns: columns)
-            ?? "ORDER BY 1"
-        query += " \(orderBy) OFFSET \(offset) ROWS FETCH NEXT \(limit) ROWS ONLY"
-        return query
-    }
-
-    private func buildOracleFilteredQuery(
-        tableName: String,
-        filters: [TableFilter],
-        logicMode: FilterLogicMode,
-        sortState: SortState?,
-        columns: [String],
-        limit: Int,
-        offset: Int
-    ) -> String {
-        let quotedTable = databaseType.quoteIdentifier(tableName)
-        var query = "SELECT * FROM \(quotedTable)"
-        let generator = FilterSQLGenerator(databaseType: databaseType)
-        let whereClause = generator.generateWhereClause(from: filters, logicMode: logicMode)
-        if !whereClause.isEmpty {
-            query += " \(whereClause)"
-        }
-        let orderBy = buildOrderByClause(sortState: sortState, columns: columns)
-            ?? "ORDER BY 1"
-        query += " \(orderBy) OFFSET \(offset) ROWS FETCH NEXT \(limit) ROWS ONLY"
-        return query
-    }
-
-    private func buildOracleQuickSearchQuery(
-        tableName: String,
-        searchText: String,
-        columns: [String],
-        sortState: SortState?,
-        limit: Int,
-        offset: Int
-    ) -> String {
-        let quotedTable = databaseType.quoteIdentifier(tableName)
-        var query = "SELECT * FROM \(quotedTable)"
-        let escapedSearch = escapeForLike(searchText)
-        let conditions = columns.map { column -> String in
-            let quotedColumn = databaseType.quoteIdentifier(column)
-            return buildLikeCondition(column: quotedColumn, searchText: escapedSearch)
-        }
-        if !conditions.isEmpty {
-            query += " WHERE (" + conditions.joined(separator: " OR ") + ")"
-        }
-        let orderBy = buildOrderByClause(sortState: sortState, columns: columns)
-            ?? "ORDER BY 1"
-        query += " \(orderBy) OFFSET \(offset) ROWS FETCH NEXT \(limit) ROWS ONLY"
-        return query
-    }
-
-    private func buildOracleCombinedQuery(
-        tableName: String,
-        filters: [TableFilter],
-        logicMode: FilterLogicMode,
-        searchText: String,
-        searchColumns: [String],
-        sortState: SortState?,
-        columns: [String],
-        limit: Int,
-        offset: Int
-    ) -> String {
-        let quotedTable = databaseType.quoteIdentifier(tableName)
-        var query = "SELECT * FROM \(quotedTable)"
-        let generator = FilterSQLGenerator(databaseType: databaseType)
-        let filterConditions = generator.generateConditions(from: filters, logicMode: logicMode)
-        let escapedSearch = escapeForLike(searchText)
-        let searchConditions = searchColumns.map { column -> String in
-            let quotedColumn = databaseType.quoteIdentifier(column)
-            return buildLikeCondition(column: quotedColumn, searchText: escapedSearch)
-        }
-        let searchClause = searchConditions.isEmpty ? "" : "(" + searchConditions.joined(separator: " OR ") + ")"
-        var whereParts: [String] = []
-        if !filterConditions.isEmpty {
-            whereParts.append("(\(filterConditions))")
-        }
-        if !searchClause.isEmpty {
-            whereParts.append(searchClause)
-        }
-        if !whereParts.isEmpty {
-            query += " WHERE " + whereParts.joined(separator: " AND ")
-        }
-        let orderBy = buildOrderByClause(sortState: sortState, columns: columns)
-            ?? "ORDER BY 1"
-        query += " \(orderBy) OFFSET \(offset) ROWS FETCH NEXT \(limit) ROWS ONLY"
-        return query
     }
 }

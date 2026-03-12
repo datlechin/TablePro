@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ParameterStyle` enum in TableProPluginKit: plugins declare `?` or `$1` placeholder style via `parameterStyle` property on `PluginDatabaseDriver`
 - DML statement generation in ClickHouse, MSSQL, and Oracle plugins via `generateStatements()` for database-specific UPDATE/DELETE syntax
 
+### Changed
+
+- Moved MSSQL and Oracle pagination query building (`OFFSET...FETCH NEXT`) from `TableQueryBuilder` into their respective plugin drivers via `buildBrowseQuery`/`buildFilteredQuery`/`buildQuickSearchQuery`/`buildCombinedQuery` hooks
+
 ### Fixed
 
 - Plugin icon rendering now supports custom asset images (e.g., duckdb-icon) alongside SF Symbols in Installed and Browse tabs
