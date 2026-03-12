@@ -91,8 +91,7 @@ struct SQLStatementGenerator {
             }
         }
 
-        // Generate individual UPDATE statements with LIMIT 1 (safer than batched CASE/WHEN)
-        // This prevents accidentally updating multiple rows with the same value
+        // Generate individual UPDATE statements (safer than batched CASE/WHEN)
         if !updateChanges.isEmpty {
             for change in updateChanges {
                 if let stmt = generateUpdateSQL(for: change) {
@@ -120,7 +119,6 @@ struct SQLStatementGenerator {
         return statements
     }
 
-    /// Get placeholder syntax based on the driver's parameter style
     private func placeholder(at index: Int) -> String {
         switch parameterStyle {
         case .dollar:
@@ -284,16 +282,8 @@ struct SQLStatementGenerator {
             parameters.append(pkValue)
             let whereClause =
                 "\(databaseType.quoteIdentifier(pkColumn)) = \(placeholder(at: parameters.count - 1))"
-            let sql: String
-            if databaseType == .clickhouse {
-                sql =
-                    "ALTER TABLE \(databaseType.quoteIdentifier(tableName)) UPDATE \(setClauses) WHERE \(whereClause)"
-            } else {
-                let limitClause =
-                    (databaseType == .mysql || databaseType == .mariadb) ? " LIMIT 1" : ""
-                sql =
-                    "UPDATE \(databaseType.quoteIdentifier(tableName)) SET \(setClauses) WHERE \(whereClause)\(limitClause)"
-            }
+            let sql =
+                "UPDATE \(databaseType.quoteIdentifier(tableName)) SET \(setClauses) WHERE \(whereClause)"
             return ParameterizedStatement(sql: sql, parameters: parameters)
         } else {
             guard let originalRow = change.originalRow else {
@@ -319,25 +309,8 @@ struct SQLStatementGenerator {
             guard !conditions.isEmpty else { return nil }
 
             let whereClause = conditions.joined(separator: " AND ")
-
-            let sql: String
-            switch databaseType {
-            case .mysql, .mariadb, .sqlite:
-                sql =
-                    "UPDATE \(databaseType.quoteIdentifier(tableName)) SET \(setClauses) WHERE \(whereClause) LIMIT 1"
-            case .mssql:
-                sql =
-                    "UPDATE TOP (1) \(databaseType.quoteIdentifier(tableName)) SET \(setClauses) WHERE \(whereClause)"
-            case .oracle:
-                sql =
-                    "UPDATE \(databaseType.quoteIdentifier(tableName)) SET \(setClauses) WHERE \(whereClause) AND ROWNUM = 1"
-            case .clickhouse:
-                sql =
-                    "ALTER TABLE \(databaseType.quoteIdentifier(tableName)) UPDATE \(setClauses) WHERE \(whereClause)"
-            case .postgresql, .redshift, .duckdb, .mongodb, .redis:
-                sql =
-                    "UPDATE \(databaseType.quoteIdentifier(tableName)) SET \(setClauses) WHERE \(whereClause)"
-            }
+            let sql =
+                "UPDATE \(databaseType.quoteIdentifier(tableName)) SET \(setClauses) WHERE \(whereClause)"
 
             return ParameterizedStatement(sql: sql, parameters: parameters)
         }
@@ -369,15 +342,8 @@ struct SQLStatementGenerator {
 
             guard !conditions.isEmpty else { return nil }
 
-            // Combine all conditions with OR
             let whereClause = conditions.joined(separator: " OR ")
-            let sql: String
-            if databaseType == .clickhouse {
-                sql =
-                    "ALTER TABLE \(databaseType.quoteIdentifier(tableName)) DELETE WHERE \(whereClause)"
-            } else {
-                sql = "DELETE FROM \(databaseType.quoteIdentifier(tableName)) WHERE \(whereClause)"
-            }
+            let sql = "DELETE FROM \(databaseType.quoteIdentifier(tableName)) WHERE \(whereClause)"
 
             return ParameterizedStatement(sql: sql, parameters: parameters)
         }
@@ -411,24 +377,7 @@ struct SQLStatementGenerator {
         guard !conditions.isEmpty else { return nil }
 
         let whereClause = conditions.joined(separator: " AND ")
-
-        let sql: String
-        switch databaseType {
-        case .mysql, .mariadb, .sqlite:
-            sql =
-                "DELETE FROM \(databaseType.quoteIdentifier(tableName)) WHERE \(whereClause) LIMIT 1"
-        case .mssql:
-            sql =
-                "DELETE TOP (1) FROM \(databaseType.quoteIdentifier(tableName)) WHERE \(whereClause)"
-        case .oracle:
-            sql =
-                "DELETE FROM \(databaseType.quoteIdentifier(tableName)) WHERE \(whereClause) AND ROWNUM = 1"
-        case .clickhouse:
-            sql =
-                "ALTER TABLE \(databaseType.quoteIdentifier(tableName)) DELETE WHERE \(whereClause)"
-        case .postgresql, .redshift, .duckdb, .mongodb, .redis:
-            sql = "DELETE FROM \(databaseType.quoteIdentifier(tableName)) WHERE \(whereClause)"
-        }
+        let sql = "DELETE FROM \(databaseType.quoteIdentifier(tableName)) WHERE \(whereClause)"
 
         return ParameterizedStatement(sql: sql, parameters: parameters)
     }
