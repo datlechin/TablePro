@@ -684,9 +684,7 @@ final class DataChangeManager {
         )
 
         let expectedUpdates = changes.count(where: { $0.type == .update })
-        let actualUpdates = statements.count(where: {
-            $0.sql.hasPrefix("UPDATE") || $0.sql.hasPrefix("ALTER TABLE")
-        })
+        let actualUpdates = statements.count(where: { $0.sql.hasPrefix("UPDATE") })
 
         if expectedUpdates > 0 && actualUpdates < expectedUpdates {
             throw DatabaseError.queryFailed(
@@ -696,9 +694,7 @@ final class DataChangeManager {
         }
 
         let expectedDeletes = changes.count(where: { $0.type == .delete && deletedRowIndices.contains($0.rowIndex) })
-        let actualDeletes = statements.count(where: {
-            $0.sql.hasPrefix("DELETE") || $0.sql.contains(" DELETE ")
-        })
+        let actualDeletes = statements.count(where: { $0.sql.hasPrefix("DELETE") })
 
         if expectedDeletes > 0 && actualDeletes < expectedDeletes {
             throw DatabaseError.queryFailed(
