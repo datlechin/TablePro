@@ -66,6 +66,8 @@ final class MongoDBPlugin: NSObject, TableProPlugin, DriverPlugin {
         "Other": ["javascript", "minKey", "maxKey"]
     ]
 
+    static let sqlDialect: SQLDialectDescriptor? = nil
+
     func createDriver(config: DriverConnectionConfig) -> any PluginDatabaseDriver {
         MongoDBPluginDriver(config: config)
     }

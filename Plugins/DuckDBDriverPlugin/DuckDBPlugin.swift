@@ -45,6 +45,52 @@ final class DuckDBPlugin: NSObject, TableProPlugin, DriverPlugin {
         "Enum": ["ENUM"]
     ]
 
+    static let sqlDialect: SQLDialectDescriptor? = SQLDialectDescriptor(
+        identifierQuote: "\"",
+        keywords: [
+            "SELECT", "FROM", "WHERE", "JOIN", "INNER", "LEFT", "RIGHT", "OUTER", "CROSS", "FULL",
+            "ON", "USING", "AND", "OR", "NOT", "IN", "LIKE", "ILIKE", "BETWEEN", "AS",
+            "ORDER", "BY", "GROUP", "HAVING", "LIMIT", "OFFSET", "FETCH", "FIRST", "ROWS", "ONLY",
+            "INSERT", "INTO", "VALUES", "UPDATE", "SET", "DELETE",
+            "CREATE", "ALTER", "DROP", "TABLE", "INDEX", "VIEW", "DATABASE", "SCHEMA",
+            "PRIMARY", "KEY", "FOREIGN", "REFERENCES", "UNIQUE", "CONSTRAINT",
+            "ADD", "MODIFY", "COLUMN", "RENAME",
+            "NULL", "IS", "ASC", "DESC", "DISTINCT", "ALL", "ANY", "SOME",
+            "CASE", "WHEN", "THEN", "ELSE", "END", "COALESCE", "NULLIF",
+            "UNION", "INTERSECT", "EXCEPT",
+            "COPY", "PRAGMA", "DESCRIBE", "SUMMARIZE", "PIVOT", "UNPIVOT",
+            "QUALIFY", "SAMPLE", "TABLESAMPLE", "RETURNING",
+            "INSTALL", "LOAD", "FORCE", "ATTACH", "DETACH",
+            "EXPORT", "IMPORT",
+            "WITH", "RECURSIVE", "MATERIALIZED",
+            "EXPLAIN", "ANALYZE",
+            "WINDOW", "OVER", "PARTITION"
+        ],
+        functions: [
+            "COUNT", "SUM", "AVG", "MAX", "MIN",
+            "LIST_AGG", "STRING_AGG", "ARRAY_AGG",
+            "CONCAT", "SUBSTRING", "LEFT", "RIGHT", "LENGTH", "LOWER", "UPPER",
+            "TRIM", "LTRIM", "RTRIM", "REPLACE", "SPLIT_PART",
+            "NOW", "CURRENT_DATE", "CURRENT_TIME", "CURRENT_TIMESTAMP",
+            "DATE_TRUNC", "EXTRACT", "AGE", "TO_CHAR", "TO_DATE",
+            "EPOCH_MS",
+            "ROUND", "CEIL", "CEILING", "FLOOR", "ABS", "MOD", "POW", "POWER", "SQRT",
+            "CAST",
+            "REGEXP_MATCHES", "READ_CSV", "READ_PARQUET", "READ_JSON",
+            "GLOB", "STRUCT_PACK", "LIST_VALUE", "MAP", "UNNEST",
+            "GENERATE_SERIES", "RANGE"
+        ],
+        dataTypes: [
+            "INTEGER", "BIGINT", "HUGEINT", "UHUGEINT",
+            "DOUBLE", "FLOAT", "DECIMAL",
+            "VARCHAR", "TEXT", "BLOB",
+            "BOOLEAN",
+            "DATE", "TIME", "TIMESTAMP", "TIMESTAMP WITH TIME ZONE", "INTERVAL",
+            "UUID", "JSON",
+            "LIST", "MAP", "STRUCT", "UNION", "ENUM", "BIT"
+        ]
+    )
+
     func createDriver(config: DriverConnectionConfig) -> any PluginDatabaseDriver {
         DuckDBPluginDriver(config: config)
     }
