@@ -18,7 +18,7 @@ Plugin enable/disable state lives in `UserDefaults["com.TablePro.disabledPlugins
 | Feature                                                  | Status | File                                                | Notes                                                       |
 | -------------------------------------------------------- | ------ | --------------------------------------------------- | ----------------------------------------------------------- |
 | Installed plugins list with toggle                       | Done   | `Views/Settings/Plugins/InstalledPluginsView.swift` | One row per `PluginEntry`, inline detail expansion          |
-| Enable/disable toggle (live)                             | Done   | `Core/Plugins/PluginManager.swift:365`              | Immediate capability register/unregister, no restart needed |
+| Enable/disable toggle (live)                             | Done   | `Core/Plugins/PluginManager.swift:382`              | Immediate capability register/unregister, no restart needed |
 | Plugin detail (version, bundle ID, source, capabilities) | Done   | `Views/Settings/Plugins/InstalledPluginsView.swift` | Shown on row expansion                                      |
 | Install from file (.tableplugin, .zip)                   | Done   | `Views/Settings/Plugins/InstalledPluginsView.swift` | NSOpenPanel + drag-and-drop                                 |
 | Uninstall user plugins                                   | Done   | `Views/Settings/Plugins/InstalledPluginsView.swift` | Destructive button with AlertHelper.confirmDestructive      |
@@ -26,7 +26,7 @@ Plugin enable/disable state lives in `UserDefaults["com.TablePro.disabledPlugins
 | Browse registry                                          | Done   | `Views/Settings/Plugins/BrowsePluginsView.swift`    | Remote manifest from GitHub, search + category filter       |
 | Registry install with progress                           | Done   | `Views/Settings/Plugins/RegistryPluginRow.swift`    | Download + SHA-256 verification, multi-phase progress       |
 | Contextual install prompt (connection flow)              | Done   | `Views/Connection/PluginInstallModifier.swift`      | Alert when opening DB type with missing driver              |
-| Code signature verification                              | Done   | `Core/Plugins/PluginManager.swift:558`              | Team ID `D7HJ5TFYCU` for user-installed plugins            |
+| Code signature verification                              | Done   | `Core/Plugins/PluginManager.swift:586`              | Team ID `D7HJ5TFYCU` for user-installed plugins            |
 
 ## Per-Plugin Configuration
 
@@ -50,7 +50,7 @@ All export plugins conform to `SettablePlugin` which provides automatic `loadSet
 
 ### Driver Plugins
 
-All 8 driver plugins have zero per-plugin settings. They can adopt `SettablePlugin` when settings are needed.
+All 9 driver plugins have zero per-plugin settings. They can adopt `SettablePlugin` when settings are needed.
 
 ---
 

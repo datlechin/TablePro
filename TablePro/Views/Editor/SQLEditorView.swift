@@ -77,7 +77,7 @@ struct SQLEditorView: View {
             .onChange(of: colorScheme) {
                 editorConfiguration = Self.makeConfiguration()
             }
-            .onReceive(NotificationCenter.default.publisher(for: .editorSettingsDidChange)) { _ in
+            .onChange(of: AppSettingsManager.shared.editor) {
                 editorConfiguration = Self.makeConfiguration()
             }
             .onReceive(NotificationCenter.default.publisher(for: .accessibilityTextSizeDidChange)) { _ in

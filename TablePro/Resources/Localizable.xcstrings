@@ -2226,6 +2226,7 @@
       }
     },
     "Are you sure you want to disconnect from this database?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -5602,6 +5603,7 @@
       }
     },
     "Disconnect" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {

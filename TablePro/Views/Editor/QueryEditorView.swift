@@ -24,7 +24,6 @@ struct QueryEditorView: View {
     var onExecuteQuery: (() -> Void)?
 
     @State private var vimMode: VimMode = .normal
-    @State private var isVimEnabled = AppSettingsManager.shared.editor.vimModeEnabled
 
     var body: some View {
         let hasQuery = appState.hasQueryText
@@ -50,9 +49,6 @@ struct QueryEditorView: View {
             .clipped()
         }
         .background(Color(nsColor: .textBackgroundColor))
-        .onReceive(NotificationCenter.default.publisher(for: .editorSettingsDidChange)) { _ in
-            isVimEnabled = AppSettingsManager.shared.editor.vimModeEnabled
-        }
     }
 
     // MARK: - Toolbar
@@ -63,7 +59,7 @@ struct QueryEditorView: View {
                 .font(.headline)
                 .foregroundStyle(.secondary)
 
-            if isVimEnabled {
+            if AppSettingsManager.shared.editor.vimModeEnabled {
                 VimModeIndicatorView(mode: vimMode)
             }
 

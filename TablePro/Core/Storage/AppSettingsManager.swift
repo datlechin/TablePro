@@ -23,7 +23,6 @@ final class AppSettingsManager {
         didSet {
             general.language.apply()
             storage.saveGeneral(general)
-            notifyChange(domain: "general", notification: .generalSettingsDidChange)
         }
     }
 
@@ -31,7 +30,6 @@ final class AppSettingsManager {
         didSet {
             storage.saveAppearance(appearance)
             appearance.theme.apply()
-            notifyChange(domain: "appearance", notification: .appearanceSettingsDidChange)
         }
     }
 
@@ -40,7 +38,7 @@ final class AppSettingsManager {
             storage.saveEditor(editor)
             // Update cached theme values for thread-safe access
             SQLEditorTheme.reloadFromSettings(editor)
-            notifyChange(domain: "editor", notification: .editorSettingsDidChange)
+            notifyChange(.editorSettingsDidChange)
         }
     }
 
@@ -62,7 +60,7 @@ final class AppSettingsManager {
             storage.saveDataGrid(validated)
             // Update date formatting service with new format
             DateFormattingService.shared.updateFormat(validated.dateFormat)
-            notifyChange(domain: "dataGrid", notification: .dataGridSettingsDidChange)
+            notifyChange(.dataGridSettingsDidChange)
         }
     }
 
@@ -84,28 +82,24 @@ final class AppSettingsManager {
             storage.saveHistory(validated)
             // Apply history settings immediately (cleanup if auto-cleanup enabled)
             Task { await applyHistorySettingsImmediately() }
-            notifyChange(domain: "history", notification: .historySettingsDidChange)
         }
     }
 
     var tabs: TabSettings {
         didSet {
             storage.saveTabs(tabs)
-            notifyChange(domain: "tabs", notification: .tabSettingsDidChange)
         }
     }
 
     var keyboard: KeyboardSettings {
         didSet {
             storage.saveKeyboard(keyboard)
-            notifyChange(domain: "keyboard", notification: .keyboardSettingsDidChange)
         }
     }
 
     var ai: AISettings {
         didSet {
             storage.saveAI(ai)
-            notifyChange(domain: "ai", notification: .aiSettingsDidChange)
         }
     }
 
@@ -147,24 +141,8 @@ final class AppSettingsManager {
 
     // MARK: - Notification Propagation
 
-    /// Notify listeners that settings have changed
-    /// Posts both domain-specific and generic notifications
-    private func notifyChange(domain: String, notification: Notification.Name) {
-        let changeInfo = SettingsChangeInfo(domain: domain, changedKeys: nil)
-
-        // Post domain-specific notification
-        NotificationCenter.default.post(
-            name: notification,
-            object: self,
-            userInfo: [SettingsChangeInfo.userInfoKey: changeInfo]
-        )
-
-        // Post generic notification for listeners that want all settings changes
-        NotificationCenter.default.post(
-            name: .settingsDidChange,
-            object: self,
-            userInfo: [SettingsChangeInfo.userInfoKey: changeInfo]
-        )
+    private func notifyChange(_ notification: Notification.Name) {
+        NotificationCenter.default.post(name: notification, object: self)
     }
 
     // MARK: - Accessibility Text Size
@@ -197,11 +175,8 @@ final class AppSettingsManager {
         }
     }
 
-    /// Apply history settings immediately (triggered on settings change)
     private func applyHistorySettingsImmediately() async {
-        // This will be called by QueryHistoryManager
-        // We post a notification and let the manager handle the actual cleanup
-        // This keeps the settings manager decoupled from history storage implementation
+        QueryHistoryManager.shared.applySettingsChange()
     }
 
     // MARK: - Actions

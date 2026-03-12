@@ -3,10 +3,8 @@
 //  TablePro
 //
 //  Thread-safe coordinator for query history
-//  Communicates via NotificationCenter (NOT ObservableObject)
 //
 
-import Combine
 import Foundation
 
 /// Thread-safe manager for query history
@@ -16,9 +14,6 @@ final class QueryHistoryManager {
 
     private let storage: QueryHistoryStorage
 
-    // Settings observer for immediate cleanup when settings change
-    private var settingsObserver: AnyCancellable?
-
     /// Creates an isolated manager with its own storage. For testing only.
     init(isolatedStorage: QueryHistoryStorage) {
         self.storage = isolatedStorage
@@ -26,22 +21,6 @@ final class QueryHistoryManager {
 
     private init() {
         self.storage = QueryHistoryStorage.shared
-        // Subscribe to history settings changes for immediate cleanup
-        settingsObserver = NotificationCenter.default.publisher(for: .historySettingsDidChange)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let self else { return }
-
-                MainActor.assumeIsolated {
-                    // Update settings cache
-                    self.storage.updateSettingsCache()
-
-                    // Perform cleanup if auto-cleanup is enabled
-                    if AppSettingsManager.shared.history.autoCleanup {
-                        self.storage.cleanup()
-                    }
-                }
-            }
     }
 
     /// Perform cleanup if auto-cleanup is enabled in settings
@@ -56,6 +35,15 @@ final class QueryHistoryManager {
 
         // Perform cleanup
         storage.cleanup()
+    }
+
+    /// Apply settings changes directly (called by AppSettingsManager)
+    @MainActor
+    func applySettingsChange() {
+        storage.updateSettingsCache()
+        if AppSettingsManager.shared.history.autoCleanup {
+            storage.cleanup()
+        }
     }
 
     // MARK: - History Capture
