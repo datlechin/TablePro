@@ -328,8 +328,8 @@ final class PluginDriverAdapter: DatabaseDriver, SchemaSwitchable {
         pluginDriver.generateDropForeignKeySQL(table: table, constraintName: constraintName)
     }
 
-    func generateModifyPrimaryKeySQL(table: String, oldColumns: [String], newColumns: [String]) -> [String]? {
-        pluginDriver.generateModifyPrimaryKeySQL(table: table, oldColumns: oldColumns, newColumns: newColumns)
+    func generateModifyPrimaryKeySQL(table: String, oldColumns: [String], newColumns: [String], constraintName: String?) -> [String]? {
+        pluginDriver.generateModifyPrimaryKeySQL(table: table, oldColumns: oldColumns, newColumns: newColumns, constraintName: constraintName)
     }
 
     // MARK: - Table Operations

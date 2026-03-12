@@ -52,7 +52,7 @@ private final class MockPluginDriver: PluginDatabaseDriver, @unchecked Sendable 
         dropForeignKeyHandler?(table, constraintName)
     }
 
-    func generateModifyPrimaryKeySQL(table: String, oldColumns: [String], newColumns: [String]) -> [String]? {
+    func generateModifyPrimaryKeySQL(table: String, oldColumns: [String], newColumns: [String], constraintName: String?) -> [String]? {
         modifyPrimaryKeyHandler?(table, oldColumns, newColumns)
     }
 
@@ -144,36 +144,39 @@ struct SchemaStatementGeneratorPluginTests {
         )
     }
 
-    // MARK: - Nil Return Tests (plugin returns nil -> change skipped)
+    // MARK: - Nil Return Tests (plugin returns nil -> throws error)
 
-    @Test("Add column is skipped when plugin returns nil")
-    func addColumnSkippedWhenNil() throws {
+    @Test("Add column throws when plugin returns nil")
+    func addColumnThrowsWhenNil() throws {
         let mock = MockPluginDriver()
         let generator = SchemaStatementGenerator(tableName: "users", pluginDriver: mock)
         let column = makeColumn()
-        let stmts = try generator.generate(changes: [.addColumn(column)])
 
-        #expect(stmts.isEmpty)
+        #expect(throws: (any Error).self) {
+            _ = try generator.generate(changes: [.addColumn(column)])
+        }
     }
 
-    @Test("Drop column is skipped when plugin returns nil")
-    func dropColumnSkippedWhenNil() throws {
+    @Test("Drop column throws when plugin returns nil")
+    func dropColumnThrowsWhenNil() throws {
         let mock = MockPluginDriver()
         let generator = SchemaStatementGenerator(tableName: "users", pluginDriver: mock)
         let column = makeColumn()
-        let stmts = try generator.generate(changes: [.deleteColumn(column)])
 
-        #expect(stmts.isEmpty)
+        #expect(throws: (any Error).self) {
+            _ = try generator.generate(changes: [.deleteColumn(column)])
+        }
     }
 
-    @Test("Add index is skipped when plugin returns nil")
-    func addIndexSkippedWhenNil() throws {
+    @Test("Add index throws when plugin returns nil")
+    func addIndexThrowsWhenNil() throws {
         let mock = MockPluginDriver()
         let generator = SchemaStatementGenerator(tableName: "users", pluginDriver: mock)
         let index = makeIndex()
-        let stmts = try generator.generate(changes: [.addIndex(index)])
 
-        #expect(stmts.isEmpty)
+        #expect(throws: (any Error).self) {
+            _ = try generator.generate(changes: [.addIndex(index)])
+        }
     }
 
     // MARK: - Plugin Override Tests
@@ -304,27 +307,25 @@ struct SchemaStatementGeneratorPluginTests {
 
     // MARK: - Mixed Override/Nil
 
-    @Test("Plugin overrides some operations while others are skipped")
-    func mixedPluginAndSkipped() throws {
+    @Test("Mixed operations: throws when any plugin returns nil")
+    func mixedPluginAndNil() throws {
         let mock = MockPluginDriver()
         mock.addColumnHandler = { _, col in
             "PLUGIN_ADD_COL \(col.name)"
         }
-        // dropColumnHandler is nil, so drop is skipped
+        // dropColumnHandler is nil, so drop throws
 
         let generator = SchemaStatementGenerator(tableName: "users", pluginDriver: mock)
 
         let addCol = makeColumn(name: "age", dataType: "INT")
         let dropCol = makeColumn(name: "old_field")
 
-        let stmts = try generator.generate(changes: [
-            .addColumn(addCol),
-            .deleteColumn(dropCol)
-        ])
-
-        // Only the add column statement is generated (drop was skipped)
-        #expect(stmts.count == 1)
-        #expect(stmts[0].sql.contains("PLUGIN_ADD_COL"))
+        #expect(throws: (any Error).self) {
+            _ = try generator.generate(changes: [
+                .addColumn(addCol),
+                .deleteColumn(dropCol)
+            ])
+        }
     }
 
     // MARK: - Modify Index/FK (drop+recreate via plugin)
@@ -349,8 +350,8 @@ struct SchemaStatementGeneratorPluginTests {
         #expect(stmts[0].sql.contains("CREATE INDEX"))
     }
 
-    @Test("Modify index is skipped when drop returns nil")
-    func modifyIndexSkippedWhenDropNil() throws {
+    @Test("Modify index throws when drop returns nil")
+    func modifyIndexThrowsWhenDropNil() throws {
         let mock = MockPluginDriver()
         mock.addIndexHandler = { table, idx in
             "CREATE INDEX \(idx.name) ON \(table)"
@@ -360,9 +361,10 @@ struct SchemaStatementGeneratorPluginTests {
         let generator = SchemaStatementGenerator(tableName: "users", pluginDriver: mock)
         let oldIndex = makeIndex(name: "idx_email")
         let newIndex = makeIndex(name: "idx_email", columns: ["email", "name"])
-        let stmts = try generator.generate(changes: [.modifyIndex(old: oldIndex, new: newIndex)])
 
-        #expect(stmts.isEmpty)
+        #expect(throws: (any Error).self) {
+            _ = try generator.generate(changes: [.modifyIndex(old: oldIndex, new: newIndex)])
+        }
     }
 
     @Test("Modify foreign key generates drop and create via plugin")

@@ -45,7 +45,11 @@ struct SchemaStatementGenerator {
 
         for change in sortedChanges {
             guard let stmt = try generateStatement(for: change) else {
-                continue
+                throw NSError(
+                    domain: "SchemaStatementGenerator",
+                    code: -1,
+                    userInfo: [NSLocalizedDescriptionKey: String(localized: "Unsupported schema operation: \(change.description)")]
+                )
             }
             let sql = stmt.sql.hasSuffix(";") ? stmt.sql : stmt.sql + ";"
             statements.append(SchemaStatement(sql: sql, description: stmt.description, isDestructive: stmt.isDestructive))
@@ -222,7 +226,7 @@ struct SchemaStatementGenerator {
 
     private func generateModifyPrimaryKey(old: [String], new: [String]) -> SchemaStatement? {
         guard let sqls = pluginDriver.generateModifyPrimaryKeySQL(
-            table: tableName, oldColumns: old, newColumns: new
+            table: tableName, oldColumns: old, newColumns: new, constraintName: primaryKeyConstraintName
         ) else {
             return nil
         }

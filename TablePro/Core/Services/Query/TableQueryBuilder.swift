@@ -141,10 +141,6 @@ struct TableQueryBuilder {
         columnName: String,
         ascending: Bool
     ) -> String {
-        if pluginDriver != nil {
-            return baseQuery
-        }
-
         var query = removeOrderBy(from: baseQuery)
         let direction = ascending ? "ASC" : "DESC"
         let quotedColumn = databaseType.quoteIdentifier(columnName)
@@ -175,10 +171,6 @@ struct TableQueryBuilder {
         sortState: SortState,
         columns: [String]
     ) -> String {
-        if pluginDriver != nil {
-            return baseQuery
-        }
-
         var query = removeOrderBy(from: baseQuery)
 
         if let orderBy = buildOrderByClause(sortState: sortState, columns: columns) {
