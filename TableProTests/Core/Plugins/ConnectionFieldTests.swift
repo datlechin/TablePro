@@ -177,6 +177,15 @@ struct ConnectionFieldTests {
         #expect(range.closedRange == 1...100)
     }
 
+    @Test("IntRange decoding rejects invalid bounds")
+    func intRangeDecodingRejectsInvalidBounds() throws {
+        let json = #"{"lowerBound":10,"upperBound":0}"#
+        let data = Data(json.utf8)
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(ConnectionField.IntRange.self, from: data)
+        }
+    }
+
     // MARK: - isSecure for new types
 
     @Test("isSecure is false for .number")

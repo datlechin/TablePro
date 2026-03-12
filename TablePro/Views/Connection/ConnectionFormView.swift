@@ -863,17 +863,18 @@ struct ConnectionFormView: View {
 
             // Load additional fields from connection
             additionalFieldValues = existing.additionalFields
-            for field in PluginManager.shared.additionalConnectionFields(for: existing.type) {
-                if additionalFieldValues[field.id] == nil, let defaultValue = field.defaultValue {
-                    additionalFieldValues[field.id] = defaultValue
-                }
-            }
 
-            // Migrate legacy Redis database index into additionalFieldValues
+            // Migrate legacy Redis database index before default seeding
             if existing.type == .redis,
                additionalFieldValues["redisDatabase"] == nil,
                let rdb = existing.redisDatabase {
                 additionalFieldValues["redisDatabase"] = String(rdb)
+            }
+
+            for field in PluginManager.shared.additionalConnectionFields(for: existing.type) {
+                if additionalFieldValues[field.id] == nil, let defaultValue = field.defaultValue {
+                    additionalFieldValues[field.id] = defaultValue
+                }
             }
 
             // Load startup commands
@@ -1239,6 +1240,9 @@ struct ConnectionFormView: View {
             }
             if let authSourceValue = parsed.authSource, !authSourceValue.isEmpty {
                 additionalFieldValues["mongoAuthSource"] = authSourceValue
+            }
+            if parsed.type == .redis, !parsed.database.isEmpty {
+                additionalFieldValues["redisDatabase"] = parsed.database
             }
             if let connectionName = parsed.connectionName, !connectionName.isEmpty {
                 name = connectionName

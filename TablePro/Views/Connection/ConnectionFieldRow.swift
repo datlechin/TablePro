@@ -33,7 +33,14 @@ struct ConnectionFieldRow: View {
         case .number:
             TextField(
                 field.label,
-                text: $value,
+                text: Binding(
+                    get: { value },
+                    set: { newValue in
+                        value = String(newValue.unicodeScalars.filter {
+                            CharacterSet.decimalDigits.contains($0) || $0 == "-" || $0 == "."
+                        })
+                    }
+                ),
                 prompt: field.placeholder.isEmpty ? nil : Text(field.placeholder)
             )
         case .toggle:
