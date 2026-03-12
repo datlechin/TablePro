@@ -18,6 +18,7 @@ struct TableStructureView: View {
     let tableName: String
     let connection: DatabaseConnection
     let toolbarState: ConnectionToolbarState
+    let coordinator: MainContentCoordinator?
 
     @State private var selectedTab: StructureTab = .columns
     @State private var columns: [ColumnInfo] = []
@@ -41,11 +42,13 @@ struct TableStructureView: View {
     @State private var sortState = SortState()
     @State private var editingCell: CellPosition?
     @State private var structureColumnLayout = ColumnLayoutState()
+    @State private var actionHandler = StructureViewActionHandler()
 
-    init(tableName: String, connection: DatabaseConnection, toolbarState: ConnectionToolbarState) {
+    init(tableName: String, connection: DatabaseConnection, toolbarState: ConnectionToolbarState, coordinator: MainContentCoordinator?) {
         self.tableName = tableName
         self.connection = connection
         self.toolbarState = toolbarState
+        self.coordinator = coordinator
 
         // Initialize wrappedChangeManager using the StateObject's wrappedValue
         let manager = StructureChangeManager()
@@ -71,51 +74,30 @@ struct TableStructureView: View {
             AppState.shared.isCurrentTabEditable = (selectedTab != .ddl)
             AppState.shared.hasRowSelection = !selectedRows.isEmpty
             AppState.shared.hasStructureChanges = structureChangeManager.hasChanges
+
+            // Wire action handler for direct coordinator calls
+            actionHandler.saveChanges = {
+                if self.structureChangeManager.hasChanges && self.selectedTab != .ddl {
+                    Task { await self.executeSchemaChanges() }
+                }
+            }
+            actionHandler.previewSQL = { self.generateStructurePreviewSQL() }
+            actionHandler.copyRows = { self.handleCopyRows(self.selectedRows) }
+            actionHandler.pasteRows = { self.handlePaste() }
+            actionHandler.undo = { self.handleUndo() }
+            actionHandler.redo = { self.handleRedo() }
+            coordinator?.structureActions = actionHandler
         }
         .onDisappear {
             AppState.shared.isCurrentTabEditable = false
             AppState.shared.hasRowSelection = false
             AppState.shared.hasStructureChanges = false
+            coordinator?.structureActions = nil
         }
         .onChange(of: structureChangeManager.hasChanges) { _, newValue in
             AppState.shared.hasStructureChanges = newValue
         }
         .onReceive(NotificationCenter.default.publisher(for: .refreshData), perform: onRefreshData)
-        .onReceive(
-            Publishers.Merge(
-                NotificationCenter.default.publisher(for: .saveStructureChanges),
-                NotificationCenter.default.publisher(for: .previewStructureSQL)
-            )
-            .debounce(for: .milliseconds(50), scheduler: RunLoop.main)
-        ) { notification in
-            if notification.name == .saveStructureChanges {
-                if structureChangeManager.hasChanges && selectedTab != .ddl {
-                    Task {
-                        await executeSchemaChanges()
-                    }
-                }
-            } else {
-                generateStructurePreviewSQL()
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .copySelectedRows)) { _ in
-            handleCopyRows(selectedRows)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .pasteRows)) { _ in
-            handlePaste()
-        }
-        .onReceive(
-            Publishers.Merge(
-                NotificationCenter.default.publisher(for: .undoChange),
-                NotificationCenter.default.publisher(for: .redoChange)
-            )
-        ) { notification in
-            if notification.name == .undoChange {
-                handleUndo()
-            } else {
-                handleRedo()
-            }
-        }
     }
 
     // MARK: - Toolbar
@@ -895,7 +877,8 @@ struct TableStructureView: View {
             username: "root",
             type: .mysql
         ),
-        toolbarState: ConnectionToolbarState()
+        toolbarState: ConnectionToolbarState(),
+        coordinator: nil
     )
     .frame(width: 800, height: 600)
 }

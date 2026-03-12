@@ -17,8 +17,8 @@ extension MainContentCoordinator {
         tableOperationOptions: [String: TableOperationOptions]
     ) {
         if tabManager.selectedTab?.showStructure == true {
-            // Structure view handles its own preview via notification
-            NotificationCenter.default.post(name: .previewStructureSQL, object: nil)
+            // Structure view handles its own preview via direct call
+            structureActions?.previewSQL?()
         } else {
             generatePreviewSQL(
                 pendingTruncates: pendingTruncates,

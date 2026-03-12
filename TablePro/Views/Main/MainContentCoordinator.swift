@@ -64,6 +64,9 @@ final class MainContentCoordinator {
     /// Direct reference to sidebar viewmodel — eliminates global notification broadcasts
     weak var sidebarViewModel: SidebarViewModel?
 
+    /// Direct reference to structure view actions — eliminates notification broadcasts
+    weak var structureActions: StructureViewActionHandler?
+
     // MARK: - Published State
 
     var schemaProvider: SQLSchemaProvider

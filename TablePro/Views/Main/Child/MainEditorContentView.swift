@@ -249,7 +249,7 @@ struct MainEditorContentView: View {
     private func resultsSection(tab: QueryTab) -> some View {
         VStack(spacing: 0) {
             if tab.showStructure, let tableName = tab.tableName {
-                TableStructureView(tableName: tableName, connection: connection, toolbarState: coordinator.toolbarState)
+                TableStructureView(tableName: tableName, connection: connection, toolbarState: coordinator.toolbarState, coordinator: coordinator)
                     .id(tableName)
                     .frame(maxHeight: .infinity)
             } else if let explainText = tab.explainText {

@@ -106,63 +106,50 @@ Gave the coordinator a direct `weak var sidebarViewModel` reference, replacing 1
 
 ---
 
-## Phase 4: Replace Sidebar Action Notifications with `@FocusedValue`
+## Phase 4: Replace Sidebar Action Notifications with Direct Calls
 
-**Status:** Not started
+**Status:** Done (PR [#286](https://github.com/datlechin/TablePro/pull/286))
 
-Menu items post global notifications to reach the sidebar. These should use `@FocusedValue` to call the active window's sidebar directly.
+Replaced 9 sidebar action notifications with direct coordinator calls and `@FocusedValue` routing. Context menu actions call coordinator directly. Menu bar uses `actions?.copyTableNames()` and `actions?.truncateTables()` via `@FocusedValue`.
 
-- [ ] `copyTableNames` — menu → `SidebarViewModel.copySelectedTableNames()`
-- [ ] `truncateTables` — menu → `SidebarViewModel.batchToggleTruncate()`
-- [ ] `clearSelection` — menu → `SidebarViewModel.selectedTables.removeAll()`
-- [ ] `showAllTables` — menu → coordinator action
-- [ ] `showTableStructure` — sidebar context menu → coordinator
-- [ ] `editViewDefinition` — sidebar context menu → coordinator
-- [ ] `createView` — sidebar context menu → coordinator
-- [ ] `exportTables` — sidebar context menu → coordinator
-- [ ] `importTables` — sidebar context menu → coordinator
+- [x] `copyTableNames` — menu → `actions?.copyTableNames()` → `coordinator.sidebarViewModel.copySelectedTableNames()`
+- [x] `truncateTables` — menu → `actions?.truncateTables()` → `coordinator.sidebarViewModel.batchToggleTruncate()`
+- [x] `clearSelection` — dead (no sender), removed both subscribers
+- [x] `showAllTables` — `SidebarView` calls `coordinator?.showAllTablesMetadata()` directly
+- [x] `showTableStructure` — context menu → `coordinator?.openTableTab(_, showStructure:)`
+- [x] `editViewDefinition` — context menu → `coordinator?.editViewDefinition(_:)`
+- [x] `createView` — context menu → `coordinator?.createView()`
+- [x] `exportTables` — context menu → `coordinator?.openExportDialog()`
+- [x] `importTables` — context menu → `coordinator?.openImportDialog()`
 
-### Pattern:
-
-```swift
-// Define focused value
-struct SidebarActionsKey: FocusedValueKey {
-    typealias Value = SidebarViewModel
-}
-
-extension FocusedValues {
-    var sidebarActions: SidebarViewModel? { ... }
-}
-
-// In SidebarView
-.focusedValue(\.sidebarActions, viewModel)
-
-// In menu
-Button("Copy Table Names") {
-    focusedSidebarActions?.copySelectedTableNames()
-}
-```
+Also extracted `createView()`, `editViewDefinition(_:)`, `openExportDialog()`, `openImportDialog()` from `MainContentCommandActions` into `MainContentCoordinator+SidebarActions.swift`. Removed all notification infrastructure from `SidebarViewModel` (`import Combine`, `cancellables`, `setupNotifications()`).
 
 ---
 
 ## Phase 5: Replace Structure View Notifications with Coordinator Pattern
 
-**Status:** Not started
+**Status:** Done
 
-`MainContentCommandActions` routes commands to `TableStructureView` via notifications because the structure view is deeply embedded and not directly accessible.
+Created `StructureViewActionHandler` class with closure properties for each action. `TableStructureView` wires closures in `.onAppear` and registers handler with coordinator. Senders call `coordinator.structureActions?.method?()` instead of posting notifications.
 
-### Notifications to replace:
+### Notifications replaced:
 
-- [ ] `copySelectedRows` (structure path)
-- [ ] `pasteRows` (structure path)
-- [ ] `undoChange` (structure path)
-- [ ] `redoChange` (structure path)
-- [ ] `saveStructureChanges`
-- [ ] `previewStructureSQL`
+- [x] `copySelectedRows` (structure path) — now `structureActions?.copyRows?()`
+- [x] `pasteRows` (structure path) — now `structureActions?.pasteRows?()`
+- [x] `undoChange` — removed notification name, now `structureActions?.undo?()`
+- [x] `redoChange` — removed notification name, now `structureActions?.redo?()`
+- [x] `saveStructureChanges` — removed notification name, now `structureActions?.saveChanges?()`
+- [x] `previewStructureSQL` — removed notification name, now `structureActions?.previewSQL?()`
 
-### Strategy:
+### Files changed:
 
-Create a `StructureViewActions` protocol/class that `TableStructureView` registers with the coordinator. The coordinator calls methods directly instead of broadcasting.
+- **New:** `Views/Structure/StructureViewActionHandler.swift` — action handler class
+- **Modified:** `MainContentCoordinator.swift` — added `weak var structureActions`
+- **Modified:** `TableStructureView.swift` — wire closures on appear, removed 6 `.onReceive` handlers
+- **Modified:** `MainEditorContentView.swift` — pass coordinator to `TableStructureView`
+- **Modified:** `MainContentCommandActions.swift` — 6 notification posts → direct calls
+- **Modified:** `MainContentCoordinator+SQLPreview.swift` — notification post → direct call
+- **Modified:** `TableProApp.swift` — removed 4 notification name definitions
 
 ---
 

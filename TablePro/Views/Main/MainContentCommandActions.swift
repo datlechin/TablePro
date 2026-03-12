@@ -240,7 +240,7 @@ final class MainContentCommandActions {
 
     func copySelectedRows() {
         if coordinator?.tabManager.selectedTab?.showStructure == true {
-            NotificationCenter.default.post(name: .copySelectedRows, object: nil)
+            coordinator?.structureActions?.copyRows?()
         } else {
             let indices = selectedRowIndices.wrappedValue
             coordinator?.copySelectedRowsToClipboard(indices: indices)
@@ -254,7 +254,7 @@ final class MainContentCommandActions {
 
     func pasteRows() {
         if coordinator?.tabManager.selectedTab?.showStructure == true {
-            NotificationCenter.default.post(name: .pasteRows, object: nil)
+            coordinator?.structureActions?.pasteRows?()
         } else {
             var indices = selectedRowIndices.wrappedValue
             var cell = editingCell.wrappedValue
@@ -339,9 +339,9 @@ final class MainContentCommandActions {
             return
         }
 
-        // Structure view saves are notification-based
+        // Structure view saves via direct coordinator call
         if coordinator.tabManager.selectedTab?.showStructure == true {
-            NotificationCenter.default.post(name: .saveStructureChanges, object: nil)
+            coordinator.structureActions?.saveChanges?()
             performClose()
             return
         }
@@ -408,8 +408,7 @@ final class MainContentCommandActions {
     func saveChanges() {
         // Check if we're in structure view mode
         if coordinator?.tabManager.selectedTab?.showStructure == true {
-            // Post notification for structure view to handle
-            NotificationCenter.default.post(name: .saveStructureChanges, object: nil)
+            coordinator?.structureActions?.saveChanges?()
         } else if rightPanelState.editState.hasEdits {
             // Save sidebar edits if the right panel has pending changes
             rightPanelState.onSave?()
@@ -473,7 +472,7 @@ final class MainContentCommandActions {
 
     func undoChange() {
         if coordinator?.tabManager.selectedTab?.showStructure == true {
-            NotificationCenter.default.post(name: .undoChange, object: nil)
+            coordinator?.structureActions?.undo?()
         } else {
             var indices = selectedRowIndices.wrappedValue
             coordinator?.undoLastChange(selectedRowIndices: &indices)
@@ -483,7 +482,7 @@ final class MainContentCommandActions {
 
     func redoChange() {
         if coordinator?.tabManager.selectedTab?.showStructure == true {
-            NotificationCenter.default.post(name: .redoChange, object: nil)
+            coordinator?.structureActions?.redo?()
         } else {
             coordinator?.redoLastChange()
         }

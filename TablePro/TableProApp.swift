@@ -454,14 +454,12 @@ extension Notification.Name {
     // Multi-listener broadcasts (Sidebar + Coordinator + StructureView)
     static let refreshData = Notification.Name("refreshData")
 
-    // Data operations (still posted by DataGrid / context menus / StructureView subscribers)
+    // Data operations (still posted by DataGrid / context menus)
     static let deleteSelectedRows = Notification.Name("deleteSelectedRows")
     static let addNewRow = Notification.Name("addNewRow")
     static let duplicateRow = Notification.Name("duplicateRow")
     static let copySelectedRows = Notification.Name("copySelectedRows")
     static let pasteRows = Notification.Name("pasteRows")
-    static let undoChange = Notification.Name("undoChange")
-    static let redoChange = Notification.Name("redoChange")
 
     // Tab operations
     static let newQueryTab = Notification.Name("newQueryTab")
@@ -469,10 +467,8 @@ extension Notification.Name {
     // Sidebar operations (still posted by SidebarView / ConnectionStatusView)
     static let openDatabaseSwitcher = Notification.Name("openDatabaseSwitcher")
 
-    // Structure view operations (still posted by QueryEditorView)
+    // Query editor operations
     static let explainQuery = Notification.Name("explainQuery")
-    static let saveStructureChanges = Notification.Name("saveStructureChanges")
-    static let previewStructureSQL = Notification.Name("previewStructureSQL")
 
     // File opening notifications
     static let openSQLFiles = Notification.Name("openSQLFiles")
