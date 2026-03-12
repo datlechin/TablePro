@@ -34,6 +34,7 @@ public protocol DriverPlugin: TableProPlugin {
     static var databaseGroupingStrategy: GroupingStrategy { get }
     static var defaultGroupName: String { get }
     static var columnTypesByCategory: [String: [String]] { get }
+    static var sqlDialect: SQLDialectDescriptor? { get }
 }
 
 public extension DriverPlugin {
@@ -72,4 +73,5 @@ public extension DriverPlugin {
             "JSON": ["JSON"]
         ]
     }
+    static var sqlDialect: SQLDialectDescriptor? { nil }
 }

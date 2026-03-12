@@ -37,6 +37,43 @@ final class SQLitePlugin: NSObject, TableProPlugin, DriverPlugin {
         "Boolean": ["BOOLEAN"]
     ]
 
+    static let sqlDialect: SQLDialectDescriptor? = SQLDialectDescriptor(
+        identifierQuote: "`",
+        keywords: [
+            "SELECT", "FROM", "WHERE", "JOIN", "INNER", "LEFT", "RIGHT", "OUTER", "CROSS",
+            "ON", "AND", "OR", "NOT", "IN", "LIKE", "GLOB", "BETWEEN", "AS",
+            "ORDER", "BY", "GROUP", "HAVING", "LIMIT", "OFFSET",
+            "INSERT", "INTO", "VALUES", "UPDATE", "SET", "DELETE",
+            "CREATE", "ALTER", "DROP", "TABLE", "INDEX", "VIEW", "TRIGGER",
+            "PRIMARY", "KEY", "FOREIGN", "REFERENCES", "UNIQUE", "CONSTRAINT",
+            "ADD", "COLUMN", "RENAME",
+            "NULL", "IS", "ASC", "DESC", "DISTINCT", "ALL",
+            "CASE", "WHEN", "THEN", "ELSE", "END", "COALESCE", "IFNULL", "NULLIF",
+            "UNION", "INTERSECT", "EXCEPT",
+            "AUTOINCREMENT", "WITHOUT", "ROWID", "PRAGMA",
+            "REPLACE", "ABORT", "FAIL", "IGNORE", "ROLLBACK",
+            "TEMP", "TEMPORARY", "VACUUM", "EXPLAIN", "QUERY", "PLAN"
+        ],
+        functions: [
+            "COUNT", "SUM", "AVG", "MAX", "MIN", "GROUP_CONCAT", "TOTAL",
+            "LENGTH", "SUBSTR", "SUBSTRING", "LOWER", "UPPER", "TRIM", "LTRIM", "RTRIM",
+            "REPLACE", "INSTR", "PRINTF",
+            "DATE", "TIME", "DATETIME", "JULIANDAY", "STRFTIME",
+            "ABS", "ROUND", "RANDOM",
+            "CAST", "TYPEOF",
+            "COALESCE", "IFNULL", "NULLIF", "HEX", "QUOTE"
+        ],
+        dataTypes: [
+            "INTEGER", "REAL", "TEXT", "BLOB", "NUMERIC",
+            "INT", "TINYINT", "SMALLINT", "MEDIUMINT", "BIGINT",
+            "UNSIGNED", "BIG", "INT2", "INT8",
+            "CHARACTER", "VARCHAR", "VARYING", "NCHAR", "NATIVE",
+            "NVARCHAR", "CLOB",
+            "DOUBLE", "PRECISION", "FLOAT",
+            "DECIMAL", "BOOLEAN", "DATE", "DATETIME"
+        ]
+    )
+
     func createDriver(config: DriverConnectionConfig) -> any PluginDatabaseDriver {
         SQLitePluginDriver(config: config)
     }

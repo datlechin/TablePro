@@ -47,6 +47,43 @@ final class PostgreSQLPlugin: NSObject, TableProPlugin, DriverPlugin {
         "XML": ["XML"]
     ]
 
+    static let sqlDialect: SQLDialectDescriptor? = SQLDialectDescriptor(
+        identifierQuote: "\"",
+        keywords: [
+            "SELECT", "FROM", "WHERE", "JOIN", "INNER", "LEFT", "RIGHT", "OUTER", "CROSS", "FULL",
+            "ON", "USING", "AND", "OR", "NOT", "IN", "LIKE", "ILIKE", "BETWEEN", "AS",
+            "ORDER", "BY", "GROUP", "HAVING", "LIMIT", "OFFSET", "FETCH", "FIRST", "ROWS", "ONLY",
+            "INSERT", "INTO", "VALUES", "UPDATE", "SET", "DELETE",
+            "CREATE", "ALTER", "DROP", "TABLE", "INDEX", "VIEW", "DATABASE", "SCHEMA",
+            "PRIMARY", "KEY", "FOREIGN", "REFERENCES", "UNIQUE", "CONSTRAINT",
+            "ADD", "MODIFY", "COLUMN", "RENAME",
+            "NULL", "IS", "ASC", "DESC", "DISTINCT", "ALL", "ANY", "SOME",
+            "CASE", "WHEN", "THEN", "ELSE", "END", "COALESCE", "NULLIF",
+            "UNION", "INTERSECT", "EXCEPT",
+            "RETURNING", "WITH", "RECURSIVE", "MATERIALIZED",
+            "EXPLAIN", "ANALYZE", "VERBOSE",
+            "WINDOW", "OVER", "PARTITION",
+            "LATERAL", "ORDINALITY"
+        ],
+        functions: [
+            "COUNT", "SUM", "AVG", "MAX", "MIN", "STRING_AGG", "ARRAY_AGG",
+            "CONCAT", "SUBSTRING", "LEFT", "RIGHT", "LENGTH", "LOWER", "UPPER",
+            "TRIM", "LTRIM", "RTRIM", "REPLACE", "SPLIT_PART",
+            "NOW", "CURRENT_DATE", "CURRENT_TIME", "CURRENT_TIMESTAMP",
+            "DATE_TRUNC", "EXTRACT", "AGE", "TO_CHAR", "TO_DATE",
+            "ROUND", "CEIL", "CEILING", "FLOOR", "ABS", "MOD", "POW", "POWER", "SQRT",
+            "CAST", "TO_NUMBER", "TO_TIMESTAMP",
+            "JSON_BUILD_OBJECT", "JSON_AGG", "JSONB_BUILD_OBJECT"
+        ],
+        dataTypes: [
+            "INTEGER", "INT", "SMALLINT", "BIGINT", "SERIAL", "BIGSERIAL", "SMALLSERIAL",
+            "DECIMAL", "NUMERIC", "REAL", "DOUBLE", "PRECISION",
+            "CHAR", "CHARACTER", "VARCHAR", "TEXT",
+            "DATE", "TIME", "TIMESTAMP", "TIMESTAMPTZ", "INTERVAL",
+            "BOOLEAN", "BOOL", "JSON", "JSONB", "UUID", "BYTEA", "ARRAY"
+        ]
+    )
+
     static func driverVariant(for databaseTypeId: String) -> String? {
         switch databaseTypeId {
         case "PostgreSQL": return "PostgreSQL"

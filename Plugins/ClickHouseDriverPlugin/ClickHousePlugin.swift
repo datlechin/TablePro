@@ -42,6 +42,51 @@ final class ClickHousePlugin: NSObject, TableProPlugin, DriverPlugin {
         "Geo": ["Point", "Ring", "Polygon", "MultiPolygon"]
     ]
 
+    static let sqlDialect: SQLDialectDescriptor? = SQLDialectDescriptor(
+        identifierQuote: "`",
+        keywords: [
+            "SELECT", "FROM", "WHERE", "JOIN", "INNER", "LEFT", "RIGHT", "OUTER", "CROSS", "FULL",
+            "ON", "USING", "AND", "OR", "NOT", "IN", "LIKE", "BETWEEN", "AS",
+            "ORDER", "BY", "GROUP", "HAVING", "LIMIT", "OFFSET",
+            "INSERT", "INTO", "VALUES", "UPDATE", "SET", "DELETE",
+            "CREATE", "ALTER", "DROP", "TABLE", "INDEX", "VIEW", "DATABASE", "SCHEMA",
+            "PRIMARY", "KEY", "FOREIGN", "REFERENCES", "UNIQUE", "CONSTRAINT",
+            "ADD", "MODIFY", "COLUMN", "RENAME",
+            "NULL", "IS", "ASC", "DESC", "DISTINCT", "ALL", "ANY", "SOME",
+            "CASE", "WHEN", "THEN", "ELSE", "END", "COALESCE",
+            "UNION", "INTERSECT", "EXCEPT",
+            "FINAL", "SAMPLE", "PREWHERE", "GLOBAL", "FORMAT", "SETTINGS",
+            "OPTIMIZE", "SYSTEM", "PARTITION", "TTL", "ENGINE", "CODEC",
+            "MATERIALIZED", "WITH"
+        ],
+        functions: [
+            "COUNT", "SUM", "AVG", "MAX", "MIN",
+            "CONCAT", "SUBSTRING", "LEFT", "RIGHT", "LENGTH", "LOWER", "UPPER",
+            "TRIM", "LTRIM", "RTRIM", "REPLACE",
+            "NOW", "TODAY", "YESTERDAY",
+            "CAST",
+            "UNIQ", "UNIQEXACT", "ARGMIN", "ARGMAX", "GROUPARRAY",
+            "TOSTRING", "TOINT32", "FORMATDATETIME",
+            "IF", "MULTIIF",
+            "ARRAYMAP", "ARRAYJOIN",
+            "MATCH", "CURRENTDATABASE", "VERSION",
+            "QUANTILE", "TOPK"
+        ],
+        dataTypes: [
+            "INT8", "INT16", "INT32", "INT64", "INT128", "INT256",
+            "UINT8", "UINT16", "UINT32", "UINT64", "UINT128", "UINT256",
+            "FLOAT32", "FLOAT64",
+            "DECIMAL", "DECIMAL32", "DECIMAL64", "DECIMAL128", "DECIMAL256",
+            "STRING", "FIXEDSTRING", "UUID",
+            "DATE", "DATE32", "DATETIME", "DATETIME64",
+            "ARRAY", "TUPLE", "MAP",
+            "NULLABLE", "LOWCARDINALITY",
+            "ENUM8", "ENUM16",
+            "IPV4", "IPV6",
+            "JSON", "BOOL"
+        ]
+    )
+
     func createDriver(config: DriverConnectionConfig) -> any PluginDatabaseDriver {
         ClickHousePluginDriver(config: config)
     }

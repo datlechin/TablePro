@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import TableProPluginKit
 
 // MARK: - MySQL/MariaDB Dialect
 
@@ -473,11 +474,42 @@ struct DuckDBDialect: SQLDialectProvider {
     ]
 }
 
+// MARK: - Plugin Dialect Adapter
+
+struct PluginDialectAdapter: SQLDialectProvider {
+    let identifierQuote: String
+    let keywords: Set<String>
+    let functions: Set<String>
+    let dataTypes: Set<String>
+
+    init(descriptor: SQLDialectDescriptor) {
+        self.identifierQuote = descriptor.identifierQuote
+        self.keywords = descriptor.keywords
+        self.functions = descriptor.functions
+        self.dataTypes = descriptor.dataTypes
+    }
+}
+
 // MARK: - Dialect Factory
 
 struct SQLDialectFactory {
-    /// Create a dialect provider for the given database type
+    /// Create a dialect provider for the given database type.
+    /// Prefers plugin-provided dialect info, falling back to built-in dialect structs.
     static func createDialect(for databaseType: DatabaseType) -> SQLDialectProvider {
+        if Thread.isMainThread {
+            return MainActor.assumeIsolated {
+                if let descriptor = PluginManager.shared.sqlDialect(for: databaseType) {
+                    return PluginDialectAdapter(descriptor: descriptor)
+                }
+                return builtInDialect(for: databaseType)
+            }
+        }
+
+        return builtInDialect(for: databaseType)
+    }
+
+    /// Built-in fallback dialects when plugins are unavailable or off the main actor
+    static func builtInDialect(for databaseType: DatabaseType) -> SQLDialectProvider {
         switch databaseType {
         case .mysql, .mariadb:
             return MySQLDialect()

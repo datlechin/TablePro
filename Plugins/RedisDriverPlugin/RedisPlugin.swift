@@ -56,6 +56,8 @@ final class RedisPlugin: NSObject, TableProPlugin, DriverPlugin {
         "Geospatial": ["geo"]
     ]
 
+    static let sqlDialect: SQLDialectDescriptor? = nil
+
     func createDriver(config: DriverConnectionConfig) -> any PluginDatabaseDriver {
         RedisPluginDriver(config: config)
     }
