@@ -101,6 +101,12 @@ public protocol PluginDatabaseDriver: AnyObject, Sendable {
     func generateAddForeignKeySQL(table: String, fk: PluginForeignKeyDefinition) -> String?
     func generateDropForeignKeySQL(table: String, constraintName: String) -> String?
     func generateModifyPrimaryKeySQL(table: String, oldColumns: [String], newColumns: [String]) -> [String]?
+
+    // Table operations (optional — return nil to use app-level fallback)
+    func truncateTableStatements(table: String, schema: String?, cascade: Bool) -> [String]?
+    func dropObjectStatement(name: String, objectType: String, schema: String?, cascade: Bool) -> String?
+    func foreignKeyDisableStatements() -> [String]?
+    func foreignKeyEnableStatements() -> [String]?
 }
 
 public extension PluginDatabaseDriver {
@@ -201,6 +207,11 @@ public extension PluginDatabaseDriver {
     func generateAddForeignKeySQL(table: String, fk: PluginForeignKeyDefinition) -> String? { nil }
     func generateDropForeignKeySQL(table: String, constraintName: String) -> String? { nil }
     func generateModifyPrimaryKeySQL(table: String, oldColumns: [String], newColumns: [String]) -> [String]? { nil }
+
+    func truncateTableStatements(table: String, schema: String?, cascade: Bool) -> [String]? { nil }
+    func dropObjectStatement(name: String, objectType: String, schema: String?, cascade: Bool) -> String? { nil }
+    func foreignKeyDisableStatements() -> [String]? { nil }
+    func foreignKeyEnableStatements() -> [String]? { nil }
 
     func executeParameterized(query: String, parameters: [String?]) async throws -> PluginQueryResult {
         guard !parameters.isEmpty else {

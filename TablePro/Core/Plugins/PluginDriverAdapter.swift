@@ -332,6 +332,24 @@ final class PluginDriverAdapter: DatabaseDriver, SchemaSwitchable {
         pluginDriver.generateModifyPrimaryKeySQL(table: table, oldColumns: oldColumns, newColumns: newColumns)
     }
 
+    // MARK: - Table Operations
+
+    func truncateTableStatements(table: String, schema: String?, cascade: Bool) -> [String]? {
+        pluginDriver.truncateTableStatements(table: table, schema: schema, cascade: cascade)
+    }
+
+    func dropObjectStatement(name: String, objectType: String, schema: String?, cascade: Bool) -> String? {
+        pluginDriver.dropObjectStatement(name: name, objectType: objectType, schema: schema, cascade: cascade)
+    }
+
+    func foreignKeyDisableStatements() -> [String]? {
+        pluginDriver.foreignKeyDisableStatements()
+    }
+
+    func foreignKeyEnableStatements() -> [String]? {
+        pluginDriver.foreignKeyEnableStatements()
+    }
+
     // MARK: - Result Mapping
 
     private func mapQueryResult(_ pluginResult: PluginQueryResult) -> QueryResult {
