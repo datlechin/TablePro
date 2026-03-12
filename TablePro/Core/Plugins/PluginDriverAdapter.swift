@@ -13,6 +13,9 @@ final class PluginDriverAdapter: DatabaseDriver, SchemaSwitchable {
     private let pluginDriver: any PluginDatabaseDriver
 
     var serverVersion: String? { pluginDriver.serverVersion }
+    /// The underlying plugin driver, exposed for DDL schema generation delegation.
+    var schemaPluginDriver: any PluginDatabaseDriver { pluginDriver }
+
     var noSqlPluginDriver: (any PluginDatabaseDriver)? {
         // Only expose plugin driver for NoSQL dispatch if it actually handles query building.
         // SQL drivers (MySQL, PostgreSQL, etc.) return nil from buildBrowseQuery and should
@@ -271,6 +274,44 @@ final class PluginDriverAdapter: DatabaseDriver, SchemaSwitchable {
 
     func switchDatabase(to database: String) async throws {
         try await pluginDriver.switchDatabase(to: database)
+    }
+
+    // MARK: - DDL Schema Generation
+
+    func generateAddColumnSQL(table: String, column: PluginColumnDefinition) -> String? {
+        pluginDriver.generateAddColumnSQL(table: table, column: column)
+    }
+
+    func generateModifyColumnSQL(
+        table: String,
+        oldColumn: PluginColumnDefinition,
+        newColumn: PluginColumnDefinition
+    ) -> String? {
+        pluginDriver.generateModifyColumnSQL(table: table, oldColumn: oldColumn, newColumn: newColumn)
+    }
+
+    func generateDropColumnSQL(table: String, columnName: String) -> String? {
+        pluginDriver.generateDropColumnSQL(table: table, columnName: columnName)
+    }
+
+    func generateAddIndexSQL(table: String, index: PluginIndexDefinition) -> String? {
+        pluginDriver.generateAddIndexSQL(table: table, index: index)
+    }
+
+    func generateDropIndexSQL(table: String, indexName: String) -> String? {
+        pluginDriver.generateDropIndexSQL(table: table, indexName: indexName)
+    }
+
+    func generateAddForeignKeySQL(table: String, fk: PluginForeignKeyDefinition) -> String? {
+        pluginDriver.generateAddForeignKeySQL(table: table, fk: fk)
+    }
+
+    func generateDropForeignKeySQL(table: String, constraintName: String) -> String? {
+        pluginDriver.generateDropForeignKeySQL(table: table, constraintName: constraintName)
+    }
+
+    func generateModifyPrimaryKeySQL(table: String, oldColumns: [String], newColumns: [String]) -> [String]? {
+        pluginDriver.generateModifyPrimaryKeySQL(table: table, oldColumns: oldColumns, newColumns: newColumns)
     }
 
     // MARK: - Result Mapping

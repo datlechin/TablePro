@@ -85,6 +85,16 @@ public protocol PluginDatabaseDriver: AnyObject, Sendable {
 
     // Database switching (SQL Server USE, ClickHouse database switch, etc.)
     func switchDatabase(to database: String) async throws
+
+    // DDL schema generation (optional, plugins return nil to use default fallback)
+    func generateAddColumnSQL(table: String, column: PluginColumnDefinition) -> String?
+    func generateModifyColumnSQL(table: String, oldColumn: PluginColumnDefinition, newColumn: PluginColumnDefinition) -> String?
+    func generateDropColumnSQL(table: String, columnName: String) -> String?
+    func generateAddIndexSQL(table: String, index: PluginIndexDefinition) -> String?
+    func generateDropIndexSQL(table: String, indexName: String) -> String?
+    func generateAddForeignKeySQL(table: String, fk: PluginForeignKeyDefinition) -> String?
+    func generateDropForeignKeySQL(table: String, constraintName: String) -> String?
+    func generateModifyPrimaryKeySQL(table: String, oldColumns: [String], newColumns: [String]) -> [String]?
 }
 
 public extension PluginDatabaseDriver {
@@ -174,6 +184,15 @@ public extension PluginDatabaseDriver {
     func buildQuickSearchQuery(table: String, searchText: String, columns: [String], sortColumns: [(columnIndex: Int, ascending: Bool)], limit: Int, offset: Int) -> String? { nil }
     func buildCombinedQuery(table: String, filters: [(column: String, op: String, value: String)], logicMode: String, searchText: String, searchColumns: [String], sortColumns: [(columnIndex: Int, ascending: Bool)], columns: [String], limit: Int, offset: Int) -> String? { nil }
     func generateStatements(table: String, columns: [String], changes: [PluginRowChange], insertedRowData: [Int: [String?]], deletedRowIndices: Set<Int>, insertedRowIndices: Set<Int>) -> [(statement: String, parameters: [String?])]? { nil }
+
+    func generateAddColumnSQL(table: String, column: PluginColumnDefinition) -> String? { nil }
+    func generateModifyColumnSQL(table: String, oldColumn: PluginColumnDefinition, newColumn: PluginColumnDefinition) -> String? { nil }
+    func generateDropColumnSQL(table: String, columnName: String) -> String? { nil }
+    func generateAddIndexSQL(table: String, index: PluginIndexDefinition) -> String? { nil }
+    func generateDropIndexSQL(table: String, indexName: String) -> String? { nil }
+    func generateAddForeignKeySQL(table: String, fk: PluginForeignKeyDefinition) -> String? { nil }
+    func generateDropForeignKeySQL(table: String, constraintName: String) -> String? { nil }
+    func generateModifyPrimaryKeySQL(table: String, oldColumns: [String], newColumns: [String]) -> [String]? { nil }
 
     func executeParameterized(query: String, parameters: [String?]) async throws -> PluginQueryResult {
         guard !parameters.isEmpty else {
