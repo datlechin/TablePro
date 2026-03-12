@@ -13,6 +13,24 @@ final class PluginDriverAdapter: DatabaseDriver, SchemaSwitchable {
     private let pluginDriver: any PluginDatabaseDriver
 
     var serverVersion: String? { pluginDriver.serverVersion }
+    var parameterStyle: ParameterStyle { pluginDriver.parameterStyle }
+
+    func pluginGenerateStatements(
+        table: String,
+        columns: [String],
+        changes: [PluginRowChange],
+        insertedRowData: [Int: [String?]],
+        deletedRowIndices: Set<Int>,
+        insertedRowIndices: Set<Int>
+    ) -> [(statement: String, parameters: [String?])]? {
+        pluginDriver.generateStatements(
+            table: table, columns: columns, changes: changes,
+            insertedRowData: insertedRowData,
+            deletedRowIndices: deletedRowIndices,
+            insertedRowIndices: insertedRowIndices
+        )
+    }
+
     var noSqlPluginDriver: (any PluginDatabaseDriver)? {
         // Only expose plugin driver for NoSQL dispatch if it actually handles query building.
         // SQL drivers (MySQL, PostgreSQL, etc.) return nil from buildBrowseQuery and should

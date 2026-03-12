@@ -370,6 +370,7 @@ final class DuckDBPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     var serverVersion: String? { String(cString: duckdb_library_version()) }
     var supportsSchemas: Bool { true }
     var supportsTransactions: Bool { true }
+    var parameterStyle: ParameterStyle { .dollar }
 
     init(config: DriverConnectionConfig) {
         self.config = config

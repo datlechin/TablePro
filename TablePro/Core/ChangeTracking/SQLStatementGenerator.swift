@@ -8,6 +8,7 @@
 
 import Foundation
 import os
+import TableProPluginKit
 
 /// A parameterized SQL statement with placeholders and bound values
 struct ParameterizedStatement {
@@ -23,6 +24,30 @@ struct SQLStatementGenerator {
     let columns: [String]
     let primaryKeyColumn: String?
     let databaseType: DatabaseType
+    let parameterStyle: ParameterStyle
+
+    init(
+        tableName: String,
+        columns: [String],
+        primaryKeyColumn: String?,
+        databaseType: DatabaseType,
+        parameterStyle: ParameterStyle? = nil
+    ) {
+        self.tableName = tableName
+        self.columns = columns
+        self.primaryKeyColumn = primaryKeyColumn
+        self.databaseType = databaseType
+        self.parameterStyle = parameterStyle ?? Self.defaultParameterStyle(for: databaseType)
+    }
+
+    private static func defaultParameterStyle(for databaseType: DatabaseType) -> ParameterStyle {
+        switch databaseType {
+        case .postgresql, .redshift, .duckdb:
+            return .dollar
+        case .mysql, .mariadb, .sqlite, .mongodb, .redis, .mssql, .oracle, .clickhouse:
+            return .questionMark
+        }
+    }
 
     // MARK: - Public API
 
@@ -95,13 +120,13 @@ struct SQLStatementGenerator {
         return statements
     }
 
-    /// Get placeholder syntax for the database type
+    /// Get placeholder syntax based on the driver's parameter style
     private func placeholder(at index: Int) -> String {
-        switch databaseType {
-        case .postgresql, .redshift, .duckdb:
-            return "$\(index + 1)"  // PostgreSQL/DuckDB uses $1, $2, etc.
-        case .mysql, .mariadb, .sqlite, .mongodb, .redis, .mssql, .oracle, .clickhouse:
-            return "?"  // MySQL, MariaDB, SQLite, MongoDB, MSSQL, Oracle, and ClickHouse use ?
+        switch parameterStyle {
+        case .dollar:
+            return "$\(index + 1)"
+        case .questionMark:
+            return "?"
         }
     }
 

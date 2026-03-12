@@ -1,5 +1,10 @@
 import Foundation
 
+public enum ParameterStyle: String, Sendable {
+    case questionMark  // ?
+    case dollar        // $1, $2
+}
+
 public struct PluginRowChange: Sendable {
     public enum ChangeType: Sendable {
         case insert
@@ -63,6 +68,7 @@ public protocol PluginDatabaseDriver: AnyObject, Sendable {
     func cancelQuery() throws
     func applyQueryTimeout(_ seconds: Int) async throws
     var serverVersion: String? { get }
+    var parameterStyle: ParameterStyle { get }
 
     // Batch operations
     func fetchApproximateRowCount(table: String, schema: String?) async throws -> Int?
@@ -119,6 +125,8 @@ public extension PluginDatabaseDriver {
     }
 
     var serverVersion: String? { nil }
+
+    var parameterStyle: ParameterStyle { .questionMark }
 
     func fetchApproximateRowCount(table: String, schema: String?) async throws -> Int? { nil }
 
