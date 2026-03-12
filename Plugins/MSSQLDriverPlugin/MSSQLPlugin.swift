@@ -512,16 +512,9 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         }
 
         if !deleteChanges.isEmpty {
-            let hasPk = deleteChanges.allSatisfy { change in
-                change.cellChanges.contains { $0.columnName == columns.first }
-            }
-            if hasPk, let batchStmt = generateMssqlBatchDelete(table: table, columns: columns, changes: deleteChanges) {
-                statements.append(batchStmt)
-            } else {
-                for change in deleteChanges {
-                    if let stmt = generateMssqlDelete(table: table, columns: columns, change: change) {
-                        statements.append(stmt)
-                    }
+            for change in deleteChanges {
+                if let stmt = generateMssqlDelete(table: table, columns: columns, change: change) {
+                    statements.append(stmt)
                 }
             }
         }
@@ -591,42 +584,6 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
 
         // Without a reliable PK, use UPDATE TOP (1) for safety
         let sql = "UPDATE TOP (1) \(escapedTable) SET \(setClauses) WHERE \(whereClause)"
-        return (statement: sql, parameters: parameters)
-    }
-
-    private func generateMssqlBatchDelete(
-        table: String,
-        columns: [String],
-        changes: [PluginRowChange]
-    ) -> (statement: String, parameters: [String?])? {
-        guard !changes.isEmpty else { return nil }
-
-        let escapedTable = "[\(table.replacingOccurrences(of: "]", with: "]]"))]"
-        var parameters: [String?] = []
-        var conditions: [String] = []
-
-        for change in changes {
-            guard let originalRow = change.originalRow else { return nil }
-            var rowConditions: [String] = []
-            for (index, columnName) in columns.enumerated() {
-                guard index < originalRow.count else { continue }
-                let col = "[\(columnName.replacingOccurrences(of: "]", with: "]]"))]"
-                if let value = originalRow[index] {
-                    parameters.append(value)
-                    rowConditions.append("\(col) = ?")
-                } else {
-                    rowConditions.append("\(col) IS NULL")
-                }
-            }
-            if !rowConditions.isEmpty {
-                conditions.append("(\(rowConditions.joined(separator: " AND ")))")
-            }
-        }
-
-        guard !conditions.isEmpty else { return nil }
-
-        let whereClause = conditions.joined(separator: " OR ")
-        let sql = "DELETE FROM \(escapedTable) WHERE \(whereClause)"
         return (statement: sql, parameters: parameters)
     }
 

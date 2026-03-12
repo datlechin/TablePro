@@ -673,9 +673,29 @@ final class MainContentCoordinator {
         let statements = SQLStatementScanner.allStatements(in: trimmed)
         guard let stmt = statements.first else { return }
 
+        let level = connection.safeModeLevel
+        let needsConfirmation = level.appliesToAllQueries && level.requiresConfirmation
+
         // ClickHouse interactive explain gets special handling
         if connection.type == .clickhouse {
-            runClickHouseExplain(variant: .plan)
+            if needsConfirmation {
+                Task { @MainActor in
+                    let window = NSApp.keyWindow
+                    let permission = await SafeModeGuard.checkPermission(
+                        level: level,
+                        isWriteOperation: false,
+                        sql: "EXPLAIN",
+                        operationDescription: String(localized: "Execute Query"),
+                        window: window,
+                        databaseType: connection.type
+                    )
+                    if case .allowed = permission {
+                        runClickHouseExplain(variant: .plan)
+                    }
+                }
+            } else {
+                runClickHouseExplain(variant: .plan)
+            }
             return
         }
 
@@ -684,8 +704,7 @@ final class MainContentCoordinator {
             return
         }
 
-        let level = connection.safeModeLevel
-        if level.appliesToAllQueries && level.requiresConfirmation {
+        if needsConfirmation {
             Task { @MainActor in
                 let window = NSApp.keyWindow
                 let permission = await SafeModeGuard.checkPermission(

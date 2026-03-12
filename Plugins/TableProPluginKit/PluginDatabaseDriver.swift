@@ -222,6 +222,19 @@ public extension PluginDatabaseDriver {
         guard !parameters.isEmpty else {
             return try await execute(query: query)
         }
+
+        let sql: String
+        switch parameterStyle {
+        case .questionMark:
+            sql = Self.substituteQuestionMarks(query: query, parameters: parameters)
+        case .dollar:
+            sql = Self.substituteDollarParams(query: query, parameters: parameters)
+        }
+
+        return try await execute(query: sql)
+    }
+
+    private static func substituteQuestionMarks(query: String, parameters: [String?]) -> String {
         var sql = ""
         var paramIndex = 0
         var inSingleQuote = false
@@ -249,7 +262,7 @@ public extension PluginDatabaseDriver {
 
             if char == "?" && !inSingleQuote && !inDoubleQuote && paramIndex < parameters.count {
                 if let value = parameters[paramIndex] {
-                    sql.append(Self.escapedParameterValue(value))
+                    sql.append(escapedParameterValue(value))
                 } else {
                     sql.append("NULL")
                 }
@@ -259,7 +272,73 @@ public extension PluginDatabaseDriver {
             }
         }
 
-        return try await execute(query: sql)
+        return sql
+    }
+
+    private static func substituteDollarParams(query: String, parameters: [String?]) -> String {
+        let nsQuery = query as NSString
+        let length = nsQuery.length
+        var sql = ""
+        var i = 0
+        var inSingleQuote = false
+        var inDoubleQuote = false
+        var isEscaped = false
+
+        while i < length {
+            let char = nsQuery.character(at: i)
+
+            if isEscaped {
+                isEscaped = false
+                sql.append(Character(UnicodeScalar(char)!))
+                i += 1
+                continue
+            }
+
+            let backslash: UInt16 = 0x5C // \\
+            if char == backslash && (inSingleQuote || inDoubleQuote) {
+                isEscaped = true
+                sql.append(Character(UnicodeScalar(char)!))
+                i += 1
+                continue
+            }
+
+            let singleQuote: UInt16 = 0x27 // '
+            let doubleQuote: UInt16 = 0x22 // "
+            if char == singleQuote && !inDoubleQuote {
+                inSingleQuote.toggle()
+            } else if char == doubleQuote && !inSingleQuote {
+                inDoubleQuote.toggle()
+            }
+
+            let dollar: UInt16 = 0x24 // $
+            if char == dollar && !inSingleQuote && !inDoubleQuote {
+                var numStr = ""
+                var j = i + 1
+                while j < length {
+                    let digitChar = nsQuery.character(at: j)
+                    if digitChar >= 0x30 && digitChar <= 0x39 { // 0-9
+                        numStr.append(Character(UnicodeScalar(digitChar)!))
+                        j += 1
+                    } else {
+                        break
+                    }
+                }
+                if !numStr.isEmpty, let paramNum = Int(numStr), paramNum >= 1, paramNum <= parameters.count {
+                    if let value = parameters[paramNum - 1] {
+                        sql.append(escapedParameterValue(value))
+                    } else {
+                        sql.append("NULL")
+                    }
+                    i = j
+                    continue
+                }
+            }
+
+            sql.append(Character(UnicodeScalar(char)!))
+            i += 1
+        }
+
+        return sql
     }
 
     /// Escape a parameter value for safe interpolation into SQL.

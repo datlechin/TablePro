@@ -630,21 +630,26 @@ final class OraclePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         columns: [String],
         values: [String?]
     ) -> (statement: String, parameters: [String?])? {
-        var nonDefaultColumns: [String] = []
+        var insertColumns: [String] = []
+        var valuesSQL: [String] = []
         var parameters: [String?] = []
 
         for (index, value) in values.enumerated() {
-            if value == "__DEFAULT__" { continue }
             guard index < columns.count else { continue }
-            nonDefaultColumns.append(escapeOracleIdentifier(columns[index]))
-            parameters.append(value)
+            insertColumns.append(escapeOracleIdentifier(columns[index]))
+            if value == "__DEFAULT__" {
+                valuesSQL.append("DEFAULT")
+            } else {
+                valuesSQL.append("?")
+                parameters.append(value)
+            }
         }
 
-        guard !nonDefaultColumns.isEmpty else { return nil }
+        guard !insertColumns.isEmpty else { return nil }
 
-        let columnList = nonDefaultColumns.joined(separator: ", ")
-        let placeholders = parameters.map { _ in "?" }.joined(separator: ", ")
-        let sql = "INSERT INTO \(escapeOracleIdentifier(table)) (\(columnList)) VALUES (\(placeholders))"
+        let columnList = insertColumns.joined(separator: ", ")
+        let valueList = valuesSQL.joined(separator: ", ")
+        let sql = "INSERT INTO \(escapeOracleIdentifier(table)) (\(columnList)) VALUES (\(valueList))"
         return (statement: sql, parameters: parameters)
     }
 
@@ -910,7 +915,7 @@ final class OraclePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
             return "\(quoted) BETWEEN \(v1) AND \(v2)"
         case "REGEX":
             let escaped = value.replacingOccurrences(of: "'", with: "''")
-            return "\(quoted) LIKE '%\(escaped)%'"
+            return "REGEXP_LIKE(\(quoted), '\(escaped)')"
         default: return nil
         }
     }

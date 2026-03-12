@@ -147,10 +147,10 @@ struct SQLStatementGenerator {
         -> ParameterizedStatement?
     {
         var nonDefaultColumns: [String] = []
-        var parameters: [Any?] = []
+        var placeholderParts: [String] = []
+        var bindParameters: [Any?] = []
 
         for (index, value) in values.enumerated() {
-            // Skip DEFAULT columns - let DB handle them
             if value == "__DEFAULT__" { continue }
 
             guard index < columns.count else { continue }
@@ -160,34 +160,24 @@ struct SQLStatementGenerator {
 
             if let val = value {
                 if isSQLFunctionExpression(val) {
-                    // SQL function - cannot parameterize, use literal
-                    // This is safe because we validate it's a known SQL function
-                    parameters.append(
-                        SQLFunctionLiteral(val.trimmingCharacters(in: .whitespaces).uppercased()))
+                    placeholderParts.append(val.trimmingCharacters(in: .whitespaces).uppercased())
                 } else {
-                    parameters.append(val)
+                    bindParameters.append(val)
+                    placeholderParts.append(placeholder(at: bindParameters.count - 1))
                 }
             } else {
-                parameters.append(nil)
+                bindParameters.append(nil)
+                placeholderParts.append(placeholder(at: bindParameters.count - 1))
             }
         }
 
-        // If all columns are DEFAULT, don't generate INSERT
         guard !nonDefaultColumns.isEmpty else { return nil }
 
         let columnList = nonDefaultColumns.joined(separator: ", ")
-        let placeholders = parameters.enumerated().map { index, param in
-            if let funcLiteral = param as? SQLFunctionLiteral {
-                return funcLiteral.value
-            }
-            return placeholder(at: index)
-        }.joined(separator: ", ")
+        let placeholders = placeholderParts.joined(separator: ", ")
 
         let sql =
             "INSERT INTO \(databaseType.quoteIdentifier(tableName)) (\(columnList)) VALUES (\(placeholders))"
-
-        // Filter out SQL function literals from parameters
-        let bindParameters = parameters.filter { !($0 is SQLFunctionLiteral) }
 
         return ParameterizedStatement(sql: sql, parameters: bindParameters)
     }

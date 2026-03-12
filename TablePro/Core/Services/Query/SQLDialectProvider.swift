@@ -36,16 +36,11 @@ private struct EmptyDialect: SQLDialectProvider {
 // MARK: - Dialect Factory
 
 struct SQLDialectFactory {
+    @MainActor
     static func createDialect(for databaseType: DatabaseType) -> SQLDialectProvider {
-        if Thread.isMainThread {
-            return MainActor.assumeIsolated {
-                if let descriptor = PluginManager.shared.sqlDialect(for: databaseType) {
-                    return PluginDialectAdapter(descriptor: descriptor)
-                }
-                return EmptyDialect()
-            }
+        if let descriptor = PluginManager.shared.sqlDialect(for: databaseType) {
+            return PluginDialectAdapter(descriptor: descriptor)
         }
-
         return EmptyDialect()
     }
 }

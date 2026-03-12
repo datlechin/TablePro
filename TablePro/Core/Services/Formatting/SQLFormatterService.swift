@@ -110,7 +110,7 @@ struct SQLFormatterService: SQLFormatterProtocol {
             return cached
         }
 
-        let provider = SQLDialectFactory.createDialect(for: dialect)
+        let provider = MainActor.assumeIsolated { SQLDialectFactory.createDialect(for: dialect) }
         let allKeywords = provider.keywords.union(provider.functions).union(provider.dataTypes)
         let escapedKeywords = allKeywords.map { NSRegularExpression.escapedPattern(for: $0) }
         let pattern = "\\b(\(escapedKeywords.joined(separator: "|")))\\b"
@@ -149,7 +149,7 @@ struct SQLFormatterService: SQLFormatterProtocol {
         }
 
         // Get dialect provider
-        let dialectProvider = SQLDialectFactory.createDialect(for: dialect)
+        let dialectProvider = MainActor.assumeIsolated { SQLDialectFactory.createDialect(for: dialect) }
 
         // Format the SQL
         let formatted = formatSQL(sql, dialect: dialectProvider, databaseType: dialect, options: options)
