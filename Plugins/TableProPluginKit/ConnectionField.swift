@@ -1,10 +1,30 @@
 import Foundation
 
 public struct ConnectionField: Codable, Sendable {
+    public struct IntRange: Codable, Sendable, Equatable {
+        public let lowerBound: Int
+        public let upperBound: Int
+
+        public init(_ range: ClosedRange<Int>) {
+            self.lowerBound = range.lowerBound
+            self.upperBound = range.upperBound
+        }
+
+        public init(lowerBound: Int, upperBound: Int) {
+            self.lowerBound = lowerBound
+            self.upperBound = upperBound
+        }
+
+        public var closedRange: ClosedRange<Int> { lowerBound...upperBound }
+    }
+
     public enum FieldType: Codable, Sendable, Equatable {
         case text
         case secure
         case dropdown(options: [DropdownOption])
+        case number
+        case toggle
+        case stepper(range: IntRange)
     }
 
     public struct DropdownOption: Codable, Sendable, Equatable {

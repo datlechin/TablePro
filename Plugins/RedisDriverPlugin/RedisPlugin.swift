@@ -21,7 +21,14 @@ final class RedisPlugin: NSObject, TableProPlugin, DriverPlugin {
     static let databaseDisplayName = "Redis"
     static let iconName = "cylinder.fill"
     static let defaultPort = 6379
-    static let additionalConnectionFields: [ConnectionField] = []
+    static let additionalConnectionFields: [ConnectionField] = [
+        ConnectionField(
+            id: "redisDatabase",
+            label: String(localized: "Database Index"),
+            defaultValue: "0",
+            fieldType: .stepper(range: ConnectionField.IntRange(0...15))
+        ),
+    ]
     static let additionalDatabaseTypeIds: [String] = []
 
     // MARK: - UI/Capability Metadata

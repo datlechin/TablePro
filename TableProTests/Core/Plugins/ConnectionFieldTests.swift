@@ -153,4 +153,107 @@ struct ConnectionFieldTests {
         #expect(decoded.id == field.id)
         #expect(decoded.fieldType == .text)
     }
+
+    // MARK: - IntRange
+
+    @Test("IntRange init from ClosedRange")
+    func intRangeFromClosedRange() {
+        let range = ConnectionField.IntRange(0...15)
+        #expect(range.lowerBound == 0)
+        #expect(range.upperBound == 15)
+    }
+
+    @Test("IntRange closedRange round-trip")
+    func intRangeClosedRangeRoundTrip() {
+        let range = ConnectionField.IntRange(3...42)
+        #expect(range.closedRange == 3...42)
+    }
+
+    @Test("IntRange init from bounds")
+    func intRangeFromBounds() {
+        let range = ConnectionField.IntRange(lowerBound: 1, upperBound: 100)
+        #expect(range.lowerBound == 1)
+        #expect(range.upperBound == 100)
+        #expect(range.closedRange == 1...100)
+    }
+
+    // MARK: - isSecure for new types
+
+    @Test("isSecure is false for .number")
+    func isSecureForNumber() {
+        let field = ConnectionField(id: "port", label: "Port", fieldType: .number)
+        #expect(field.isSecure == false)
+    }
+
+    @Test("isSecure is false for .toggle")
+    func isSecureForToggle() {
+        let field = ConnectionField(id: "flag", label: "Flag", fieldType: .toggle)
+        #expect(field.isSecure == false)
+    }
+
+    @Test("isSecure is false for .stepper")
+    func isSecureForStepper() {
+        let range = ConnectionField.IntRange(0...15)
+        let field = ConnectionField(id: "db", label: "DB", fieldType: .stepper(range: range))
+        #expect(field.isSecure == false)
+    }
+
+    // MARK: - Codable round-trips for new types
+
+    @Test("Codable round-trip for .number field")
+    func codableNumber() throws {
+        let field = ConnectionField(
+            id: "port",
+            label: "Port",
+            placeholder: "3306",
+            defaultValue: "3306",
+            fieldType: .number
+        )
+
+        let data = try JSONEncoder().encode(field)
+        let decoded = try JSONDecoder().decode(ConnectionField.self, from: data)
+
+        #expect(decoded.id == field.id)
+        #expect(decoded.label == field.label)
+        #expect(decoded.placeholder == field.placeholder)
+        #expect(decoded.defaultValue == field.defaultValue)
+        #expect(decoded.fieldType == .number)
+    }
+
+    @Test("Codable round-trip for .toggle field")
+    func codableToggle() throws {
+        let field = ConnectionField(
+            id: "compress",
+            label: "Compress",
+            defaultValue: "false",
+            fieldType: .toggle
+        )
+
+        let data = try JSONEncoder().encode(field)
+        let decoded = try JSONDecoder().decode(ConnectionField.self, from: data)
+
+        #expect(decoded.id == field.id)
+        #expect(decoded.label == field.label)
+        #expect(decoded.defaultValue == "false")
+        #expect(decoded.fieldType == .toggle)
+    }
+
+    @Test("Codable round-trip for .stepper field with IntRange")
+    func codableStepper() throws {
+        let range = ConnectionField.IntRange(0...15)
+        let field = ConnectionField(
+            id: "redisDatabase",
+            label: "Database Index",
+            defaultValue: "0",
+            fieldType: .stepper(range: range)
+        )
+
+        let data = try JSONEncoder().encode(field)
+        let decoded = try JSONDecoder().decode(ConnectionField.self, from: data)
+
+        #expect(decoded.id == field.id)
+        #expect(decoded.label == field.label)
+        #expect(decoded.defaultValue == "0")
+        #expect(decoded.fieldType == .stepper(range: range))
+    }
 }

@@ -359,8 +359,6 @@ enum DatabaseDriverFactory {
         switch connection.type {
         case .mongodb:
             fields["sslCACertPath"] = ssl.caCertificatePath
-        case .redis:
-            fields["redisDatabase"] = String(connection.redisDatabase ?? 0)
         default:
             break
         }
