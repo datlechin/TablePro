@@ -159,6 +159,12 @@ final class RedshiftPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         _ = try await execute(query: "SET statement_timeout = '\(ms)'")
     }
 
+    // MARK: - EXPLAIN
+
+    func buildExplainQuery(_ sql: String) -> String? {
+        "EXPLAIN \(sql)"
+    }
+
     // MARK: - Schema
 
     func fetchTables(schema: String?) async throws -> [PluginTableInfo] {

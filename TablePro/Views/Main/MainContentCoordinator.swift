@@ -673,22 +673,32 @@ final class MainContentCoordinator {
         let statements = SQLStatementScanner.allStatements(in: trimmed)
         guard let stmt = statements.first else { return }
 
-        // Build database-specific EXPLAIN prefix
-        let explainSQL: String
-        switch connection.type {
-        case .mssql, .oracle:
-            return
-        case .clickhouse:
+        // ClickHouse interactive explain gets special handling
+        if connection.type == .clickhouse {
             runClickHouseExplain(variant: .plan)
             return
-        case .sqlite:
-            explainSQL = "EXPLAIN QUERY PLAN \(stmt)"
-        case .mysql, .mariadb, .postgresql, .redshift, .duckdb:
-            explainSQL = "EXPLAIN \(stmt)"
-        case .mongodb:
-            explainSQL = Self.buildMongoExplain(for: stmt)
-        case .redis:
-            explainSQL = Self.buildRedisDebugCommand(for: stmt)
+        }
+
+        // Build database-specific EXPLAIN query via plugin, with fallback
+        let explainSQL: String
+        if let adapter = DatabaseManager.shared.driver(for: connectionId) as? PluginDriverAdapter,
+           let pluginExplain = adapter.buildExplainQuery(stmt) {
+            explainSQL = pluginExplain
+        } else {
+            switch connection.type {
+            case .mssql, .oracle:
+                return
+            case .sqlite:
+                explainSQL = "EXPLAIN QUERY PLAN \(stmt)"
+            case .mysql, .mariadb, .postgresql, .redshift, .duckdb:
+                explainSQL = "EXPLAIN \(stmt)"
+            case .mongodb:
+                explainSQL = Self.buildMongoExplain(for: stmt)
+            case .redis:
+                explainSQL = Self.buildRedisDebugCommand(for: stmt)
+            case .clickhouse:
+                return
+            }
         }
 
         let level = connection.safeModeLevel

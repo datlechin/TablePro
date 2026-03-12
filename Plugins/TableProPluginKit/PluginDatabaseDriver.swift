@@ -107,6 +107,9 @@ public protocol PluginDatabaseDriver: AnyObject, Sendable {
     func dropObjectStatement(name: String, objectType: String, schema: String?, cascade: Bool) -> String?
     func foreignKeyDisableStatements() -> [String]?
     func foreignKeyEnableStatements() -> [String]?
+
+    // EXPLAIN query building (optional)
+    func buildExplainQuery(_ sql: String) -> String?
 }
 
 public extension PluginDatabaseDriver {
@@ -212,6 +215,8 @@ public extension PluginDatabaseDriver {
     func dropObjectStatement(name: String, objectType: String, schema: String?, cascade: Bool) -> String? { nil }
     func foreignKeyDisableStatements() -> [String]? { nil }
     func foreignKeyEnableStatements() -> [String]? { nil }
+
+    func buildExplainQuery(_ sql: String) -> String? { nil }
 
     func executeParameterized(query: String, parameters: [String?]) async throws -> PluginQueryResult {
         guard !parameters.isEmpty else {

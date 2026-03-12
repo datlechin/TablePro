@@ -350,6 +350,12 @@ final class PluginDriverAdapter: DatabaseDriver, SchemaSwitchable {
         pluginDriver.foreignKeyEnableStatements()
     }
 
+    // MARK: - EXPLAIN
+
+    func buildExplainQuery(_ sql: String) -> String? {
+        pluginDriver.buildExplainQuery(sql)
+    }
+
     // MARK: - Result Mapping
 
     private func mapQueryResult(_ pluginResult: PluginQueryResult) -> QueryResult {

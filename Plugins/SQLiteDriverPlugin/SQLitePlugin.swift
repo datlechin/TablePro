@@ -387,6 +387,12 @@ final class SQLitePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         sqlite3_interrupt(db)
     }
 
+    // MARK: - EXPLAIN
+
+    func buildExplainQuery(_ sql: String) -> String? {
+        "EXPLAIN QUERY PLAN \(sql)"
+    }
+
     // MARK: - Pagination
 
     func fetchRowCount(query: String) async throws -> Int {

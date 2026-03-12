@@ -359,6 +359,20 @@ final class RedisPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         try await conn.selectDatabase(dbIndex)
     }
 
+    // MARK: - EXPLAIN
+
+    func buildExplainQuery(_ sql: String) -> String? {
+        let trimmed = sql.trimmingCharacters(in: .whitespacesAndNewlines)
+        let parts = trimmed.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+
+        if parts.count >= 2 {
+            let key = parts[1]
+            return "DEBUG OBJECT \(key)"
+        }
+
+        return "INFO commandstats"
+    }
+
     // MARK: - Query Building
 
     func buildBrowseQuery(
