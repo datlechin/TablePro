@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Plugin-provided table operations: `truncateTableStatements`, `dropObjectStatement`, `foreignKeyDisableStatements`, `foreignKeyEnableStatements` in `PluginDatabaseDriver` protocol, allowing plugins to override TRUNCATE, DROP, and FK handling SQL
 - `SettablePlugin` protocol in TableProPluginKit SDK: unified settings pattern for all plugins with automatic persistence via `loadSettings()`/`saveSettings()`, replacing duplicated boilerplate across export/import/driver plugins
 - Plugin UI/capability metadata: each driver plugin now self-declares brand color, connection mode, supported features, column types, URL schemes, and grouping strategy via the `DriverPlugin` protocol
 - Driver plugin settings view support: `DriverPlugin.settingsView()` allows plugins to provide custom settings UI in the Installed Plugins panel

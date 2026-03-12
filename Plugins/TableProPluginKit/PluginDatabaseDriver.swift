@@ -85,6 +85,12 @@ public protocol PluginDatabaseDriver: AnyObject, Sendable {
 
     // Database switching (SQL Server USE, ClickHouse database switch, etc.)
     func switchDatabase(to database: String) async throws
+
+    // Table operations (optional — return nil to use app-level fallback)
+    func truncateTableStatements(table: String, schema: String?, cascade: Bool) -> [String]?
+    func dropObjectStatement(name: String, objectType: String, schema: String?, cascade: Bool) -> String?
+    func foreignKeyDisableStatements() -> [String]?
+    func foreignKeyEnableStatements() -> [String]?
 }
 
 public extension PluginDatabaseDriver {
@@ -174,6 +180,11 @@ public extension PluginDatabaseDriver {
     func buildQuickSearchQuery(table: String, searchText: String, columns: [String], sortColumns: [(columnIndex: Int, ascending: Bool)], limit: Int, offset: Int) -> String? { nil }
     func buildCombinedQuery(table: String, filters: [(column: String, op: String, value: String)], logicMode: String, searchText: String, searchColumns: [String], sortColumns: [(columnIndex: Int, ascending: Bool)], columns: [String], limit: Int, offset: Int) -> String? { nil }
     func generateStatements(table: String, columns: [String], changes: [PluginRowChange], insertedRowData: [Int: [String?]], deletedRowIndices: Set<Int>, insertedRowIndices: Set<Int>) -> [(statement: String, parameters: [String?])]? { nil }
+
+    func truncateTableStatements(table: String, schema: String?, cascade: Bool) -> [String]? { nil }
+    func dropObjectStatement(name: String, objectType: String, schema: String?, cascade: Bool) -> String? { nil }
+    func foreignKeyDisableStatements() -> [String]? { nil }
+    func foreignKeyEnableStatements() -> [String]? { nil }
 
     func executeParameterized(query: String, parameters: [String?]) async throws -> PluginQueryResult {
         guard !parameters.isEmpty else {
