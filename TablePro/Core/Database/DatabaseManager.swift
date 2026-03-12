@@ -114,7 +114,20 @@ final class DatabaseManager {
         }
 
         // Create appropriate driver with effective connection
-        let driver = try DatabaseDriverFactory.createDriver(for: effectiveConnection)
+        let driver: DatabaseDriver
+        do {
+            driver = try DatabaseDriverFactory.createDriver(for: effectiveConnection)
+        } catch {
+            // Close tunnel if SSH was established
+            if connection.sshConfig.enabled {
+                Task {
+                    try? await SSHTunnelManager.shared.closeTunnel(connectionId: connection.id)
+                }
+            }
+            activeSessions.removeValue(forKey: connection.id)
+            currentSessionId = nil
+            throw error
+        }
 
         do {
             try await driver.connect()
