@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import TableProPluginKit
 
 /// A schema SQL statement with metadata
 struct SchemaStatement {
@@ -25,10 +26,20 @@ struct SchemaStatementGenerator {
     /// Falls back to `{table}_pkey` convention if nil.
     private let primaryKeyConstraintName: String?
 
-    init(tableName: String, databaseType: DatabaseType, primaryKeyConstraintName: String? = nil) {
+    /// Optional plugin driver for database-specific DDL generation.
+    /// When non-nil, plugin methods are tried first; nil results fall back to built-in logic.
+    private let pluginDriver: (any PluginDatabaseDriver)?
+
+    init(
+        tableName: String,
+        databaseType: DatabaseType,
+        primaryKeyConstraintName: String? = nil,
+        pluginDriver: (any PluginDatabaseDriver)? = nil
+    ) {
         self.tableName = tableName
         self.databaseType = databaseType
         self.primaryKeyConstraintName = primaryKeyConstraintName
+        self.pluginDriver = pluginDriver
     }
 
     /// Generate all SQL statements from schema changes
@@ -125,6 +136,11 @@ struct SchemaStatementGenerator {
     // MARK: - Column Operations
 
     private func generateAddColumn(_ column: EditableColumnDefinition) throws -> SchemaStatement {
+        if let pluginDriver,
+           let sql = pluginDriver.generateAddColumnSQL(table: tableName, column: toPluginColumnDefinition(column)) {
+            return SchemaStatement(sql: sql, description: "Add column '\(column.name)'", isDestructive: false)
+        }
+
         let tableQuoted = databaseType.quoteIdentifier(tableName)
         let columnDef = try buildEditableColumnDefinition(column)
 
@@ -138,6 +154,19 @@ struct SchemaStatementGenerator {
     }
 
     private func generateModifyColumn(old: EditableColumnDefinition, new: EditableColumnDefinition) throws -> SchemaStatement {
+        if let pluginDriver,
+           let sql = pluginDriver.generateModifyColumnSQL(
+               table: tableName,
+               oldColumn: toPluginColumnDefinition(old),
+               newColumn: toPluginColumnDefinition(new)
+           ) {
+            return SchemaStatement(
+                sql: sql,
+                description: "Modify column '\(old.name)' to '\(new.name)'",
+                isDestructive: old.dataType != new.dataType
+            )
+        }
+
         let tableQuoted = databaseType.quoteIdentifier(tableName)
 
         switch databaseType {
@@ -247,49 +276,7 @@ struct SchemaStatementGenerator {
             )
 
         case .clickhouse:
-            // ClickHouse HTTP interface doesn't support multi-statement queries,
-            // so we combine changes into a single ALTER TABLE with comma-separated actions
-            var actions: [String] = []
-            let newQuoted = databaseType.quoteIdentifier(new.name)
-
-            if old.name != new.name {
-                let oldQuoted = databaseType.quoteIdentifier(old.name)
-                actions.append("RENAME COLUMN \(oldQuoted) TO \(newQuoted)")
-            }
-
-            if old.dataType != new.dataType || old.isNullable != new.isNullable {
-                let nullableType = new.isNullable ? "Nullable(\(new.dataType))" : new.dataType
-                actions.append("MODIFY COLUMN \(newQuoted) \(nullableType)")
-            }
-
-            if old.defaultValue != new.defaultValue {
-                if let defaultVal = new.defaultValue, !defaultVal.isEmpty {
-                    actions.append("MODIFY COLUMN \(newQuoted) DEFAULT \(defaultVal)")
-                } else {
-                    actions.append("MODIFY COLUMN \(newQuoted) REMOVE DEFAULT")
-                }
-            }
-
-            if old.comment != new.comment {
-                if let comment = new.comment, !comment.isEmpty {
-                    let escaped = comment.replacingOccurrences(of: "'", with: "''")
-                    actions.append("COMMENT COLUMN \(newQuoted) '\(escaped)'")
-                } else {
-                    actions.append("COMMENT COLUMN \(newQuoted) ''")
-                }
-            }
-
-            guard !actions.isEmpty else {
-                return SchemaStatement(sql: "", description: "No changes", isDestructive: false)
-            }
-
-            let sql = "ALTER TABLE \(tableQuoted) " + actions.joined(separator: ", ")
-            return SchemaStatement(
-                sql: sql,
-                description: "Modify column '\(old.name)' to '\(new.name)'",
-                isDestructive: old.dataType != new.dataType
-            )
-
+            return generateModifyColumnClickHouse(old: old, new: new, tableQuoted: tableQuoted)
 
         case .duckdb:
             // DuckDB: Multiple ALTER COLUMN statements (like PostgreSQL)
@@ -332,7 +319,61 @@ struct SchemaStatementGenerator {
         }
     }
 
+    private func generateModifyColumnClickHouse(
+        old: EditableColumnDefinition,
+        new: EditableColumnDefinition,
+        tableQuoted: String
+    ) -> SchemaStatement {
+        // ClickHouse HTTP interface doesn't support multi-statement queries,
+        // so we combine changes into a single ALTER TABLE with comma-separated actions
+        var actions: [String] = []
+        let newQuoted = databaseType.quoteIdentifier(new.name)
+
+        if old.name != new.name {
+            let oldQuoted = databaseType.quoteIdentifier(old.name)
+            actions.append("RENAME COLUMN \(oldQuoted) TO \(newQuoted)")
+        }
+
+        if old.dataType != new.dataType || old.isNullable != new.isNullable {
+            let nullableType = new.isNullable ? "Nullable(\(new.dataType))" : new.dataType
+            actions.append("MODIFY COLUMN \(newQuoted) \(nullableType)")
+        }
+
+        if old.defaultValue != new.defaultValue {
+            if let defaultVal = new.defaultValue, !defaultVal.isEmpty {
+                actions.append("MODIFY COLUMN \(newQuoted) DEFAULT \(defaultVal)")
+            } else {
+                actions.append("MODIFY COLUMN \(newQuoted) REMOVE DEFAULT")
+            }
+        }
+
+        if old.comment != new.comment {
+            if let comment = new.comment, !comment.isEmpty {
+                let escaped = comment.replacingOccurrences(of: "'", with: "''")
+                actions.append("COMMENT COLUMN \(newQuoted) '\(escaped)'")
+            } else {
+                actions.append("COMMENT COLUMN \(newQuoted) ''")
+            }
+        }
+
+        guard !actions.isEmpty else {
+            return SchemaStatement(sql: "", description: "No changes", isDestructive: false)
+        }
+
+        let sql = "ALTER TABLE \(tableQuoted) " + actions.joined(separator: ", ")
+        return SchemaStatement(
+            sql: sql,
+            description: "Modify column '\(old.name)' to '\(new.name)'",
+            isDestructive: old.dataType != new.dataType
+        )
+    }
+
     private func generateDeleteColumn(_ column: EditableColumnDefinition) -> SchemaStatement {
+        if let pluginDriver,
+           let sql = pluginDriver.generateDropColumnSQL(table: tableName, columnName: column.name) {
+            return SchemaStatement(sql: sql, description: "Drop column '\(column.name)'", isDestructive: true)
+        }
+
         let tableQuoted = databaseType.quoteIdentifier(tableName)
         let columnQuoted = databaseType.quoteIdentifier(column.name)
 
@@ -422,6 +463,11 @@ struct SchemaStatementGenerator {
     // MARK: - Index Operations
 
     private func generateAddIndex(_ index: EditableIndexDefinition) throws -> SchemaStatement {
+        if let pluginDriver,
+           let sql = pluginDriver.generateAddIndexSQL(table: tableName, index: toPluginIndexDefinition(index)) {
+            return SchemaStatement(sql: sql, description: "Add index '\(index.name)'", isDestructive: false)
+        }
+
         let tableQuoted = databaseType.quoteIdentifier(tableName)
         let indexQuoted = databaseType.quoteIdentifier(index.name)
         let columnsQuoted = index.columns.map { databaseType.quoteIdentifier($0) }.joined(separator: ", ")
@@ -463,6 +509,11 @@ struct SchemaStatementGenerator {
     }
 
     private func generateDeleteIndex(_ index: EditableIndexDefinition) -> SchemaStatement {
+        if let pluginDriver,
+           let sql = pluginDriver.generateDropIndexSQL(table: tableName, indexName: index.name) {
+            return SchemaStatement(sql: sql, description: "Drop index '\(index.name)'", isDestructive: false)
+        }
+
         let indexQuoted = databaseType.quoteIdentifier(index.name)
 
         let sql: String
@@ -488,6 +539,14 @@ struct SchemaStatementGenerator {
     // MARK: - Foreign Key Operations
 
     private func generateAddForeignKey(_ fk: EditableForeignKeyDefinition) throws -> SchemaStatement {
+        if let pluginDriver,
+           let sql = pluginDriver.generateAddForeignKeySQL(
+               table: tableName,
+               fk: toPluginForeignKeyDefinition(fk)
+           ) {
+            return SchemaStatement(sql: sql, description: "Add foreign key '\(fk.name)'", isDestructive: false)
+        }
+
         let tableQuoted = databaseType.quoteIdentifier(tableName)
         let fkQuoted = databaseType.quoteIdentifier(fk.name)
         let columnsQuoted = fk.columns.map { databaseType.quoteIdentifier($0) }.joined(separator: ", ")
@@ -524,6 +583,11 @@ struct SchemaStatementGenerator {
     }
 
     private func generateDeleteForeignKey(_ fk: EditableForeignKeyDefinition) throws -> SchemaStatement {
+        if let pluginDriver,
+           let sql = pluginDriver.generateDropForeignKeySQL(table: tableName, constraintName: fk.name) {
+            return SchemaStatement(sql: sql, description: "Drop foreign key '\(fk.name)'", isDestructive: false)
+        }
+
         let tableQuoted = databaseType.quoteIdentifier(tableName)
         let fkQuoted = databaseType.quoteIdentifier(fk.name)
 
@@ -547,6 +611,18 @@ struct SchemaStatementGenerator {
     // MARK: - Primary Key Operations
 
     private func generateModifyPrimaryKey(old: [String], new: [String]) throws -> SchemaStatement {
+        if let pluginDriver,
+           let sqls = pluginDriver.generateModifyPrimaryKeySQL(
+               table: tableName, oldColumns: old, newColumns: new
+           ) {
+            let joined = sqls.joined(separator: ";\n")
+            return SchemaStatement(
+                sql: joined,
+                description: "Modify primary key from [\(old.joined(separator: ", "))] to [\(new.joined(separator: ", "))]",
+                isDestructive: true
+            )
+        }
+
         let tableQuoted = databaseType.quoteIdentifier(tableName)
         let newColumnsQuoted = new.map { databaseType.quoteIdentifier($0) }.joined(separator: ", ")
 
@@ -591,6 +667,42 @@ struct SchemaStatementGenerator {
             sql: sql,
             description: "Modify primary key from [\(old.joined(separator: ", "))] to [\(new.joined(separator: ", "))]",
             isDestructive: true
+        )
+    }
+
+    // MARK: - Plugin Type Converters
+
+    private func toPluginColumnDefinition(_ col: EditableColumnDefinition) -> PluginColumnDefinition {
+        PluginColumnDefinition(
+            name: col.name,
+            dataType: col.dataType,
+            isNullable: col.isNullable,
+            defaultValue: col.defaultValue,
+            isPrimaryKey: col.isPrimaryKey,
+            autoIncrement: col.autoIncrement,
+            comment: col.comment,
+            unsigned: col.unsigned,
+            onUpdate: col.onUpdate
+        )
+    }
+
+    private func toPluginIndexDefinition(_ index: EditableIndexDefinition) -> PluginIndexDefinition {
+        PluginIndexDefinition(
+            name: index.name,
+            columns: index.columns,
+            isUnique: index.isUnique,
+            indexType: index.type.rawValue
+        )
+    }
+
+    private func toPluginForeignKeyDefinition(_ fk: EditableForeignKeyDefinition) -> PluginForeignKeyDefinition {
+        PluginForeignKeyDefinition(
+            name: fk.name,
+            columns: fk.columns,
+            referencedTable: fk.referencedTable,
+            referencedColumns: fk.referencedColumns,
+            onDelete: fk.onDelete.rawValue,
+            onUpdate: fk.onUpdate.rawValue
         )
     }
 }

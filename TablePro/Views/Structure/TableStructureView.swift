@@ -10,6 +10,7 @@ import AppKit
 import Combine
 import os
 import SwiftUI
+import TableProPluginKit
 import UniformTypeIdentifiers
 
 /// View displaying table structure with DataGridView
@@ -532,9 +533,11 @@ struct TableStructureView: View {
             return
         }
 
+        let pluginDriver = (DatabaseManager.shared.driver(for: connection.id) as? PluginDriverAdapter)?.schemaPluginDriver
         let generator = SchemaStatementGenerator(
             tableName: tableName,
-            databaseType: getDatabaseType()
+            databaseType: getDatabaseType(),
+            pluginDriver: pluginDriver
         )
 
         do {
