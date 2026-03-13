@@ -1111,11 +1111,15 @@ struct ConnectionFormView: View {
             } catch {
                 await MainActor.run {
                     isTesting = false
-                    AlertHelper.showErrorSheet(
-                        title: String(localized: "Connection Test Failed"),
-                        message: error.localizedDescription,
-                        window: window
-                    )
+                    if case PluginError.pluginNotInstalled = error {
+                        pluginInstallConnection = testConn
+                    } else {
+                        AlertHelper.showErrorSheet(
+                            title: String(localized: "Connection Test Failed"),
+                            message: error.localizedDescription,
+                            window: window
+                        )
+                    }
                 }
             }
         }
