@@ -356,6 +356,20 @@ final class PluginDriverAdapter: DatabaseDriver, SchemaSwitchable {
         pluginDriver.buildExplainQuery(sql)
     }
 
+    // MARK: - View Templates
+
+    func createViewTemplate() -> String? {
+        pluginDriver.createViewTemplate()
+    }
+
+    func editViewFallbackTemplate(viewName: String) -> String? {
+        pluginDriver.editViewFallbackTemplate(viewName: viewName)
+    }
+
+    func castColumnToText(_ column: String) -> String {
+        pluginDriver.castColumnToText(column)
+    }
+
     // MARK: - Identifier Quoting
 
     func quoteIdentifier(_ name: String) -> String {

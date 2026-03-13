@@ -499,6 +499,16 @@ final class MongoDBPluginDriver: PluginDatabaseDriver {
         }
     }
 
+    // MARK: - View Templates
+
+    func createViewTemplate() -> String? {
+        "db.createView(\"view_name\", \"source_collection\", [\n  {\"$match\": {}},\n  {\"$project\": {\"_id\": 1}}\n])"
+    }
+
+    func editViewFallbackTemplate(viewName: String) -> String? {
+        "db.runCommand({\"collMod\": \"\(viewName)\", \"viewOn\": \"source_collection\", \"pipeline\": [{\"$match\": {}}]})"
+    }
+
     // MARK: - Query Building
 
     func buildBrowseQuery(

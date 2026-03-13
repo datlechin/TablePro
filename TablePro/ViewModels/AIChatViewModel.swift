@@ -8,6 +8,7 @@
 import Foundation
 import Observation
 import os
+import TableProPluginKit
 
 /// View model for the AI chat panel
 @MainActor @Observable
@@ -412,6 +413,7 @@ final class AIChatViewModel {
     private func buildSystemPrompt(settings: AISettings) -> String? {
         guard let connection else { return nil }
 
+        let idQuote = PluginManager.shared.sqlDialect(for: connection.type)?.identifierQuote ?? "\""
         return AISchemaContext.buildSystemPrompt(
             databaseType: connection.type,
             databaseName: connection.database,
@@ -420,7 +422,8 @@ final class AIChatViewModel {
             foreignKeys: foreignKeysByTable,
             currentQuery: settings.includeCurrentQuery ? currentQuery : nil,
             queryResults: settings.includeQueryResults ? queryResults : nil,
-            settings: settings
+            settings: settings,
+            identifierQuote: idQuote
         )
     }
 }

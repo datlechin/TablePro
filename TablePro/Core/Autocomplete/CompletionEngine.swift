@@ -30,8 +30,16 @@ final class CompletionEngine {
 
     // MARK: - Initialization
 
-    init(schemaProvider: SQLSchemaProvider, databaseType: DatabaseType? = nil, dialect: SQLDialectDescriptor? = nil) {
+    init(
+        schemaProvider: SQLSchemaProvider,
+        databaseType: DatabaseType? = nil,
+        dialect: SQLDialectDescriptor? = nil,
+        statementCompletions: [CompletionEntry] = []
+    ) {
         self.provider = SQLCompletionProvider(schemaProvider: schemaProvider, databaseType: databaseType, dialect: dialect)
+        if let type = databaseType {
+            self.provider.setDatabaseType(type, dialect: dialect, statementCompletions: statementCompletions)
+        }
     }
 
     // MARK: - Public API

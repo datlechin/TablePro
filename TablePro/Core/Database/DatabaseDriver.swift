@@ -146,6 +146,13 @@ protocol DatabaseDriver: AnyObject {
 
     /// Escape a string value for safe use in SQL string literals
     func escapeStringLiteral(_ value: String) -> String
+
+    func createViewTemplate() -> String?
+    func editViewFallbackTemplate(viewName: String) -> String?
+    func castColumnToText(_ column: String) -> String
+
+    func foreignKeyDisableStatements() -> [String]?
+    func foreignKeyEnableStatements() -> [String]?
 }
 
 // MARK: - Schema Switching
@@ -178,6 +185,13 @@ extension DatabaseDriver {
         result = result.replacingOccurrences(of: "\0", with: "")
         return result
     }
+
+    func createViewTemplate() -> String? { nil }
+    func editViewFallbackTemplate(viewName: String) -> String? { nil }
+    func castColumnToText(_ column: String) -> String { column }
+
+    func foreignKeyDisableStatements() -> [String]? { nil }
+    func foreignKeyEnableStatements() -> [String]? { nil }
 
     func testConnection() async throws -> Bool {
         try await connect()

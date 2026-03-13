@@ -428,6 +428,20 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         return "[\(escaped)]"
     }
 
+    // MARK: - View Templates
+
+    func createViewTemplate() -> String? {
+        "CREATE OR ALTER VIEW view_name AS\nSELECT column1, column2\nFROM table_name\nWHERE condition;"
+    }
+
+    func editViewFallbackTemplate(viewName: String) -> String? {
+        "CREATE OR ALTER VIEW \(viewName) AS\nSELECT * FROM table_name;"
+    }
+
+    func castColumnToText(_ column: String) -> String {
+        "CAST(\(column) AS NVARCHAR(MAX))"
+    }
+
     init(config: DriverConnectionConfig) {
         self.config = config
         self._currentSchema = config.additionalFields["mssqlSchema"]?.isEmpty == false

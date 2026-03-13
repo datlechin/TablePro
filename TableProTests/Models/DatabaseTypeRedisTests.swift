@@ -28,16 +28,6 @@ struct DatabaseTypeRedisTests {
         #expect(DatabaseType.redis.supportsSchemaEditing == false)
     }
 
-    @Test("Identifier quote is double quote")
-    func identifierQuote() {
-        #expect(DatabaseType.redis.identifierQuote == "\"")
-    }
-
-    @Test("quoteIdentifier returns name unchanged")
-    func quoteIdentifier() {
-        #expect(DatabaseType.redis.quoteIdentifier("mykey") == "mykey")
-    }
-
     @Test("Raw value is Redis")
     func rawValue() {
         #expect(DatabaseType.redis.rawValue == "Redis")

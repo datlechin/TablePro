@@ -3,6 +3,7 @@
 //  TablePro
 
 import Foundation
+import TableProPluginKit
 
 internal struct SQLRowToStatementConverter {
     internal let tableName: String
@@ -17,6 +18,7 @@ internal struct SQLRowToStatementConverter {
         columns: [String],
         primaryKeyColumn: String?,
         databaseType: DatabaseType,
+        dialect: SQLDialectDescriptor? = nil,
         quoteIdentifier: ((String) -> String)? = nil,
         escapeStringLiteral: ((String) -> String)? = nil
     ) {
@@ -24,7 +26,7 @@ internal struct SQLRowToStatementConverter {
         self.columns = columns
         self.primaryKeyColumn = primaryKeyColumn
         self.databaseType = databaseType
-        self.quoteIdentifierFn = quoteIdentifier ?? databaseType.quoteIdentifier
+        self.quoteIdentifierFn = quoteIdentifier ?? quoteIdentifierFromDialect(dialect)
         self.escapeStringFn = escapeStringLiteral ?? Self.defaultEscapeFunction(for: databaseType)
     }
 

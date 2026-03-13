@@ -311,33 +311,6 @@ enum DatabaseType: String, CaseIterable, Identifiable, Codable {
         }
     }
 
-    /// Quote character for identifiers (table/column names)
-    /// MySQL/MariaDB/SQLite use backticks, PostgreSQL uses double quotes
-    var identifierQuote: String {
-        switch self {
-        case .mysql, .mariadb, .sqlite, .clickhouse:
-            return "`"
-        case .postgresql, .redshift, .mongodb, .redis, .oracle, .duckdb:
-            return "\""
-        case .mssql:
-            return "["
-        }
-    }
-
-    /// Quote an identifier (table or column name) for this database type.
-    /// Escapes embedded quote characters to prevent SQL injection.
-    func quoteIdentifier(_ name: String) -> String {
-        switch self {
-        case .mongodb, .redis:
-            return name
-        case .mssql:
-            return "[\(name.replacingOccurrences(of: "]", with: "]]"))]"
-        default:
-            let q = identifierQuote
-            let escaped = name.replacingOccurrences(of: q, with: q + q)
-            return "\(q)\(escaped)\(q)"
-        }
-    }
 }
 
 // MARK: - Connection Color

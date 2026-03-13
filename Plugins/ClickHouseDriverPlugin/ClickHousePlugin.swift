@@ -724,6 +724,16 @@ final class ClickHousePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         "EXPLAIN \(sql)"
     }
 
+    // MARK: - View Templates
+
+    func createViewTemplate() -> String? {
+        "CREATE VIEW view_name AS\nSELECT column1, column2\nFROM table_name\nWHERE condition;"
+    }
+
+    func editViewFallbackTemplate(viewName: String) -> String? {
+        "ALTER VIEW \(viewName) AS\nSELECT * FROM table_name;"
+    }
+
     // MARK: - Kill Query
 
     private func killQuery(queryId: String) {

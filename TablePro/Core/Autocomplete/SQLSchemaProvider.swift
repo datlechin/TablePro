@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import TableProPluginKit
 
 /// Provides cached database schema information for autocomplete
 actor SQLSchemaProvider {
@@ -139,6 +140,11 @@ actor SQLSchemaProvider {
             }
         }
 
+        let dbType = connection.type
+        let idQuote = await MainActor.run {
+            PluginManager.shared.sqlDialect(for: dbType)?.identifierQuote ?? "\""
+        }
+
         return AISchemaContext.buildSystemPrompt(
             databaseType: connection.type,
             databaseName: connection.database,
@@ -147,7 +153,8 @@ actor SQLSchemaProvider {
             foreignKeys: [:],
             currentQuery: nil,
             queryResults: nil,
-            settings: settings
+            settings: settings,
+            identifierQuote: idQuote
         )
     }
 

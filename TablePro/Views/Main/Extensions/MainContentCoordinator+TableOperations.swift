@@ -33,7 +33,8 @@ extension MainContentCoordinator {
         var statements: [String] = []
         let dbType = connection.type
         let driver = DatabaseManager.shared.driver(for: connectionId)
-        let quote: (String) -> String = driver?.quoteIdentifier ?? dbType.quoteIdentifier
+        let quote: (String) -> String = driver?.quoteIdentifier
+            ?? quoteIdentifierFromDialect(PluginManager.shared.sqlDialect(for: dbType))
 
         // Sort tables for consistent execution order
         let sortedTruncates = truncates.sorted()
