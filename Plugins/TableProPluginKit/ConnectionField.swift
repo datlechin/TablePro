@@ -104,4 +104,20 @@ public struct ConnectionField: Codable, Sendable {
         self.section = section
         self.hidesPassword = hidesPassword
     }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        label = try container.decode(String.self, forKey: .label)
+        placeholder = try container.decodeIfPresent(String.self, forKey: .placeholder) ?? ""
+        isRequired = try container.decodeIfPresent(Bool.self, forKey: .isRequired) ?? false
+        defaultValue = try container.decodeIfPresent(String.self, forKey: .defaultValue)
+        fieldType = try container.decode(FieldType.self, forKey: .fieldType)
+        section = try container.decodeIfPresent(FieldSection.self, forKey: .section) ?? .advanced
+        hidesPassword = try container.decodeIfPresent(Bool.self, forKey: .hidesPassword) ?? false
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, label, placeholder, isRequired, defaultValue, fieldType, section, hidesPassword
+    }
 }

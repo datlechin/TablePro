@@ -105,13 +105,6 @@ struct ConnectionFormView: View {
         additionalFieldValues["usePgpass"] == "true"
     }
 
-    private var usePgpassBinding: Binding<Bool> {
-        Binding(
-            get: { additionalFieldValues["usePgpass"] == "true" },
-            set: { additionalFieldValues["usePgpass"] = $0 ? "true" : "false" }
-        )
-    }
-
     // Pre-connect script
     @State private var preConnectScript: String = ""
 
@@ -939,7 +932,7 @@ struct ConnectionFormView: View {
             groupId: selectedGroupId,
             safeModeLevel: safeModeLevel,
             aiPolicy: aiPolicy,
-            redisDatabase: Int(additionalFieldValues["redisDatabase"] ?? ""),
+            redisDatabase: Int(additionalFieldValues["redisDatabase"] ?? "0"),
             startupCommands: startupCommands.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 ? nil : startupCommands,
             additionalFields: finalAdditionalFields.isEmpty ? nil : finalAdditionalFields
@@ -1088,7 +1081,7 @@ struct ConnectionFormView: View {
             color: connectionColor,
             tagId: selectedTagId,
             groupId: selectedGroupId,
-            redisDatabase: Int(additionalFieldValues["redisDatabase"] ?? ""),
+            redisDatabase: Int(additionalFieldValues["redisDatabase"] ?? "0"),
             startupCommands: startupCommands.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 ? nil : startupCommands,
             additionalFields: finalAdditionalFields.isEmpty ? nil : finalAdditionalFields
