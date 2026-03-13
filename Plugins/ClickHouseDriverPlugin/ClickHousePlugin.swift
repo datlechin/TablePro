@@ -91,7 +91,8 @@ final class ClickHousePlugin: NSObject, TableProPlugin, DriverPlugin {
         regexSyntax: .match,
         booleanLiteralStyle: .numeric,
         likeEscapeStyle: .implicit,
-        paginationStyle: .limit
+        paginationStyle: .limit,
+        requiresBackslashEscaping: true
     )
 
     func createDriver(config: DriverConnectionConfig) -> any PluginDatabaseDriver {

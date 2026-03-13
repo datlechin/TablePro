@@ -44,6 +44,7 @@ final class RedisPlugin: NSObject, TableProPlugin, DriverPlugin {
     static let supportsImport = false
     static let tableEntityName = "Keys"
     static let supportsForeignKeyDisable = false
+    static let supportsReadOnlyMode = false
     static let databaseGroupingStrategy: GroupingStrategy = .flat
     static let defaultGroupName = "db0"
     static let columnTypesByCategory: [String: [String]] = [

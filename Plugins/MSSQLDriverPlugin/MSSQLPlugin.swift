@@ -26,6 +26,7 @@ final class MSSQLPlugin: NSObject, TableProPlugin, DriverPlugin {
 
     static let brandColorHex = "#E34517"
     static let systemDatabaseNames: [String] = ["master", "tempdb", "model", "msdb"]
+    static let defaultSchemaName = "dbo"
     static let databaseGroupingStrategy: GroupingStrategy = .bySchema
     static let columnTypesByCategory: [String: [String]] = [
         "Integer": ["TINYINT", "SMALLINT", "INT", "BIGINT"],

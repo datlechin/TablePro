@@ -42,7 +42,7 @@ enum SessionStateFactory {
         toolbarSt.hasCompletedSetup = true
 
         // Redis: set initial database name eagerly to avoid toolbar flash
-        if connection.type == .redis {
+        if connection.type.pluginTypeId == "Redis" {
             let dbIndex = connection.redisDatabase ?? Int(connection.database) ?? 0
             toolbarSt.databaseName = String(dbIndex)
         }

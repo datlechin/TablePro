@@ -55,6 +55,8 @@ final class MongoDBPlugin: NSObject, TableProPlugin, DriverPlugin {
     static let systemDatabaseNames: [String] = ["admin", "local", "config"]
     static let tableEntityName = "Collections"
     static let supportsForeignKeyDisable = false
+    static let immutableColumns: [String] = ["_id"]
+    static let supportsReadOnlyMode = false
     static let databaseGroupingStrategy: GroupingStrategy = .flat
     static let columnTypesByCategory: [String: [String]] = [
         "String": ["string", "objectId", "regex"],

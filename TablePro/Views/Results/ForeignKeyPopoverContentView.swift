@@ -7,6 +7,7 @@
 
 import os
 import SwiftUI
+import TableProPluginKit
 
 struct ForeignKeyPopoverContentView: View {
     let currentValue: String?
@@ -133,10 +134,10 @@ struct ForeignKeyPopoverContentView: View {
 
         let query: String
         let limitSuffix: String
-        switch databaseType {
-        case .oracle, .mssql:
+        switch PluginManager.shared.paginationStyle(for: databaseType) {
+        case .offsetFetch:
             limitSuffix = "OFFSET 0 ROWS FETCH NEXT \(Self.maxFetchRows) ROWS ONLY"
-        default:
+        case .limit:
             limitSuffix = "LIMIT \(Self.maxFetchRows)"
         }
         if let displayCol = displayColumn {

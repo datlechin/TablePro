@@ -25,7 +25,7 @@ internal final class SafeModeGuard {
         databaseType: DatabaseType? = nil
     ) async -> Permission {
         let effectiveIsWrite: Bool
-        if let dbType = databaseType, dbType == .mongodb || dbType == .redis {
+        if let dbType = databaseType, !PluginManager.shared.supportsReadOnlyMode(for: dbType) {
             effectiveIsWrite = true
         } else {
             effectiveIsWrite = isWriteOperation

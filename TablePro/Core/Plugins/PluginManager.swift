@@ -457,6 +457,39 @@ final class PluginManager {
         return Swift.type(of: plugin).supportsForeignKeyDisable
     }
 
+    func immutableColumns(for databaseType: DatabaseType) -> [String] {
+        guard let plugin = driverPlugin(for: databaseType) else { return [] }
+        return Swift.type(of: plugin).immutableColumns
+    }
+
+    func supportsReadOnlyMode(for databaseType: DatabaseType) -> Bool {
+        guard let plugin = driverPlugin(for: databaseType) else { return true }
+        return Swift.type(of: plugin).supportsReadOnlyMode
+    }
+
+    func defaultSchemaName(for databaseType: DatabaseType) -> String {
+        guard let plugin = driverPlugin(for: databaseType) else { return "public" }
+        return Swift.type(of: plugin).defaultSchemaName
+    }
+
+    func paginationStyle(for databaseType: DatabaseType) -> SQLDialectDescriptor.PaginationStyle {
+        sqlDialect(for: databaseType)?.paginationStyle ?? .limit
+    }
+
+    func offsetFetchOrderBy(for databaseType: DatabaseType) -> String {
+        sqlDialect(for: databaseType)?.offsetFetchOrderBy ?? "ORDER BY (SELECT NULL)"
+    }
+
+    func databaseGroupingStrategy(for databaseType: DatabaseType) -> GroupingStrategy {
+        guard let plugin = driverPlugin(for: databaseType) else { return .byDatabase }
+        return Swift.type(of: plugin).databaseGroupingStrategy
+    }
+
+    func defaultGroupName(for databaseType: DatabaseType) -> String {
+        guard let plugin = driverPlugin(for: databaseType) else { return "main" }
+        return Swift.type(of: plugin).defaultGroupName
+    }
+
     /// All file extensions across all loaded plugins.
     var allRegisteredFileExtensions: [String: DatabaseType] {
         loadPendingPlugins()

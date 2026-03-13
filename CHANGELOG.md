@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `FilterSQLGenerator` now uses `SQLDialectDescriptor` data (regex syntax, boolean literals, LIKE escape style, pagination style) instead of `DatabaseType` switch statements
 - Moved identifier quoting, autocomplete statement completions, view templates, and FK disable/enable into plugin system
 - Removed `DatabaseType` switches from `FilterSQLGenerator`, `SQLCompletionProvider`, `ImportDataSinkAdapter`, and `MainContentCoordinator+SidebarActions`
+- Replaced hardcoded `DatabaseType` switches in ExportDialog, DataChangeManager, SafeModeGuard, ExportService, DataGridView, HighlightedSQLTextView, ForeignKeyPopoverContentView, QueryTab, SQLRowToStatementConverter, SessionStateFactory, ConnectionToolbarState, and DatabaseSwitcherSheet with dynamic plugin lookups (`databaseGroupingStrategy`, `immutableColumns`, `supportsReadOnlyMode`, `paginationStyle`, `editorLanguage`, `connectionMode`, `supportsSchemaSwitching`)
 
 ### Added
 

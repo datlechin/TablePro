@@ -29,6 +29,7 @@ final class PostgreSQLPlugin: NSObject, TableProPlugin, DriverPlugin {
     static let urlSchemes: [String] = ["postgresql", "postgres"]
     static let brandColorHex = "#336791"
     static let systemDatabaseNames: [String] = ["postgres", "template0", "template1"]
+    static let supportsSchemaSwitching = true
     static let databaseGroupingStrategy: GroupingStrategy = .bySchema
     static let columnTypesByCategory: [String: [String]] = [
         "Integer": ["SMALLINT", "INTEGER", "BIGINT", "SERIAL", "BIGSERIAL", "SMALLSERIAL"],

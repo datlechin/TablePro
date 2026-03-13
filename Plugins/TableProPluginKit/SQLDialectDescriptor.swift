@@ -22,6 +22,7 @@ public struct SQLDialectDescriptor: Sendable {
     public let likeEscapeStyle: LikeEscapeStyle
     public let paginationStyle: PaginationStyle
     public let offsetFetchOrderBy: String
+    public let requiresBackslashEscaping: Bool
 
     public enum RegexSyntax: String, Sendable {
         case regexp        // MySQL: column REGEXP 'pattern'
@@ -57,7 +58,8 @@ public struct SQLDialectDescriptor: Sendable {
         booleanLiteralStyle: BooleanLiteralStyle = .numeric,
         likeEscapeStyle: LikeEscapeStyle = .explicit,
         paginationStyle: PaginationStyle = .limit,
-        offsetFetchOrderBy: String = "ORDER BY (SELECT NULL)"
+        offsetFetchOrderBy: String = "ORDER BY (SELECT NULL)",
+        requiresBackslashEscaping: Bool = false
     ) {
         self.identifierQuote = identifierQuote
         self.keywords = keywords
@@ -69,5 +71,6 @@ public struct SQLDialectDescriptor: Sendable {
         self.likeEscapeStyle = likeEscapeStyle
         self.paginationStyle = paginationStyle
         self.offsetFetchOrderBy = offsetFetchOrderBy
+        self.requiresBackslashEscaping = requiresBackslashEscaping
     }
 }

@@ -7,6 +7,7 @@
 
 import Foundation
 import Observation
+import TableProPluginKit
 
 /// Type of tab
 enum TabType: Equatable, Codable, Hashable {
@@ -439,20 +440,21 @@ struct QueryTab: Identifiable, Equatable {
     ) -> String {
         let quote = quoteIdentifier ?? quoteIdentifierFromDialect(PluginManager.shared.sqlDialect(for: databaseType))
         let pageSize = AppSettingsManager.shared.dataGrid.defaultPageSize
-        if databaseType == .mongodb {
+        switch PluginManager.shared.editorLanguage(for: databaseType) {
+        case .javascript:
             let escaped = tableName.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
             return "db[\"\(escaped)\"].find({}).limit(\(pageSize))"
-        } else if databaseType == .redis {
+        case .bash:
             return "SCAN 0 MATCH * COUNT \(pageSize)"
-        } else if databaseType == .mssql {
+        default:
             let quotedName = quote(tableName)
-            return "SELECT * FROM \(quotedName) ORDER BY (SELECT NULL) OFFSET 0 ROWS FETCH NEXT \(pageSize) ROWS ONLY;"
-        } else if databaseType == .oracle {
-            let quotedName = quote(tableName)
-            return "SELECT * FROM \(quotedName) ORDER BY 1 OFFSET 0 ROWS FETCH NEXT \(pageSize) ROWS ONLY;"
-        } else {
-            let quotedName = quote(tableName)
-            return "SELECT * FROM \(quotedName) LIMIT \(pageSize);"
+            switch PluginManager.shared.paginationStyle(for: databaseType) {
+            case .offsetFetch:
+                let orderBy = PluginManager.shared.offsetFetchOrderBy(for: databaseType)
+                return "SELECT * FROM \(quotedName) \(orderBy) OFFSET 0 ROWS FETCH NEXT \(pageSize) ROWS ONLY;"
+            case .limit:
+                return "SELECT * FROM \(quotedName) LIMIT \(pageSize);"
+            }
         }
     }
 

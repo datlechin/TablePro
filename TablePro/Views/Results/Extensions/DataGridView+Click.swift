@@ -51,10 +51,10 @@ extension TableViewCoordinator {
         let columnIndex = column - 1
         guard !changeManager.isRowDeleted(row) else { return }
 
-        // MongoDB _id is immutable — block editing
-        if databaseType == .mongodb,
+        let immutable = databaseType.map { PluginManager.shared.immutableColumns(for: $0) } ?? []
+        if !immutable.isEmpty,
            columnIndex < rowProvider.columns.count,
-           rowProvider.columns[columnIndex] == "_id" {
+           immutable.contains(rowProvider.columns[columnIndex]) {
             return
         }
 

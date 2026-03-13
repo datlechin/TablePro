@@ -8,6 +8,7 @@
 
 import AppKit
 import SwiftUI
+import TableProPluginKit
 
 struct DatabaseSwitcherSheet: View {
     @Binding var isPresented: Bool
@@ -62,7 +63,7 @@ struct DatabaseSwitcherSheet: View {
                 .padding(.vertical, 12)
 
             // Databases / Schemas toggle (PostgreSQL only)
-            if databaseType == .postgresql {
+            if PluginManager.shared.supportsSchemaSwitching(for: databaseType) {
                 Picker("", selection: $viewModel.mode) {
                     Text(String(localized: "Databases"))
                         .tag(DatabaseSwitcherViewModel.Mode.database)
@@ -90,7 +91,7 @@ struct DatabaseSwitcherSheet: View {
                 loadingView
             } else if let error = viewModel.errorMessage {
                 errorView(error)
-            } else if databaseType == .sqlite {
+            } else if PluginManager.shared.connectionMode(for: databaseType) == .fileBased {
                 sqliteEmptyState
             } else if viewModel.filteredDatabases.isEmpty {
                 emptyState
@@ -434,7 +435,7 @@ struct DatabaseSwitcherSheet: View {
         viewModel.trackAccess(database: database)
 
         // Call appropriate callback
-        if viewModel.isSchemaMode, databaseType == .postgresql, let onSelectSchema {
+        if viewModel.isSchemaMode, PluginManager.shared.supportsSchemaSwitching(for: databaseType), let onSelectSchema {
             onSelectSchema(database)
         } else {
             onSelect(database)

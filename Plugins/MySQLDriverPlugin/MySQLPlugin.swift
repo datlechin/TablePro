@@ -81,7 +81,8 @@ final class MySQLPlugin: NSObject, TableProPlugin, DriverPlugin {
         regexSyntax: .regexp,
         booleanLiteralStyle: .numeric,
         likeEscapeStyle: .implicit,
-        paginationStyle: .limit
+        paginationStyle: .limit,
+        requiresBackslashEscaping: true
     )
 
     func createDriver(config: DriverConnectionConfig) -> any PluginDatabaseDriver {

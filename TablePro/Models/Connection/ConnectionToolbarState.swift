@@ -9,6 +9,7 @@
 import AppKit
 import Observation
 import SwiftUI
+import TableProPluginKit
 
 // MARK: - Connection Environment
 
@@ -233,15 +234,11 @@ final class ConnectionToolbarState {
     /// Update state from a DatabaseConnection model
     func update(from connection: DatabaseConnection) {
         connectionName = connection.name
-        if connection.type == .sqlite {
+        if PluginManager.shared.connectionMode(for: connection.type) == .fileBased {
             databaseName = (connection.database as NSString).lastPathComponent
-        } else if connection.type == .postgresql {
-            if let session = DatabaseManager.shared.session(for: connection.id),
-               let database = session.currentDatabase {
-                databaseName = database
-            } else {
-                databaseName = connection.database
-            }
+        } else if let session = DatabaseManager.shared.session(for: connection.id),
+                  let database = session.currentDatabase {
+            databaseName = database
         } else {
             databaseName = connection.database
         }

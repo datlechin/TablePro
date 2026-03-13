@@ -39,6 +39,9 @@ public protocol DriverPlugin: TableProPlugin {
     static var tableEntityName: String { get }
     static var supportsCascadeDrop: Bool { get }
     static var supportsForeignKeyDisable: Bool { get }
+    static var immutableColumns: [String] { get }
+    static var supportsReadOnlyMode: Bool { get }
+    static var defaultSchemaName: String { get }
 }
 
 public extension DriverPlugin {
@@ -82,4 +85,7 @@ public extension DriverPlugin {
     static var tableEntityName: String { "Tables" }
     static var supportsCascadeDrop: Bool { false }
     static var supportsForeignKeyDisable: Bool { true }
+    static var immutableColumns: [String] { [] }
+    static var supportsReadOnlyMode: Bool { true }
+    static var defaultSchemaName: String { "public" }
 }

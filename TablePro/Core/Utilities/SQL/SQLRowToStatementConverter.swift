@@ -27,16 +27,15 @@ internal struct SQLRowToStatementConverter {
         self.primaryKeyColumn = primaryKeyColumn
         self.databaseType = databaseType
         self.quoteIdentifierFn = quoteIdentifier ?? quoteIdentifierFromDialect(dialect)
-        self.escapeStringFn = escapeStringLiteral ?? Self.defaultEscapeFunction(for: databaseType)
+        self.escapeStringFn = escapeStringLiteral ?? Self.defaultEscapeFunction(dialect: dialect)
     }
 
     private static let maxRows = 50_000
 
     /// Fallback escape function when no plugin driver is available.
-    /// MySQL/MariaDB/ClickHouse need backslash escaping; others use ANSI SQL.
-    private static func defaultEscapeFunction(for databaseType: DatabaseType) -> (String) -> String {
-        switch databaseType {
-        case .mysql, .mariadb, .clickhouse:
+    /// Dialects with `requiresBackslashEscaping` get backslash escaping; others use ANSI SQL.
+    private static func defaultEscapeFunction(dialect: SQLDialectDescriptor?) -> (String) -> String {
+        if dialect?.requiresBackslashEscaping == true {
             return { value in
                 var result = value
                 result = result.replacingOccurrences(of: "\\", with: "\\\\")
@@ -44,9 +43,8 @@ internal struct SQLRowToStatementConverter {
                 result = result.replacingOccurrences(of: "\0", with: "\\0")
                 return result
             }
-        default:
-            return SQLEscaping.escapeStringLiteral
         }
+        return SQLEscaping.escapeStringLiteral
     }
 
     internal func generateInserts(rows: [[String?]]) -> String {
@@ -109,12 +107,7 @@ internal struct SQLRowToStatementConverter {
             whereClause = whereParts.joined(separator: " AND ")
         }
 
-        switch databaseType {
-        case .clickhouse:
-            return "ALTER TABLE \(quotedTable) UPDATE \(setClause) WHERE \(whereClause);"
-        default:
-            return "UPDATE \(quotedTable) SET \(setClause) WHERE \(whereClause);"
-        }
+        return "UPDATE \(quotedTable) SET \(setClause) WHERE \(whereClause);"
     }
 
     private func formatValue(_ value: String?) -> String {
