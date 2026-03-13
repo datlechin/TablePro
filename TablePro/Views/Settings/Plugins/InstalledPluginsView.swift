@@ -11,10 +11,16 @@ struct InstalledPluginsView: View {
     private let pluginManager = PluginManager.shared
 
     @State private var selectedPluginId: String?
+    @State private var searchText = ""
     @State private var showErrorAlert = false
     @State private var errorAlertTitle = ""
     @State private var errorAlertMessage = ""
     @State private var dismissedRestartBanner = false
+
+    private var filteredPlugins: [PluginEntry] {
+        if searchText.isEmpty { return pluginManager.plugins }
+        return pluginManager.plugins.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -73,15 +79,27 @@ struct InstalledPluginsView: View {
     // MARK: - Plugin List
 
     private var pluginList: some View {
-        List(selection: $selectedPluginId) {
-            ForEach(pluginManager.plugins) { plugin in
-                pluginRow(plugin)
-                    .tag(plugin.id)
+        VStack(spacing: 0) {
+            TextField("Filter...", text: $searchText)
+                .textFieldStyle(.roundedBorder)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+
+            List(selection: $selectedPluginId) {
+                ForEach(filteredPlugins) { plugin in
+                    pluginRow(plugin)
+                        .tag(plugin.id)
+                }
+            }
+            .listStyle(.inset(alternatesRowBackgrounds: true))
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                listBottomBar
             }
         }
-        .listStyle(.inset(alternatesRowBackgrounds: true))
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            listBottomBar
+        .onChange(of: searchText) {
+            if let selectedPluginId, !filteredPlugins.contains(where: { $0.id == selectedPluginId }) {
+                self.selectedPluginId = nil
+            }
         }
     }
 
