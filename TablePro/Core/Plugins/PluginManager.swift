@@ -249,6 +249,12 @@ final class PluginManager {
             if !declared.contains(.databaseDriver) {
                 Self.logger.warning("Plugin '\(pluginId)' conforms to DriverPlugin but does not declare .databaseDriver capability — registering anyway")
             }
+            do {
+                try validateDriverDescriptor(type(of: driver), pluginId: pluginId)
+            } catch {
+                Self.logger.error("Plugin '\(pluginId)' rejected: \(error.localizedDescription)")
+                return
+            }
             let typeId = type(of: driver).databaseTypeId
             driverPlugins[typeId] = driver
             for additionalId in type(of: driver).additionalDatabaseTypeIds {
@@ -290,6 +296,73 @@ final class PluginManager {
         }
         if declared.contains(.importFormat) && !isImporter {
             Self.logger.warning("Plugin '\(pluginId)' declares .importFormat but does not conform to ImportFormatPlugin")
+        }
+    }
+
+    // MARK: - Descriptor Validation
+
+    /// Reject-level validation: runs synchronously before registration.
+    /// Checks only properties already accessed during the loading flow.
+    private func validateDriverDescriptor(_ driverType: any DriverPlugin.Type, pluginId: String) throws {
+        guard !driverType.databaseTypeId.trimmingCharacters(in: .whitespaces).isEmpty else {
+            throw PluginError.invalidDescriptor(pluginId: pluginId, reason: "databaseTypeId is empty")
+        }
+
+        guard !driverType.databaseDisplayName.trimmingCharacters(in: .whitespaces).isEmpty else {
+            throw PluginError.invalidDescriptor(pluginId: pluginId, reason: "databaseDisplayName is empty")
+        }
+
+        let typeId = driverType.databaseTypeId
+        if let existingPlugin = driverPlugins[typeId] {
+            let existingName = Swift.type(of: existingPlugin).databaseDisplayName
+            throw PluginError.invalidDescriptor(
+                pluginId: pluginId,
+                reason: "databaseTypeId '\(typeId)' is already registered by '\(existingName)'"
+            )
+        }
+
+        let allAdditionalIds = driverType.additionalDatabaseTypeIds
+        if allAdditionalIds.contains(typeId) {
+            Self.logger.warning("Plugin '\(pluginId)': additionalDatabaseTypeIds contains the primary databaseTypeId '\(typeId)'")
+        }
+
+        for additionalId in allAdditionalIds {
+            if let existingPlugin = driverPlugins[additionalId] {
+                let existingName = Swift.type(of: existingPlugin).databaseDisplayName
+                throw PluginError.invalidDescriptor(
+                    pluginId: pluginId,
+                    reason: "additionalDatabaseTypeId '\(additionalId)' is already registered by '\(existingName)'"
+                )
+            }
+        }
+    }
+
+    /// Warn-level connection field validation. Called lazily when fields are accessed,
+    /// not during plugin loading (protocol witness tables may be unstable for dynamically loaded bundles).
+    private func validateConnectionFields(_ fields: [ConnectionField], pluginId: String) {
+        var seenIds = Set<String>()
+        for field in fields {
+            if field.id.trimmingCharacters(in: .whitespaces).isEmpty {
+                Self.logger.warning("Plugin '\(pluginId)': connection field has empty id")
+            }
+            if field.label.trimmingCharacters(in: .whitespaces).isEmpty {
+                Self.logger.warning("Plugin '\(pluginId)': connection field '\(field.id)' has empty label")
+            }
+            if !seenIds.insert(field.id).inserted {
+                Self.logger.warning("Plugin '\(pluginId)': duplicate connection field id '\(field.id)'")
+            }
+            if case .dropdown(let options) = field.fieldType, options.isEmpty {
+                Self.logger.warning("Plugin '\(pluginId)': connection field '\(field.id)' is a dropdown with no options")
+            }
+        }
+    }
+
+    private func validateDialectDescriptor(_ dialect: SQLDialectDescriptor, pluginId: String) {
+        if dialect.identifierQuote.trimmingCharacters(in: .whitespaces).isEmpty {
+            Self.logger.warning("Plugin '\(pluginId)': sqlDialect.identifierQuote is empty")
+        }
+        if dialect.keywords.isEmpty {
+            Self.logger.warning("Plugin '\(pluginId)': sqlDialect.keywords is empty")
         }
     }
 
