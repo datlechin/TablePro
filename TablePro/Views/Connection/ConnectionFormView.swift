@@ -25,7 +25,7 @@ struct ConnectionFormView: View {
     private var isNew: Bool { connectionId == nil }
 
     private var availableDatabaseTypes: [DatabaseType] {
-        DatabaseType.allKnownTypes
+        PluginManager.shared.availableDatabaseTypes
     }
 
     private var additionalConnectionFields: [ConnectionField] {
@@ -143,11 +143,12 @@ struct ConnectionFormView: View {
             if hasLoadedData {
                 port = String(newType.defaultPort)
             }
-            if (newType == .sqlite || newType == .duckdb) && (selectedTab == .ssh || selectedTab == .ssl) {
+            let isFileBased = PluginManager.shared.connectionMode(for: newType) == .fileBased
+            if isFileBased && (selectedTab == .ssh || selectedTab == .ssl) {
                 selectedTab = .general
             }
             additionalFieldValues = [:]
-            if newType != .postgresql && newType != .redshift {
+            if newType.pluginTypeId != "PostgreSQL" {
                 usePgpass = false
             }
             for field in PluginManager.shared.additionalConnectionFields(for: newType) {
@@ -169,7 +170,7 @@ struct ConnectionFormView: View {
     // MARK: - Tab Picker Helpers
 
     private var visibleTabs: [FormTab] {
-        if type == .sqlite || type == .duckdb {
+        if PluginManager.shared.connectionMode(for: type) == .fileBased {
             return [.general, .advanced]
         }
         return FormTab.allCases
@@ -232,13 +233,13 @@ struct ConnectionFormView: View {
                 }
             }
 
-            if type == .sqlite || type == .duckdb {
+            if PluginManager.shared.connectionMode(for: type) == .fileBased {
                 Section(String(localized: "Database File")) {
                     HStack {
                         TextField(
                             String(localized: "File Path"),
                             text: $database,
-                            prompt: Text(type == .duckdb ? "/path/to/database.duckdb" : "/path/to/database.sqlite")
+                            prompt: Text(filePathPrompt)
                         )
                         Button(String(localized: "Browse...")) { browseForFile() }
                             .controlSize(.small)
@@ -256,7 +257,7 @@ struct ConnectionFormView: View {
                         text: $port,
                         prompt: Text(defaultPort)
                     )
-                    if type != .redis {
+                    if PluginManager.shared.requiresAuthentication(for: type) {
                         TextField(
                             String(localized: "Database"),
                             text: $database,
@@ -265,23 +266,23 @@ struct ConnectionFormView: View {
                     }
                 }
                 Section(String(localized: "Authentication")) {
-                    if type != .redis {
+                    if PluginManager.shared.requiresAuthentication(for: type) {
                         TextField(
                             String(localized: "Username"),
                             text: $username,
                             prompt: Text("root")
                         )
                     }
-                    if type == .postgresql || type == .redshift {
+                    if type.pluginTypeId == "PostgreSQL" {
                         Toggle(String(localized: "Use ~/.pgpass"), isOn: $usePgpass)
                     }
-                    if !usePgpass || (type != .postgresql && type != .redshift) {
+                    if !usePgpass || type.pluginTypeId != "PostgreSQL" {
                         SecureField(
                             String(localized: "Password"),
                             text: $password
                         )
                     }
-                    if usePgpass && (type == .postgresql || type == .redshift) {
+                    if usePgpass && type.pluginTypeId == "PostgreSQL" {
                         pgpassStatusView
                     }
                 }
@@ -749,9 +750,17 @@ struct ConnectionFormView: View {
         return port == 0 ? "" : String(port)
     }
 
+    private var filePathPrompt: String {
+        let extensions = PluginManager.shared.driverPlugin(for: type)
+            .map { Swift.type(of: $0).fileExtensions } ?? []
+        let ext = extensions.first ?? type.rawValue.lowercased()
+        return "/path/to/database.\(ext)"
+    }
+
     private var isValid: Bool {
         // Host and port can be empty (will use defaults: localhost and default port)
-        let basicValid = !name.isEmpty && (type == .sqlite || type == .duckdb ? !database.isEmpty : true)
+        let isFileBased = PluginManager.shared.connectionMode(for: type) == .fileBased
+        let basicValid = !name.isEmpty && (isFileBased ? !database.isEmpty : true)
         if sshEnabled {
             let sshValid = !sshHost.isEmpty && !sshUsername.isEmpty
             let authValid =
@@ -764,7 +773,7 @@ struct ConnectionFormView: View {
     }
 
     private func updatePgpassStatus() {
-        guard usePgpass, type == .postgresql || type == .redshift else {
+        guard usePgpass, type.pluginTypeId == "PostgreSQL" else {
             pgpassStatus = .notChecked
             return
         }
@@ -816,7 +825,7 @@ struct ConnectionFormView: View {
             additionalFieldValues = existing.additionalFields
 
             // Migrate legacy Redis database index before default seeding
-            if existing.type == .redis,
+            if existing.type.pluginTypeId == "Redis",
                additionalFieldValues["redisDatabase"] == nil,
                let rdb = existing.redisDatabase {
                 additionalFieldValues["redisDatabase"] = String(rdb)
@@ -869,16 +878,15 @@ struct ConnectionFormView: View {
             clientKeyPath: sslClientKeyPath
         )
 
-        // Apply defaults: localhost for empty host, default port for empty/invalid port, root for empty username
-        // MongoDB and SQLite commonly run without authentication, so skip the "root" default
         let finalHost = host.trimmingCharacters(in: .whitespaces).isEmpty ? "localhost" : host
         let finalPort = Int(port) ?? type.defaultPort
         let trimmedUsername = username.trimmingCharacters(in: .whitespaces)
         let finalUsername =
-            trimmedUsername.isEmpty && type.requiresAuthentication ? "root" : trimmedUsername
+            trimmedUsername.isEmpty && PluginManager.shared.requiresAuthentication(for: type)
+                ? "root" : trimmedUsername
 
         var finalAdditionalFields = additionalFieldValues
-        if usePgpass && (type == .postgresql || type == .redshift) {
+        if usePgpass && type.pluginTypeId == "PostgreSQL" {
             finalAdditionalFields["usePgpass"] = "true"
         } else {
             finalAdditionalFields.removeValue(forKey: "usePgpass")
@@ -905,7 +913,7 @@ struct ConnectionFormView: View {
             groupId: selectedGroupId,
             safeModeLevel: safeModeLevel,
             aiPolicy: aiPolicy,
-            redisDatabase: type == .redis
+            redisDatabase: type.pluginTypeId == "Redis"
                 ? Int(additionalFieldValues["redisDatabase"] ?? "0")
                 : nil,
             startupCommands: startupCommands.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -1029,17 +1037,15 @@ struct ConnectionFormView: View {
             clientKeyPath: sslClientKeyPath
         )
 
-        // Apply defaults: localhost for empty host, default port for empty/invalid port, root for empty username
-        // MongoDB and SQLite commonly run without authentication, so skip the "root" default
         let finalHost = host.trimmingCharacters(in: .whitespaces).isEmpty ? "localhost" : host
         let finalPort = Int(port) ?? type.defaultPort
         let trimmedUsername = username.trimmingCharacters(in: .whitespaces)
         let finalUsername =
-            trimmedUsername.isEmpty && type.requiresAuthentication ? "root" : trimmedUsername
+            trimmedUsername.isEmpty && PluginManager.shared.requiresAuthentication(for: type)
+                ? "root" : trimmedUsername
 
-        // Build finalAdditionalFields for test connection
         var finalAdditionalFields = additionalFieldValues
-        if usePgpass && (type == .postgresql || type == .redshift) {
+        if usePgpass && type.pluginTypeId == "PostgreSQL" {
             finalAdditionalFields["usePgpass"] = "true"
         } else {
             finalAdditionalFields.removeValue(forKey: "usePgpass")
@@ -1051,7 +1057,6 @@ struct ConnectionFormView: View {
             finalAdditionalFields.removeValue(forKey: "preConnectScript")
         }
 
-        // Build connection from form values
         let testConn = DatabaseConnection(
             name: name,
             host: finalHost,
@@ -1064,7 +1069,7 @@ struct ConnectionFormView: View {
             color: connectionColor,
             tagId: selectedTagId,
             groupId: selectedGroupId,
-            redisDatabase: type == .redis
+            redisDatabase: type.pluginTypeId == "Redis"
                 ? Int(additionalFieldValues["redisDatabase"] ?? "0")
                 : nil,
             startupCommands: startupCommands.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -1210,7 +1215,7 @@ struct ConnectionFormView: View {
             if let authSourceValue = parsed.authSource, !authSourceValue.isEmpty {
                 additionalFieldValues["mongoAuthSource"] = authSourceValue
             }
-            if parsed.type == .redis, !parsed.database.isEmpty {
+            if parsed.type.pluginTypeId == "Redis", !parsed.database.isEmpty {
                 additionalFieldValues["redisDatabase"] = parsed.database
             }
             if let connectionName = parsed.connectionName, !connectionName.isEmpty {

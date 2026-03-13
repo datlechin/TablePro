@@ -36,6 +36,9 @@ public protocol DriverPlugin: TableProPlugin {
     static var columnTypesByCategory: [String: [String]] { get }
     static var sqlDialect: SQLDialectDescriptor? { get }
     static var statementCompletions: [CompletionEntry] { get }
+    static var tableEntityName: String { get }
+    static var supportsCascadeDrop: Bool { get }
+    static var supportsForeignKeyDisable: Bool { get }
 }
 
 public extension DriverPlugin {
@@ -76,4 +79,7 @@ public extension DriverPlugin {
     }
     static var sqlDialect: SQLDialectDescriptor? { nil }
     static var statementCompletions: [CompletionEntry] { [] }
+    static var tableEntityName: String { "Tables" }
+    static var supportsCascadeDrop: Bool { false }
+    static var supportsForeignKeyDisable: Bool { true }
 }

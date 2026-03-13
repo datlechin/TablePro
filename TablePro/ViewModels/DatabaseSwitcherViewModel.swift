@@ -77,7 +77,7 @@ final class DatabaseSwitcherViewModel {
         self.currentDatabase = currentDatabase
         self.currentSchema = currentSchema
         self.databaseType = databaseType
-        self.mode = databaseType == .redshift ? .schema : .database
+        self.mode = PluginManager.shared.supportsSchemaSwitching(for: databaseType) ? .schema : .database
         self.recentDatabases = UserDefaults.standard.recentDatabases(for: connectionId)
     }
 
@@ -168,26 +168,12 @@ final class DatabaseSwitcherViewModel {
         }
     }
 
-    /// Determine if a database or schema is a system item
     private func isSystemItem(_ name: String) -> Bool {
         if isSchemaMode {
-            return name.hasPrefix("pg_")
+            let schemaNames = PluginManager.shared.systemSchemaNames(for: databaseType)
+            return schemaNames.contains(name)
         }
-        if databaseType == .duckdb {
-            return Self.duckdbSystemItems.contains(name.lowercased())
-        }
-        return Self.systemItemNames[databaseType]?.contains(name) ?? false
+        let dbNames = PluginManager.shared.systemDatabaseNames(for: databaseType)
+        return dbNames.contains(name)
     }
-
-    private static let duckdbSystemItems: Set<String> = ["information_schema", "pg_catalog"]
-
-    private static let systemItemNames: [DatabaseType: Set<String>] = [
-        .mysql: ["information_schema", "mysql", "performance_schema", "sys"],
-        .mariadb: ["information_schema", "mysql", "performance_schema", "sys"],
-        .postgresql: ["postgres", "template0", "template1"],
-        .redshift: ["dev", "padb_harvest"],
-        .clickhouse: ["information_schema", "INFORMATION_SCHEMA", "system"],
-        .mssql: ["master", "tempdb", "model", "msdb"],
-        .oracle: ["SYS", "SYSTEM", "OUTLN", "DBSNMP", "APPQOSSYS", "WMSYS", "XDB"],
-    ]
 }

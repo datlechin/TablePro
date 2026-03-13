@@ -47,6 +47,9 @@ final class PostgreSQLPlugin: NSObject, TableProPlugin, DriverPlugin {
         "XML": ["XML"]
     ]
 
+    static let supportsCascadeDrop = true
+    static let supportsForeignKeyDisable = false
+
     static let sqlDialect: SQLDialectDescriptor? = SQLDialectDescriptor(
         identifierQuote: "\"",
         keywords: [

@@ -516,7 +516,7 @@ struct MainEditorContentView: View {
                             RoundedRectangle(cornerRadius: 4)
                                 .fill(Color(nsColor: .quaternaryLabelColor))
                         )
-                    Text(connection.type == .mongodb ? "Open MQL Editor" : connection.type == .redis ? "Open Redis CLI" : "Open SQL Editor")
+                    Text("Open \(PluginManager.shared.queryLanguageName(for: connection.type)) Editor")
                         .font(.callout)
                         .foregroundStyle(.tertiary)
                 }

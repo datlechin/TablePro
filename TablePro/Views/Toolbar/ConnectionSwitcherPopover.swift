@@ -8,6 +8,7 @@
 
 import AppKit
 import SwiftUI
+import TableProPluginKit
 
 /// Popover content for quick connection switching
 struct ConnectionSwitcherPopover: View {
@@ -293,7 +294,7 @@ struct ConnectionSwitcherPopover: View {
     // MARK: - Helpers
 
     private func connectionSubtitle(_ connection: DatabaseConnection) -> String {
-        if connection.type == .sqlite || connection.type == .duckdb {
+        if PluginManager.shared.connectionMode(for: connection.type) == .fileBased {
             return connection.database
         }
         let port = connection.port != connection.type.defaultPort ? ":\(connection.port)" : ""

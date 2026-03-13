@@ -495,7 +495,7 @@ struct DatabaseConnection: Identifiable, Hashable {
     }
 
     /// Returns the display color (custom color or database type color)
-    var displayColor: Color {
+    @MainActor var displayColor: Color {
         color.isDefault ? type.themeColor : color.color
     }
 }

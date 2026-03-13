@@ -6,12 +6,22 @@
 import Foundation
 import os
 import Security
+import SwiftUI
 import TableProPluginKit
 
 @MainActor @Observable
 final class PluginManager {
     static let shared = PluginManager()
     static let currentPluginKitVersion = 1
+    static let defaultColumnTypes: [String: [String]] = [
+        "Integer": ["INTEGER", "INT", "SMALLINT", "BIGINT", "TINYINT"],
+        "Float": ["FLOAT", "DOUBLE", "DECIMAL", "NUMERIC", "REAL"],
+        "String": ["VARCHAR", "CHAR", "TEXT", "NVARCHAR", "NCHAR"],
+        "Date": ["DATE", "TIME", "DATETIME", "TIMESTAMP"],
+        "Binary": ["BLOB", "BINARY", "VARBINARY"],
+        "Boolean": ["BOOLEAN", "BOOL"],
+        "JSON": ["JSON"]
+    ]
     private static let disabledPluginsKey = "com.TablePro.disabledPlugins"
     private static let legacyDisabledPluginsKey = "disabledPlugins"
 
@@ -363,6 +373,113 @@ final class PluginManager {
         loadPendingPlugins()
         guard let plugin = driverPlugins[databaseType.pluginTypeId] else { return [] }
         return Swift.type(of: plugin).additionalConnectionFields
+    }
+
+    // MARK: - Plugin Property Lookups
+
+    func driverPlugin(for databaseType: DatabaseType) -> (any DriverPlugin)? {
+        loadPendingPlugins()
+        return driverPlugins[databaseType.pluginTypeId]
+    }
+
+    func editorLanguage(for databaseType: DatabaseType) -> EditorLanguage {
+        guard let plugin = driverPlugin(for: databaseType) else { return .sql }
+        return Swift.type(of: plugin).editorLanguage
+    }
+
+    func queryLanguageName(for databaseType: DatabaseType) -> String {
+        guard let plugin = driverPlugin(for: databaseType) else { return "SQL" }
+        return Swift.type(of: plugin).queryLanguageName
+    }
+
+    func connectionMode(for databaseType: DatabaseType) -> ConnectionMode {
+        guard let plugin = driverPlugin(for: databaseType) else { return .network }
+        return Swift.type(of: plugin).connectionMode
+    }
+
+    func brandColor(for databaseType: DatabaseType) -> Color {
+        guard let plugin = driverPlugin(for: databaseType) else { return Theme.defaultDatabaseColor }
+        return Color(hex: Swift.type(of: plugin).brandColorHex)
+    }
+
+    func supportsDatabaseSwitching(for databaseType: DatabaseType) -> Bool {
+        guard let plugin = driverPlugin(for: databaseType) else { return true }
+        return Swift.type(of: plugin).supportsDatabaseSwitching
+    }
+
+    func supportsSchemaSwitching(for databaseType: DatabaseType) -> Bool {
+        guard let plugin = driverPlugin(for: databaseType) else { return false }
+        return Swift.type(of: plugin).supportsSchemaSwitching
+    }
+
+    func supportsImport(for databaseType: DatabaseType) -> Bool {
+        guard let plugin = driverPlugin(for: databaseType) else { return true }
+        return Swift.type(of: plugin).supportsImport
+    }
+
+    func systemDatabaseNames(for databaseType: DatabaseType) -> [String] {
+        guard let plugin = driverPlugin(for: databaseType) else { return [] }
+        return Swift.type(of: plugin).systemDatabaseNames
+    }
+
+    func systemSchemaNames(for databaseType: DatabaseType) -> [String] {
+        guard let plugin = driverPlugin(for: databaseType) else { return [] }
+        return Swift.type(of: plugin).systemSchemaNames
+    }
+
+    func columnTypesByCategory(for databaseType: DatabaseType) -> [String: [String]] {
+        guard let plugin = driverPlugin(for: databaseType) else { return Self.defaultColumnTypes }
+        return Swift.type(of: plugin).columnTypesByCategory
+    }
+
+    func requiresAuthentication(for databaseType: DatabaseType) -> Bool {
+        guard let plugin = driverPlugin(for: databaseType) else { return true }
+        return Swift.type(of: plugin).requiresAuthentication
+    }
+
+    func fileExtensions(for databaseType: DatabaseType) -> [String] {
+        guard let plugin = driverPlugin(for: databaseType) else { return [] }
+        return Swift.type(of: plugin).fileExtensions
+    }
+
+    func tableEntityName(for databaseType: DatabaseType) -> String {
+        guard let plugin = driverPlugin(for: databaseType) else { return "Tables" }
+        return Swift.type(of: plugin).tableEntityName
+    }
+
+    func supportsCascadeDrop(for databaseType: DatabaseType) -> Bool {
+        guard let plugin = driverPlugin(for: databaseType) else { return false }
+        return Swift.type(of: plugin).supportsCascadeDrop
+    }
+
+    func supportsForeignKeyDisable(for databaseType: DatabaseType) -> Bool {
+        guard let plugin = driverPlugin(for: databaseType) else { return true }
+        return Swift.type(of: plugin).supportsForeignKeyDisable
+    }
+
+    /// All file extensions across all loaded plugins.
+    var allRegisteredFileExtensions: [String: DatabaseType] {
+        loadPendingPlugins()
+        var result: [String: DatabaseType] = [:]
+        for (typeId, plugin) in driverPlugins {
+            let dbType = DatabaseType(rawValue: typeId)
+            for ext in Swift.type(of: plugin).fileExtensions {
+                result[ext.lowercased()] = dbType
+            }
+        }
+        return result
+    }
+
+    /// All URL schemes across all loaded plugins.
+    var allRegisteredURLSchemes: Set<String> {
+        loadPendingPlugins()
+        var result: Set<String> = []
+        for plugin in driverPlugins.values {
+            for scheme in Swift.type(of: plugin).urlSchemes {
+                result.insert(scheme.lowercased())
+            }
+        }
+        return result
     }
 
     func installMissingPlugin(

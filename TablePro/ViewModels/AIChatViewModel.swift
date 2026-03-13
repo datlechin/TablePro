@@ -52,19 +52,13 @@ final class AIChatViewModel {
     // MARK: - AI Action Dispatch
 
     private var queryLanguage: String {
-        switch connection?.type {
-        case .mongodb: return "javascript"
-        case .redis: return "bash"
-        default: return "sql"
-        }
+        guard let type = connection?.type else { return "sql" }
+        return PluginManager.shared.editorLanguage(for: type).codeBlockTag
     }
 
     private var queryTypeName: String {
-        switch connection?.type {
-        case .mongodb: return "MongoDB query"
-        case .redis: return "Redis command"
-        default: return "SQL query"
-        }
+        guard let type = connection?.type else { return "SQL query" }
+        return "\(PluginManager.shared.queryLanguageName(for: type)) query"
     }
 
     func handleFixError(query: String, error: String) {

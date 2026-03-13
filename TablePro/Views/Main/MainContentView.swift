@@ -125,7 +125,7 @@ struct MainContentView: View {
             let session = DatabaseManager.shared.session(for: connection.id)
             let activeDatabase = session?.currentDatabase ?? connection.database
             let activeSchema = session?.currentSchema
-            let currentSelection = connection.type == .redshift
+            let currentSelection = PluginManager.shared.supportsSchemaSwitching(for: connection.type)
                 ? (activeSchema ?? activeDatabase)
                 : activeDatabase
             DatabaseSwitcherSheet(
@@ -620,7 +620,8 @@ struct MainContentView: View {
         )
 
         // Update window title to reflect selected tab
-        let queryLabel = connection.type == .mongodb ? "MQL Query" : connection.type == .redis ? "Redis Query" : "SQL Query"
+        let langName = PluginManager.shared.queryLanguageName(for: connection.type)
+        let queryLabel = langName == "SQL" ? "SQL Query" : langName == "MQL" ? "MQL Query" : langName
         windowTitle = tabManager.selectedTab?.tableName
             ?? (tabManager.tabs.isEmpty ? connection.name : queryLabel)
 
@@ -639,7 +640,8 @@ struct MainContentView: View {
 
     private func handleTabsChange(_ newTabs: [QueryTab]) {
         // Always update window title to reflect current tab, even during restoration
-        let queryLabel = connection.type == .mongodb ? "MQL Query" : connection.type == .redis ? "Redis Query" : "SQL Query"
+        let langName = PluginManager.shared.queryLanguageName(for: connection.type)
+        let queryLabel = langName == "SQL" ? "SQL Query" : langName == "MQL" ? "MQL Query" : langName
         windowTitle = tabManager.selectedTab?.tableName
             ?? (tabManager.tabs.isEmpty ? connection.name : queryLabel)
 

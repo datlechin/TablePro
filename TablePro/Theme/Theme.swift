@@ -13,18 +13,6 @@ enum Theme {
     // MARK: - Brand Colors
 
     static let primaryColor = Color("AccentColor")
-
-    static let mysqlColor = Color(nsColor: .systemOrange)
-    static let postgresqlColor = Color(nsColor: .systemBlue)
-    static let sqliteColor = Color(nsColor: .systemGreen)
-    static let mariadbColor = Color(nsColor: .systemCyan)
-    static let mongodbColor = Color(red: 0.0, green: 0.93, blue: 0.39)
-    static let redshiftColor = Color(red: 0.13, green: 0.36, blue: 0.59)
-    static let redisColor = Color(red: 0.86, green: 0.22, blue: 0.18) // #DC382D
-    static let mssqlColor = Color(red: 0.89, green: 0.27, blue: 0.09)
-    static let oracleColor = Color(red: 0.76, green: 0.09, blue: 0.07) // #C3160B Oracle red
-    static let clickhouseColor = Color(red: 1.0, green: 0.82, blue: 0.0)
-    static let duckdbColor = Color(red: 1.0, green: 0.85, blue: 0.0)
     static let defaultDatabaseColor = Color.gray
 
     // MARK: - Semantic Colors
@@ -100,21 +88,7 @@ extension View {
 // MARK: - Database Type Colors
 
 extension DatabaseType {
-    var themeColor: Color {
-        Self.themeColorMap[self] ?? Theme.defaultDatabaseColor
+    @MainActor var themeColor: Color {
+        PluginManager.shared.brandColor(for: self)
     }
-
-    private static let themeColorMap: [DatabaseType: Color] = [
-        .mysql: Theme.mysqlColor,
-        .mariadb: Theme.mariadbColor,
-        .postgresql: Theme.postgresqlColor,
-        .sqlite: Theme.sqliteColor,
-        .redshift: Theme.redshiftColor,
-        .mongodb: Theme.mongodbColor,
-        .redis: Theme.redisColor,
-        .mssql: Theme.mssqlColor,
-        .oracle: Theme.oracleColor,
-        .clickhouse: Theme.clickhouseColor,
-        .duckdb: Theme.duckdbColor,
-    ]
 }

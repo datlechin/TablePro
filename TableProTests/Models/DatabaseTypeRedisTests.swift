@@ -33,9 +33,9 @@ struct DatabaseTypeRedisTests {
         #expect(DatabaseType.redis.rawValue == "Redis")
     }
 
-    @Test("Theme color matches Theme.redisColor")
-    func themeColor() {
-        #expect(DatabaseType.redis.themeColor == Theme.redisColor)
+    @Test("Theme color is derived from plugin brand color")
+    @MainActor func themeColor() {
+        #expect(DatabaseType.redis.themeColor == PluginManager.shared.brandColor(for: .redis))
     }
 
     @Test("Included in allKnownTypes")

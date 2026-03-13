@@ -9,6 +9,7 @@ import AppKit
 import CodeEditLanguages
 import CodeEditSourceEditor
 import SwiftUI
+import TableProPluginKit
 
 /// Popover view that displays SQL statements with tree-sitter syntax highlighting for review before commit.
 struct SQLReviewPopover: View {
@@ -23,7 +24,7 @@ struct SQLReviewPopover: View {
     /// All statements joined for display
     private var combinedSQL: String {
         let joined = statements.map { $0.hasSuffix(";") ? $0 : $0 + ";" }.joined(separator: "\n\n")
-        if databaseType == .mongodb {
+        if PluginManager.shared.editorLanguage(for: databaseType) == .javascript {
             return Self.convertExtendedJsonToShellSyntax(joined)
         }
         return joined
@@ -99,11 +100,7 @@ struct SQLReviewPopover: View {
 
     private var headerView: some View {
         HStack {
-            Text(databaseType == .mongodb
-                ? String(localized: "MQL Preview")
-                : databaseType == .redis
-                    ? String(localized: "Command Preview")
-                    : String(localized: "SQL Preview"))
+            Text(String(localized: "\(PluginManager.shared.queryLanguageName(for: databaseType)) Preview"))
                 .font(.system(size: DesignConstants.FontSize.body, weight: .semibold))
             if !statements.isEmpty {
                 Text(
@@ -149,7 +146,7 @@ struct SQLReviewPopover: View {
         if isEditorReady {
             SourceEditor(
                 .constant(combinedSQL),
-                language: databaseType == .mongodb ? .javascript : databaseType == .redis ? .bash : .sql,
+                language: PluginManager.shared.editorLanguage(for: databaseType).treeSitterLanguage,
                 configuration: Self.makeConfiguration(),
                 state: $editorState
             )
@@ -197,7 +194,7 @@ struct SQLReviewPopover: View {
 
     private func copyAllToClipboard() {
         var joined = statements.map { $0.hasSuffix(";") ? $0 : $0 + ";" }.joined(separator: "\n\n")
-        if databaseType == .mongodb {
+        if PluginManager.shared.editorLanguage(for: databaseType) == .javascript {
             joined = Self.convertExtendedJsonToShellSyntax(joined)
         }
         ClipboardService.shared.writeText(joined)

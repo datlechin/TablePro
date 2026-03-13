@@ -141,21 +141,25 @@ actor SQLSchemaProvider {
         }
 
         let dbType = connection.type
+        let dbName = connection.database
+        let capturedTables = tables
         let idQuote = await MainActor.run {
             PluginManager.shared.sqlDialect(for: dbType)?.identifierQuote ?? "\""
         }
 
-        return AISchemaContext.buildSystemPrompt(
-            databaseType: connection.type,
-            databaseName: connection.database,
-            tables: tables,
-            columnsByTable: columnsByTable,
-            foreignKeys: [:],
-            currentQuery: nil,
-            queryResults: nil,
-            settings: settings,
-            identifierQuote: idQuote
-        )
+        return await MainActor.run {
+            AISchemaContext.buildSystemPrompt(
+                databaseType: dbType,
+                databaseName: dbName,
+                tables: capturedTables,
+                columnsByTable: columnsByTable,
+                foreignKeys: [:],
+                currentQuery: nil,
+                queryResults: nil,
+                settings: settings,
+                identifierQuote: idQuote
+            )
+        }
     }
 
     // MARK: - Completion Items

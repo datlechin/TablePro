@@ -14,32 +14,21 @@ private let fileOpenLogger = Logger(subsystem: "com.TablePro", category: "FileOp
 extension AppDelegate {
     // MARK: - URL Classification
 
-    private static let databaseURLSchemes: Set<String> = [
-        "postgresql", "postgres", "mysql", "mariadb", "sqlite",
-        "mongodb", "mongodb+srv", "redis", "rediss", "redshift",
-        "mssql", "sqlserver", "oracle", "duckdb"
-    ]
-
-    static let sqliteFileExtensions: Set<String> = [
-        "sqlite", "sqlite3", "db3", "s3db", "sl3", "sqlitedb"
-    ]
-
-    static let duckdbFileExtensions: Set<String> = ["duckdb", "ddb"]
-
     private func isDatabaseURL(_ url: URL) -> Bool {
         guard let scheme = url.scheme?.lowercased() else { return false }
         let base = scheme
             .replacingOccurrences(of: "+ssh", with: "")
             .replacingOccurrences(of: "+srv", with: "")
-        return Self.databaseURLSchemes.contains(base) || Self.databaseURLSchemes.contains(scheme)
+        let registeredSchemes = PluginManager.shared.allRegisteredURLSchemes
+        return registeredSchemes.contains(base) || registeredSchemes.contains(scheme)
     }
 
-    private func isSQLiteFile(_ url: URL) -> Bool {
-        Self.sqliteFileExtensions.contains(url.pathExtension.lowercased())
+    private func isDatabaseFile(_ url: URL) -> Bool {
+        PluginManager.shared.allRegisteredFileExtensions[url.pathExtension.lowercased()] != nil
     }
 
-    private func isDuckDBFile(_ url: URL) -> Bool {
-        Self.duckdbFileExtensions.contains(url.pathExtension.lowercased())
+    private func databaseTypeForFile(_ url: URL) -> DatabaseType? {
+        PluginManager.shared.allRegisteredFileExtensions[url.pathExtension.lowercased()]
     }
 
     // MARK: - Main Dispatch
@@ -68,20 +57,21 @@ extension AppDelegate {
             }
         }
 
-        let sqliteFiles = urls.filter { isSQLiteFile($0) }
-        if !sqliteFiles.isEmpty {
+        let databaseFiles = urls.filter { isDatabaseFile($0) }
+        if !databaseFiles.isEmpty {
             suppressWelcomeWindow()
             Task { @MainActor in
-                for url in sqliteFiles { self.handleSQLiteFile(url) }
-                self.scheduleWelcomeWindowSuppression()
-            }
-        }
-
-        let duckdbFiles = urls.filter { isDuckDBFile($0) }
-        if !duckdbFiles.isEmpty {
-            suppressWelcomeWindow()
-            Task { @MainActor in
-                for url in duckdbFiles { self.handleDuckDBFile(url) }
+                for url in databaseFiles {
+                    guard let dbType = self.databaseTypeForFile(url) else { continue }
+                    switch dbType {
+                    case .sqlite:
+                        self.handleSQLiteFile(url)
+                    case .duckdb:
+                        self.handleDuckDBFile(url)
+                    default:
+                        break
+                    }
+                }
                 self.scheduleWelcomeWindowSuppression()
             }
         }
