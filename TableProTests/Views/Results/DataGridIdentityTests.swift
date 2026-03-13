@@ -59,4 +59,18 @@ struct DataGridIdentityTests {
         let b = DataGridIdentity(reloadVersion: 1, resultVersion: 2, metadataVersion: 3, rowCount: 100, columnCount: 5, isEditable: false, hiddenColumns: [])
         #expect(a != b)
     }
+
+    @Test("Different hiddenColumns produces unequal identities")
+    func differentHiddenColumns() {
+        let a = DataGridIdentity(reloadVersion: 1, resultVersion: 2, metadataVersion: 3, rowCount: 100, columnCount: 5, isEditable: true, hiddenColumns: [])
+        let b = DataGridIdentity(reloadVersion: 1, resultVersion: 2, metadataVersion: 3, rowCount: 100, columnCount: 5, isEditable: true, hiddenColumns: ["name"])
+        #expect(a != b)
+    }
+
+    @Test("Same hiddenColumns produces equal identities")
+    func sameHiddenColumns() {
+        let a = DataGridIdentity(reloadVersion: 1, resultVersion: 2, metadataVersion: 3, rowCount: 100, columnCount: 5, isEditable: true, hiddenColumns: ["name", "email"])
+        let b = DataGridIdentity(reloadVersion: 1, resultVersion: 2, metadataVersion: 3, rowCount: 100, columnCount: 5, isEditable: true, hiddenColumns: ["name", "email"])
+        #expect(a == b)
+    }
 }
