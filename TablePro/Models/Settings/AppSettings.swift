@@ -354,6 +354,8 @@ enum DateFormatOption: String, Codable, CaseIterable, Identifiable {
 
 /// Data grid settings
 struct DataGridSettings: Codable, Equatable {
+    var fontFamily: EditorFont
+    var fontSize: Int
     var rowHeight: DataGridRowHeight
     var dateFormat: DateFormatOption
     var nullDisplay: String
@@ -364,6 +366,8 @@ struct DataGridSettings: Codable, Equatable {
     static let `default` = DataGridSettings()
 
     init(
+        fontFamily: EditorFont = .systemMono,
+        fontSize: Int = 13,
         rowHeight: DataGridRowHeight = .normal,
         dateFormat: DateFormatOption = .iso8601,
         nullDisplay: String = "NULL",
@@ -371,6 +375,8 @@ struct DataGridSettings: Codable, Equatable {
         showAlternateRows: Bool = true,
         autoShowInspector: Bool = false
     ) {
+        self.fontFamily = fontFamily
+        self.fontSize = fontSize
         self.rowHeight = rowHeight
         self.dateFormat = dateFormat
         self.nullDisplay = nullDisplay
@@ -381,12 +387,19 @@ struct DataGridSettings: Codable, Equatable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        fontFamily = try container.decodeIfPresent(EditorFont.self, forKey: .fontFamily) ?? .systemMono
+        fontSize = try container.decodeIfPresent(Int.self, forKey: .fontSize) ?? 13
         rowHeight = try container.decode(DataGridRowHeight.self, forKey: .rowHeight)
         dateFormat = try container.decode(DateFormatOption.self, forKey: .dateFormat)
         nullDisplay = try container.decode(String.self, forKey: .nullDisplay)
         defaultPageSize = try container.decode(Int.self, forKey: .defaultPageSize)
         showAlternateRows = try container.decode(Bool.self, forKey: .showAlternateRows)
         autoShowInspector = try container.decodeIfPresent(Bool.self, forKey: .autoShowInspector) ?? false
+    }
+
+    /// Clamped font size (10-18)
+    var clampedFontSize: Int {
+        min(max(fontSize, 10), 18)
     }
 
     // MARK: - Validated Properties

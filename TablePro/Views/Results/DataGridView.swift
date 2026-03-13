@@ -730,22 +730,9 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
             DispatchQueue.main.async { [weak self] in
                 guard let self, let tableView = self.tableView else { return }
                 let newRowHeight = CGFloat(AppSettingsManager.shared.dataGrid.rowHeight.rawValue)
-
-                // Only reload if row height changed (requires full reload)
-                if tableView.rowHeight != newRowHeight {
-                    tableView.rowHeight = newRowHeight
-                    tableView.tile()
-                } else {
-                    // For other settings (date format, NULL display), just reload visible rows
-                    let visibleRect = tableView.visibleRect
-                    let visibleRange = tableView.rows(in: visibleRect)
-                    if visibleRange.length > 0 {
-                        tableView.reloadData(
-                            forRowIndexes: IndexSet(integersIn: visibleRange.location..<(visibleRange.location + visibleRange.length)),
-                            columnIndexes: IndexSet(integersIn: 0..<tableView.numberOfColumns)
-                        )
-                    }
-                }
+                tableView.rowHeight = newRowHeight
+                tableView.reloadData()
+                tableView.tile()
             }
         }
     }

@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SQL import options (wrap in transaction, disable FK checks) now persist across launches
 - `needsRestart` banner persists across app quit/relaunch after plugin uninstall
 - Copy as INSERT/UPDATE SQL statements from data grid context menu
+- Configurable font family and size for data grid (Settings > Data Grid > Font)
 - Plugin download count display in Browse Plugins — fetched from GitHub Releases API and cached for 1 hour
 - MSSQL query cancellation (`cancelQuery`) and lock timeout (`applyQueryTimeout`) support
 - `~/.pgpass` file support for PostgreSQL/Redshift connections with live validation in the connection form
