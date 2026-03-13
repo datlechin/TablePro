@@ -23,11 +23,6 @@ struct DatabaseTypeMSSQLTests {
         #expect(DatabaseType.mssql.rawValue == "SQL Server")
     }
 
-    @Test("identifierQuote is open bracket")
-    func identifierQuote() {
-        #expect(DatabaseType.mssql.identifierQuote == "[")
-    }
-
     @Test("requiresAuthentication is true")
     func requiresAuthentication() {
         #expect(DatabaseType.mssql.requiresAuthentication == true)
@@ -46,33 +41,6 @@ struct DatabaseTypeMSSQLTests {
     @Test("iconName is mssql-icon")
     func iconName() {
         #expect(DatabaseType.mssql.iconName == "mssql-icon")
-    }
-
-    // MARK: - quoteIdentifier Tests
-
-    @Test("quoteIdentifier wraps simple name with brackets")
-    func quoteIdentifierSimple() {
-        #expect(DatabaseType.mssql.quoteIdentifier("users") == "[users]")
-    }
-
-    @Test("quoteIdentifier handles name with spaces")
-    func quoteIdentifierWithSpaces() {
-        #expect(DatabaseType.mssql.quoteIdentifier("my table") == "[my table]")
-    }
-
-    @Test("quoteIdentifier escapes embedded closing bracket")
-    func quoteIdentifierWithEmbeddedBracket() {
-        #expect(DatabaseType.mssql.quoteIdentifier("user]s") == "[user]]s]")
-    }
-
-    @Test("quoteIdentifier handles empty name")
-    func quoteIdentifierEmpty() {
-        #expect(DatabaseType.mssql.quoteIdentifier("") == "[]")
-    }
-
-    @Test("quoteIdentifier escapes multiple embedded closing brackets")
-    func quoteIdentifierMultipleBrackets() {
-        #expect(DatabaseType.mssql.quoteIdentifier("a]b]c") == "[a]]b]]c]")
     }
 
     // MARK: - allCases Tests

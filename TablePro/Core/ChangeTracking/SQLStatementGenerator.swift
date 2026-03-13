@@ -33,6 +33,7 @@ struct SQLStatementGenerator {
         primaryKeyColumn: String?,
         databaseType: DatabaseType,
         parameterStyle: ParameterStyle? = nil,
+        dialect: SQLDialectDescriptor? = nil,
         quoteIdentifier: ((String) -> String)? = nil
     ) {
         self.tableName = tableName
@@ -40,7 +41,7 @@ struct SQLStatementGenerator {
         self.primaryKeyColumn = primaryKeyColumn
         self.databaseType = databaseType
         self.parameterStyle = parameterStyle ?? Self.defaultParameterStyle(for: databaseType)
-        self.quoteIdentifierFn = quoteIdentifier ?? databaseType.quoteIdentifier
+        self.quoteIdentifierFn = quoteIdentifier ?? quoteIdentifierFromDialect(dialect)
     }
 
     private static func defaultParameterStyle(for databaseType: DatabaseType) -> ParameterStyle {

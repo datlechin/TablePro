@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moved string literal escaping into plugin drivers via `escapeStringLiteral` on `PluginDatabaseDriver` and `DatabaseDriver` protocols; `SQLEscaping.escapeStringLiteral` now uses ANSI SQL escaping only (doubles single quotes, strips null bytes)
 - SQL autocomplete data types and CREATE TABLE options now use plugin-provided dialect data instead of hardcoded per-database switches
 - `FilterSQLGenerator` now uses `SQLDialectDescriptor` data (regex syntax, boolean literals, LIKE escape style, pagination style) instead of `DatabaseType` switch statements
+- Moved identifier quoting, autocomplete statement completions, view templates, and FK disable/enable into plugin system
+- Removed `DatabaseType` switches from `FilterSQLGenerator`, `SQLCompletionProvider`, `ImportDataSinkAdapter`, and `MainContentCoordinator+SidebarActions`
 
 ### Added
 
@@ -19,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `SQLDialectDescriptor` in TableProPluginKit: plugins can now self-describe their SQL dialect (keywords, functions, data types, identifier quoting), with `SQLDialectFactory` preferring plugin-provided dialect info over built-in structs
 - DDL schema generation protocol in TableProPluginKit: plugins can now optionally provide database-specific ALTER TABLE syntax (ADD/MODIFY/DROP COLUMN, ADD/DROP INDEX, ADD/DROP FK, MODIFY PK) via `PluginDatabaseDriver`, with `SchemaStatementGenerator` trying plugin methods first before falling back to built-in logic
 - Plugin-provided table operations: `truncateTableStatements`, `dropObjectStatement`, `foreignKeyDisableStatements`, `foreignKeyEnableStatements` in `PluginDatabaseDriver` protocol, allowing plugins to override TRUNCATE, DROP, and FK handling SQL
+- `CompletionEntry` struct and `statementCompletions` on `DriverPlugin` for plugin-provided autocomplete entries (MongoDB MQL methods, Redis commands)
+- `offsetFetchOrderBy` property on `SQLDialectDescriptor` for plugin-controlled ORDER BY in OFFSET/FETCH pagination
+- `createViewTemplate()`, `editViewFallbackTemplate(viewName:)`, and `castColumnToText(_:)` on `PluginDatabaseDriver` for plugin-provided view DDL templates and column casting
 - `buildExplainQuery` method in `PluginDatabaseDriver` protocol: plugins can now provide database-specific EXPLAIN syntax, with coordinator falling back to built-in logic when plugin returns nil
 - `SettablePlugin` protocol in TableProPluginKit SDK: unified settings pattern for all plugins with automatic persistence via `loadSettings()`/`saveSettings()`, replacing duplicated boilerplate across export/import/driver plugins
 - Plugin UI/capability metadata: each driver plugin now self-declares brand color, connection mode, supported features, column types, URL schemes, and grouping strategy via the `DriverPlugin` protocol

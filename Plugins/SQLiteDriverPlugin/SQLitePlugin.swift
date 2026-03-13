@@ -405,6 +405,27 @@ final class SQLitePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         "EXPLAIN QUERY PLAN \(sql)"
     }
 
+    // MARK: - View Templates
+
+    func createViewTemplate() -> String? {
+        "CREATE VIEW IF NOT EXISTS view_name AS\nSELECT column1, column2\nFROM table_name\nWHERE condition;"
+    }
+
+    func editViewFallbackTemplate(viewName: String) -> String? {
+        let quoted = quoteIdentifier(viewName)
+        return "DROP VIEW IF EXISTS \(quoted);\nCREATE VIEW \(quoted) AS\nSELECT * FROM table_name;"
+    }
+
+    // MARK: - Foreign Key Checks
+
+    func foreignKeyDisableStatements() -> [String]? {
+        ["PRAGMA foreign_keys = OFF"]
+    }
+
+    func foreignKeyEnableStatements() -> [String]? {
+        ["PRAGMA foreign_keys = ON"]
+    }
+
     // MARK: - Pagination
 
     func fetchRowCount(query: String) async throws -> Int {

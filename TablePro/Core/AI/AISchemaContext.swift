@@ -26,7 +26,8 @@ struct AISchemaContext {
         foreignKeys: [String: [ForeignKeyInfo]],
         currentQuery: String?,
         queryResults: String?,
-        settings: AISettings
+        settings: AISettings,
+        identifierQuote: String = "\""
     ) -> String {
         var parts: [String] = []
 
@@ -44,7 +45,7 @@ struct AISchemaContext {
                 columnsByTable: columnsByTable,
                 foreignKeys: foreignKeys,
                 maxTables: settings.maxSchemaTables,
-                databaseType: databaseType
+                identifierQuote: identifierQuote
             )
             if !schemaContext.isEmpty {
                 parts.append("\n## Database Schema\n\(schemaContext)")
@@ -104,13 +105,13 @@ struct AISchemaContext {
         columnsByTable: [String: [ColumnInfo]],
         foreignKeys: [String: [ForeignKeyInfo]],
         maxTables: Int,
-        databaseType: DatabaseType
+        identifierQuote: String
     ) -> String {
         let selectedTables = Array(tables.prefix(maxTables))
         guard !selectedTables.isEmpty else { return "" }
 
         var lines: [String] = []
-        let q = databaseType.identifierQuote
+        let q = identifierQuote
 
         for table in selectedTables {
             var tableLine = "- \(q)\(table.name)\(q)"

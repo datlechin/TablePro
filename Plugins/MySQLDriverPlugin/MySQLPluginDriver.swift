@@ -602,6 +602,31 @@ final class MySQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         "EXPLAIN \(sql)"
     }
 
+    // MARK: - View Templates
+
+    func createViewTemplate() -> String? {
+        "CREATE VIEW view_name AS\nSELECT column1, column2\nFROM table_name\nWHERE condition;"
+    }
+
+    func editViewFallbackTemplate(viewName: String) -> String? {
+        let quoted = quoteIdentifier(viewName)
+        return "ALTER VIEW \(quoted) AS\nSELECT * FROM table_name;"
+    }
+
+    func castColumnToText(_ column: String) -> String {
+        "CAST(\(column) AS CHAR)"
+    }
+
+    // MARK: - Foreign Key Checks
+
+    func foreignKeyDisableStatements() -> [String]? {
+        ["SET FOREIGN_KEY_CHECKS=0"]
+    }
+
+    func foreignKeyEnableStatements() -> [String]? {
+        ["SET FOREIGN_KEY_CHECKS=1"]
+    }
+
     // MARK: - Private Helpers
 
     private func extractTableName(from query: String) -> String? {

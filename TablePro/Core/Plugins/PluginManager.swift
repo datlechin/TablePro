@@ -337,6 +337,12 @@ final class PluginManager {
         return Swift.type(of: plugin).sqlDialect
     }
 
+    func statementCompletions(for databaseType: DatabaseType) -> [CompletionEntry] {
+        loadPendingPlugins()
+        guard let plugin = driverPlugins[databaseType.pluginTypeId] else { return [] }
+        return Swift.type(of: plugin).statementCompletions
+    }
+
     func additionalConnectionFields(for databaseType: DatabaseType) -> [ConnectionField] {
         loadPendingPlugins()
         guard let plugin = driverPlugins[databaseType.pluginTypeId] else { return [] }

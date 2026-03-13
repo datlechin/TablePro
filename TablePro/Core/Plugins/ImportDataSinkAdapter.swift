@@ -10,13 +10,11 @@ import TableProPluginKit
 final class ImportDataSinkAdapter: PluginImportDataSink, @unchecked Sendable {
     let databaseTypeId: String
     private let driver: DatabaseDriver
-    private let dbType: DatabaseType
 
     private static let logger = Logger(subsystem: "com.TablePro", category: "ImportDataSinkAdapter")
 
     init(driver: DatabaseDriver, databaseType: DatabaseType) {
         self.driver = driver
-        self.dbType = databaseType
         self.databaseTypeId = databaseType.rawValue
     }
 
@@ -37,42 +35,16 @@ final class ImportDataSinkAdapter: PluginImportDataSink, @unchecked Sendable {
     }
 
     func disableForeignKeyChecks() async throws {
-        for stmt in fkDisableStatements() {
+        guard let statements = driver.foreignKeyDisableStatements() else { return }
+        for stmt in statements {
             _ = try await driver.execute(query: stmt)
         }
     }
 
     func enableForeignKeyChecks() async throws {
-        for stmt in fkEnableStatements() {
+        guard let statements = driver.foreignKeyEnableStatements() else { return }
+        for stmt in statements {
             _ = try await driver.execute(query: stmt)
-        }
-    }
-
-    // MARK: - FK Statements
-
-    private func fkDisableStatements() -> [String] {
-        switch dbType {
-        case .mysql, .mariadb:
-            return ["SET FOREIGN_KEY_CHECKS=0"]
-        case .postgresql, .redshift, .mssql, .oracle:
-            return []
-        case .sqlite:
-            return ["PRAGMA foreign_keys = OFF"]
-        case .mongodb, .redis, .clickhouse, .duckdb:
-            return []
-        }
-    }
-
-    private func fkEnableStatements() -> [String] {
-        switch dbType {
-        case .mysql, .mariadb:
-            return ["SET FOREIGN_KEY_CHECKS=1"]
-        case .postgresql, .redshift, .mssql, .oracle:
-            return []
-        case .sqlite:
-            return ["PRAGMA foreign_keys = ON"]
-        case .mongodb, .redis, .clickhouse, .duckdb:
-            return []
         }
     }
 }

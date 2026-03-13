@@ -37,43 +37,9 @@ struct DatabaseTypeTests {
         #expect(DatabaseType.mongodb.defaultPort == 27_017)
     }
 
-    @Test("MySQL identifier quote is backtick")
-    func testMySQLIdentifierQuote() {
-        #expect(DatabaseType.mysql.identifierQuote == "`")
-    }
-
-    @Test("PostgreSQL identifier quote is double quote")
-    func testPostgreSQLIdentifierQuote() {
-        #expect(DatabaseType.postgresql.identifierQuote == "\"")
-    }
-
-    @Test("Quote identifier simple name for MySQL")
-    func testQuoteIdentifierSimpleNameMySQL() {
-        let result = DatabaseType.mysql.quoteIdentifier("users")
-        #expect(result == "`users`")
-    }
-
-    @Test("Quote identifier simple name for PostgreSQL")
-    func testQuoteIdentifierSimpleNamePostgreSQL() {
-        let result = DatabaseType.postgresql.quoteIdentifier("users")
-        #expect(result == "\"users\"")
-    }
-
-    @Test("Quote identifier with embedded backtick for MySQL")
-    func testQuoteIdentifierWithEmbeddedBacktickMySQL() {
-        let result = DatabaseType.mysql.quoteIdentifier("user`s")
-        #expect(result == "`user``s`")
-    }
-
-    @Test("Quote identifier with embedded double quote for PostgreSQL")
-    func testQuoteIdentifierWithEmbeddedDoubleQuotePostgreSQL() {
-        let result = DatabaseType.postgresql.quoteIdentifier("user\"s")
-        #expect(result == "\"user\"\"s\"")
-    }
-
-    @Test("CaseIterable count is 10")
+    @Test("CaseIterable count is 11")
     func testCaseIterableCount() {
-        #expect(DatabaseType.allCases.count == 10)
+        #expect(DatabaseType.allCases.count == 11)
     }
 
     @Test("Raw value matches display name", arguments: [
@@ -86,7 +52,8 @@ struct DatabaseTypeTests {
         (DatabaseType.redshift, "Redshift"),
         (DatabaseType.mssql, "SQL Server"),
         (DatabaseType.oracle, "Oracle"),
-        (DatabaseType.clickhouse, "ClickHouse")
+        (DatabaseType.clickhouse, "ClickHouse"),
+        (DatabaseType.duckdb, "DuckDB")
     ])
     func testRawValueMatchesDisplayName(dbType: DatabaseType, expectedRawValue: String) {
         #expect(dbType.rawValue == expectedRawValue)
@@ -97,11 +64,6 @@ struct DatabaseTypeTests {
     @Test("ClickHouse default port is 8123")
     func testClickHouseDefaultPort() {
         #expect(DatabaseType.clickhouse.defaultPort == 8_123)
-    }
-
-    @Test("ClickHouse identifier quote is backtick")
-    func testClickHouseIdentifierQuote() {
-        #expect(DatabaseType.clickhouse.identifierQuote == "`")
     }
 
     @Test("ClickHouse requires authentication")

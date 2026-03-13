@@ -35,6 +35,7 @@ public protocol DriverPlugin: TableProPlugin {
     static var defaultGroupName: String { get }
     static var columnTypesByCategory: [String: [String]] { get }
     static var sqlDialect: SQLDialectDescriptor? { get }
+    static var statementCompletions: [CompletionEntry] { get }
 }
 
 public extension DriverPlugin {
@@ -74,4 +75,5 @@ public extension DriverPlugin {
         ]
     }
     static var sqlDialect: SQLDialectDescriptor? { nil }
+    static var statementCompletions: [CompletionEntry] { [] }
 }

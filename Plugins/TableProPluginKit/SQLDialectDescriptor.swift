@@ -1,5 +1,14 @@
 import Foundation
 
+public struct CompletionEntry: Sendable {
+    public let label: String
+    public let insertText: String
+    public init(label: String, insertText: String) {
+        self.label = label
+        self.insertText = insertText
+    }
+}
+
 public struct SQLDialectDescriptor: Sendable {
     public let identifierQuote: String
     public let keywords: Set<String>
@@ -12,6 +21,7 @@ public struct SQLDialectDescriptor: Sendable {
     public let booleanLiteralStyle: BooleanLiteralStyle
     public let likeEscapeStyle: LikeEscapeStyle
     public let paginationStyle: PaginationStyle
+    public let offsetFetchOrderBy: String
 
     public enum RegexSyntax: String, Sendable {
         case regexp        // MySQL: column REGEXP 'pattern'
@@ -46,7 +56,8 @@ public struct SQLDialectDescriptor: Sendable {
         regexSyntax: RegexSyntax = .unsupported,
         booleanLiteralStyle: BooleanLiteralStyle = .numeric,
         likeEscapeStyle: LikeEscapeStyle = .explicit,
-        paginationStyle: PaginationStyle = .limit
+        paginationStyle: PaginationStyle = .limit,
+        offsetFetchOrderBy: String = "ORDER BY (SELECT NULL)"
     ) {
         self.identifierQuote = identifierQuote
         self.keywords = keywords
@@ -57,5 +68,6 @@ public struct SQLDialectDescriptor: Sendable {
         self.booleanLiteralStyle = booleanLiteralStyle
         self.likeEscapeStyle = likeEscapeStyle
         self.paginationStyle = paginationStyle
+        self.offsetFetchOrderBy = offsetFetchOrderBy
     }
 }

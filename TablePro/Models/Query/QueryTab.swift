@@ -437,7 +437,7 @@ struct QueryTab: Identifiable, Equatable {
         databaseType: DatabaseType,
         quoteIdentifier: ((String) -> String)? = nil
     ) -> String {
-        let quote = quoteIdentifier ?? databaseType.quoteIdentifier
+        let quote = quoteIdentifier ?? quoteIdentifierFromDialect(PluginManager.shared.sqlDialect(for: databaseType))
         let pageSize = AppSettingsManager.shared.dataGrid.defaultPageSize
         if databaseType == .mongodb {
             let escaped = tableName.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
