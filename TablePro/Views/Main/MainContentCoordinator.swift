@@ -953,8 +953,10 @@ final class MainContentCoordinator {
             }
         }
 
-        // Fetch CHECK constraint pseudo-enum values from DDL (matches only SQLite-style constraints)
-        if let createSQL = try? await driver.fetchTableDDL(table: tableName) {
+        // Fetch CHECK constraint pseudo-enum values from DDL (SQLite-style CHECK ... IN constraints).
+        // Only attempt DDL parsing when no enum values were found via catalog (avoids unnecessary
+        // fetchTableDDL calls for databases that don't use CHECK constraints for enums).
+        if result.isEmpty, let createSQL = try? await driver.fetchTableDDL(table: tableName) {
             let columns = try? await driver.fetchColumns(table: tableName)
             for col in columns ?? [] {
                 if let values = Self.parseSQLiteCheckConstraintValues(

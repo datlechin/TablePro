@@ -496,7 +496,8 @@ final class PluginManager {
 
     func autoLimitStyle(for databaseType: DatabaseType) -> AutoLimitStyle {
         guard let plugin = driverPlugin(for: databaseType) else { return .limit }
-        return Swift.type(of: plugin).sqlDialect?.autoLimitStyle ?? .limit
+        guard let dialect = Swift.type(of: plugin).sqlDialect else { return .none }
+        return dialect.autoLimitStyle
     }
 
     func paginationStyle(for databaseType: DatabaseType) -> SQLDialectDescriptor.PaginationStyle {

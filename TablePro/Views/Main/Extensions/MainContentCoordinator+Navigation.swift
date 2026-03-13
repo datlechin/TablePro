@@ -334,8 +334,11 @@ extension MainContentCoordinator {
                 if let adapter = driver as? PluginDriverAdapter {
                     try await adapter.switchDatabase(to: database)
                 }
+                let defaultSchema = pm.defaultSchemaName(for: connection.type)
                 DatabaseManager.shared.updateSession(connectionId) { session in
                     session.currentDatabase = database
+                    // Reset schema to plugin default (e.g. "dbo" for MSSQL)
+                    session.currentSchema = defaultSchema
                 }
             }
             AppSettingsStorage.shared.saveLastDatabase(database, for: connectionId)
