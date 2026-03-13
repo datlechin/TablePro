@@ -8,6 +8,16 @@
 
 import AppKit
 
+/// Tags stored on NSTextField.tag to identify which font variant a cell uses.
+/// Used by `updateVisibleCellFonts` to re-apply the correct variant after a font change.
+enum DataGridFontVariant {
+    static let regular = 0
+    static let italic = 1
+    static let medium = 2
+    static let rowNumber = 3
+}
+
+@MainActor
 struct DataGridFontCache {
     private(set) static var regular = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
     private(set) static var italic = regular.withTraits(.italic)

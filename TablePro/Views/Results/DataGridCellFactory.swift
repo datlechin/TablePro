@@ -96,6 +96,7 @@ final class DataGridCellFactory {
            let textField = reused.textField {
             cellView = reused
             cell = textField
+            cell.font = DataGridFontCache.rowNumber
         } else {
             cellView = NSTableCellView()
             cellView.identifier = cellViewId
@@ -103,6 +104,7 @@ final class DataGridCellFactory {
             cell = NSTextField(labelWithString: "")
             cell.alignment = .right
             cell.font = DataGridFontCache.rowNumber
+            cell.tag = DataGridFontVariant.rowNumber
             cell.textColor = .secondaryLabelColor
             cell.translatesAutoresizingMaskIntoConstraints = false
 
@@ -312,35 +314,28 @@ final class DataGridCellFactory {
 
         if value == nil {
             cell.stringValue = ""
+            cell.font = DataGridFontCache.italic
+            cell.tag = DataGridFontVariant.italic
             if !isLargeDataset {
                 cell.placeholderString = nullDisplayString
-                cell.textColor = .secondaryLabelColor
-                if cell.font !== DataGridFontCache.italic {
-                    cell.font = DataGridFontCache.italic
-                }
-            } else {
-                cell.textColor = .secondaryLabelColor
             }
+            cell.textColor = .secondaryLabelColor
         } else if value == "__DEFAULT__" {
             cell.stringValue = ""
+            cell.font = DataGridFontCache.medium
+            cell.tag = DataGridFontVariant.medium
             if !isLargeDataset {
                 cell.placeholderString = "DEFAULT"
-                cell.textColor = .systemBlue
-                cell.font = DataGridFontCache.medium
-            } else {
-                cell.textColor = .systemBlue
             }
+            cell.textColor = .systemBlue
         } else if value == "" {
             cell.stringValue = ""
+            cell.font = DataGridFontCache.italic
+            cell.tag = DataGridFontVariant.italic
             if !isLargeDataset {
                 cell.placeholderString = "Empty"
-                cell.textColor = .secondaryLabelColor
-                if cell.font !== DataGridFontCache.italic {
-                    cell.font = DataGridFontCache.italic
-                }
-            } else {
-                cell.textColor = .secondaryLabelColor
             }
+            cell.textColor = .secondaryLabelColor
         } else {
             var displayValue = value ?? ""
 
@@ -360,9 +355,8 @@ final class DataGridCellFactory {
             cell.stringValue = displayValue
             (cell as? CellTextField)?.originalValue = value
             cell.textColor = .labelColor
-            if cell.font !== DataGridFontCache.regular {
-                cell.font = DataGridFontCache.regular
-            }
+            cell.font = DataGridFontCache.regular
+            cell.tag = DataGridFontVariant.regular
         }
     }
 

@@ -27,7 +27,7 @@ struct DataGridSettingsView: View {
 
                 GroupBox("Preview") {
                     Text("1  John Doe  john@example.com  NULL")
-                        .font(.custom(settings.fontFamily.displayName, size: CGFloat(settings.clampedFontSize)))
+                        .font(Font(settings.fontFamily.font(size: CGFloat(settings.clampedFontSize))))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(8)
                 }

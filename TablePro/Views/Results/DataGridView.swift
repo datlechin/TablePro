@@ -667,7 +667,7 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
     // Settings observer for real-time updates
     fileprivate var settingsObserver: NSObjectProtocol?
     /// Snapshot of last-seen data grid settings for change detection
-    private var lastDataGridSettings = AppSettingsManager.shared.dataGrid
+    private var lastDataGridSettings: DataGridSettings
 
     @Binding var selectedRowIndices: Set<Int>
 
@@ -718,6 +718,7 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
         self.onPasteRows = onPasteRows
         self.onUndo = onUndo
         self.onRedo = onRedo
+        self.lastDataGridSettings = AppSettingsManager.shared.dataGrid
         super.init()
         updateCache()
 
@@ -780,7 +781,8 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
     // MARK: - Font Updates
 
     /// Update fonts on existing visible cell views in-place.
-    /// Avoids reloadData which recycles cells through the reuse pool.
+    /// Uses `DataGridFontVariant` tags set during cell configuration
+    /// to apply the correct font variant without inspecting cell content.
     @MainActor
     static func updateVisibleCellFonts(tableView: NSTableView) {
         let visibleRect = tableView.visibleRect
@@ -793,14 +795,14 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
                 guard let cellView = tableView.view(atColumn: col, row: row, makeIfNecessary: false) as? NSTableCellView,
                       let textField = cellView.textField else { continue }
 
-                let columnId = tableView.tableColumns[col].identifier.rawValue
-                if columnId == "__rowNumber__" {
+                switch textField.tag {
+                case DataGridFontVariant.rowNumber:
                     textField.font = DataGridFontCache.rowNumber
-                } else if textField.stringValue.isEmpty && textField.placeholderString == "DEFAULT" {
-                    textField.font = DataGridFontCache.medium
-                } else if textField.stringValue.isEmpty && textField.placeholderString != nil {
+                case DataGridFontVariant.italic:
                     textField.font = DataGridFontCache.italic
-                } else {
+                case DataGridFontVariant.medium:
+                    textField.font = DataGridFontCache.medium
+                default:
                     textField.font = DataGridFontCache.regular
                 }
             }
