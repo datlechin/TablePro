@@ -53,12 +53,12 @@ struct TableOperationDialog: View {
     private var cascadeDescription: String {
         switch operationType {
         case .drop:
-            return "Drop all tables that depend on this table"
+            return String(localized: "Drop all tables that depend on this table")
         case .truncate:
             if !cascadeSupported {
                 return String(localized: "Not supported for TRUNCATE with this database")
             }
-            return "Truncate all tables linked by foreign keys"
+            return String(localized: "Truncate all tables linked by foreign keys")
         }
     }
 

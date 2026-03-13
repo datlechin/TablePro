@@ -179,7 +179,7 @@ struct AppMenuCommands: Commands {
                 NotificationCenter.default.post(name: .openConnectionSwitcher, object: nil)
             }
             .optionalKeyboardShortcut(shortcut(for: .switchConnection))
-            .disabled(!appState.isConnected || !appState.supportsDatabaseSwitching)
+            .disabled(!appState.isConnected)
 
             Button("Quick Switcher...") {
                 actions?.openQuickSwitcher()

@@ -461,8 +461,11 @@ final class PluginManager {
     var allRegisteredFileExtensions: [String: DatabaseType] {
         loadPendingPlugins()
         var result: [String: DatabaseType] = [:]
+        var seen = Set<ObjectIdentifier>()
         for typeId in driverPlugins.keys.sorted() {
             guard let plugin = driverPlugins[typeId] else { continue }
+            let pluginId = ObjectIdentifier(Swift.type(of: plugin))
+            guard seen.insert(pluginId).inserted else { continue }
             let dbType = DatabaseType(rawValue: typeId)
             for ext in Swift.type(of: plugin).fileExtensions {
                 let key = ext.lowercased()
@@ -482,7 +485,10 @@ final class PluginManager {
     var allRegisteredURLSchemes: Set<String> {
         loadPendingPlugins()
         var result: Set<String> = []
+        var seen = Set<ObjectIdentifier>()
         for plugin in driverPlugins.values {
+            let pluginId = ObjectIdentifier(Swift.type(of: plugin))
+            guard seen.insert(pluginId).inserted else { continue }
             for scheme in Swift.type(of: plugin).urlSchemes {
                 result.insert(scheme.lowercased())
             }
