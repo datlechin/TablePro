@@ -730,9 +730,22 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
             DispatchQueue.main.async { [weak self] in
                 guard let self, let tableView = self.tableView else { return }
                 let newRowHeight = CGFloat(AppSettingsManager.shared.dataGrid.rowHeight.rawValue)
-                tableView.rowHeight = newRowHeight
-                tableView.reloadData()
-                tableView.tile()
+
+                if tableView.rowHeight != newRowHeight {
+                    tableView.rowHeight = newRowHeight
+                    tableView.tile()
+                }
+
+                // Reload visible rows to apply font/formatting changes.
+                // Off-screen cells pick up new fonts from DataGridFontCache on scroll.
+                let visibleRect = tableView.visibleRect
+                let visibleRange = tableView.rows(in: visibleRect)
+                if visibleRange.length > 0 {
+                    tableView.reloadData(
+                        forRowIndexes: IndexSet(integersIn: visibleRange.location..<(visibleRange.location + visibleRange.length)),
+                        columnIndexes: IndexSet(integersIn: 0..<tableView.numberOfColumns)
+                    )
+                }
             }
         }
     }
