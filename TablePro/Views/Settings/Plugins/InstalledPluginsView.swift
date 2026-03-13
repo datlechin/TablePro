@@ -134,14 +134,6 @@ struct InstalledPluginsView: View {
             Text(plugin.name)
                 .lineLimit(1)
                 .foregroundStyle(plugin.isEnabled ? .primary : .secondary)
-            Spacer()
-            Toggle("", isOn: Binding(
-                get: { plugin.isEnabled },
-                set: { pluginManager.setEnabled($0, pluginId: plugin.id) }
-            ))
-            .toggleStyle(.switch)
-            .labelsHidden()
-            .controlSize(.small)
         }
     }
 
@@ -167,8 +159,18 @@ struct InstalledPluginsView: View {
         if let selected = selectedPlugin {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text(selected.name)
-                        .font(.title3.weight(.semibold))
+                    HStack {
+                        Text(selected.name)
+                            .font(.title3.weight(.semibold))
+                        Spacer()
+                        Toggle("", isOn: Binding(
+                            get: { selected.isEnabled },
+                            set: { pluginManager.setEnabled($0, pluginId: selected.id) }
+                        ))
+                        .toggleStyle(.switch)
+                        .labelsHidden()
+                        .controlSize(.small)
+                    }
 
                     Text("v\(selected.version) · \(selected.source == .builtIn ? String(localized: "Built-in") : String(localized: "User-installed"))")
                         .font(.subheadline)
