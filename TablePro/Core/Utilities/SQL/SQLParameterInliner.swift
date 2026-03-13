@@ -17,11 +17,12 @@ struct SQLParameterInliner {
     ///   - statement: The parameterized statement containing SQL with placeholders and bound values.
     ///   - databaseType: The database type, which determines placeholder style (`?` vs `$N`).
     /// - Returns: A SQL string with placeholders replaced by formatted literal values.
+    private static let dollarPlaceholderTypes: Set<DatabaseType> = [.postgresql, .redshift, .duckdb]
+
     static func inline(_ statement: ParameterizedStatement, databaseType: DatabaseType) -> String {
-        switch databaseType {
-        case .postgresql, .redshift, .duckdb:
+        if dollarPlaceholderTypes.contains(databaseType) {
             return inlineDollarPlaceholders(statement.sql, parameters: statement.parameters)
-        case .mysql, .mariadb, .sqlite, .mongodb, .redis, .mssql, .oracle, .clickhouse:
+        } else {
             return inlineQuestionMarkPlaceholders(statement.sql, parameters: statement.parameters)
         }
     }

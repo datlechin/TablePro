@@ -37,9 +37,14 @@ struct DatabaseTypeTests {
         #expect(DatabaseType.mongodb.defaultPort == 27_017)
     }
 
-    @Test("CaseIterable count is 11")
-    func testCaseIterableCount() {
-        #expect(DatabaseType.allCases.count == 11)
+    @Test("allKnownTypes count is 11")
+    func testAllKnownTypesCount() {
+        #expect(DatabaseType.allKnownTypes.count == 11)
+    }
+
+    @Test("allCases shim matches allKnownTypes")
+    func testAllCasesShim() {
+        #expect(DatabaseType.allCases == DatabaseType.allKnownTypes)
     }
 
     @Test("Raw value matches display name", arguments: [
@@ -84,5 +89,52 @@ struct DatabaseTypeTests {
     @Test("ClickHouse icon name is clickhouse-icon")
     func testClickHouseIconName() {
         #expect(DatabaseType.clickhouse.iconName == "clickhouse-icon")
+    }
+
+    // MARK: - Struct Behavior Tests
+
+    @Test("Struct equality via rawValue")
+    func testStructEquality() {
+        #expect(DatabaseType(rawValue: "MySQL") == .mysql)
+    }
+
+    @Test("Unknown type round-trips via rawValue")
+    func testUnknownTypeRoundTrip() {
+        #expect(DatabaseType(rawValue: "FutureDB").rawValue == "FutureDB")
+    }
+
+    @Test("Validating init rejects unknown type")
+    func testValidatingInitRejectsUnknown() {
+        #expect(DatabaseType(validating: "FutureDB") == nil)
+    }
+
+    @Test("Validating init accepts known type")
+    func testValidatingInitAcceptsKnown() {
+        #expect(DatabaseType(validating: "MySQL") == .mysql)
+    }
+
+    @Test("Codable round-trip for known type")
+    func testCodableRoundTrip() throws {
+        let original = DatabaseType.postgresql
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(DatabaseType.self, from: data)
+        #expect(decoded == original)
+    }
+
+    @Test("Codable round-trip for unknown type")
+    func testCodableUnknownRoundTrip() throws {
+        let original = DatabaseType(rawValue: "FutureDB")
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(DatabaseType.self, from: data)
+        #expect(decoded == original)
+        #expect(decoded.rawValue == "FutureDB")
+    }
+
+    @Test("Hashable set membership works")
+    func testHashableSetMembership() {
+        let types: Set<DatabaseType> = [.mysql, .postgresql, .sqlite]
+        #expect(types.contains(.mysql))
+        #expect(types.contains(.postgresql))
+        #expect(!types.contains(.redis))
     }
 }

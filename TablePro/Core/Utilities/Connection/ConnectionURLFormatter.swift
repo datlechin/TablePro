@@ -26,20 +26,22 @@ struct ConnectionURLFormatter {
 
     // MARK: - Private
 
+    private static let urlSchemeMap: [DatabaseType: String] = [
+        .mysql: "mysql",
+        .mariadb: "mariadb",
+        .postgresql: "postgresql",
+        .redshift: "redshift",
+        .sqlite: "sqlite",
+        .mongodb: "mongodb",
+        .redis: "redis",
+        .mssql: "sqlserver",
+        .oracle: "oracle",
+        .clickhouse: "clickhouse",
+        .duckdb: "duckdb",
+    ]
+
     private static func urlScheme(for type: DatabaseType) -> String {
-        switch type {
-        case .mysql: return "mysql"
-        case .mariadb: return "mariadb"
-        case .postgresql: return "postgresql"
-        case .redshift: return "redshift"
-        case .sqlite: return "sqlite"
-        case .mongodb: return "mongodb"
-        case .redis: return "redis"
-        case .mssql: return "sqlserver"
-        case .oracle: return "oracle"
-        case .clickhouse: return "clickhouse"
-        case .duckdb: return "duckdb"
-        }
+        urlSchemeMap[type] ?? type.rawValue.lowercased()
     }
 
     private static func formatSQLite(_ database: String) -> String {

@@ -434,8 +434,8 @@ struct ExportDialog: View {
         do {
             var items: [ExportDatabaseItem] = []
 
-            switch connection.type {
-            case .postgresql, .redshift:
+            let dbType = connection.type
+            if dbType == .postgresql || dbType == .redshift {
                 // PostgreSQL: fetch schemas within current database (can't query across databases)
                 let schemas = try await fetchPostgreSQLSchemas(driver: driver)
                 for schema in schemas {
@@ -462,16 +462,14 @@ struct ExportDialog: View {
                     if item2.name == "public" { return false }
                     return item1.name < item2.name
                 }
-
-            case .sqlite, .mongodb, .redis, .duckdb:
-                let fallbackName = connection.type == .redis ? "db0" : "main"
+            } else if dbType == .sqlite || dbType == .mongodb || dbType == .redis || dbType == .duckdb {
+                let fallbackName = dbType == .redis ? "db0" : "main"
                 let dbItem = try await buildFlatDatabaseItem(
                     driver: driver,
                     name: connection.database.isEmpty ? fallbackName : connection.database
                 )
                 if let dbItem { items.append(dbItem) }
-
-            case .mssql:
+            } else if dbType == .mssql {
                 // MSSQL: fetch schemas within current database
                 let schemas = try await driver.fetchSchemas()
                 for schema in schemas {
@@ -497,8 +495,7 @@ struct ExportDialog: View {
                     if item2.name == "dbo" { return false }
                     return item1.name < item2.name
                 }
-
-            case .oracle:
+            } else if dbType == .oracle {
                 // Oracle: fetch schemas (users) and their tables
                 let schemas = try await driver.fetchSchemas()
                 for schema in schemas {
@@ -519,9 +516,8 @@ struct ExportDialog: View {
                         ))
                     }
                 }
-
-            case .clickhouse, .mysql, .mariadb:
-                // MySQL/MariaDB/ClickHouse: fetch all databases and their tables
+            } else {
+                // MySQL/MariaDB/ClickHouse and other types: fetch all databases and their tables
                 let databases = try await driver.fetchDatabases()
                 for dbName in databases {
                     let tables = try await fetchTablesForDatabase(dbName, driver: driver)

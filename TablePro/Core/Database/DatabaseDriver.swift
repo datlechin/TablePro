@@ -303,28 +303,19 @@ extension DatabaseDriver {
         guard seconds > 0 else { return }
         let ms = seconds * 1_000
         do {
-            switch connection.type {
-            case .mysql:
+            let type = connection.type
+            if type == .mysql {
                 _ = try await execute(query: "SET SESSION max_execution_time = \(ms)")
-            case .mariadb:
+            } else if type == .mariadb {
                 _ = try await execute(query: "SET SESSION max_statement_time = \(seconds)")
-            case .postgresql, .redshift:
+            } else if type == .postgresql || type == .redshift {
                 _ = try await execute(query: "SET statement_timeout = '\(ms)'")
-            case .sqlite:
-                break  // SQLite busy_timeout handled by driver directly
-            case .duckdb:
-                break
-            case .mongodb:
-                break  // MongoDB timeout handled per-operation by MongoDBDriver
-            case .redis:
-                break  // Redis does not support session-level query timeouts
-            case .mssql:
+            } else if type == .mssql {
                 _ = try await execute(query: "SET LOCK_TIMEOUT \(ms)")
-            case .oracle:
-                break  // Oracle timeout handled per-statement by OracleDriver
-            case .clickhouse:
+            } else if type == .clickhouse {
                 _ = try await execute(query: "SET max_execution_time = \(seconds)")
             }
+            // sqlite, duckdb, mongodb, redis, oracle: no session-level timeout
         } catch {
             Logger(subsystem: "com.TablePro", category: "DatabaseDriver")
                 .warning("Failed to set query timeout: \(error.localizedDescription)")

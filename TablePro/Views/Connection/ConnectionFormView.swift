@@ -25,7 +25,7 @@ struct ConnectionFormView: View {
     private var isNew: Bool { connectionId == nil }
 
     private var availableDatabaseTypes: [DatabaseType] {
-        DatabaseType.allCases
+        DatabaseType.allKnownTypes
     }
 
     private var additionalConnectionFields: [ConnectionField] {
@@ -745,17 +745,8 @@ struct ConnectionFormView: View {
     // MARK: - Helpers
 
     private var defaultPort: String {
-        switch type {
-        case .mysql, .mariadb: return "3306"
-        case .postgresql: return "5432"
-        case .redshift: return "5439"
-        case .clickhouse: return "8123"
-        case .sqlite, .duckdb: return ""
-        case .mongodb: return "27017"
-        case .redis: return "6379"
-        case .mssql: return "1433"
-        case .oracle: return "1521"
-        }
+        let port = type.defaultPort
+        return port == 0 ? "" : String(port)
     }
 
     private var isValid: Bool {

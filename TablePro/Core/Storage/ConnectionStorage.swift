@@ -586,7 +586,7 @@ private struct StoredConnection: Codable {
             port: port,
             database: database,
             username: username,
-            type: DatabaseType(rawValue: type) ?? .mysql,
+            type: DatabaseType(rawValue: type),
             sshConfig: sshConfig,
             sslConfig: sslConfig,
             color: parsedColor,

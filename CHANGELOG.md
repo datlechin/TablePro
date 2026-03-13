@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Converted `DatabaseType` from closed enum to string-based struct, enabling future plugin-defined database types
 - Moved string literal escaping into plugin drivers via `escapeStringLiteral` on `PluginDatabaseDriver` and `DatabaseDriver` protocols; `SQLEscaping.escapeStringLiteral` now uses ANSI SQL escaping only (doubles single quotes, strips null bytes)
 - SQL autocomplete data types and CREATE TABLE options now use plugin-provided dialect data instead of hardcoded per-database switches
 - `FilterSQLGenerator` now uses `SQLDialectDescriptor` data (regex syntax, boolean literals, LIKE escape style, pagination style) instead of `DatabaseType` switch statements

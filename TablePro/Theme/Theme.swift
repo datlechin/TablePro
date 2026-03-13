@@ -25,6 +25,7 @@ enum Theme {
     static let oracleColor = Color(red: 0.76, green: 0.09, blue: 0.07) // #C3160B Oracle red
     static let clickhouseColor = Color(red: 1.0, green: 0.82, blue: 0.0)
     static let duckdbColor = Color(red: 1.0, green: 0.85, blue: 0.0)
+    static let defaultDatabaseColor = Color.gray
 
     // MARK: - Semantic Colors
 
@@ -100,29 +101,20 @@ extension View {
 
 extension DatabaseType {
     var themeColor: Color {
-        switch self {
-        case .mysql:
-            return Theme.mysqlColor
-        case .mariadb:
-            return Theme.mariadbColor
-        case .postgresql:
-            return Theme.postgresqlColor
-        case .sqlite:
-            return Theme.sqliteColor
-        case .redshift:
-            return Theme.redshiftColor
-        case .mongodb:
-            return Theme.mongodbColor
-        case .redis:
-            return Theme.redisColor
-        case .mssql:
-            return Theme.mssqlColor
-        case .oracle:
-            return Theme.oracleColor
-        case .clickhouse:
-            return Theme.clickhouseColor
-        case .duckdb:
-            return Theme.duckdbColor
-        }
+        Self.themeColorMap[self] ?? Theme.defaultDatabaseColor
     }
+
+    private static let themeColorMap: [DatabaseType: Color] = [
+        .mysql: Theme.mysqlColor,
+        .mariadb: Theme.mariadbColor,
+        .postgresql: Theme.postgresqlColor,
+        .sqlite: Theme.sqliteColor,
+        .redshift: Theme.redshiftColor,
+        .mongodb: Theme.mongodbColor,
+        .redis: Theme.redisColor,
+        .mssql: Theme.mssqlColor,
+        .oracle: Theme.oracleColor,
+        .clickhouse: Theme.clickhouseColor,
+        .duckdb: Theme.duckdbColor,
+    ]
 }

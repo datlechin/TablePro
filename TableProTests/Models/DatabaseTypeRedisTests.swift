@@ -38,7 +38,12 @@ struct DatabaseTypeRedisTests {
         #expect(DatabaseType.redis.themeColor == Theme.redisColor)
     }
 
-    @Test("Included in allCases")
+    @Test("Included in allKnownTypes")
+    func includedInAllKnownTypes() {
+        #expect(DatabaseType.allKnownTypes.contains(.redis))
+    }
+
+    @Test("Included in allCases shim")
     func includedInAllCases() {
         #expect(DatabaseType.allCases.contains(.redis))
     }

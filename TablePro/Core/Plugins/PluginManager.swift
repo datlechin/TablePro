@@ -319,6 +319,22 @@ final class PluginManager {
         }
     }
 
+    // MARK: - Available Database Types
+
+    /// All database types with loaded plugins, ordered by display name.
+    var availableDatabaseTypes: [DatabaseType] {
+        var types: [DatabaseType] = []
+        for entry in plugins {
+            if let typeId = entry.databaseTypeId {
+                types.append(DatabaseType(rawValue: typeId))
+            }
+            for additionalId in entry.additionalTypeIds {
+                types.append(DatabaseType(rawValue: additionalId))
+            }
+        }
+        return types.sorted { $0.rawValue < $1.rawValue }
+    }
+
     // MARK: - Driver Availability
 
     func isDriverAvailable(for databaseType: DatabaseType) -> Bool {

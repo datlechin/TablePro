@@ -87,8 +87,8 @@ enum DeeplinkHandler {
         guard let name = value("name"), !name.isEmpty,
               let host = value("host"), !host.isEmpty,
               let typeStr = value("type"),
-              let dbType = DatabaseType(rawValue: typeStr)
-                ?? DatabaseType.allCases.first(where: {
+              let dbType = DatabaseType(validating: typeStr)
+                ?? DatabaseType.allKnownTypes.first(where: {
                     $0.rawValue.lowercased() == typeStr.lowercased()
                 })
         else {

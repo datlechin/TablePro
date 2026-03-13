@@ -243,9 +243,10 @@ extension MainContentCoordinator {
         WindowOpener.shared.openNativeTab(payload)
     }
 
+    // swiftlint:disable:next function_body_length
     private func allTablesMetadataSQL() -> String? {
-        switch connection.type {
-        case .postgresql:
+        let dbType = connection.type
+        if dbType == .postgresql {
             let schema = (DatabaseManager.shared.driver(for: connectionId) as? SchemaSwitchable)?.escapedSchema ?? "public"
             return """
             SELECT
@@ -261,7 +262,7 @@ extension MainContentCoordinator {
             WHERE schemaname = '\(schema)'
             ORDER BY relname
             """
-        case .redshift:
+        } else if dbType == .redshift {
             let schema = (DatabaseManager.shared.driver(for: connectionId) as? SchemaSwitchable)?.escapedSchema ?? "public"
             return """
             SELECT
@@ -277,7 +278,7 @@ extension MainContentCoordinator {
             WHERE schema = '\(schema)'
             ORDER BY "table"
             """
-        case .clickhouse:
+        } else if dbType == .clickhouse {
             return """
             SELECT
                 database as `schema`,
@@ -290,7 +291,7 @@ extension MainContentCoordinator {
             WHERE database = currentDatabase()
             ORDER BY name
             """
-        case .mysql, .mariadb:
+        } else if dbType == .mysql || dbType == .mariadb {
             return """
             SELECT
                 TABLE_SCHEMA as `schema`,
@@ -309,7 +310,7 @@ extension MainContentCoordinator {
             WHERE TABLE_SCHEMA = DATABASE()
             ORDER BY TABLE_NAME
             """
-        case .sqlite:
+        } else if dbType == .sqlite {
             return """
             SELECT
                 '' as schema,
@@ -327,7 +328,7 @@ extension MainContentCoordinator {
             AND name NOT LIKE 'sqlite_%'
             ORDER BY name
             """
-        case .mssql:
+        } else if dbType == .mssql {
             return """
             SELECT
                 s.name as schema_name,
@@ -344,7 +345,7 @@ extension MainContentCoordinator {
             GROUP BY s.name, t.name, p.rows, v.object_id
             ORDER BY t.name
             """
-        case .oracle:
+        } else if dbType == .oracle {
             let schema = (DatabaseManager.shared.driver(for: connectionId) as? SchemaSwitchable)?.escapedSchema ?? "SYSTEM"
             return """
             SELECT
@@ -356,7 +357,7 @@ extension MainContentCoordinator {
             WHERE OWNER = '\(schema)'
             ORDER BY TABLE_NAME
             """
-        case .duckdb:
+        } else if dbType == .duckdb {
             let schema = (DatabaseManager.shared.driver(for: connectionId) as? SchemaSwitchable)?.escapedSchema ?? "main"
             return """
             SELECT
@@ -367,14 +368,14 @@ extension MainContentCoordinator {
             WHERE table_schema = '\(schema)'
             ORDER BY table_name
             """
-        case .mongodb:
+        } else if dbType == .mongodb {
             tabManager.addTab(
                 initialQuery: "db.runCommand({\"listCollections\": 1, \"nameOnly\": false})",
                 databaseName: connection.database
             )
             runQuery()
             return nil
-        case .redis:
+        } else if dbType == .redis {
             tabManager.addTab(
                 initialQuery: "SCAN 0 MATCH * COUNT 100",
                 databaseName: connection.database
@@ -382,6 +383,7 @@ extension MainContentCoordinator {
             runQuery()
             return nil
         }
+        return nil
     }
 
     // MARK: - Database Switching

@@ -43,15 +43,15 @@ struct DatabaseTypeMSSQLTests {
         #expect(DatabaseType.mssql.iconName == "mssql-icon")
     }
 
-    // MARK: - allCases Tests
+    // MARK: - allKnownTypes Tests
 
-    @Test("allCases contains mssql")
-    func allCasesContainsMSSql() {
-        #expect(DatabaseType.allCases.contains(.mssql))
+    @Test("allKnownTypes contains mssql")
+    func allKnownTypesContainsMSSql() {
+        #expect(DatabaseType.allKnownTypes.contains(.mssql))
     }
 
-    @Test("allCases contains mssql entry")
-    func allCasesCount() {
+    @Test("allCases shim contains mssql")
+    func allCasesContainsMSSql() {
         #expect(DatabaseType.allCases.contains(.mssql))
     }
 }

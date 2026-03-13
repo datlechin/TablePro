@@ -173,27 +173,21 @@ final class DatabaseSwitcherViewModel {
         if isSchemaMode {
             return name.hasPrefix("pg_")
         }
-        switch databaseType {
-        case .mysql, .mariadb:
-            return ["information_schema", "mysql", "performance_schema", "sys"].contains(name)
-        case .postgresql:
-            return ["postgres", "template0", "template1"].contains(name)
-        case .redshift:
-            return ["dev", "padb_harvest"].contains(name)
-        case .clickhouse:
-            return ["information_schema", "INFORMATION_SCHEMA", "system"].contains(name)
-        case .sqlite:
-            return false
-        case .duckdb:
-            return ["information_schema", "pg_catalog"].contains(name.lowercased())
-        case .mongodb:
-            return false
-        case .redis:
-            return false
-        case .mssql:
-            return ["master", "tempdb", "model", "msdb"].contains(name)
-        case .oracle:
-            return ["SYS", "SYSTEM", "OUTLN", "DBSNMP", "APPQOSSYS", "WMSYS", "XDB"].contains(name)
+        if databaseType == .duckdb {
+            return Self.duckdbSystemItems.contains(name.lowercased())
         }
+        return Self.systemItemNames[databaseType]?.contains(name) ?? false
     }
+
+    private static let duckdbSystemItems: Set<String> = ["information_schema", "pg_catalog"]
+
+    private static let systemItemNames: [DatabaseType: Set<String>] = [
+        .mysql: ["information_schema", "mysql", "performance_schema", "sys"],
+        .mariadb: ["information_schema", "mysql", "performance_schema", "sys"],
+        .postgresql: ["postgres", "template0", "template1"],
+        .redshift: ["dev", "padb_harvest"],
+        .clickhouse: ["information_schema", "INFORMATION_SCHEMA", "system"],
+        .mssql: ["master", "tempdb", "model", "msdb"],
+        .oracle: ["SYS", "SYSTEM", "OUTLN", "DBSNMP", "APPQOSSYS", "WMSYS", "XDB"],
+    ]
 }
