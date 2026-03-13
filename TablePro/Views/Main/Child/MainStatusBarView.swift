@@ -126,6 +126,9 @@ struct MainStatusBarView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 4)
         .background(Color(nsColor: .controlBackgroundColor))
+        .onChange(of: tab?.id) { _, _ in
+            showColumnPopover = false
+        }
     }
 
     /// Generate row info text based on selection and pagination state

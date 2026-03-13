@@ -7,8 +7,8 @@ import Foundation
 import Observation
 
 @MainActor @Observable
-final class ColumnVisibilityManager {
-    var hiddenColumns: Set<String> = []
+internal final class ColumnVisibilityManager {
+    private(set) var hiddenColumns: Set<String> = []
 
     var hasHiddenColumns: Bool {
         !hiddenColumns.isEmpty
@@ -54,14 +54,14 @@ final class ColumnVisibilityManager {
 
     // MARK: - Per-Table UserDefaults Persistence
 
-    func saveLastHiddenColumns(for tableName: String) {
-        let key = "com.TablePro.columns.hiddenColumns.\(tableName)"
+    func saveLastHiddenColumns(for tableName: String, connectionId: UUID) {
+        let key = Self.userDefaultsKey(tableName: tableName, connectionId: connectionId)
         let array = Array(hiddenColumns)
         UserDefaults.standard.set(array, forKey: key)
     }
 
-    func restoreLastHiddenColumns(for tableName: String) {
-        let key = "com.TablePro.columns.hiddenColumns.\(tableName)"
+    func restoreLastHiddenColumns(for tableName: String, connectionId: UUID) {
+        let key = Self.userDefaultsKey(tableName: tableName, connectionId: connectionId)
         if let array = UserDefaults.standard.stringArray(forKey: key) {
             hiddenColumns = Set(array)
         } else {
@@ -73,5 +73,11 @@ final class ColumnVisibilityManager {
     func pruneStaleColumns(_ currentColumns: [String]) {
         let currentSet = Set(currentColumns)
         hiddenColumns = hiddenColumns.intersection(currentSet)
+    }
+
+    // MARK: - Private
+
+    private static func userDefaultsKey(tableName: String, connectionId: UUID) -> String {
+        "com.TablePro.columns.hiddenColumns.\(connectionId.uuidString).\(tableName)"
     }
 }

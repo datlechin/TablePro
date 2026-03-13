@@ -331,8 +331,8 @@ struct MainEditorContentView: View {
             tableName: tab.tableName,
             primaryKeyColumn: changeManager.primaryKeyColumn,
             hiddenColumns: columnVisibilityManager.hiddenColumns,
-            onHideColumn: { columnName in
-                columnVisibilityManager.hideColumn(columnName)
+            onHideColumn: { [coordinator] columnName in
+                coordinator.hideColumn(columnName)
             },
             selectedRowIndices: $selectedRowIndices,
             sortState: sortStateBinding(for: tab),

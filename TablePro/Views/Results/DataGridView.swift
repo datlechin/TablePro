@@ -527,7 +527,10 @@ struct DataGridView: NSViewRepresentable {
             guard let colIndex = Self.columnIndex(from: column.identifier),
                   colIndex < rowProvider.columns.count else { continue }
             let columnName = rowProvider.columns[colIndex]
-            column.isHidden = hiddenColumns.contains(columnName)
+            let shouldHide = hiddenColumns.contains(columnName)
+            if column.isHidden != shouldHide {
+                column.isHidden = shouldHide
+            }
         }
     }
 

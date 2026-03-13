@@ -158,28 +158,30 @@ struct ColumnVisibilityManagerTests {
     @Test("UserDefaults round-trip for saveLastHiddenColumns and restoreLastHiddenColumns")
     func userDefaultsRoundTrip() {
         let tableName = "test_table_\(UUID().uuidString)"
-        let key = "com.TablePro.columns.hiddenColumns.\(tableName)"
+        let connectionId = UUID()
+        let key = "com.TablePro.columns.hiddenColumns.\(connectionId.uuidString).\(tableName)"
         defer { UserDefaults.standard.removeObject(forKey: key) }
 
         let manager = ColumnVisibilityManager()
         manager.hideAll(["col1", "col2", "col3"])
-        manager.saveLastHiddenColumns(for: tableName)
+        manager.saveLastHiddenColumns(for: tableName, connectionId: connectionId)
 
         let other = ColumnVisibilityManager()
-        other.restoreLastHiddenColumns(for: tableName)
+        other.restoreLastHiddenColumns(for: tableName, connectionId: connectionId)
         #expect(other.hiddenColumns == Set(["col1", "col2", "col3"]))
     }
 
     @Test("restoreLastHiddenColumns with no saved data resets to empty")
     func restoreWithNoSavedData() {
         let tableName = "nonexistent_table_\(UUID().uuidString)"
-        let key = "com.TablePro.columns.hiddenColumns.\(tableName)"
+        let connectionId = UUID()
+        let key = "com.TablePro.columns.hiddenColumns.\(connectionId.uuidString).\(tableName)"
         defer { UserDefaults.standard.removeObject(forKey: key) }
 
         let manager = ColumnVisibilityManager()
         manager.hideColumn("leftover")
 
-        manager.restoreLastHiddenColumns(for: tableName)
+        manager.restoreLastHiddenColumns(for: tableName, connectionId: connectionId)
         #expect(manager.hiddenColumns.isEmpty)
     }
 

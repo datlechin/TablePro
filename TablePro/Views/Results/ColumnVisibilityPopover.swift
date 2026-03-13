@@ -64,7 +64,7 @@ struct ColumnVisibilityPopover: View {
     }
 
     private var searchField: some View {
-        TextField("Search columns...", text: $searchText)
+        TextField(String(localized: "Search columns..."), text: $searchText)
             .textFieldStyle(.roundedBorder)
             .controlSize(.small)
             .padding(.horizontal, 12)

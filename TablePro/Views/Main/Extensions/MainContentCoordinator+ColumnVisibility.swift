@@ -19,11 +19,16 @@ extension MainContentCoordinator {
 
     /// Load per-table hidden columns from UserDefaults when opening a table tab
     func restoreLastHiddenColumnsForTable(_ tableName: String) {
-        columnVisibilityManager.restoreLastHiddenColumns(for: tableName)
+        columnVisibilityManager.restoreLastHiddenColumns(for: tableName, connectionId: connectionId)
     }
 
     /// Prune hidden columns that no longer exist in the current result set
     func pruneHiddenColumns(currentColumns: [String]) {
         columnVisibilityManager.pruneStaleColumns(currentColumns)
+    }
+
+    /// Hide a single column (routed through coordinator for centralized control)
+    func hideColumn(_ columnName: String) {
+        columnVisibilityManager.hideColumn(columnName)
     }
 }
