@@ -56,7 +56,7 @@ struct TableOperationDialog: View {
             return "Drop all tables that depend on this table"
         case .truncate:
             if !cascadeSupported {
-                return "Not supported for TRUNCATE with this database"
+                return String(localized: "Not supported for TRUNCATE with this database")
             }
             return "Truncate all tables linked by foreign keys"
         }
@@ -76,9 +76,9 @@ struct TableOperationDialog: View {
     private var ignoreFKDescription: String? {
         if !PluginManager.shared.supportsForeignKeyDisable(for: databaseType) {
             if cascadeSupported {
-                return "Not supported for this database. Use CASCADE instead."
+                return String(localized: "Not supported for this database. Use CASCADE instead.")
             }
-            return "Not supported for this database."
+            return String(localized: "Not supported for this database.")
         }
         return nil
     }

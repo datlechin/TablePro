@@ -62,21 +62,21 @@ struct TableProToolbar: ViewModifier {
             .toolbar {
                 // MARK: - Navigation (Left)
 
-                if PluginManager.shared.supportsDatabaseSwitching(for: state.databaseType) {
-                    ToolbarItem(placement: .navigation) {
-                        Button {
-                            showConnectionSwitcher.toggle()
-                        } label: {
-                            Label("Connection", systemImage: "network")
-                        }
-                        .help("Switch Connection (⌘⌥C)")
-                        .popover(isPresented: $showConnectionSwitcher) {
-                            ConnectionSwitcherPopover {
-                                showConnectionSwitcher = false
-                            }
+                ToolbarItem(placement: .navigation) {
+                    Button {
+                        showConnectionSwitcher.toggle()
+                    } label: {
+                        Label("Connection", systemImage: "network")
+                    }
+                    .help("Switch Connection (⌘⌥C)")
+                    .popover(isPresented: $showConnectionSwitcher) {
+                        ConnectionSwitcherPopover {
+                            showConnectionSwitcher = false
                         }
                     }
+                }
 
+                if PluginManager.shared.supportsDatabaseSwitching(for: state.databaseType) {
                     ToolbarItem(placement: .navigation) {
                         Button {
                             actions?.openDatabaseSwitcher()
@@ -142,17 +142,9 @@ struct TableProToolbar: ViewModifier {
                         actions?.previewSQL()
                     } label: {
                         let langName = PluginManager.shared.queryLanguageName(for: state.databaseType)
-                        let previewLabel = langName == "SQL" ? "Preview SQL"
-                            : langName == "MQL" ? "Preview MQL"
-                            : "Preview Commands"
-                        Label(previewLabel, systemImage: "eye")
+                        Label("Preview \(langName)", systemImage: "eye")
                     }
-                    .help({
-                        let langName = PluginManager.shared.queryLanguageName(for: state.databaseType)
-                        return langName == "SQL" ? "Preview SQL (⌘⇧P)"
-                            : langName == "MQL" ? "Preview MQL (⌘⇧P)"
-                            : "Preview Commands (⌘⇧P)"
-                    }())
+                    .help("Preview \(PluginManager.shared.queryLanguageName(for: state.databaseType)) (⌘⇧P)")
                     .disabled(!state.hasPendingChanges || state.connectionState != .connected)
                     .popover(isPresented: $state.showSQLReviewPopover) {
                         SQLReviewPopover(statements: state.previewStatements, databaseType: state.databaseType)

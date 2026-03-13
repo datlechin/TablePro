@@ -461,10 +461,18 @@ final class PluginManager {
     var allRegisteredFileExtensions: [String: DatabaseType] {
         loadPendingPlugins()
         var result: [String: DatabaseType] = [:]
-        for (typeId, plugin) in driverPlugins {
+        for typeId in driverPlugins.keys.sorted() {
+            guard let plugin = driverPlugins[typeId] else { continue }
             let dbType = DatabaseType(rawValue: typeId)
             for ext in Swift.type(of: plugin).fileExtensions {
-                result[ext.lowercased()] = dbType
+                let key = ext.lowercased()
+                if let existing = result[key], existing != dbType {
+                    Self.logger.warning(
+                        "File extension '\(key)' is registered by multiple plugins; keeping '\(existing.rawValue)', ignoring '\(dbType.rawValue)'"
+                    )
+                    continue
+                }
+                result[key] = dbType
             }
         }
         return result

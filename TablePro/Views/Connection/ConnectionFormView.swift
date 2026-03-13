@@ -753,7 +753,7 @@ struct ConnectionFormView: View {
     private var filePathPrompt: String {
         let extensions = PluginManager.shared.driverPlugin(for: type)
             .map { Swift.type(of: $0).fileExtensions } ?? []
-        let ext = extensions.first ?? type.rawValue.lowercased()
+        let ext = extensions.first ?? "db"
         return "/path/to/database.\(ext)"
     }
 

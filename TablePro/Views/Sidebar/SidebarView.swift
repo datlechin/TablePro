@@ -151,13 +151,9 @@ struct SidebarView: View {
     }
 
     private var emptyState: some View {
-        let entityName = PluginManager.shared.queryLanguageName(for: viewModel.databaseType)
-        let noItemsLabel = entityName == "MQL" ? "No Collections"
-            : entityName == "Redis CLI" ? "No Databases"
-            : "No Tables"
-        let noItemsDetail = entityName == "MQL" ? "This database has no collections yet."
-            : entityName == "Redis CLI" ? "All databases are empty."
-            : "This database has no tables yet."
+        let entityName = PluginManager.shared.tableEntityName(for: viewModel.databaseType)
+        let noItemsLabel = String(localized: "No \(entityName)")
+        let noItemsDetail = String(localized: "This database has no \(entityName.lowercased()) yet.")
         return VStack(spacing: 6) {
             Image(systemName: "tablecells")
                 .font(.system(size: 28, weight: .thin))
@@ -177,17 +173,10 @@ struct SidebarView: View {
     // MARK: - Table List
 
     private var tableList: some View {
-        let langName = PluginManager.shared.queryLanguageName(for: viewModel.databaseType)
-        let entityLabel = langName == "MQL" ? "Collections" : langName == "Redis CLI" ? "Databases" : "Tables"
-        let noMatchLabel = langName == "MQL" ? "No matching collections"
-            : langName == "Redis CLI" ? "No matching databases"
-            : "No matching tables"
-        let helpLabel = langName == "MQL" ? "Right-click to show all collections"
-            : langName == "Redis CLI" ? "Right-click to show all databases"
-            : "Right-click to show all tables"
-        let showAllLabel = langName == "MQL" ? String(localized: "Show All Collections")
-            : langName == "Redis CLI" ? String(localized: "Show All Databases")
-            : String(localized: "Show All Tables")
+        let entityLabel = PluginManager.shared.tableEntityName(for: viewModel.databaseType)
+        let noMatchLabel = String(localized: "No matching \(entityLabel.lowercased())")
+        let helpLabel = String(localized: "Right-click to show all \(entityLabel.lowercased())")
+        let showAllLabel = String(localized: "Show All \(entityLabel)")
         return List(selection: selectedTablesBinding) {
             if filteredTables.isEmpty {
                 ContentUnavailableView(

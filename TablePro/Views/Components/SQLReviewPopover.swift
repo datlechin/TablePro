@@ -100,7 +100,7 @@ struct SQLReviewPopover: View {
 
     private var headerView: some View {
         HStack {
-            Text(String(localized: "\(PluginManager.shared.queryLanguageName(for: databaseType)) Preview"))
+            Text("\(PluginManager.shared.queryLanguageName(for: databaseType)) Preview")
                 .font(.system(size: DesignConstants.FontSize.body, weight: .semibold))
             if !statements.isEmpty {
                 Text(

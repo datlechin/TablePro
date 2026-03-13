@@ -69,7 +69,7 @@ extension AppDelegate {
                     case .duckdb:
                         self.handleDuckDBFile(url)
                     default:
-                        break
+                        self.handleGenericDatabaseFile(url, type: dbType)
                     }
                 }
                 self.scheduleWelcomeWindowSuppression()

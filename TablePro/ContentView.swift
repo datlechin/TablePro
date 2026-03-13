@@ -93,6 +93,7 @@ struct ContentView: View {
                         AppState.shared.isConnected = true
                         AppState.shared.safeModeLevel = session.connection.safeModeLevel
                         AppState.shared.editorLanguage = PluginManager.shared.editorLanguage(for: session.connection.type)
+                        AppState.shared.currentDatabaseType = session.connection.type
                         AppState.shared.supportsDatabaseSwitching = PluginManager.shared.supportsDatabaseSwitching(
                             for: session.connection.type)
                     }
@@ -119,6 +120,7 @@ struct ContentView: View {
                         AppState.shared.isConnected = false
                         AppState.shared.safeModeLevel = .silent
                         AppState.shared.editorLanguage = .sql
+                        AppState.shared.currentDatabaseType = nil
                         AppState.shared.supportsDatabaseSwitching = true
 
                         // Close all native tab windows for this connection and
@@ -150,6 +152,7 @@ struct ContentView: View {
                 AppState.shared.isConnected = true
                 AppState.shared.safeModeLevel = newSession.connection.safeModeLevel
                 AppState.shared.editorLanguage = PluginManager.shared.editorLanguage(for: newSession.connection.type)
+                AppState.shared.currentDatabaseType = newSession.connection.type
                 AppState.shared.supportsDatabaseSwitching = PluginManager.shared.supportsDatabaseSwitching(
                     for: newSession.connection.type)
             }
@@ -179,12 +182,14 @@ struct ContentView: View {
                     AppState.shared.isConnected = true
                     AppState.shared.safeModeLevel = session.connection.safeModeLevel
                     AppState.shared.editorLanguage = PluginManager.shared.editorLanguage(for: session.connection.type)
+                    AppState.shared.currentDatabaseType = session.connection.type
                     AppState.shared.supportsDatabaseSwitching = PluginManager.shared.supportsDatabaseSwitching(
                         for: session.connection.type)
                 } else {
                     AppState.shared.isConnected = false
                     AppState.shared.safeModeLevel = .silent
                     AppState.shared.editorLanguage = .sql
+                    AppState.shared.currentDatabaseType = nil
                     AppState.shared.supportsDatabaseSwitching = true
                 }
             }

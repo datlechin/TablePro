@@ -12,7 +12,7 @@ extension EditorLanguage {
         case .sql: return .sql
         case .javascript: return .javascript
         case .bash: return .bash
-        case .custom: return .sql
+        case .custom: return .default
         }
     }
 

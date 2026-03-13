@@ -21,6 +21,7 @@ final class AppState {
     var safeModeLevel: SafeModeLevel = .silent
     var isReadOnly: Bool { safeModeLevel.blocksAllWrites }
     var editorLanguage: EditorLanguage = .sql
+    var currentDatabaseType: DatabaseType?
     var supportsDatabaseSwitching: Bool = true
     var isCurrentTabEditable: Bool = false  // True when current tab is an editable table
     var hasRowSelection: Bool = false  // True when rows are selected in data grid
@@ -194,10 +195,14 @@ struct AppMenuCommands: Commands {
             .optionalKeyboardShortcut(shortcut(for: .saveChanges))
             .disabled(!appState.isConnected || appState.isReadOnly)
 
-            Button(appState.editorLanguage == .javascript ? "Preview MQL"
-                : appState.editorLanguage == .bash ? "Preview Commands"
-                : "Preview SQL") {
+            Button {
                 actions?.previewSQL()
+            } label: {
+                if let dbType = appState.currentDatabaseType {
+                    Text("Preview \(PluginManager.shared.queryLanguageName(for: dbType))")
+                } else {
+                    Text("Preview SQL")
+                }
             }
             .optionalKeyboardShortcut(shortcut(for: .previewSQL))
             .disabled(!appState.isConnected)
@@ -233,7 +238,7 @@ struct AppMenuCommands: Commands {
             .optionalKeyboardShortcut(shortcut(for: .export))
             .disabled(!appState.isConnected)
 
-            if appState.editorLanguage == .sql {
+            if appState.currentDatabaseType.map({ PluginManager.shared.supportsImport(for: $0) }) ?? true {
                 Button("Import...") {
                     actions?.importTables()
                 }
