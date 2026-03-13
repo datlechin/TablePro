@@ -61,7 +61,8 @@ struct RegistryPluginDetailView: View {
                         }
                     }
 
-                    if let homepage = plugin.homepage, let url = URL(string: homepage) {
+                    if let homepage = plugin.homepage, let url = URL(string: homepage),
+                       let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https" {
                         GridRow {
                             Text("Homepage")
                                 .foregroundStyle(.secondary)
@@ -82,15 +83,49 @@ struct RegistryPluginDetailView: View {
                 }
                 .font(.callout)
 
-                if !isInstalled, installProgress == nil {
+                if !isInstalled {
                     Divider()
-                    Button("Install Plugin") { onInstall() }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.regular)
+                    installActionView
                 }
             }
             .padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    @ViewBuilder
+    private var installActionView: some View {
+        if let progress = installProgress {
+            switch progress.phase {
+            case .downloading(let fraction):
+                HStack(spacing: 8) {
+                    ProgressView(value: fraction)
+                    Text("\(Int(fraction * 100))%")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
+            case .installing:
+                HStack(spacing: 8) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Installing...")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+            case .completed:
+                Label("Installed", systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                    .font(.callout)
+            case .failed:
+                Button("Retry Install") { onInstall() }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.regular)
+            }
+        } else {
+            Button("Install Plugin") { onInstall() }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.regular)
         }
     }
 

@@ -98,7 +98,10 @@ struct BrowsePluginsView: View {
                 Text(message)
             } actions: {
                 Button("Try Again") {
-                    Task { await registryClient.fetchManifest(forceRefresh: true) }
+                    Task {
+                        await registryClient.fetchManifest(forceRefresh: true)
+                        await downloadCountService.fetchCounts(for: registryClient.manifest)
+                    }
                 }
                 .buttonStyle(.bordered)
             }

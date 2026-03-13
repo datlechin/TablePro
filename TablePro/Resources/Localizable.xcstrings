@@ -865,6 +865,9 @@
         }
       }
     },
+    "%lld%%" : {
+
+    },
     "%lldm %llds" : {
       "localizations" : {
         "en" : {
@@ -8638,6 +8641,9 @@
         }
       }
     },
+    "Install plugin from file" : {
+
+    },
     "Installation Failed" : {
       "localizations" : {
         "vi" : {
@@ -8686,6 +8692,9 @@
           }
         }
       }
+    },
+    "Installing..." : {
+
     },
     "Invalid argument: %@" : {
       "extractionState" : "stale",
@@ -13470,6 +13479,9 @@
         }
       }
     },
+    "Retry Install" : {
+
+    },
     "Reuse clean table tab" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -16753,6 +16765,9 @@
         }
       }
     },
+    "Uninstall %@" : {
+
+    },
     "Uninstall Failed" : {
       "localizations" : {
         "vi" : {
@@ -16768,6 +16783,9 @@
           }
         }
       }
+    },
+    "Uninstall plugin" : {
+
     },
     "Uninstall Plugin?" : {
       "localizations" : {

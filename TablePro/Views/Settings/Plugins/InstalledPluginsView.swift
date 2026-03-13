@@ -55,6 +55,7 @@ struct InstalledPluginsView: View {
                         }
                         .buttonStyle(.borderless)
                         .disabled(pluginManager.isInstalling)
+                        .accessibilityLabel(String(localized: "Install plugin from file"))
 
                         Divider().frame(height: 16)
 
@@ -68,6 +69,7 @@ struct InstalledPluginsView: View {
                         }
                         .buttonStyle(.borderless)
                         .disabled(selectedPluginId == nil || selectedPlugin?.source == .builtIn)
+                        .accessibilityLabel(selectedPlugin.map { String(localized: "Uninstall \($0.name)") } ?? String(localized: "Uninstall plugin"))
 
                         Spacer()
 
