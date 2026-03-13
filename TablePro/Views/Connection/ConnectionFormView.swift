@@ -41,13 +41,6 @@ struct ConnectionFormView: View {
         authSectionFields.contains { $0.hidesPassword && additionalFieldValues[$0.id] == "true" }
     }
 
-    private func toggleBinding(for fieldId: String) -> Binding<Bool> {
-        Binding(
-            get: { additionalFieldValues[fieldId] == "true" },
-            set: { additionalFieldValues[fieldId] = $0 ? "true" : "false" }
-        )
-    }
-
     @State private var name: String = ""
     @State private var host: String = ""
     @State private var port: String = ""
@@ -294,9 +287,16 @@ struct ConnectionFormView: View {
                         )
                     }
                     ForEach(authSectionFields, id: \.id) { field in
-                        if field.fieldType == .toggle {
-                            Toggle(field.label, isOn: toggleBinding(for: field.id))
-                        }
+                        ConnectionFieldRow(
+                            field: field,
+                            value: Binding(
+                                get: {
+                                    additionalFieldValues[field.id]
+                                        ?? field.defaultValue ?? ""
+                                },
+                                set: { additionalFieldValues[field.id] = $0 }
+                            )
+                        )
                     }
                     if !hidePasswordField {
                         SecureField(
@@ -931,7 +931,7 @@ struct ConnectionFormView: View {
             groupId: selectedGroupId,
             safeModeLevel: safeModeLevel,
             aiPolicy: aiPolicy,
-            redisDatabase: Int(additionalFieldValues["redisDatabase"] ?? "") ?? 0,
+            redisDatabase: additionalFieldValues["redisDatabase"].map { Int($0) ?? 0 },
             startupCommands: startupCommands.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 ? nil : startupCommands,
             additionalFields: finalAdditionalFields.isEmpty ? nil : finalAdditionalFields
@@ -1080,7 +1080,7 @@ struct ConnectionFormView: View {
             color: connectionColor,
             tagId: selectedTagId,
             groupId: selectedGroupId,
-            redisDatabase: Int(additionalFieldValues["redisDatabase"] ?? "") ?? 0,
+            redisDatabase: additionalFieldValues["redisDatabase"].map { Int($0) ?? 0 },
             startupCommands: startupCommands.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 ? nil : startupCommands,
             additionalFields: finalAdditionalFields.isEmpty ? nil : finalAdditionalFields
