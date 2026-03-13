@@ -621,7 +621,7 @@ struct MainContentView: View {
 
         // Update window title to reflect selected tab
         let langName = PluginManager.shared.queryLanguageName(for: connection.type)
-        let queryLabel = langName == "SQL" ? "SQL Query" : langName == "MQL" ? "MQL Query" : langName
+        let queryLabel = "\(langName) Query"
         windowTitle = tabManager.selectedTab?.tableName
             ?? (tabManager.tabs.isEmpty ? connection.name : queryLabel)
 
@@ -641,7 +641,7 @@ struct MainContentView: View {
     private func handleTabsChange(_ newTabs: [QueryTab]) {
         // Always update window title to reflect current tab, even during restoration
         let langName = PluginManager.shared.queryLanguageName(for: connection.type)
-        let queryLabel = langName == "SQL" ? "SQL Query" : langName == "MQL" ? "MQL Query" : langName
+        let queryLabel = "\(langName) Query"
         windowTitle = tabManager.selectedTab?.tableName
             ?? (tabManager.tabs.isEmpty ? connection.name : queryLabel)
 

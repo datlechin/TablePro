@@ -60,19 +60,19 @@ struct SidebarContextMenuLogicTests {
 
     // MARK: - Import Visibility
 
-    @Test("Import visible for table with SQL editor")
+    @Test("Import visible for table with import support")
     func importVisibleForTable() {
-        #expect(SidebarContextMenuLogic.importVisible(isView: false, editorLanguage: .sql))
+        #expect(SidebarContextMenuLogic.importVisible(isView: false, supportsImport: true))
     }
 
     @Test("Import hidden for view")
     func importHiddenForView() {
-        #expect(!SidebarContextMenuLogic.importVisible(isView: true, editorLanguage: .sql))
+        #expect(!SidebarContextMenuLogic.importVisible(isView: true, supportsImport: true))
     }
 
-    @Test("Import hidden for non-SQL editor")
-    func importHiddenForNonSQL() {
-        #expect(!SidebarContextMenuLogic.importVisible(isView: false, editorLanguage: .javascript))
+    @Test("Import hidden when import not supported")
+    func importHiddenWhenNotSupported() {
+        #expect(!SidebarContextMenuLogic.importVisible(isView: false, supportsImport: false))
     }
 
     // MARK: - Truncate Visibility

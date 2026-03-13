@@ -18,8 +18,8 @@ enum SidebarContextMenuLogic {
         clickedTable?.type == .view
     }
 
-    static func importVisible(isView: Bool, editorLanguage: EditorLanguage) -> Bool {
-        !isView && editorLanguage == .sql
+    static func importVisible(isView: Bool, supportsImport: Bool) -> Bool {
+        !isView && supportsImport
     }
 
     static func truncateVisible(isView: Bool) -> Bool {
@@ -93,7 +93,12 @@ struct SidebarContextMenu: View {
         .keyboardShortcut("e", modifiers: [.command, .shift])
         .disabled(!hasSelection)
 
-        if !isView && AppState.shared.editorLanguage == .sql {
+        if SidebarContextMenuLogic.importVisible(
+            isView: isView,
+            supportsImport: PluginManager.shared.supportsImport(
+                for: AppState.shared.currentDatabaseType ?? .mysql
+            )
+        ) {
             Button("Import...") {
                 coordinator?.openImportDialog()
             }

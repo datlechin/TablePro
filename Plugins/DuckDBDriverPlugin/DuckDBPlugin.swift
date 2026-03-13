@@ -24,7 +24,7 @@ final class DuckDBPlugin: NSObject, TableProPlugin, DriverPlugin {
     static let requiresAuthentication = false
     static let connectionMode: ConnectionMode = .fileBased
     static let urlSchemes: [String] = ["duckdb"]
-    static let fileExtensions: [String] = ["duckdb", "db"]
+    static let fileExtensions: [String] = ["duckdb", "ddb"]
     static let brandColorHex = "#FFD900"
     static let supportsDatabaseSwitching = false
     static let systemDatabaseNames: [String] = ["information_schema", "pg_catalog"]

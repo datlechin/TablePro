@@ -42,7 +42,7 @@ struct ContentView: View {
         } else if let connectionId = payload?.connectionId,
                   let connection = ConnectionStorage.shared.loadConnections().first(where: { $0.id == connectionId }) {
             let langName = PluginManager.shared.queryLanguageName(for: connection.type)
-            defaultTitle = langName == "SQL" ? "SQL Query" : langName == "MQL" ? "MQL Query" : langName
+            defaultTitle = "\(langName) Query"
         } else {
             defaultTitle = "SQL Query"
         }
