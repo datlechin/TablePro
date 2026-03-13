@@ -63,6 +63,7 @@ final class PluginManager {
 
     private var pendingPluginURLs: [(url: URL, source: PluginSource)] = []
     private var validatedConnectionFieldPlugins: Set<String> = []
+    private var validatedDialectPlugins: Set<String> = []
 
     private init() {}
 
@@ -446,7 +447,13 @@ final class PluginManager {
     func sqlDialect(for databaseType: DatabaseType) -> SQLDialectDescriptor? {
         loadPendingPlugins()
         guard let plugin = driverPlugins[databaseType.pluginTypeId] else { return nil }
-        return Swift.type(of: plugin).sqlDialect
+        let dialect = Swift.type(of: plugin).sqlDialect
+        let pluginId = databaseType.pluginTypeId
+        if let dialect, !validatedDialectPlugins.contains(pluginId) {
+            validatedDialectPlugins.insert(pluginId)
+            validateDialectDescriptor(dialect, pluginId: pluginId)
+        }
+        return dialect
     }
 
     func statementCompletions(for databaseType: DatabaseType) -> [CompletionEntry] {

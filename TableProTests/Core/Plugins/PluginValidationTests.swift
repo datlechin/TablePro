@@ -45,7 +45,7 @@ private final class MockDriverPlugin: NSObject, TableProPlugin, DriverPlugin {
 
 // MARK: - validateDriverDescriptor Tests
 
-@Suite("PluginManager.validateDriverDescriptor")
+@Suite("PluginManager.validateDriverDescriptor", .serialized)
 struct ValidateDriverDescriptorTests {
 
     @Test("rejects empty databaseTypeId")
