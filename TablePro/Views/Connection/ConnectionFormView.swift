@@ -162,8 +162,7 @@ struct ConnectionFormView: View {
             if hasLoadedData {
                 port = String(newType.defaultPort)
             }
-            let isFileBased = PluginManager.shared.connectionMode(for: newType) == .fileBased
-            if isFileBased && (selectedTab == .ssh || selectedTab == .ssl) {
+            if !visibleTabs.contains(selectedTab) {
                 selectedTab = .general
             }
             additionalFieldValues = [:]
@@ -651,9 +650,10 @@ struct ConnectionFormView: View {
 
     private var advancedForm: some View {
         Form {
-            if !additionalConnectionFields.isEmpty {
+            let advancedFields = additionalConnectionFields.filter { $0.section == .advanced }
+            if !advancedFields.isEmpty {
                 Section(type.displayName) {
-                    ForEach(additionalConnectionFields, id: \.id) { field in
+                    ForEach(advancedFields, id: \.id) { field in
                         ConnectionFieldRow(
                             field: field,
                             value: Binding(
@@ -849,7 +849,6 @@ struct ConnectionFormView: View {
             // Load additional fields from connection
             additionalFieldValues = existing.additionalFields
 
-            // Migrate legacy Redis database index before default seeding
             // Migrate legacy redisDatabase to additionalFields
             if additionalFieldValues["redisDatabase"] == nil,
                let rdb = existing.redisDatabase {
@@ -932,7 +931,7 @@ struct ConnectionFormView: View {
             groupId: selectedGroupId,
             safeModeLevel: safeModeLevel,
             aiPolicy: aiPolicy,
-            redisDatabase: Int(additionalFieldValues["redisDatabase"] ?? "0"),
+            redisDatabase: Int(additionalFieldValues["redisDatabase"] ?? "") ?? 0,
             startupCommands: startupCommands.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 ? nil : startupCommands,
             additionalFields: finalAdditionalFields.isEmpty ? nil : finalAdditionalFields
@@ -1081,7 +1080,7 @@ struct ConnectionFormView: View {
             color: connectionColor,
             tagId: selectedTagId,
             groupId: selectedGroupId,
-            redisDatabase: Int(additionalFieldValues["redisDatabase"] ?? "0"),
+            redisDatabase: Int(additionalFieldValues["redisDatabase"] ?? "") ?? 0,
             startupCommands: startupCommands.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 ? nil : startupCommands,
             additionalFields: finalAdditionalFields.isEmpty ? nil : finalAdditionalFields
