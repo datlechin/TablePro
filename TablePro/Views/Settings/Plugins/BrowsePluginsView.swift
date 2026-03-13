@@ -121,8 +121,6 @@ struct BrowsePluginsView: View {
                     .foregroundStyle(.blue)
                     .font(.caption2)
             }
-            Spacer()
-            compactActionButton(for: plugin)
         }
     }
 
@@ -148,38 +146,6 @@ struct BrowsePluginsView: View {
                     .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-    }
-
-    // MARK: - Compact Action Button
-
-    @ViewBuilder
-    private func compactActionButton(for plugin: RegistryPlugin) -> some View {
-        if isPluginInstalled(plugin.id) {
-            Text("Installed")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-        } else if let progress = installTracker.state(for: plugin.id) {
-            switch progress.phase {
-            case .downloading(let fraction):
-                ProgressView(value: fraction)
-                    .frame(width: 40)
-                    .progressViewStyle(.linear)
-            case .installing:
-                ProgressView()
-                    .controlSize(.mini)
-            case .completed:
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
-                    .font(.caption)
-            case .failed:
-                Button("Retry") { installPlugin(plugin) }
-                    .controlSize(.mini)
-            }
-        } else {
-            Button("Install") { installPlugin(plugin) }
-                .buttonStyle(.bordered)
-                .controlSize(.mini)
         }
     }
 
