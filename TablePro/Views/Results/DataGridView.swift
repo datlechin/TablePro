@@ -666,6 +666,8 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
 
     // Settings observer for real-time updates
     fileprivate var settingsObserver: NSObjectProtocol?
+    /// Snapshot of last-seen data grid settings for change detection
+    private var lastDataGridSettings = AppSettingsManager.shared.dataGrid
 
     @Binding var selectedRowIndices: Set<Int>
 
@@ -729,22 +731,36 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
 
             DispatchQueue.main.async { [weak self] in
                 guard let self, let tableView = self.tableView else { return }
-                let newRowHeight = CGFloat(AppSettingsManager.shared.dataGrid.rowHeight.rawValue)
+                let settings = AppSettingsManager.shared.dataGrid
+                let prev = self.lastDataGridSettings
+                self.lastDataGridSettings = settings
 
+                let newRowHeight = CGFloat(settings.rowHeight.rawValue)
                 if tableView.rowHeight != newRowHeight {
                     tableView.rowHeight = newRowHeight
                     tableView.tile()
                 }
 
-                // Reload visible rows to apply font/formatting changes.
-                // Off-screen cells pick up new fonts from DataGridFontCache on scroll.
-                let visibleRect = tableView.visibleRect
-                let visibleRange = tableView.rows(in: visibleRect)
-                if visibleRange.length > 0 {
-                    tableView.reloadData(
-                        forRowIndexes: IndexSet(integersIn: visibleRange.location..<(visibleRange.location + visibleRange.length)),
-                        columnIndexes: IndexSet(integersIn: 0..<tableView.numberOfColumns)
-                    )
+                // Font-only change: update fonts in-place without reloadData
+                // to avoid recycling cells through the reuse pool outside the
+                // normal SwiftUI update cycle, which can cause stale data.
+                let fontChanged = prev.fontFamily != settings.fontFamily || prev.fontSize != settings.fontSize
+                let dataChanged = prev.dateFormat != settings.dateFormat
+                    || prev.nullDisplay != settings.nullDisplay
+
+                if fontChanged {
+                    Self.updateVisibleCellFonts(tableView: tableView)
+                }
+
+                if dataChanged {
+                    let visibleRect = tableView.visibleRect
+                    let visibleRange = tableView.rows(in: visibleRect)
+                    if visibleRange.length > 0 {
+                        tableView.reloadData(
+                            forRowIndexes: IndexSet(integersIn: visibleRange.location..<(visibleRange.location + visibleRange.length)),
+                            columnIndexes: IndexSet(integersIn: 0..<tableView.numberOfColumns)
+                        )
+                    }
                 }
             }
         }
@@ -759,6 +775,36 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
     func updateCache() {
         cachedRowCount = rowProvider.totalRowCount
         cachedColumnCount = rowProvider.columns.count
+    }
+
+    // MARK: - Font Updates
+
+    /// Update fonts on existing visible cell views in-place.
+    /// Avoids reloadData which recycles cells through the reuse pool.
+    @MainActor
+    static func updateVisibleCellFonts(tableView: NSTableView) {
+        let visibleRect = tableView.visibleRect
+        let visibleRange = tableView.rows(in: visibleRect)
+        guard visibleRange.length > 0 else { return }
+
+        let columnCount = tableView.numberOfColumns
+        for row in visibleRange.location..<(visibleRange.location + visibleRange.length) {
+            for col in 0..<columnCount {
+                guard let cellView = tableView.view(atColumn: col, row: row, makeIfNecessary: false) as? NSTableCellView,
+                      let textField = cellView.textField else { continue }
+
+                let columnId = tableView.tableColumns[col].identifier.rawValue
+                if columnId == "__rowNumber__" {
+                    textField.font = DataGridFontCache.rowNumber
+                } else if textField.stringValue.isEmpty && textField.placeholderString == "DEFAULT" {
+                    textField.font = DataGridFontCache.medium
+                } else if textField.stringValue.isEmpty && textField.placeholderString != nil {
+                    textField.font = DataGridFontCache.italic
+                } else {
+                    textField.font = DataGridFontCache.regular
+                }
+            }
+        }
     }
 
     // MARK: - Row Visual State Cache
