@@ -18,6 +18,7 @@ struct PluginsSettingsView: View {
             .labelsHidden()
             .padding(.horizontal, 16)
             .padding(.top, 12)
+            .padding(.bottom, 8)
 
             Group {
                 switch selectedTab {

@@ -91,7 +91,7 @@ struct InstalledPluginsView: View {
                         .tag(plugin.id)
                 }
             }
-            .listStyle(.inset(alternatesRowBackgrounds: true))
+            .listStyle(.inset)
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 listBottomBar
             }

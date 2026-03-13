@@ -24,25 +24,7 @@ struct BrowsePluginsView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                TextField("Search plugins...", text: $searchText)
-                    .textFieldStyle(.roundedBorder)
-                Picker("Category", selection: $selectedCategory) {
-                    Text("All").tag(RegistryCategory?.none)
-                    ForEach(RegistryCategory.allCases) { category in
-                        Text(category.displayName).tag(RegistryCategory?.some(category))
-                    }
-                }
-                .fixedSize()
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-
-            Divider()
-
-            mainContent
-        }
+        mainContent
         .task {
             if registryClient.fetchState == .idle {
                 await registryClient.fetchManifest()
@@ -73,21 +55,38 @@ struct BrowsePluginsView: View {
 
         case .loaded:
             let plugins = registryClient.search(query: searchText, category: selectedCategory)
-            if plugins.isEmpty {
-                ContentUnavailableView.search(text: searchText)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                HSplitView {
-                    List(plugins, selection: $selectedPluginId) { plugin in
-                        browseRow(plugin)
-                            .tag(plugin.id)
+            HSplitView {
+                VStack(spacing: 0) {
+                    HStack(spacing: 6) {
+                        TextField("Search...", text: $searchText)
+                            .textFieldStyle(.roundedBorder)
+                        Picker("", selection: $selectedCategory) {
+                            Text("All").tag(RegistryCategory?.none)
+                            ForEach(RegistryCategory.allCases) { category in
+                                Text(category.displayName).tag(RegistryCategory?.some(category))
+                            }
+                        }
+                        .labelsHidden()
+                        .fixedSize()
                     }
-                    .listStyle(.inset(alternatesRowBackgrounds: true))
-                    .frame(minWidth: 200, idealWidth: 240, maxWidth: 280)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
 
-                    detailContent
-                        .frame(minWidth: 340)
+                    if plugins.isEmpty {
+                        ContentUnavailableView.search(text: searchText)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        List(plugins, selection: $selectedPluginId) { plugin in
+                            browseRow(plugin)
+                                .tag(plugin.id)
+                        }
+                        .listStyle(.inset)
+                    }
                 }
+                .frame(minWidth: 200, idealWidth: 240, maxWidth: 280)
+
+                detailContent
+                    .frame(minWidth: 340)
             }
 
         case .failed(let message):
