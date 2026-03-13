@@ -92,9 +92,6 @@ struct ConnectionFormView: View {
     @State private var isTesting: Bool = false
     @State private var testSucceeded: Bool = false
 
-    @State private var isInstallingPlugin = false
-    @State private var pluginInstallProgress: Double = 0
-
     @State private var pluginInstallConnection: DatabaseConnection?
 
     // Tab selection
@@ -148,9 +145,6 @@ struct ConnectionFormView: View {
             }
             if (newType == .sqlite || newType == .duckdb) && (selectedTab == .ssh || selectedTab == .ssl) {
                 selectedTab = .general
-            }
-            if newType.isDownloadablePlugin && !PluginManager.shared.isDriverAvailable(for: newType) {
-                installPluginForType(newType)
             }
             additionalFieldValues = [:]
             if newType != .postgresql && newType != .redshift {
@@ -701,18 +695,6 @@ struct ConnectionFormView: View {
 
     private var footer: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if isInstallingPlugin {
-                HStack(spacing: 6) {
-                    ProgressView()
-                        .controlSize(.small)
-                    Text("Installing plugin...")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-            }
-
             HStack {
                 // Test connection
                 Button(action: testConnection) {
@@ -727,7 +709,7 @@ struct ConnectionFormView: View {
                         Text("Test Connection")
                     }
                 }
-                .disabled(isTesting || isInstallingPlugin || !isValid)
+                .disabled(isTesting || !isValid)
 
                 Spacer()
 
@@ -749,7 +731,7 @@ struct ConnectionFormView: View {
                 }
                 .keyboardShortcut(.return)
                 .buttonStyle(.borderedProminent)
-                .disabled(!isValid || isInstallingPlugin)
+                .disabled(!isValid)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
@@ -788,28 +770,6 @@ struct ConnectionFormView: View {
             return basicValid && sshValid && authValid && jumpValid
         }
         return basicValid
-    }
-
-    private func installPluginForType(_ databaseType: DatabaseType) {
-        isInstallingPlugin = true
-        pluginInstallProgress = 0
-        let window = NSApp.keyWindow
-
-        Task {
-            do {
-                try await PluginManager.shared.installMissingPlugin(for: databaseType) { progress in
-                    pluginInstallProgress = progress
-                }
-                isInstallingPlugin = false
-            } catch {
-                isInstallingPlugin = false
-                AlertHelper.showErrorSheet(
-                    title: String(localized: "Plugin Installation Failed"),
-                    message: error.localizedDescription,
-                    window: window
-                )
-            }
-        }
     }
 
     private func updatePgpassStatus() {
