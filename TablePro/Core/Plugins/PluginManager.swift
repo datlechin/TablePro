@@ -324,7 +324,7 @@ final class PluginManager {
     /// All database types with loaded plugins, ordered by display name.
     var availableDatabaseTypes: [DatabaseType] {
         var types: [DatabaseType] = []
-        for entry in plugins {
+        for entry in plugins where entry.isEnabled {
             if let typeId = entry.databaseTypeId {
                 types.append(DatabaseType(rawValue: typeId))
             }

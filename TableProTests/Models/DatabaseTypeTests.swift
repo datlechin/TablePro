@@ -91,6 +91,23 @@ struct DatabaseTypeTests {
         #expect(DatabaseType.clickhouse.iconName == "clickhouse-icon")
     }
 
+    // MARK: - Plugin Type ID Alias Tests
+
+    @Test("MariaDB pluginTypeId maps to MySQL plugin")
+    func testMariaDBPluginTypeId() {
+        #expect(DatabaseType.mariadb.pluginTypeId == "MySQL")
+    }
+
+    @Test("Redshift pluginTypeId maps to PostgreSQL plugin")
+    func testRedshiftPluginTypeId() {
+        #expect(DatabaseType.redshift.pluginTypeId == "PostgreSQL")
+    }
+
+    @Test("Unknown type pluginTypeId falls back to rawValue")
+    func testUnknownPluginTypeIdFallback() {
+        #expect(DatabaseType(rawValue: "FutureDB").pluginTypeId == "FutureDB")
+    }
+
     // MARK: - Struct Behavior Tests
 
     @Test("Struct equality via rawValue")
