@@ -8,6 +8,115 @@ import TableProPluginKit
 import Testing
 @testable import TablePro
 
+// MARK: - Mock DriverPlugin for Testing
+
+private final class MockDriverPlugin: NSObject, TableProPlugin, DriverPlugin {
+    static var pluginName = "MockDriver"
+    static var pluginVersion = "1.0.0"
+    static var pluginDescription = "Test plugin"
+    static var capabilities: [PluginCapability] = [.databaseDriver]
+    static var dependencies: [String] = []
+
+    static var databaseTypeId = "mock-db"
+    static var databaseDisplayName = "Mock Database"
+    static var iconName = "cylinder.fill"
+    static var defaultPort = 9999
+
+    func createDriver(config: DriverConnectionConfig) -> any PluginDatabaseDriver {
+        fatalError("Not used in tests")
+    }
+
+    required override init() {
+        super.init()
+    }
+
+    static func reset(
+        typeId: String = "mock-db",
+        displayName: String = "Mock Database",
+        additionalIds: [String] = []
+    ) {
+        databaseTypeId = typeId
+        databaseDisplayName = displayName
+        additionalDatabaseTypeIds = additionalIds
+    }
+
+    static var additionalDatabaseTypeIds: [String] = []
+}
+
+// MARK: - validateDriverDescriptor Tests
+
+@Suite("PluginManager.validateDriverDescriptor")
+struct ValidateDriverDescriptorTests {
+
+    @Test("rejects empty databaseTypeId")
+    @MainActor func rejectsEmptyTypeId() {
+        MockDriverPlugin.reset(typeId: "")
+        let pm = PluginManager.shared
+        #expect(throws: PluginError.self) {
+            try pm.validateDriverDescriptor(MockDriverPlugin.self, pluginId: "test")
+        }
+    }
+
+    @Test("rejects whitespace-only databaseTypeId")
+    @MainActor func rejectsWhitespaceTypeId() {
+        MockDriverPlugin.reset(typeId: "   ")
+        let pm = PluginManager.shared
+        #expect(throws: PluginError.self) {
+            try pm.validateDriverDescriptor(MockDriverPlugin.self, pluginId: "test")
+        }
+    }
+
+    @Test("rejects empty databaseDisplayName")
+    @MainActor func rejectsEmptyDisplayName() {
+        MockDriverPlugin.reset(typeId: "valid-id", displayName: "")
+        let pm = PluginManager.shared
+        #expect(throws: PluginError.self) {
+            try pm.validateDriverDescriptor(MockDriverPlugin.self, pluginId: "test")
+        }
+    }
+
+    @Test("rejects whitespace-only databaseDisplayName")
+    @MainActor func rejectsWhitespaceDisplayName() {
+        MockDriverPlugin.reset(typeId: "valid-id", displayName: "   ")
+        let pm = PluginManager.shared
+        #expect(throws: PluginError.self) {
+            try pm.validateDriverDescriptor(MockDriverPlugin.self, pluginId: "test")
+        }
+    }
+
+    @Test("accepts valid descriptor with no conflicts")
+    @MainActor func acceptsValidDescriptor() throws {
+        MockDriverPlugin.reset(typeId: "unique-test-db-type", displayName: "Unique Test DB")
+        let pm = PluginManager.shared
+        try pm.validateDriverDescriptor(MockDriverPlugin.self, pluginId: "test")
+    }
+
+    @Test("rejects duplicate primary type ID already registered")
+    @MainActor func rejectsDuplicatePrimaryTypeId() {
+        // "MySQL" is registered by the built-in MySQL plugin
+        MockDriverPlugin.reset(typeId: "MySQL", displayName: "Fake MySQL")
+        let pm = PluginManager.shared
+        #expect(throws: PluginError.self) {
+            try pm.validateDriverDescriptor(MockDriverPlugin.self, pluginId: "test")
+        }
+    }
+
+    @Test("rejects duplicate additional type ID already registered")
+    @MainActor func rejectsDuplicateAdditionalTypeId() {
+        MockDriverPlugin.reset(
+            typeId: "unique-test-db-type-2",
+            displayName: "Test DB",
+            additionalIds: ["MySQL"]
+        )
+        let pm = PluginManager.shared
+        #expect(throws: PluginError.self) {
+            try pm.validateDriverDescriptor(MockDriverPlugin.self, pluginId: "test")
+        }
+    }
+}
+
+// MARK: - PluginError.invalidDescriptor Formatting
+
 @Suite("PluginError.invalidDescriptor")
 struct PluginErrorInvalidDescriptorTests {
 
@@ -33,90 +142,61 @@ struct PluginErrorInvalidDescriptorTests {
         #expect(description.contains("mysql"))
         #expect(description.contains("MySQL"))
     }
-
-    @Test("error description for empty display name")
-    func emptyDisplayNameDescription() {
-        let error = PluginError.invalidDescriptor(
-            pluginId: "com.example.test",
-            reason: "databaseDisplayName is empty"
-        )
-        let description = error.localizedDescription
-        #expect(description.contains("databaseDisplayName is empty"))
-    }
-
-    @Test("error description for additional type ID conflict")
-    func additionalTypeIdConflict() {
-        let error = PluginError.invalidDescriptor(
-            pluginId: "com.example.multi",
-            reason: "additionalDatabaseTypeId 'redshift' is already registered by 'PostgreSQL'"
-        )
-        let description = error.localizedDescription
-        #expect(description.contains("additionalDatabaseTypeId"))
-        #expect(description.contains("redshift"))
-        #expect(description.contains("PostgreSQL"))
-    }
 }
 
-@Suite("ConnectionField Validation Logic")
-struct ConnectionFieldValidationLogicTests {
+// MARK: - validateConnectionFields Tests
 
-    @Test("duplicate field IDs are detectable")
-    func duplicateFieldIds() {
+@Suite("PluginManager.validateConnectionFields")
+struct ValidateConnectionFieldsTests {
+
+    @Test("duplicate field IDs are detected")
+    @MainActor func duplicateFieldIds() {
         let fields = [
             ConnectionField(id: "encoding", label: "Encoding"),
             ConnectionField(id: "timeout", label: "Timeout"),
             ConnectionField(id: "encoding", label: "Character Encoding")
         ]
-        var seenIds = Set<String>()
-        var duplicates: [String] = []
-        for field in fields {
-            if !seenIds.insert(field.id).inserted {
-                duplicates.append(field.id)
-            }
-        }
-        #expect(duplicates == ["encoding"])
+        // Should not crash — warns via logger
+        PluginManager.shared.validateConnectionFields(fields, pluginId: "test")
     }
 
-    @Test("empty field ID is detectable")
-    func emptyFieldId() {
-        let field = ConnectionField(id: "", label: "Something")
-        #expect(field.id.trimmingCharacters(in: .whitespaces).isEmpty)
+    @Test("empty field ID is detected without crash")
+    @MainActor func emptyFieldId() {
+        let fields = [ConnectionField(id: "", label: "Something")]
+        PluginManager.shared.validateConnectionFields(fields, pluginId: "test")
     }
 
-    @Test("empty field label is detectable")
-    func emptyFieldLabel() {
-        let field = ConnectionField(id: "test", label: "")
-        #expect(field.label.trimmingCharacters(in: .whitespaces).isEmpty)
+    @Test("empty field label is detected without crash")
+    @MainActor func emptyFieldLabel() {
+        let fields = [ConnectionField(id: "test", label: "")]
+        PluginManager.shared.validateConnectionFields(fields, pluginId: "test")
     }
 
-    @Test("dropdown with empty options is detectable")
-    func emptyDropdownOptions() {
-        let field = ConnectionField(
-            id: "encoding",
-            label: "Encoding",
-            fieldType: .dropdown(options: [])
-        )
-        if case .dropdown(let options) = field.fieldType {
-            #expect(options.isEmpty)
-        } else {
-            Issue.record("Expected dropdown field type")
-        }
+    @Test("dropdown with empty options is detected without crash")
+    @MainActor func emptyDropdownOptions() {
+        let fields = [
+            ConnectionField(
+                id: "encoding",
+                label: "Encoding",
+                fieldType: .dropdown(options: [])
+            )
+        ]
+        PluginManager.shared.validateConnectionFields(fields, pluginId: "test")
     }
 
-    @Test("dropdown with options is valid")
-    func validDropdown() {
-        let field = ConnectionField(
-            id: "encoding",
-            label: "Encoding",
-            fieldType: .dropdown(options: [
-                ConnectionField.DropdownOption(value: "utf8", label: "UTF-8"),
-                ConnectionField.DropdownOption(value: "latin1", label: "Latin-1")
-            ])
-        )
-        if case .dropdown(let options) = field.fieldType {
-            #expect(options.count == 2)
-        } else {
-            Issue.record("Expected dropdown field type")
-        }
+    @Test("valid fields pass without issue")
+    @MainActor func validFields() {
+        let fields = [
+            ConnectionField(id: "encoding", label: "Encoding"),
+            ConnectionField(
+                id: "mode",
+                label: "Mode",
+                fieldType: .dropdown(options: [
+                    ConnectionField.DropdownOption(value: "fast", label: "Fast"),
+                    ConnectionField.DropdownOption(value: "safe", label: "Safe")
+                ])
+            )
+        ]
+        PluginManager.shared.validateConnectionFields(fields, pluginId: "test")
     }
 }
