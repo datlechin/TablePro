@@ -75,6 +75,7 @@ struct BrowsePluginsView: View {
             let plugins = registryClient.search(query: searchText, category: selectedCategory)
             if plugins.isEmpty {
                 ContentUnavailableView.search(text: searchText)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 HSplitView {
                     List(plugins, selection: $selectedPluginId) { plugin in
@@ -103,6 +104,7 @@ struct BrowsePluginsView: View {
                 }
                 .buttonStyle(.bordered)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 

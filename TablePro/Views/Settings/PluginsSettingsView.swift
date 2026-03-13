@@ -19,12 +19,15 @@ struct PluginsSettingsView: View {
             .padding(.horizontal, 16)
             .padding(.top, 12)
 
-            switch selectedTab {
-            case .installed:
-                InstalledPluginsView()
-            case .browse:
-                BrowsePluginsView()
+            Group {
+                switch selectedTab {
+                case .installed:
+                    InstalledPluginsView()
+                case .browse:
+                    BrowsePluginsView()
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 }
