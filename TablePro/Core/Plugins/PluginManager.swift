@@ -494,6 +494,16 @@ final class PluginManager {
         return Swift.type(of: plugin).supportsQueryProgress
     }
 
+    func supportsSSH(for databaseType: DatabaseType) -> Bool {
+        guard let plugin = driverPlugin(for: databaseType) else { return true }
+        return Swift.type(of: plugin).supportsSSH
+    }
+
+    func supportsSSL(for databaseType: DatabaseType) -> Bool {
+        guard let plugin = driverPlugin(for: databaseType) else { return true }
+        return Swift.type(of: plugin).supportsSSL
+    }
+
     func autoLimitStyle(for databaseType: DatabaseType) -> AutoLimitStyle {
         guard let plugin = driverPlugin(for: databaseType) else { return .limit }
         guard let dialect = Swift.type(of: plugin).sqlDialect else { return .none }

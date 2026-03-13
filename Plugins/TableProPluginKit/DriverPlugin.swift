@@ -46,6 +46,8 @@ public protocol DriverPlugin: TableProPlugin {
     static var structureColumnFields: [StructureColumnField] { get }
     static var defaultPrimaryKeyColumn: String? { get }
     static var supportsQueryProgress: Bool { get }
+    static var supportsSSH: Bool { get }
+    static var supportsSSL: Bool { get }
 }
 
 public extension DriverPlugin {
@@ -98,4 +100,6 @@ public extension DriverPlugin {
     }
     static var defaultPrimaryKeyColumn: String? { nil }
     static var supportsQueryProgress: Bool { false }
+    static var supportsSSH: Bool { true }
+    static var supportsSSL: Bool { true }
 }

@@ -21,7 +21,16 @@ final class PostgreSQLPlugin: NSObject, TableProPlugin, DriverPlugin {
     static let databaseDisplayName = "PostgreSQL"
     static let iconName = "cylinder.fill"
     static let defaultPort = 5432
-    static let additionalConnectionFields: [ConnectionField] = []
+    static let additionalConnectionFields: [ConnectionField] = [
+        ConnectionField(
+            id: "usePgpass",
+            label: String(localized: "Use ~/.pgpass"),
+            defaultValue: "false",
+            fieldType: .toggle,
+            section: .authentication,
+            hidesPassword: true
+        )
+    ]
     static let additionalDatabaseTypeIds: [String] = ["Redshift"]
 
     // MARK: - UI/Capability Metadata

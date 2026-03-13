@@ -32,6 +32,22 @@ struct ConnectionFormView: View {
         PluginManager.shared.additionalConnectionFields(for: type)
     }
 
+    private var authSectionFields: [ConnectionField] {
+        PluginManager.shared.additionalConnectionFields(for: type)
+            .filter { $0.section == .authentication }
+    }
+
+    private var hidePasswordField: Bool {
+        authSectionFields.contains { $0.hidesPassword && additionalFieldValues[$0.id] == "true" }
+    }
+
+    private func toggleBinding(for fieldId: String) -> Binding<Bool> {
+        Binding(
+            get: { additionalFieldValues[fieldId] == "true" },
+            set: { additionalFieldValues[fieldId] = $0 ? "true" : "false" }
+        )
+    }
+
     @State private var name: String = ""
     @State private var host: String = ""
     @State private var port: String = ""
@@ -83,8 +99,18 @@ struct ConnectionFormView: View {
     @State private var startupCommands: String = ""
 
     // Pgpass
-    @State private var usePgpass: Bool = false
     @State private var pgpassStatus: PgpassStatus = .notChecked
+
+    private var usePgpass: Bool {
+        additionalFieldValues["usePgpass"] == "true"
+    }
+
+    private var usePgpassBinding: Binding<Bool> {
+        Binding(
+            get: { additionalFieldValues["usePgpass"] == "true" },
+            set: { additionalFieldValues["usePgpass"] = $0 ? "true" : "false" }
+        )
+    }
 
     // Pre-connect script
     @State private var preConnectScript: String = ""
@@ -148,9 +174,6 @@ struct ConnectionFormView: View {
                 selectedTab = .general
             }
             additionalFieldValues = [:]
-            if newType.pluginTypeId != "PostgreSQL" {
-                usePgpass = false
-            }
             for field in PluginManager.shared.additionalConnectionFields(for: newType) {
                 if let defaultValue = field.defaultValue {
                     additionalFieldValues[field.id] = defaultValue
@@ -160,7 +183,7 @@ struct ConnectionFormView: View {
         .pluginInstallPrompt(connection: $pluginInstallConnection) { connection in
             connectAfterInstall(connection)
         }
-        .onChange(of: usePgpass) { _, _ in updatePgpassStatus() }
+        .onChange(of: additionalFieldValues) { _, _ in updatePgpassStatus() }
         .onChange(of: host) { _, _ in updatePgpassStatus() }
         .onChange(of: port) { _, _ in updatePgpassStatus() }
         .onChange(of: database) { _, _ in updatePgpassStatus() }
@@ -170,10 +193,15 @@ struct ConnectionFormView: View {
     // MARK: - Tab Picker Helpers
 
     private var visibleTabs: [FormTab] {
-        if PluginManager.shared.connectionMode(for: type) == .fileBased {
-            return [.general, .advanced]
+        var tabs: [FormTab] = [.general]
+        if PluginManager.shared.supportsSSH(for: type) {
+            tabs.append(.ssh)
         }
-        return FormTab.allCases
+        if PluginManager.shared.supportsSSL(for: type) {
+            tabs.append(.ssl)
+        }
+        tabs.append(.advanced)
+        return tabs
     }
 
     private var resolvedSSHAgentSocketPath: String {
@@ -273,16 +301,18 @@ struct ConnectionFormView: View {
                             prompt: Text("root")
                         )
                     }
-                    if type.pluginTypeId == "PostgreSQL" {
-                        Toggle(String(localized: "Use ~/.pgpass"), isOn: $usePgpass)
+                    ForEach(authSectionFields, id: \.id) { field in
+                        if field.fieldType == .toggle {
+                            Toggle(field.label, isOn: toggleBinding(for: field.id))
+                        }
                     }
-                    if !usePgpass || type.pluginTypeId != "PostgreSQL" {
+                    if !hidePasswordField {
                         SecureField(
                             String(localized: "Password"),
                             text: $password
                         )
                     }
-                    if usePgpass && type.pluginTypeId == "PostgreSQL" {
+                    if additionalFieldValues["usePgpass"] == "true" {
                         pgpassStatusView
                     }
                 }
@@ -775,7 +805,7 @@ struct ConnectionFormView: View {
     }
 
     private func updatePgpassStatus() {
-        guard usePgpass, type.pluginTypeId == "PostgreSQL" else {
+        guard additionalFieldValues["usePgpass"] == "true" else {
             pgpassStatus = .notChecked
             return
         }
@@ -827,8 +857,8 @@ struct ConnectionFormView: View {
             additionalFieldValues = existing.additionalFields
 
             // Migrate legacy Redis database index before default seeding
-            if existing.type.pluginTypeId == "Redis",
-               additionalFieldValues["redisDatabase"] == nil,
+            // Migrate legacy redisDatabase to additionalFields
+            if additionalFieldValues["redisDatabase"] == nil,
                let rdb = existing.redisDatabase {
                 additionalFieldValues["redisDatabase"] = String(rdb)
             }
@@ -841,7 +871,6 @@ struct ConnectionFormView: View {
 
             // Load startup commands
             startupCommands = existing.startupCommands ?? ""
-            usePgpass = existing.usePgpass
             preConnectScript = existing.preConnectScript ?? ""
 
             // Load passwords from Keychain
@@ -888,11 +917,6 @@ struct ConnectionFormView: View {
                 ? "root" : trimmedUsername
 
         var finalAdditionalFields = additionalFieldValues
-        if usePgpass && type.pluginTypeId == "PostgreSQL" {
-            finalAdditionalFields["usePgpass"] = "true"
-        } else {
-            finalAdditionalFields.removeValue(forKey: "usePgpass")
-        }
         let trimmedScript = preConnectScript.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmedScript.isEmpty {
             finalAdditionalFields["preConnectScript"] = preConnectScript
@@ -915,9 +939,7 @@ struct ConnectionFormView: View {
             groupId: selectedGroupId,
             safeModeLevel: safeModeLevel,
             aiPolicy: aiPolicy,
-            redisDatabase: type.pluginTypeId == "Redis"
-                ? Int(additionalFieldValues["redisDatabase"] ?? "0")
-                : nil,
+            redisDatabase: Int(additionalFieldValues["redisDatabase"] ?? ""),
             startupCommands: startupCommands.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 ? nil : startupCommands,
             additionalFields: finalAdditionalFields.isEmpty ? nil : finalAdditionalFields
@@ -1047,11 +1069,6 @@ struct ConnectionFormView: View {
                 ? "root" : trimmedUsername
 
         var finalAdditionalFields = additionalFieldValues
-        if usePgpass && type.pluginTypeId == "PostgreSQL" {
-            finalAdditionalFields["usePgpass"] = "true"
-        } else {
-            finalAdditionalFields.removeValue(forKey: "usePgpass")
-        }
         let trimmedScript = preConnectScript.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmedScript.isEmpty {
             finalAdditionalFields["preConnectScript"] = preConnectScript
@@ -1071,9 +1088,7 @@ struct ConnectionFormView: View {
             color: connectionColor,
             tagId: selectedTagId,
             groupId: selectedGroupId,
-            redisDatabase: type.pluginTypeId == "Redis"
-                ? Int(additionalFieldValues["redisDatabase"] ?? "0")
-                : nil,
+            redisDatabase: Int(additionalFieldValues["redisDatabase"] ?? ""),
             startupCommands: startupCommands.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 ? nil : startupCommands,
             additionalFields: finalAdditionalFields.isEmpty ? nil : finalAdditionalFields

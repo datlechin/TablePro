@@ -352,9 +352,7 @@ enum DatabaseDriverFactory {
     }
 
     private static func resolvePassword(for connection: DatabaseConnection) -> String {
-        if connection.usePgpass
-            && (connection.type == .postgresql || connection.type == .redshift)
-        {
+        if connection.usePgpass {
             return ""
         }
         return ConnectionStorage.shared.loadPassword(for: connection.id) ?? ""
