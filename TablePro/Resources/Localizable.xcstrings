@@ -1905,6 +1905,9 @@
     "Alert (Full)" : {
 
     },
+    "All" : {
+
+    },
     "All %lld rows selected" : {
       "localizations" : {
         "vi" : {
@@ -2033,7 +2036,11 @@
         }
       }
     },
+    "Also handles" : {
+
+    },
     "Also handles:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -2399,6 +2406,9 @@
     "Authentication required to execute write operations" : {
 
     },
+    "Author" : {
+
+    },
     "AUTO" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2642,7 +2652,11 @@
         }
       }
     },
+    "Bundle ID" : {
+
+    },
     "Bundle ID:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -2725,7 +2739,11 @@
         }
       }
     },
+    "Capabilities" : {
+
+    },
     "Capabilities:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -2756,6 +2774,9 @@
           }
         }
       }
+    },
+    "Category" : {
+
     },
     "Cell Renderer" : {
       "extractionState" : "stale",
@@ -4972,7 +4993,11 @@
         }
       }
     },
+    "Database Type" : {
+
+    },
     "Database Type:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -5278,7 +5303,11 @@
         }
       }
     },
+    "Default Port" : {
+
+    },
     "Default Port:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -5656,6 +5685,9 @@
           }
         }
       }
+    },
+    "Dismiss" : {
+
     },
     "Display" : {
       "localizations" : {
@@ -7033,6 +7065,9 @@
         }
       }
     },
+    "Failed to Load" : {
+
+    },
     "Failed to load databases" : {
       "localizations" : {
         "vi" : {
@@ -7066,6 +7101,7 @@
       }
     },
     "Failed to load plugin registry" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -8570,6 +8606,7 @@
       }
     },
     "Install from File..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -8634,6 +8671,7 @@
       }
     },
     "Installed Plugins" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -9365,6 +9403,7 @@
       }
     },
     "Loading plugins..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -10648,6 +10687,7 @@
       }
     },
     "No plugins found" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -13347,6 +13387,9 @@
         }
       }
     },
+    "Requires" : {
+
+    },
     "Reset to Defaults" : {
       "localizations" : {
         "vi" : {
@@ -14170,6 +14213,12 @@
         }
       }
     },
+    "Select a Plugin" : {
+
+    },
+    "Select a plugin to view details" : {
+
+    },
     "Select a Query" : {
       "localizations" : {
         "vi" : {
@@ -14806,6 +14855,7 @@
       }
     },
     "Source:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -15313,6 +15363,9 @@
           }
         }
       }
+    },
+    "Status" : {
+
     },
     "Stop" : {
       "localizations" : {
@@ -17006,6 +17059,7 @@
       }
     },
     "User" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -17086,6 +17140,7 @@
       }
     },
     "v%@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -17100,6 +17155,19 @@
           }
         }
       }
+    },
+    "v%@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "v%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "v%@+" : {
+
     },
     "Validation Failed" : {
       "localizations" : {
@@ -17149,7 +17217,11 @@
         }
       }
     },
+    "Verified" : {
+
+    },
     "Verified by TablePro" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -17197,6 +17269,9 @@
         }
       }
     },
+    "Version" : {
+
+    },
     "Version %@" : {
       "localizations" : {
         "vi" : {
@@ -17236,6 +17311,7 @@
       }
     },
     "Version:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {

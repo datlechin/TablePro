@@ -13,62 +13,85 @@ struct RegistryPluginDetailView: View {
     let onInstall: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(plugin.summary)
-                .font(.callout)
-                .foregroundStyle(.secondary)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text(plugin.name)
+                    .font(.title3.weight(.semibold))
 
-            HStack(spacing: 16) {
-                detailItem(label: "Category", value: plugin.category.displayName)
+                Text(plugin.summary)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
 
-                if let minVersion = plugin.minAppVersion {
-                    detailItem(label: "Requires", value: "v\(minVersion)+")
-                }
+                Divider()
 
-                if let downloadCount {
-                    detailItem(
-                        label: String(localized: "Downloads"),
-                        value: formattedDownloadCount(downloadCount)
-                    )
-                }
-            }
+                Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 10) {
+                    GridRow {
+                        Text("Category")
+                            .foregroundStyle(.secondary)
+                            .gridColumnAlignment(.leading)
+                        Text(plugin.category.displayName)
+                            .gridColumnAlignment(.leading)
+                    }
 
-            HStack(spacing: 16) {
-                detailItem(label: "Author", value: plugin.author.name)
+                    GridRow {
+                        Text("Author")
+                            .foregroundStyle(.secondary)
+                        Text(plugin.author.name)
+                    }
 
-                if let homepage = plugin.homepage, let url = URL(string: homepage) {
-                    Link(destination: url) {
-                        HStack(spacing: 2) {
+                    GridRow {
+                        Text("Version")
+                            .foregroundStyle(.secondary)
+                        Text(plugin.version)
+                    }
+
+                    if let minVersion = plugin.minAppVersion {
+                        GridRow {
+                            Text("Requires")
+                                .foregroundStyle(.secondary)
+                            Text("v\(minVersion)+")
+                        }
+                    }
+
+                    if let count = downloadCount {
+                        GridRow {
+                            Text("Downloads")
+                                .foregroundStyle(.secondary)
+                            Text(formattedCount(count))
+                        }
+                    }
+
+                    if let homepage = plugin.homepage, let url = URL(string: homepage) {
+                        GridRow {
                             Text("Homepage")
-                                .font(.caption)
-                            Image(systemName: "arrow.up.right.square")
-                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            Link(homepage, destination: url)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                        }
+                    }
+
+                    if plugin.isVerified {
+                        GridRow {
+                            Text("Status")
+                                .foregroundStyle(.secondary)
+                            Label("Verified", systemImage: "checkmark.seal.fill")
+                                .foregroundStyle(.blue)
                         }
                     }
                 }
-            }
+                .font(.callout)
 
-            if plugin.isVerified {
-                HStack(spacing: 4) {
-                    Image(systemName: "checkmark.seal.fill")
-                        .foregroundStyle(.blue)
-                        .font(.caption)
-                    Text("Verified by TablePro")
-                        .font(.caption)
-                        .foregroundStyle(.blue)
+                if !isInstalled, installProgress == nil {
+                    Divider()
+                    Button("Install Plugin") { onInstall() }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.regular)
                 }
             }
-
-            if !isInstalled, installProgress == nil {
-                Button("Install Plugin") {
-                    onInstall()
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
-            }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.leading, 34)
-        .padding(.vertical, 8)
     }
 
     private static let decimalFormatter: NumberFormatter = {
@@ -77,19 +100,10 @@ struct RegistryPluginDetailView: View {
         return formatter
     }()
 
-    private func formattedDownloadCount(_ count: Int) -> String {
-        Self.decimalFormatter.string(from: NSNumber(value: count)) ?? "\(count)"
-    }
-
-    @ViewBuilder
-    private func detailItem(label: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(label)
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .textCase(.uppercase)
-            Text(value)
-                .font(.caption)
-        }
+    private func formattedCount(_ count: Int) -> String {
+        let formatted = Self.decimalFormatter.string(from: NSNumber(value: count)) ?? "\(count)"
+        return count == 1
+            ? String(localized: "\(formatted) download")
+            : String(localized: "\(formatted) downloads")
     }
 }
