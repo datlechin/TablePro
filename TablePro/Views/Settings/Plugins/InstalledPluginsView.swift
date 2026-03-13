@@ -22,11 +22,12 @@ struct InstalledPluginsView: View {
                 restartBanner
             }
 
-            NavigationSplitView {
+            HSplitView {
                 pluginList
-                    .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 280)
-            } detail: {
+                    .frame(minWidth: 200, idealWidth: 240, maxWidth: 280)
+
                 detailPane
+                    .frame(minWidth: 340)
             }
         }
         .onDrop(of: [.fileURL], isTargeted: nil) { providers in
@@ -78,7 +79,7 @@ struct InstalledPluginsView: View {
                     .tag(plugin.id)
             }
         }
-        .listStyle(.sidebar)
+        .listStyle(.inset(alternatesRowBackgrounds: true))
         .safeAreaInset(edge: .bottom, spacing: 0) {
             listBottomBar
         }

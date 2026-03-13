@@ -41,11 +41,12 @@ struct BrowsePluginsView: View {
 
             Divider()
 
-            NavigationSplitView {
+            HSplitView {
                 sidebarContent
-                    .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 280)
-            } detail: {
+                    .frame(minWidth: 200, idealWidth: 240, maxWidth: 280)
+
                 detailContent
+                    .frame(minWidth: 340)
             }
         }
         .task {
@@ -85,7 +86,7 @@ struct BrowsePluginsView: View {
                     browseRow(plugin)
                         .tag(plugin.id)
                 }
-                .listStyle(.sidebar)
+                .listStyle(.inset(alternatesRowBackgrounds: true))
             }
 
         case .failed(let message):
