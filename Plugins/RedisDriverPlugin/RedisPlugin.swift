@@ -97,7 +97,7 @@ final class RedisPlugin: NSObject, TableProPlugin, DriverPlugin {
             CompletionEntry(label: "DECR", insertText: "DECR"),
             CompletionEntry(label: "APPEND", insertText: "APPEND"),
             CompletionEntry(label: "MGET", insertText: "MGET"),
-            CompletionEntry(label: "MSET", insertText: "MSET"),
+            CompletionEntry(label: "MSET", insertText: "MSET")
         ]
     }
 

@@ -435,7 +435,8 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     }
 
     func editViewFallbackTemplate(viewName: String) -> String? {
-        "CREATE OR ALTER VIEW \(viewName) AS\nSELECT * FROM table_name;"
+        let quoted = quoteIdentifier(viewName)
+        return "CREATE OR ALTER VIEW \(quoted) AS\nSELECT * FROM table_name;"
     }
 
     func castColumnToText(_ column: String) -> String {

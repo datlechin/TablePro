@@ -119,7 +119,8 @@ final class OraclePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     }
 
     func editViewFallbackTemplate(viewName: String) -> String? {
-        "CREATE OR REPLACE VIEW \(viewName) AS\nSELECT * FROM table_name;"
+        let quoted = quoteIdentifier(viewName)
+        return "CREATE OR REPLACE VIEW \(quoted) AS\nSELECT * FROM table_name;"
     }
 
     // MARK: - Connection

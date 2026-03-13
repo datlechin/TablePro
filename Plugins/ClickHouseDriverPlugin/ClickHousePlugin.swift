@@ -731,7 +731,8 @@ final class ClickHousePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     }
 
     func editViewFallbackTemplate(viewName: String) -> String? {
-        "ALTER VIEW \(viewName) AS\nSELECT * FROM table_name;"
+        let quoted = quoteIdentifier(viewName)
+        return "CREATE OR REPLACE VIEW \(quoted) AS\nSELECT * FROM table_name;"
     }
 
     // MARK: - Kill Query

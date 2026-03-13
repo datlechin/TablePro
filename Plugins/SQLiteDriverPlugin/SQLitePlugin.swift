@@ -412,7 +412,8 @@ final class SQLitePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     }
 
     func editViewFallbackTemplate(viewName: String) -> String? {
-        "DROP VIEW IF EXISTS \(viewName);\nCREATE VIEW \(viewName) AS\nSELECT * FROM table_name;"
+        let quoted = quoteIdentifier(viewName)
+        return "DROP VIEW IF EXISTS \(quoted);\nCREATE VIEW \(quoted) AS\nSELECT * FROM table_name;"
     }
 
     // MARK: - Foreign Key Checks

@@ -52,7 +52,8 @@ struct DatabaseTypeTests {
         (DatabaseType.redshift, "Redshift"),
         (DatabaseType.mssql, "SQL Server"),
         (DatabaseType.oracle, "Oracle"),
-        (DatabaseType.clickhouse, "ClickHouse")
+        (DatabaseType.clickhouse, "ClickHouse"),
+        (DatabaseType.duckdb, "DuckDB")
     ])
     func testRawValueMatchesDisplayName(dbType: DatabaseType, expectedRawValue: String) {
         #expect(dbType.rawValue == expectedRawValue)

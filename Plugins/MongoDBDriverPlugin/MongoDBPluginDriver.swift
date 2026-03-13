@@ -506,7 +506,8 @@ final class MongoDBPluginDriver: PluginDatabaseDriver {
     }
 
     func editViewFallbackTemplate(viewName: String) -> String? {
-        "db.runCommand({\"collMod\": \"\(viewName)\", \"viewOn\": \"source_collection\", \"pipeline\": [{\"$match\": {}}]})"
+        let escaped = viewName.replacingOccurrences(of: "\"", with: "\\\"")
+        return "db.runCommand({\"collMod\": \"\(escaped)\", \"viewOn\": \"source_collection\", \"pipeline\": [{\"$match\": {}}]})"
     }
 
     // MARK: - Query Building

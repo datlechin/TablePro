@@ -91,7 +91,7 @@ final class MongoDBPlugin: NSObject, TableProPlugin, DriverPlugin {
             CompletionEntry(label: ".findOneAndReplace", insertText: ".findOneAndReplace"),
             CompletionEntry(label: ".findOneAndDelete", insertText: ".findOneAndDelete"),
             CompletionEntry(label: ".countDocuments", insertText: ".countDocuments"),
-            CompletionEntry(label: ".createIndex", insertText: ".createIndex"),
+            CompletionEntry(label: ".createIndex", insertText: ".createIndex")
         ]
     }
 

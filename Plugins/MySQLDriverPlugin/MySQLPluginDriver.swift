@@ -609,7 +609,8 @@ final class MySQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     }
 
     func editViewFallbackTemplate(viewName: String) -> String? {
-        "ALTER VIEW \(viewName) AS\nSELECT * FROM table_name;"
+        let quoted = quoteIdentifier(viewName)
+        return "ALTER VIEW \(quoted) AS\nSELECT * FROM table_name;"
     }
 
     func castColumnToText(_ column: String) -> String {
