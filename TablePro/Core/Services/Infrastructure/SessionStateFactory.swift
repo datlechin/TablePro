@@ -14,6 +14,7 @@ enum SessionStateFactory {
         let tabManager: QueryTabManager
         let changeManager: DataChangeManager
         let filterStateManager: FilterStateManager
+        let columnVisibilityManager: ColumnVisibilityManager
         let toolbarState: ConnectionToolbarState
         let coordinator: MainContentCoordinator
     }
@@ -25,6 +26,7 @@ enum SessionStateFactory {
         let tabMgr = QueryTabManager()
         let changeMgr = DataChangeManager()
         let filterMgr = FilterStateManager()
+        let colVisMgr = ColumnVisibilityManager()
         let toolbarSt = ConnectionToolbarState(connection: connection)
 
         // Eagerly populate version + state from existing session to avoid flash
@@ -86,6 +88,7 @@ enum SessionStateFactory {
             tabManager: tabMgr,
             changeManager: changeMgr,
             filterStateManager: filterMgr,
+            columnVisibilityManager: colVisMgr,
             toolbarState: toolbarSt
         )
 
@@ -93,6 +96,7 @@ enum SessionStateFactory {
             tabManager: tabMgr,
             changeManager: changeMgr,
             filterStateManager: filterMgr,
+            columnVisibilityManager: colVisMgr,
             toolbarState: toolbarSt,
             coordinator: coord
         )

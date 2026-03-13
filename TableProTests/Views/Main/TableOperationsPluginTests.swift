@@ -29,6 +29,7 @@ struct TableOperationsPluginTests {
             tabManager: tabManager,
             changeManager: changeManager,
             filterStateManager: filterStateManager,
+            columnVisibilityManager: ColumnVisibilityManager(),
             toolbarState: toolbarState
         )
     }

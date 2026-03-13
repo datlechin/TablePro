@@ -60,6 +60,13 @@ extension TableViewCoordinator {
         filterItem.representedObject = baseName
         filterItem.target = self
         menu.addItem(filterItem)
+
+        menu.addItem(NSMenuItem.separator())
+
+        let hideItem = NSMenuItem(title: String(localized: "Hide Column"), action: #selector(hideColumn(_:)), keyEquivalent: "")
+        hideItem.representedObject = baseName
+        hideItem.target = self
+        menu.addItem(hideItem)
     }
 
     @objc func copyColumnName(_ sender: NSMenuItem) {
@@ -70,5 +77,10 @@ extension TableViewCoordinator {
     @objc func filterWithColumn(_ sender: NSMenuItem) {
         guard let columnName = sender.representedObject as? String else { return }
         onFilterColumn?(columnName)
+    }
+
+    @objc func hideColumn(_ sender: NSMenuItem) {
+        guard let columnName = sender.representedObject as? String else { return }
+        onHideColumn?(columnName)
     }
 }

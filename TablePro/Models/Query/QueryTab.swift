@@ -206,6 +206,7 @@ struct PaginationState: Equatable {
 struct ColumnLayoutState: Equatable {
     var columnWidths: [String: CGFloat] = [:]
     var columnOrder: [String]?
+    var hiddenColumns: Set<String> = []
 }
 
 /// Reference-type wrapper for large result data.

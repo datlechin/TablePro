@@ -32,6 +32,7 @@ struct DataGridIdentity: Equatable {
     let rowCount: Int
     let columnCount: Int
     let isEditable: Bool
+    let hiddenColumns: Set<String>
 }
 
 /// High-performance table view using AppKit NSTableView
@@ -60,6 +61,8 @@ struct DataGridView: NSViewRepresentable {
     var databaseType: DatabaseType?
     var tableName: String?
     var primaryKeyColumn: String?
+    var hiddenColumns: Set<String> = []
+    var onHideColumn: ((String) -> Void)?
 
     @Binding var selectedRowIndices: Set<Int>
     @Binding var sortState: SortState
@@ -149,6 +152,9 @@ struct DataGridView: NSViewRepresentable {
         }
         context.coordinator.isRebuildingColumns = false
 
+        // Apply column visibility
+        applyColumnVisibility(to: tableView)
+
         if let headerView = tableView.headerView {
             let headerMenu = NSMenu()
             headerMenu.delegate = context.coordinator
@@ -178,7 +184,8 @@ struct DataGridView: NSViewRepresentable {
             metadataVersion: metadataVersion,
             rowCount: rowProvider.totalRowCount,
             columnCount: rowProvider.columns.count,
-            isEditable: isEditable
+            isEditable: isEditable,
+            hiddenColumns: hiddenColumns
         )
         if currentIdentity == coordinator.lastIdentity {
             // Only refresh closure callbacks — they capture new state on each body eval
@@ -187,6 +194,7 @@ struct DataGridView: NSViewRepresentable {
             coordinator.onAddRow = onAddRow
             coordinator.onUndoInsert = onUndoInsert
             coordinator.onFilterColumn = onFilterColumn
+            coordinator.onHideColumn = onHideColumn
             coordinator.onRefresh = onRefresh
             coordinator.onDeleteRows = onDeleteRows
             coordinator.getVisualState = getVisualState
@@ -244,6 +252,7 @@ struct DataGridView: NSViewRepresentable {
         coordinator.onAddRow = onAddRow
         coordinator.onUndoInsert = onUndoInsert
         coordinator.onFilterColumn = onFilterColumn
+        coordinator.onHideColumn = onHideColumn
         coordinator.getVisualState = getVisualState
         coordinator.onNavigateFK = onNavigateFK
         coordinator.dropdownColumns = dropdownColumns
@@ -275,6 +284,9 @@ struct DataGridView: NSViewRepresentable {
             shouldRebuild: shouldRebuildColumns,
             structureChanged: structureChanged
         )
+
+        // Sync column visibility
+        applyColumnVisibility(to: tableView)
 
         syncSortDescriptors(tableView: tableView, coordinator: coordinator)
 
@@ -507,6 +519,18 @@ struct DataGridView: NSViewRepresentable {
         }
     }
 
+    // MARK: - Column Visibility
+
+    /// Apply hidden column state to the table view
+    private func applyColumnVisibility(to tableView: NSTableView) {
+        for column in tableView.tableColumns where column.identifier.rawValue != "__rowNumber__" {
+            guard let colIndex = Self.columnIndex(from: column.identifier),
+                  colIndex < rowProvider.columns.count else { continue }
+            let columnName = rowProvider.columns[colIndex]
+            column.isHidden = hiddenColumns.contains(columnName)
+        }
+    }
+
     // MARK: - Column Layout Helpers
 
     /// Extract column index from a stable identifier like "col_3"
@@ -613,6 +637,7 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
     var onAddRow: (() -> Void)?
     var onUndoInsert: ((Int) -> Void)?
     var onFilterColumn: ((String) -> Void)?
+    var onHideColumn: ((String) -> Void)?
     var onNavigateFK: ((String, ForeignKeyInfo) -> Void)?
     var getVisualState: ((Int) -> RowVisualState)?
     var dropdownColumns: Set<Int>?

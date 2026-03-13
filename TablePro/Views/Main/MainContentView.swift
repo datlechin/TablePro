@@ -388,6 +388,7 @@ struct MainContentView: View {
             coordinator: coordinator,
             changeManager: changeManager,
             filterStateManager: filterStateManager,
+            columnVisibilityManager: coordinator.columnVisibilityManager,
             connection: connection,
             windowId: windowId,
             connectionId: connection.id,
@@ -668,6 +669,11 @@ struct MainContentView: View {
     private func handleColumnsChange(newColumns: [String]?) {
         // Skip during tab switch — handleTabChange already configures the change manager
         guard !coordinator.isHandlingTabSwitch else { return }
+
+        // Prune hidden columns that no longer exist in results
+        if let newColumns = newColumns {
+            coordinator.pruneHiddenColumns(currentColumns: newColumns)
+        }
 
         guard let newColumns = newColumns, !newColumns.isEmpty,
               let tab = tabManager.selectedTab,

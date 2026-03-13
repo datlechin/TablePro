@@ -30,6 +30,9 @@ extension MainContentCoordinator {
             // Restore filter state for new tab
             filterStateManager.restoreFromTabState(newTab.filterState)
 
+            // Restore column visibility for new tab
+            columnVisibilityManager.restoreFromColumnLayout(newTab.columnLayout.hiddenColumns)
+
             selectedRowIndices = newTab.selectedRowIndices
             AppState.shared.isCurrentTabEditable = newTab.isEditable && !newTab.isView && newTab.tableName != nil
             toolbarState.isTableTab = newTab.tabType == .table

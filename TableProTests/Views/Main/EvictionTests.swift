@@ -23,6 +23,7 @@ struct EvictionTests {
             tabManager: tabManager,
             changeManager: changeManager,
             filterStateManager: filterStateManager,
+            columnVisibilityManager: ColumnVisibilityManager(),
             toolbarState: toolbarState
         )
         return (coordinator, tabManager)

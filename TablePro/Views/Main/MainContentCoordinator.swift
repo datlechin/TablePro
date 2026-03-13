@@ -48,6 +48,7 @@ final class MainContentCoordinator {
     let tabManager: QueryTabManager
     let changeManager: DataChangeManager
     let filterStateManager: FilterStateManager
+    let columnVisibilityManager: ColumnVisibilityManager
     let toolbarState: ConnectionToolbarState
 
     // MARK: - Services
@@ -218,12 +219,14 @@ final class MainContentCoordinator {
         tabManager: QueryTabManager,
         changeManager: DataChangeManager,
         filterStateManager: FilterStateManager,
+        columnVisibilityManager: ColumnVisibilityManager,
         toolbarState: ConnectionToolbarState
     ) {
         self.connection = connection
         self.tabManager = tabManager
         self.changeManager = changeManager
         self.filterStateManager = filterStateManager
+        self.columnVisibilityManager = columnVisibilityManager
         self.toolbarState = toolbarState
         self.queryBuilder = TableQueryBuilder(databaseType: connection.type)
         self.persistence = TabPersistenceCoordinator(connectionId: connection.id)
