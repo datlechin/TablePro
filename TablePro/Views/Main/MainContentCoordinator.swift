@@ -228,7 +228,12 @@ final class MainContentCoordinator {
         self.filterStateManager = filterStateManager
         self.columnVisibilityManager = columnVisibilityManager
         self.toolbarState = toolbarState
-        self.queryBuilder = TableQueryBuilder(databaseType: connection.type)
+        self.queryBuilder = TableQueryBuilder(
+            databaseType: connection.type,
+            dialectQuote: quoteIdentifierFromDialect(
+                PluginManager.shared.sqlDialect(for: connection.type)
+            )
+        )
         self.persistence = TabPersistenceCoordinator(connectionId: connection.id)
 
         self.schemaProvider = SchemaProviderRegistry.shared.getOrCreate(for: connection.id)
