@@ -41,13 +41,7 @@ struct BrowsePluginsView: View {
 
             Divider()
 
-            HSplitView {
-                sidebarContent
-                    .frame(minWidth: 200, idealWidth: 240, maxWidth: 280)
-
-                detailContent
-                    .frame(minWidth: 340)
-            }
+            mainContent
         }
         .task {
             if registryClient.fetchState == .idle {
@@ -68,10 +62,10 @@ struct BrowsePluginsView: View {
         }
     }
 
-    // MARK: - Sidebar
+    // MARK: - Main Content
 
     @ViewBuilder
-    private var sidebarContent: some View {
+    private var mainContent: some View {
         switch registryClient.fetchState {
         case .idle, .loading:
             ProgressView()
@@ -82,11 +76,17 @@ struct BrowsePluginsView: View {
             if plugins.isEmpty {
                 ContentUnavailableView.search(text: searchText)
             } else {
-                List(plugins, selection: $selectedPluginId) { plugin in
-                    browseRow(plugin)
-                        .tag(plugin.id)
+                HSplitView {
+                    List(plugins, selection: $selectedPluginId) { plugin in
+                        browseRow(plugin)
+                            .tag(plugin.id)
+                    }
+                    .listStyle(.inset(alternatesRowBackgrounds: true))
+                    .frame(minWidth: 200, idealWidth: 240, maxWidth: 280)
+
+                    detailContent
+                        .frame(minWidth: 340)
                 }
-                .listStyle(.inset(alternatesRowBackgrounds: true))
             }
 
         case .failed(let message):
