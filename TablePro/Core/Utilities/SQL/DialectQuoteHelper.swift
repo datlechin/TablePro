@@ -14,7 +14,10 @@ func quoteIdentifierFromDialect(_ dialect: SQLDialectDescriptor?) -> (String) ->
     guard let dialect else { return { $0 } }
     let q = dialect.identifierQuote
     if q == "[" {
-        return { name in "[\(name.replacingOccurrences(of: "]", with: "]]"))]" }
+        return { name in
+            let escaped = name.replacingOccurrences(of: "]", with: "]]")
+            return "[\(escaped)]"
+        }
     }
     return { name in
         let escaped = name.replacingOccurrences(of: q, with: q + q)

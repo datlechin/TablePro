@@ -8,20 +8,6 @@
 import Foundation
 import TableProPluginKit
 
-private func quoteIdentifierFromDialect(_ dialect: SQLDialectDescriptor) -> (String) -> String {
-    let q = dialect.identifierQuote
-    if q == "[" {
-        return { name in
-            let escaped = name.replacingOccurrences(of: "]", with: "]]")
-            return "[\(escaped)]"
-        }
-    }
-    return { name in
-        let escaped = name.replacingOccurrences(of: q, with: q + q)
-        return "\(q)\(escaped)\(q)"
-    }
-}
-
 /// Generates SQL WHERE clauses from filter definitions
 struct FilterSQLGenerator {
     private let dialect: SQLDialectDescriptor

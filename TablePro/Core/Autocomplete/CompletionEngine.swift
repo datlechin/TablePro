@@ -36,10 +36,12 @@ final class CompletionEngine {
         dialect: SQLDialectDescriptor? = nil,
         statementCompletions: [CompletionEntry] = []
     ) {
-        self.provider = SQLCompletionProvider(schemaProvider: schemaProvider, databaseType: databaseType, dialect: dialect)
-        if let type = databaseType {
-            self.provider.setDatabaseType(type, dialect: dialect, statementCompletions: statementCompletions)
-        }
+        self.provider = SQLCompletionProvider(
+            schemaProvider: schemaProvider,
+            databaseType: databaseType,
+            dialect: dialect,
+            statementCompletions: statementCompletions
+        )
     }
 
     // MARK: - Public API

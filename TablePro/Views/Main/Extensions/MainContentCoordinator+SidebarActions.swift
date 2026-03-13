@@ -42,8 +42,9 @@ extension MainContentCoordinator {
                 WindowOpener.shared.openNativeTab(payload)
             } catch {
                 let driver = DatabaseManager.shared.driver(for: self.connection.id)
-                let fallbackSQL = driver?.editViewFallbackTemplate(viewName: viewName)
+                let template = driver?.editViewFallbackTemplate(viewName: viewName)
                     ?? "CREATE OR REPLACE VIEW \(viewName) AS\nSELECT * FROM table_name;"
+                let fallbackSQL = "-- Could not fetch view definition: \(error.localizedDescription)\n\(template)"
 
                 let payload = EditorTabPayload(
                     connectionId: connection.id,

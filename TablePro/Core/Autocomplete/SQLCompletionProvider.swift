@@ -26,10 +26,12 @@ final class SQLCompletionProvider {
 
     // MARK: - Init
 
-    init(schemaProvider: SQLSchemaProvider, databaseType: DatabaseType? = nil, dialect: SQLDialectDescriptor? = nil) {
+    init(schemaProvider: SQLSchemaProvider, databaseType: DatabaseType? = nil,
+         dialect: SQLDialectDescriptor? = nil, statementCompletions: [CompletionEntry] = []) {
         self.schemaProvider = schemaProvider
         self.databaseType = databaseType
         self.cachedDialect = dialect
+        self.cachedStatementCompletions = statementCompletions
     }
 
     /// Update the database type for context-aware completions
