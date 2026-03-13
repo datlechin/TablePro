@@ -1,7 +1,6 @@
 //
 //  InstalledPluginsView.swift
 //  TablePro
-//
 
 import AppKit
 import SwiftUI
@@ -20,71 +19,14 @@ struct InstalledPluginsView: View {
     var body: some View {
         VStack(spacing: 0) {
             if pluginManager.needsRestart && !dismissedRestartBanner {
-                HStack(spacing: 8) {
-                    Image(systemName: "exclamationmark.triangle")
-                        .foregroundStyle(.yellow)
-                    Text("Restart TablePro to fully unload removed plugins.")
-                        .font(.callout)
-                    Spacer()
-                    Button("Dismiss") { dismissedRestartBanner = true }
-                        .buttonStyle(.borderless)
-                        .font(.callout)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
+                restartBanner
             }
 
-            HSplitView {
-                VStack(spacing: 0) {
-                    List(selection: $selectedPluginId) {
-                        ForEach(pluginManager.plugins) { plugin in
-                            pluginRow(plugin)
-                                .tag(plugin.id)
-                        }
-                    }
-                    .listStyle(.inset(alternatesRowBackgrounds: true))
-
-                    Divider()
-
-                    HStack(spacing: 0) {
-                        Button {
-                            installFromFile()
-                        } label: {
-                            Image(systemName: "plus")
-                                .frame(width: 24, height: 20)
-                        }
-                        .buttonStyle(.borderless)
-                        .disabled(pluginManager.isInstalling)
-                        .accessibilityLabel(String(localized: "Install plugin from file"))
-
-                        Divider().frame(height: 16)
-
-                        Button {
-                            if let plugin = selectedPlugin {
-                                uninstallPlugin(plugin)
-                            }
-                        } label: {
-                            Image(systemName: "minus")
-                                .frame(width: 24, height: 20)
-                        }
-                        .buttonStyle(.borderless)
-                        .disabled(selectedPluginId == nil || selectedPlugin?.source == .builtIn)
-                        .accessibilityLabel(selectedPlugin.map { String(localized: "Uninstall \($0.name)") } ?? String(localized: "Uninstall plugin"))
-
-                        Spacer()
-
-                        if pluginManager.isInstalling {
-                            ProgressView()
-                                .controlSize(.small)
-                        }
-                    }
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 2)
-                }
-                .frame(minWidth: 200, idealWidth: 240, maxWidth: 280)
-
+            NavigationSplitView {
+                pluginList
+                    .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 280)
+            } detail: {
                 detailPane
-                    .frame(minWidth: 340)
             }
         }
         .onDrop(of: [.fileURL], isTargeted: nil) { providers in
@@ -108,6 +50,76 @@ struct InstalledPluginsView: View {
         } message: {
             Text(errorAlertMessage)
         }
+    }
+
+    // MARK: - Restart Banner
+
+    private var restartBanner: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle")
+                .foregroundStyle(.yellow)
+            Text("Restart TablePro to fully unload removed plugins.")
+                .font(.callout)
+            Spacer()
+            Button("Dismiss") { dismissedRestartBanner = true }
+                .buttonStyle(.borderless)
+                .font(.callout)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+    }
+
+    // MARK: - Plugin List
+
+    private var pluginList: some View {
+        List(selection: $selectedPluginId) {
+            ForEach(pluginManager.plugins) { plugin in
+                pluginRow(plugin)
+                    .tag(plugin.id)
+            }
+        }
+        .listStyle(.sidebar)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            listBottomBar
+        }
+    }
+
+    private var listBottomBar: some View {
+        HStack(spacing: 4) {
+            Button {
+                installFromFile()
+            } label: {
+                Image(systemName: "plus")
+                    .frame(width: 24, height: 20)
+            }
+            .buttonStyle(.borderless)
+            .disabled(pluginManager.isInstalling)
+            .accessibilityLabel(String(localized: "Install plugin from file"))
+
+            Button {
+                if let plugin = selectedPlugin {
+                    uninstallPlugin(plugin)
+                }
+            } label: {
+                Image(systemName: "minus")
+                    .frame(width: 24, height: 20)
+            }
+            .buttonStyle(.borderless)
+            .disabled(selectedPluginId == nil || selectedPlugin?.source == .builtIn)
+            .accessibilityLabel(
+                selectedPlugin.map { String(localized: "Uninstall \($0.name)") }
+                    ?? String(localized: "Uninstall plugin")
+            )
+
+            Spacer()
+
+            if pluginManager.isInstalling {
+                ProgressView()
+                    .controlSize(.small)
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
     }
 
     // MARK: - Plugin Row

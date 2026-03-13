@@ -41,12 +41,11 @@ struct BrowsePluginsView: View {
 
             Divider()
 
-            HSplitView {
-                browseLeftPane
-                    .frame(minWidth: 200, idealWidth: 240, maxWidth: 280)
-
-                browseDetailPane
-                    .frame(minWidth: 340)
+            NavigationSplitView {
+                sidebarContent
+                    .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 280)
+            } detail: {
+                detailContent
             }
         }
         .task {
@@ -68,10 +67,10 @@ struct BrowsePluginsView: View {
         }
     }
 
-    // MARK: - Left Pane
+    // MARK: - Sidebar
 
     @ViewBuilder
-    private var browseLeftPane: some View {
+    private var sidebarContent: some View {
         switch registryClient.fetchState {
         case .idle, .loading:
             ProgressView()
@@ -82,13 +81,11 @@ struct BrowsePluginsView: View {
             if plugins.isEmpty {
                 ContentUnavailableView.search(text: searchText)
             } else {
-                List(selection: $selectedPluginId) {
-                    ForEach(plugins) { plugin in
-                        browseRow(plugin)
-                            .tag(plugin.id)
-                    }
+                List(plugins, selection: $selectedPluginId) { plugin in
+                    browseRow(plugin)
+                        .tag(plugin.id)
                 }
-                .listStyle(.inset(alternatesRowBackgrounds: true))
+                .listStyle(.sidebar)
             }
 
         case .failed(let message):
@@ -128,10 +125,10 @@ struct BrowsePluginsView: View {
         }
     }
 
-    // MARK: - Right Pane
+    // MARK: - Detail
 
     @ViewBuilder
-    private var browseDetailPane: some View {
+    private var detailContent: some View {
         if let selectedPlugin = selectedRegistryPlugin {
             RegistryPluginDetailView(
                 plugin: selectedPlugin,
