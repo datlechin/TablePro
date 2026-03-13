@@ -9,6 +9,13 @@ public struct CompletionEntry: Sendable {
     }
 }
 
+public enum AutoLimitStyle: String, Sendable {
+    case limit       // LIMIT n
+    case fetchFirst  // FETCH FIRST n ROWS ONLY (Oracle)
+    case top         // SELECT TOP n ... (MSSQL)
+    case none        // Don't auto-limit (non-SQL)
+}
+
 public struct SQLDialectDescriptor: Sendable {
     public let identifierQuote: String
     public let keywords: Set<String>
@@ -23,6 +30,9 @@ public struct SQLDialectDescriptor: Sendable {
     public let paginationStyle: PaginationStyle
     public let offsetFetchOrderBy: String
     public let requiresBackslashEscaping: Bool
+
+    // Query limit style
+    public let autoLimitStyle: AutoLimitStyle
 
     public enum RegexSyntax: String, Sendable {
         case regexp        // MySQL: column REGEXP 'pattern'
@@ -59,7 +69,8 @@ public struct SQLDialectDescriptor: Sendable {
         likeEscapeStyle: LikeEscapeStyle = .explicit,
         paginationStyle: PaginationStyle = .limit,
         offsetFetchOrderBy: String = "ORDER BY (SELECT NULL)",
-        requiresBackslashEscaping: Bool = false
+        requiresBackslashEscaping: Bool = false,
+        autoLimitStyle: AutoLimitStyle = .limit
     ) {
         self.identifierQuote = identifierQuote
         self.keywords = keywords
@@ -72,5 +83,6 @@ public struct SQLDialectDescriptor: Sendable {
         self.paginationStyle = paginationStyle
         self.offsetFetchOrderBy = offsetFetchOrderBy
         self.requiresBackslashEscaping = requiresBackslashEscaping
+        self.autoLimitStyle = autoLimitStyle
     }
 }

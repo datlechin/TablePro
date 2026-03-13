@@ -42,6 +42,9 @@ final class ClickHousePlugin: NSObject, TableProPlugin, DriverPlugin {
         "Geo": ["Point", "Ring", "Polygon", "MultiPolygon"]
     ]
 
+    static let structureColumnFields: [StructureColumnField] = [.name, .type, .nullable, .defaultValue, .comment]
+    static let supportsQueryProgress = true
+
     static let sqlDialect: SQLDialectDescriptor? = SQLDialectDescriptor(
         identifierQuote: "`",
         keywords: [
@@ -569,6 +572,23 @@ final class ClickHousePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     func createDatabase(name: String, charset: String, collation: String?) async throws {
         let escapedName = name.replacingOccurrences(of: "`", with: "``")
         _ = try await execute(query: "CREATE DATABASE `\(escapedName)`")
+    }
+
+    // MARK: - All Tables Metadata
+
+    func allTablesMetadataSQL(schema: String?) -> String? {
+        """
+        SELECT
+            database as `schema`,
+            name,
+            engine as kind,
+            total_rows as estimated_rows,
+            formatReadableSize(total_bytes) as total_size,
+            comment
+        FROM system.tables
+        WHERE database = currentDatabase()
+        ORDER BY name
+        """
     }
 
     // MARK: - DML Statement Generation

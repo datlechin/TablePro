@@ -42,6 +42,10 @@ public protocol DriverPlugin: TableProPlugin {
     static var immutableColumns: [String] { get }
     static var supportsReadOnlyMode: Bool { get }
     static var defaultSchemaName: String { get }
+    static var requiresReconnectForDatabaseSwitch: Bool { get }
+    static var structureColumnFields: [StructureColumnField] { get }
+    static var defaultPrimaryKeyColumn: String? { get }
+    static var supportsQueryProgress: Bool { get }
 }
 
 public extension DriverPlugin {
@@ -88,4 +92,10 @@ public extension DriverPlugin {
     static var immutableColumns: [String] { [] }
     static var supportsReadOnlyMode: Bool { true }
     static var defaultSchemaName: String { "public" }
+    static var requiresReconnectForDatabaseSwitch: Bool { false }
+    static var structureColumnFields: [StructureColumnField] {
+        [.name, .type, .nullable, .defaultValue, .autoIncrement, .comment]
+    }
+    static var defaultPrimaryKeyColumn: String? { nil }
+    static var supportsQueryProgress: Bool { false }
 }

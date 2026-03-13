@@ -669,6 +669,28 @@ final class SQLitePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         throw SQLitePluginError.unsupportedOperation
     }
 
+    // MARK: - All Tables Metadata
+
+    func allTablesMetadataSQL(schema: String?) -> String? {
+        """
+        SELECT
+            '' as schema,
+            name,
+            type as kind,
+            '' as charset,
+            '' as collation,
+            '' as estimated_rows,
+            '' as total_size,
+            '' as data_size,
+            '' as index_size,
+            '' as comment
+        FROM sqlite_master
+        WHERE type IN ('table', 'view')
+        AND name NOT LIKE 'sqlite_%'
+        ORDER BY name
+        """
+    }
+
     // MARK: - Private Helpers
 
     nonisolated private func setInterruptHandle(_ handle: OpaquePointer?) {

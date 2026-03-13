@@ -88,7 +88,8 @@ final class MSSQLPlugin: NSObject, TableProPlugin, DriverPlugin {
         regexSyntax: .unsupported,
         booleanLiteralStyle: .numeric,
         likeEscapeStyle: .explicit,
-        paginationStyle: .offsetFetch
+        paginationStyle: .offsetFetch,
+        autoLimitStyle: .top
     )
 
     func createDriver(config: DriverConnectionConfig) -> any PluginDatabaseDriver {
@@ -1174,6 +1175,27 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     func createDatabase(name: String, charset: String, collation: String?) async throws {
         let quotedName = "[\(name.replacingOccurrences(of: "]", with: "]]"))]"
         _ = try await execute(query: "CREATE DATABASE \(quotedName)")
+    }
+
+    // MARK: - All Tables Metadata
+
+    func allTablesMetadataSQL(schema: String?) -> String? {
+        """
+        SELECT
+            s.name as schema_name,
+            t.name as name,
+            CASE WHEN v.object_id IS NOT NULL THEN 'VIEW' ELSE 'TABLE' END as kind,
+            p.rows as estimated_rows,
+            CAST(ROUND(SUM(a.total_pages) * 8 / 1024.0, 2) AS VARCHAR) + ' MB' as total_size
+        FROM sys.tables t
+        INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
+        INNER JOIN sys.indexes i ON t.object_id = i.object_id AND i.index_id IN (0, 1)
+        INNER JOIN sys.partitions p ON i.object_id = p.object_id AND i.index_id = p.index_id
+        INNER JOIN sys.allocation_units a ON p.partition_id = a.container_id
+        LEFT JOIN sys.views v ON t.object_id = v.object_id
+        GROUP BY s.name, t.name, p.rows, v.object_id
+        ORDER BY t.name
+        """
     }
 
     // MARK: - Query Building

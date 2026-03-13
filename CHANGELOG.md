@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moved identifier quoting, autocomplete statement completions, view templates, and FK disable/enable into plugin system
 - Removed `DatabaseType` switches from `FilterSQLGenerator`, `SQLCompletionProvider`, `ImportDataSinkAdapter`, and `MainContentCoordinator+SidebarActions`
 - Replaced hardcoded `DatabaseType` switches in ExportDialog, DataChangeManager, SafeModeGuard, ExportService, DataGridView, HighlightedSQLTextView, ForeignKeyPopoverContentView, QueryTab, SQLRowToStatementConverter, SessionStateFactory, ConnectionToolbarState, and DatabaseSwitcherSheet with dynamic plugin lookups (`databaseGroupingStrategy`, `immutableColumns`, `supportsReadOnlyMode`, `paginationStyle`, `editorLanguage`, `connectionMode`, `supportsSchemaSwitching`)
+- Replaced remaining ~40 hardcoded `DatabaseType` switches in MainContentCoordinator (main + 5 extensions) and StructureRowProvider with plugin metadata lookups (`requiresReconnectForDatabaseSwitch`, `structureColumnFields`, `defaultPrimaryKeyColumn`, `supportsQueryProgress`, `autoLimitStyle`, `allTablesMetadataSQL`)
 
 ### Added
 

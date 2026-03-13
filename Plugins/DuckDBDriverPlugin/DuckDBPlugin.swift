@@ -832,6 +832,21 @@ final class DuckDBPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         return "CREATE OR REPLACE VIEW \(quoted) AS\nSELECT * FROM table_name;"
     }
 
+    // MARK: - All Tables Metadata
+
+    func allTablesMetadataSQL(schema: String?) -> String? {
+        let s = schema ?? currentSchema ?? "main"
+        return """
+        SELECT
+            table_schema as schema_name,
+            table_name as name,
+            table_type as kind
+        FROM information_schema.tables
+        WHERE table_schema = '\(s)'
+        ORDER BY table_name
+        """
+    }
+
     // MARK: - Private Helpers
 
     nonisolated private func setInterruptHandle(_ handle: duckdb_connection?) {

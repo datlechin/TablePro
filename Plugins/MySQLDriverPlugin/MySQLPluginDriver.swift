@@ -627,6 +627,29 @@ final class MySQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         ["SET FOREIGN_KEY_CHECKS=1"]
     }
 
+    // MARK: - All Tables Metadata
+
+    func allTablesMetadataSQL(schema: String?) -> String? {
+        """
+        SELECT
+            TABLE_SCHEMA as `schema`,
+            TABLE_NAME as name,
+            TABLE_TYPE as kind,
+            IFNULL(CCSA.CHARACTER_SET_NAME, '') as charset,
+            TABLE_COLLATION as collation,
+            TABLE_ROWS as estimated_rows,
+            CONCAT(ROUND((DATA_LENGTH + INDEX_LENGTH) / 1024 / 1024, 2), ' MB') as total_size,
+            CONCAT(ROUND(DATA_LENGTH / 1024 / 1024, 2), ' MB') as data_size,
+            CONCAT(ROUND(INDEX_LENGTH / 1024 / 1024, 2), ' MB') as index_size,
+            TABLE_COMMENT as comment
+        FROM information_schema.TABLES
+        LEFT JOIN information_schema.COLLATION_CHARACTER_SET_APPLICABILITY CCSA
+            ON TABLE_COLLATION = CCSA.COLLATION_NAME
+        WHERE TABLE_SCHEMA = DATABASE()
+        ORDER BY TABLE_NAME
+        """
+    }
+
     // MARK: - Private Helpers
 
     private func extractTableName(from query: String) -> String? {

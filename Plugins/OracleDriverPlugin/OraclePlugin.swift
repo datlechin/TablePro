@@ -88,7 +88,8 @@ final class OraclePlugin: NSObject, TableProPlugin, DriverPlugin {
         booleanLiteralStyle: .numeric,
         likeEscapeStyle: .explicit,
         paginationStyle: .offsetFetch,
-        offsetFetchOrderBy: "ORDER BY 1"
+        offsetFetchOrderBy: "ORDER BY 1",
+        autoLimitStyle: .fetchFirst
     )
 
     func createDriver(config: DriverConnectionConfig) -> any PluginDatabaseDriver {
@@ -743,6 +744,22 @@ final class OraclePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         let escaped = schema.replacingOccurrences(of: "\"", with: "\"\"")
         _ = try await execute(query: "ALTER SESSION SET CURRENT_SCHEMA = \"\(escaped)\"")
         _currentSchema = schema
+    }
+
+    // MARK: - All Tables Metadata
+
+    func allTablesMetadataSQL(schema: String?) -> String? {
+        let s = schema ?? currentSchema ?? "SYSTEM"
+        return """
+        SELECT
+            OWNER as schema_name,
+            TABLE_NAME as name,
+            'TABLE' as kind,
+            NUM_ROWS as estimated_rows
+        FROM ALL_TABLES
+        WHERE OWNER = '\(s)'
+        ORDER BY TABLE_NAME
+        """
     }
 
     // MARK: - Query Building

@@ -11,6 +11,7 @@ import Foundation
 import Observation
 import os
 import SwiftUI
+import TableProPluginKit
 
 /// Discard action types for unified alert handling
 enum DiscardAction {
@@ -754,7 +755,7 @@ final class MainContentCoordinator {
         tabManager.tabs[index] = tab
         toolbarState.setExecuting(true)
 
-        if connection.type == .clickhouse {
+        if PluginManager.shared.supportsQueryProgress(for: connection.type) {
             installClickHouseProgressHandler()
         }
 
@@ -771,7 +772,7 @@ final class MainContentCoordinator {
 
         let tableName: String?
         let isEditable: Bool
-        if connection.type == .redis {
+        if PluginManager.shared.editorLanguage(for: connection.type) != .sql {
             tableName = tabManager.selectedTab?.tableName
             isEditable = tableName != nil
         } else {
@@ -857,7 +858,7 @@ final class MainContentCoordinator {
                 await MainActor.run { [weak self] in
                     guard let self else { return }
                     currentQueryTask = nil
-                    if self.connection.type == .clickhouse {
+                    if PluginManager.shared.supportsQueryProgress(for: self.connection.type) {
                         self.clearClickHouseProgress()
                     }
                     toolbarState.setExecuting(false)
@@ -936,33 +937,30 @@ final class MainContentCoordinator {
             }
         }
 
-        // For PostgreSQL: fetch actual enum values from pg_enum catalog via dependent types
-        if connectionType == .postgresql {
-            if let enumTypes = try? await driver.fetchDependentTypes(forTable: tableName) {
-                let typeMap = Dictionary(uniqueKeysWithValues: enumTypes.map { ($0.name, $0.labels) })
-                for col in columnInfo where col.dataType.uppercased().hasPrefix("ENUM(") {
-                    let raw = col.dataType
-                    if let openParen = raw.firstIndex(of: "("),
-                       let closeParen = raw.lastIndex(of: ")") {
-                        let typeName = String(raw[raw.index(after: openParen)..<closeParen])
-                        if let values = typeMap[typeName] {
-                            result[col.name] = values
-                        }
+        // Fetch actual enum values from catalog via dependent types (PostgreSQL returns values, others return [])
+        if let enumTypes = try? await driver.fetchDependentTypes(forTable: tableName),
+           !enumTypes.isEmpty {
+            let typeMap = Dictionary(uniqueKeysWithValues: enumTypes.map { ($0.name, $0.labels) })
+            for col in columnInfo where col.dataType.uppercased().hasPrefix("ENUM(") {
+                let raw = col.dataType
+                if let openParen = raw.firstIndex(of: "("),
+                   let closeParen = raw.lastIndex(of: ")") {
+                    let typeName = String(raw[raw.index(after: openParen)..<closeParen])
+                    if let values = typeMap[typeName] {
+                        result[col.name] = values
                     }
                 }
             }
         }
 
-        // For SQLite: fetch CHECK constraint pseudo-enum values from DDL
-        if connectionType == .sqlite {
-            if let createSQL = try? await driver.fetchTableDDL(table: tableName) {
-                let columns = try? await driver.fetchColumns(table: tableName)
-                for col in columns ?? [] {
-                    if let values = Self.parseSQLiteCheckConstraintValues(
-                        createSQL: createSQL, columnName: col.name
-                    ) {
-                        result[col.name] = values
-                    }
+        // Fetch CHECK constraint pseudo-enum values from DDL (matches only SQLite-style constraints)
+        if let createSQL = try? await driver.fetchTableDDL(table: tableName) {
+            let columns = try? await driver.fetchColumns(table: tableName)
+            for col in columns ?? [] {
+                if let values = Self.parseSQLiteCheckConstraintValues(
+                    createSQL: createSQL, columnName: col.name
+                ) {
+                    result[col.name] = values
                 }
             }
         }
@@ -998,8 +996,10 @@ final class MainContentCoordinator {
         // Only apply to SELECT statements
         guard uppercased.hasPrefix("SELECT ") else { return sql }
 
-        // Skip for databases that don't support row limiting via SQL
-        guard dbType != .mongodb, dbType != .redis else { return sql }
+        let autoLimit = PluginManager.shared.autoLimitStyle(for: dbType)
+
+        // Skip for databases that don't support row limiting
+        guard autoLimit != .none else { return sql }
 
         // Check if query already has a LIMIT/FETCH/TOP clause
         let range = NSRange(trimmed.startIndex..., in: trimmed)
@@ -1012,15 +1012,16 @@ final class MainContentCoordinator {
             ? String(trimmed.dropLast()).trimmingCharacters(in: .whitespacesAndNewlines)
             : trimmed
 
-        switch dbType {
-        case .oracle:
+        switch autoLimit {
+        case .fetchFirst:
             return "\(withoutSemicolon) FETCH FIRST \(limit) ROWS ONLY"
-        case .mssql:
-            // MSSQL uses TOP in SELECT — inject after SELECT keyword
+        case .top:
             let afterSelect = withoutSemicolon.dropFirst(7) // drop "SELECT "
             return "SELECT TOP \(limit) \(afterSelect)"
-        default:
+        case .limit:
             return "\(withoutSemicolon) LIMIT \(limit)"
+        case .none:
+            return sql
         }
     }
 
@@ -1295,12 +1296,10 @@ private extension MainContentCoordinator {
         updatedTab.lastExecutedAt = Date()
         updatedTab.tableName = tableName
         updatedTab.isEditable = isEditable && updatedTab.isEditable
-        if conn.type == .redis {
-            // Populate enum values from column types for the enum popover
-            for (index, colType) in updatedTab.columnTypes.enumerated() {
-                if case .enumType(_, let values) = colType, let vals = values, index < updatedTab.resultColumns.count {
-                    updatedTab.columnEnumValues[updatedTab.resultColumns[index]] = vals
-                }
+        // Populate enum values from column types for the enum popover
+        for (index, colType) in updatedTab.columnTypes.enumerated() {
+            if case .enumType(_, let values) = colType, let vals = values, index < updatedTab.resultColumns.count {
+                updatedTab.columnEnumValues[updatedTab.resultColumns[index]] = vals
             }
         }
 
@@ -1326,8 +1325,8 @@ private extension MainContentCoordinator {
         let resolvedPK: String?
         if let pk = metadata?.primaryKeyColumn {
             resolvedPK = pk
-        } else if conn.type == .redis {
-            resolvedPK = "Key"
+        } else if let defaultPK = PluginManager.shared.defaultPrimaryKeyColumn(for: conn.type) {
+            resolvedPK = defaultPK
         } else {
             // Preserve existing PK when metadata is cached and not re-fetched
             resolvedPK = tabManager.tabs[idx].primaryKeyColumn

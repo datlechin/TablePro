@@ -50,6 +50,7 @@ final class PostgreSQLPlugin: NSObject, TableProPlugin, DriverPlugin {
 
     static let supportsCascadeDrop = true
     static let supportsForeignKeyDisable = false
+    static let requiresReconnectForDatabaseSwitch = true
 
     static let sqlDialect: SQLDialectDescriptor? = SQLDialectDescriptor(
         identifierQuote: "\"",

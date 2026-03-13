@@ -350,6 +350,12 @@ final class PluginDriverAdapter: DatabaseDriver, SchemaSwitchable {
         pluginDriver.foreignKeyEnableStatements()
     }
 
+    // MARK: - All Tables Metadata SQL
+
+    func allTablesMetadataSQL(schema: String?) -> String? {
+        pluginDriver.allTablesMetadataSQL(schema: schema)
+    }
+
     // MARK: - EXPLAIN
 
     func buildExplainQuery(_ sql: String) -> String? {

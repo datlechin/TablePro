@@ -42,7 +42,7 @@ extension MainContentCoordinator {
             Task { @MainActor [weak self] in
                 guard let self else { return }
 
-                if self.connection.type == .postgresql {
+                if PluginManager.shared.supportsSchemaSwitching(for: self.connection.type) {
                     await self.switchSchema(to: schema)
                 } else {
                     await self.switchDatabase(to: schema)

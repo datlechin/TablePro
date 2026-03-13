@@ -64,11 +64,10 @@ extension MainContentCoordinator {
 
     func openImportDialog() {
         guard !connection.safeModeLevel.blocksAllWrites else { return }
-        guard connection.type != .mongodb && connection.type != .redis else {
-            let typeName = connection.type == .mongodb ? "MongoDB" : "Redis"
+        guard PluginManager.shared.supportsImport(for: connection.type) else {
             AlertHelper.showErrorSheet(
                 title: String(localized: "Import Not Supported"),
-                message: String(localized: "SQL import is not supported for \(typeName) connections."),
+                message: String(localized: "SQL import is not supported for \(connection.type.rawValue) connections."),
                 window: nil
             )
             return

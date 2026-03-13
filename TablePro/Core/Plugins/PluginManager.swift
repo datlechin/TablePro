@@ -472,6 +472,33 @@ final class PluginManager {
         return Swift.type(of: plugin).defaultSchemaName
     }
 
+    func requiresReconnectForDatabaseSwitch(for databaseType: DatabaseType) -> Bool {
+        guard let plugin = driverPlugin(for: databaseType) else { return false }
+        return Swift.type(of: plugin).requiresReconnectForDatabaseSwitch
+    }
+
+    func structureColumnFields(for databaseType: DatabaseType) -> [StructureColumnField] {
+        guard let plugin = driverPlugin(for: databaseType) else {
+            return [.name, .type, .nullable, .defaultValue, .autoIncrement, .comment]
+        }
+        return Swift.type(of: plugin).structureColumnFields
+    }
+
+    func defaultPrimaryKeyColumn(for databaseType: DatabaseType) -> String? {
+        guard let plugin = driverPlugin(for: databaseType) else { return nil }
+        return Swift.type(of: plugin).defaultPrimaryKeyColumn
+    }
+
+    func supportsQueryProgress(for databaseType: DatabaseType) -> Bool {
+        guard let plugin = driverPlugin(for: databaseType) else { return false }
+        return Swift.type(of: plugin).supportsQueryProgress
+    }
+
+    func autoLimitStyle(for databaseType: DatabaseType) -> AutoLimitStyle {
+        guard let plugin = driverPlugin(for: databaseType) else { return .limit }
+        return Swift.type(of: plugin).sqlDialect?.autoLimitStyle ?? .limit
+    }
+
     func paginationStyle(for databaseType: DatabaseType) -> SQLDialectDescriptor.PaginationStyle {
         sqlDialect(for: databaseType)?.paginationStyle ?? .limit
     }

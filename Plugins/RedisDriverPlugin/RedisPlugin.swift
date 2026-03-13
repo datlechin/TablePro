@@ -59,6 +59,9 @@ final class RedisPlugin: NSObject, TableProPlugin, DriverPlugin {
         "Geospatial": ["geo"]
     ]
 
+    static let structureColumnFields: [StructureColumnField] = [.name, .type, .nullable]
+    static let defaultPrimaryKeyColumn: String? = "Key"
+
     static let sqlDialect: SQLDialectDescriptor? = nil
 
     static var statementCompletions: [CompletionEntry] {

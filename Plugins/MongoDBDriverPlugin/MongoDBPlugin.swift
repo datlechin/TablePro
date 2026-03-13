@@ -70,6 +70,9 @@ final class MongoDBPlugin: NSObject, TableProPlugin, DriverPlugin {
         "Other": ["javascript", "minKey", "maxKey"]
     ]
 
+    static let structureColumnFields: [StructureColumnField] = [.name, .type, .nullable]
+    static let defaultPrimaryKeyColumn: String? = "_id"
+
     static let sqlDialect: SQLDialectDescriptor? = nil
 
     static var statementCompletions: [CompletionEntry] {

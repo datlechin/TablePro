@@ -749,6 +749,26 @@ final class PostgreSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         _ = try await execute(query: query)
     }
 
+    // MARK: - All Tables Metadata
+
+    func allTablesMetadataSQL(schema: String?) -> String? {
+        let s = schema ?? currentSchema ?? "public"
+        return """
+        SELECT
+            schemaname as schema,
+            relname as name,
+            'TABLE' as kind,
+            n_live_tup as estimated_rows,
+            pg_size_pretty(pg_total_relation_size(schemaname||'.'||relname)) as total_size,
+            pg_size_pretty(pg_relation_size(schemaname||'.'||relname)) as data_size,
+            pg_size_pretty(pg_indexes_size(schemaname||'.'||relname)) as index_size,
+            obj_description((schemaname||'.'||relname)::regclass) as comment
+        FROM pg_stat_user_tables
+        WHERE schemaname = '\(s)'
+        ORDER BY relname
+        """
+    }
+
     // MARK: - Helpers
 
     private func stripLimitOffset(from query: String) -> String {
