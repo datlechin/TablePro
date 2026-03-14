@@ -10,9 +10,10 @@ import SwiftUI
 import TableProPluginKit
 import UniformTypeIdentifiers
 
-// swiftlint:disable file_length type_body_length
+// swiftlint:disable file_length
+
 /// Form for creating or editing a database connection
-struct ConnectionFormView: View {
+struct ConnectionFormView: View { // swiftlint:disable:this type_body_length
     private static let logger = Logger(subsystem: "com.TablePro", category: "ConnectionFormView")
     @Environment(\.openWindow) private var openWindow
 
