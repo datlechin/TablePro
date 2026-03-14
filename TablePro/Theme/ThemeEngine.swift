@@ -175,7 +175,7 @@ internal final class ThemeEngine {
         var copy = theme
         copy.id = "user.\(UUID().uuidString.lowercased().prefix(8))"
         copy.name = newName
-        copy.author = NSFullUserName()
+        copy.author = theme.author
         return copy
     }
 

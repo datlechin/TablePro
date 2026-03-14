@@ -595,6 +595,19 @@ internal struct ThemeEdgeInsets: Codable, Equatable, Sendable {
 
     var swiftUI: EdgeInsets { EdgeInsets(top: top, leading: leading, bottom: bottom, trailing: trailing) }
     var appKit: NSEdgeInsets { NSEdgeInsets(top: top, left: leading, bottom: bottom, right: trailing) }
+
+    init(top: CGFloat, leading: CGFloat, bottom: CGFloat, trailing: CGFloat) {
+        self.top = top; self.leading = leading; self.bottom = bottom; self.trailing = trailing
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let fallback = ThemeEdgeInsets.default
+        top = try container.decodeIfPresent(CGFloat.self, forKey: .top) ?? fallback.top
+        leading = try container.decodeIfPresent(CGFloat.self, forKey: .leading) ?? fallback.leading
+        bottom = try container.decodeIfPresent(CGFloat.self, forKey: .bottom) ?? fallback.bottom
+        trailing = try container.decodeIfPresent(CGFloat.self, forKey: .trailing) ?? fallback.trailing
+    }
 }
 
 // MARK: - Theme Typography

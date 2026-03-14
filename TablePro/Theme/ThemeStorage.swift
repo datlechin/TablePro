@@ -162,8 +162,8 @@ internal struct ThemeStorage {
         let data = try Data(contentsOf: sourceURL)
         var theme = try JSONDecoder().decode(ThemeDefinition.self, from: data)
 
-        // Ensure imported themes get a user prefix if they have a built-in ID
-        if theme.isBuiltIn || theme.isRegistry {
+        // Avoid clobbering an existing theme on import
+        if theme.isBuiltIn || theme.isRegistry || loadTheme(id: theme.id) != nil {
             theme.id = "user.\(UUID().uuidString.lowercased().prefix(8))"
         }
 
