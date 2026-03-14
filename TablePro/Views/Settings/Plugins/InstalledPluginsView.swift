@@ -124,7 +124,7 @@ struct InstalledPluginsView: View {
                     .frame(width: 24, height: 20)
             }
             .buttonStyle(.borderless)
-            .disabled(selectedPluginId == nil || selectedPlugin?.source == .builtIn)
+            .disabled(selectedPlugin == nil || selectedPlugin?.source == .builtIn)
             .accessibilityLabel(
                 selectedPlugin.map { String(localized: "Uninstall \($0.name)") }
                     ?? String(localized: "Uninstall plugin")
@@ -146,7 +146,7 @@ struct InstalledPluginsView: View {
     @ViewBuilder
     private func pluginRow(_ plugin: PluginEntry) -> some View {
         HStack(spacing: 8) {
-            pluginIcon(plugin.iconName)
+            PluginIconView(name: plugin.iconName)
                 .font(.title3)
                 .frame(width: 24, height: 24)
                 .foregroundStyle(plugin.isEnabled ? .secondary : .tertiary)
@@ -176,16 +176,6 @@ struct InstalledPluginsView: View {
         .padding(.vertical, 2)
     }
 
-    @ViewBuilder
-    private func pluginIcon(_ name: String) -> some View {
-        if NSImage(systemSymbolName: name, accessibilityDescription: nil) != nil {
-            Image(systemName: name)
-        } else {
-            Image(name)
-                .renderingMode(.template)
-        }
-    }
-
     // MARK: - Detail Pane
 
     private var selectedPlugin: PluginEntry? {
@@ -209,6 +199,7 @@ struct InstalledPluginsView: View {
                         .toggleStyle(.switch)
                         .labelsHidden()
                         .controlSize(.small)
+                        .accessibilityLabel(String(localized: "Enable \(selected.name)"))
                     }
 
                     Text("v\(selected.version) · \(selected.source == .builtIn ? String(localized: "Built-in") : String(localized: "User-installed"))")

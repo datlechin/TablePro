@@ -3,7 +3,6 @@
 //  TablePro
 //
 
-import AppKit
 import SwiftUI
 
 struct BrowsePluginsView: View {
@@ -112,7 +111,7 @@ struct BrowsePluginsView: View {
     @ViewBuilder
     private func browseRow(_ plugin: RegistryPlugin) -> some View {
         HStack(spacing: 8) {
-            pluginIcon(plugin.iconName ?? "puzzlepiece")
+            PluginIconView(name: plugin.iconName ?? "puzzlepiece")
                 .font(.title3)
                 .frame(width: 24, height: 24)
                 .foregroundStyle(.secondary)
@@ -210,18 +209,6 @@ struct BrowsePluginsView: View {
                     .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-    }
-
-    // MARK: - Plugin Icon
-
-    @ViewBuilder
-    private func pluginIcon(_ name: String) -> some View {
-        if NSImage(systemSymbolName: name, accessibilityDescription: nil) != nil {
-            Image(systemName: name)
-        } else {
-            Image(name)
-                .renderingMode(.template)
         }
     }
 
