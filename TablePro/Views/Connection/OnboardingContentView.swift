@@ -76,7 +76,7 @@ struct OnboardingContentView: View {
     // MARK: - Welcome Page
 
     private var welcomePage: some View {
-        VStack(spacing: DesignConstants.Spacing.md) {
+        VStack(spacing: ThemeEngine.shared.activeTheme.spacing.md) {
             Image(nsImage: NSApp.applicationIconImage)
                 .resizable()
                 .frame(width: 80, height: 80)
@@ -85,7 +85,7 @@ struct OnboardingContentView: View {
                 .font(.system(size: 24, weight: .bold, design: .rounded))
 
             Text("A fast, lightweight native macOS database client")
-                .font(.system(size: DesignConstants.FontSize.body))
+                .font(.system(size: ThemeEngine.shared.activeTheme.typography.body))
                 .foregroundStyle(.secondary)
         }
     }
@@ -93,9 +93,9 @@ struct OnboardingContentView: View {
     // MARK: - Features Page
 
     private var featuresPage: some View {
-        VStack(spacing: DesignConstants.Spacing.xl) {
+        VStack(spacing: ThemeEngine.shared.activeTheme.spacing.xl) {
             Text("What you can do")
-                .font(.system(size: DesignConstants.FontSize.title2, weight: .semibold))
+                .font(.system(size: ThemeEngine.shared.activeTheme.typography.title2, weight: .semibold))
 
             VStack(alignment: .leading, spacing: 16) {
                 featureRow(
@@ -132,15 +132,15 @@ struct OnboardingContentView: View {
     private func featureRow(icon: String, title: String, description: String) -> some View {
         HStack(spacing: 16) {
             Image(systemName: icon)
-                .font(.system(size: DesignConstants.IconSize.extraLarge))
+                .font(.system(size: ThemeEngine.shared.activeTheme.iconSizes.extraLarge))
                 .foregroundStyle(.tint)
                 .frame(width: 40)
 
-            VStack(alignment: .leading, spacing: DesignConstants.Spacing.xxxs) {
+            VStack(alignment: .leading, spacing: ThemeEngine.shared.activeTheme.spacing.xxxs) {
                 Text(title)
-                    .font(.system(size: DesignConstants.FontSize.body, weight: .medium))
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.body, weight: .medium))
                 Text(description)
-                    .font(.system(size: DesignConstants.FontSize.small))
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.small))
                     .foregroundStyle(.secondary)
             }
         }
@@ -149,7 +149,7 @@ struct OnboardingContentView: View {
     // MARK: - Get Started Page
 
     private var getStartedPage: some View {
-        VStack(spacing: DesignConstants.Spacing.md) {
+        VStack(spacing: ThemeEngine.shared.activeTheme.spacing.md) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 48))
                 .foregroundStyle(.green)
@@ -158,7 +158,7 @@ struct OnboardingContentView: View {
                 .font(.system(size: 22, weight: .bold, design: .rounded))
 
             Text("Create a connection to get started with\nyour databases.")
-                .font(.system(size: DesignConstants.FontSize.body))
+                .font(.system(size: ThemeEngine.shared.activeTheme.typography.body))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }
@@ -208,8 +208,8 @@ struct OnboardingContentView: View {
             }
             .animation(.easeInOut(duration: 0.35), value: currentPage)
         }
-        .padding(.horizontal, DesignConstants.Spacing.xl)
-        .padding(.bottom, DesignConstants.Spacing.lg)
+        .padding(.horizontal, ThemeEngine.shared.activeTheme.spacing.xl)
+        .padding(.bottom, ThemeEngine.shared.activeTheme.spacing.lg)
     }
 
     // MARK: - Actions

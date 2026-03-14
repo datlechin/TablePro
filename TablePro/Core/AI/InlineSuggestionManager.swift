@@ -310,7 +310,7 @@ final class InlineSuggestionManager {
         layer.allowsFontSubpixelQuantization = true
 
         // Use the editor's font and grey color for ghost appearance
-        let font = SQLEditorTheme.font
+        let font = ThemeEngine.shared.editorFonts.font
         let attrs: [NSAttributedString.Key: Any] = [
             .font: font,
             .foregroundColor: NSColor.tertiaryLabelColor

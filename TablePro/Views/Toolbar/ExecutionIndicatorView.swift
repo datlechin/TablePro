@@ -24,32 +24,32 @@ struct ExecutionIndicatorView: View {
                     .help("Query executing...")
                 if let progress = clickHouseProgress {
                     Text(progress.formattedLive)
-                        .font(ToolbarDesignTokens.Typography.executionTime)
-                        .foregroundStyle(ToolbarDesignTokens.Colors.tertiaryText)
+                        .font(.system(size: ThemeEngine.shared.activeTheme.typography.small, weight: .regular, design: .monospaced))
+                        .foregroundStyle(ThemeEngine.shared.colors.toolbar.tertiaryTextSwiftUI)
                 }
             } else if let chProgress = lastClickHouseProgress {
                 Text(chProgress.formattedSummary)
-                    .font(ToolbarDesignTokens.Typography.executionTime)
-                    .foregroundStyle(ToolbarDesignTokens.Colors.tertiaryText)
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.small, weight: .regular, design: .monospaced))
+                    .foregroundStyle(ThemeEngine.shared.colors.toolbar.tertiaryTextSwiftUI)
                     .accessibilityLabel(String(localized: "Last query: \(chProgress.formattedSummary)"))
                     .help("Last query execution summary")
             } else if let duration = lastDuration {
                 Text(formattedDuration(duration))
-                    .font(ToolbarDesignTokens.Typography.executionTime)
-                    .foregroundStyle(ToolbarDesignTokens.Colors.tertiaryText)
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.small, weight: .regular, design: .monospaced))
+                    .foregroundStyle(ThemeEngine.shared.colors.toolbar.tertiaryTextSwiftUI)
                     .accessibilityLabel(
                         String(localized: "Last query took \(formattedDuration(duration))")
                     )
                     .help("Last query execution time")
             } else {
                 Text("--")
-                    .font(ToolbarDesignTokens.Typography.executionTime)
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.small, weight: .regular, design: .monospaced))
                     .foregroundStyle(.quaternary)
                     .accessibilityLabel(String(localized: "No query executed yet"))
                     .help("Run a query to see execution time")
             }
         }
-        .padding(.trailing, DesignConstants.Spacing.xs)
+        .padding(.trailing, ThemeEngine.shared.activeTheme.spacing.xs)
     }
 
     // MARK: - Helpers

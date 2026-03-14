@@ -45,43 +45,43 @@ struct SectionHeaderView<Actions: View>: View {
     }
 
     private var headerContent: some View {
-        HStack(spacing: DesignConstants.Spacing.xs) {
+        HStack(spacing: ThemeEngine.shared.activeTheme.spacing.xs) {
             if isCollapsible {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: DesignConstants.FontSize.caption, weight: .semibold))
-                    .foregroundStyle(DesignConstants.Colors.tertiaryText)
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.caption, weight: .semibold))
+                    .foregroundStyle(ThemeEngine.shared.colors.ui.tertiaryTextSwiftUI)
                     .rotationEffect(.degrees(isExpanded ? 90 : 0))
-                    .animation(.easeInOut(duration: DesignConstants.AnimationDuration.normal), value: isExpanded)
+                    .animation(.easeInOut(duration: ThemeEngine.shared.activeTheme.animations.normal), value: isExpanded)
             }
 
             if let icon = icon {
                 Image(systemName: icon)
-                    .font(.system(size: DesignConstants.FontSize.body))
-                    .foregroundStyle(DesignConstants.Colors.secondaryText)
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.body))
+                    .foregroundStyle(ThemeEngine.shared.colors.ui.secondaryTextSwiftUI)
             }
 
             Text(title)
-                .font(.system(size: DesignConstants.FontSize.title3, weight: .semibold))
-                .foregroundStyle(DesignConstants.Colors.primaryText)
+                .font(.system(size: ThemeEngine.shared.activeTheme.typography.title3, weight: .semibold))
+                .foregroundStyle(ThemeEngine.shared.colors.ui.primaryTextSwiftUI)
 
             if let count = count {
                 Text("(\(count))")
-                    .font(.system(size: DesignConstants.FontSize.small))
-                    .foregroundStyle(DesignConstants.Colors.tertiaryText)
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.small))
+                    .foregroundStyle(ThemeEngine.shared.colors.ui.tertiaryTextSwiftUI)
             }
 
             Spacer()
 
             actions()
         }
-        .padding(.horizontal, DesignConstants.Spacing.sm)
-        .padding(.vertical, DesignConstants.Spacing.xs)
+        .padding(.horizontal, ThemeEngine.shared.activeTheme.spacing.sm)
+        .padding(.vertical, ThemeEngine.shared.activeTheme.spacing.xs)
         .background(
             isCollapsible ?
-                DesignConstants.Colors.sectionBackground.opacity(0.5) :
+                ThemeEngine.shared.colors.ui.controlBackgroundSwiftUI.opacity(0.5) :
                 Color.clear
         )
-        .cornerRadius(DesignConstants.CornerRadius.medium)
+        .cornerRadius(ThemeEngine.shared.activeTheme.cornerRadius.medium)
         .contentShape(Rectangle())
     }
 }

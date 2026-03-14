@@ -1192,6 +1192,7 @@
       }
     },
     "1  John Doe  john@example.com  NULL" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -1659,6 +1660,7 @@
       }
     },
     "Accent Color:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -2301,6 +2303,9 @@
         }
       }
     },
+    "Alternate Row" : {
+
+    },
     "Always" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2366,6 +2371,9 @@
         }
       }
     },
+    "Animations" : {
+
+    },
     "API Key" : {
       "localizations" : {
         "vi" : {
@@ -2399,6 +2407,7 @@
       }
     },
     "Appearance:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -2719,6 +2728,9 @@
         }
       }
     },
+    "Auto" : {
+
+    },
     "AUTO" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2786,7 +2798,6 @@
       }
     },
     "Auto Increment" : {
-      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -2866,6 +2877,15 @@
         }
       }
     },
+    "Background" : {
+
+    },
+    "Badge Background" : {
+
+    },
+    "Badges" : {
+
+    },
     "Base32-encoded secret from your authenticator setup" : {
       "localizations" : {
         "vi" : {
@@ -2929,6 +2949,18 @@
           }
         }
       }
+    },
+    "Body" : {
+
+    },
+    "Bool False" : {
+
+    },
+    "Bool True" : {
+
+    },
+    "Border" : {
+
     },
     "Browse" : {
       "localizations" : {
@@ -3139,6 +3171,12 @@
           }
         }
       }
+    },
+    "Caption" : {
+
+    },
+    "Card Background" : {
+
     },
     "Cascade" : {
       "localizations" : {
@@ -3840,6 +3878,9 @@
         }
       }
     },
+    "Colors" : {
+
+    },
     "Column" : {
       "localizations" : {
         "vi" : {
@@ -4012,7 +4053,6 @@
       }
     },
     "Comment" : {
-      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -4448,6 +4488,9 @@
         }
       }
     },
+    "Control Background" : {
+
+    },
     "Conversation History" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4724,6 +4767,9 @@
           }
         }
       }
+    },
+    "Corner Radius" : {
+
     },
     "Could not fetch plugin registry" : {
       "localizations" : {
@@ -5062,6 +5108,9 @@
         }
       }
     },
+    "Current Line" : {
+
+    },
     "Current schema: %@ (⌘K to switch)" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5111,6 +5160,9 @@
           }
         }
       }
+    },
+    "Cursor" : {
+
     },
     "Cursor position %lld exceeds SQL length (%lld)" : {
       "localizations" : {
@@ -5261,6 +5313,9 @@
           }
         }
       }
+    },
+    "Data Grid Font" : {
+
     },
     "Data Size" : {
       "localizations" : {
@@ -6013,6 +6068,15 @@
         }
       }
     },
+    "Delete Theme" : {
+
+    },
+    "Deleted" : {
+
+    },
+    "Deleted Text" : {
+
+    },
     "Delimiter" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6449,6 +6513,9 @@
         }
       }
     },
+    "Duplicate it to customize colors and layout." : {
+
+    },
     "Duplicate Row" : {
       "localizations" : {
         "vi" : {
@@ -6481,6 +6548,9 @@
           }
         }
       }
+    },
+    "Duplicate Theme" : {
+
     },
     "Each SQLite file is a separate database.\nTo open a different database, create a new connection." : {
       "localizations" : {
@@ -6627,6 +6697,9 @@
           }
         }
       }
+    },
+    "Editor Font" : {
+
     },
     "Email:" : {
       "localizations" : {
@@ -7503,6 +7576,9 @@
         }
       }
     },
+    "Extra Large" : {
+
+    },
     "Failed at line %lld" : {
       "localizations" : {
         "vi" : {
@@ -7968,6 +8044,12 @@
         }
       }
     },
+    "Family" : {
+
+    },
+    "Fast" : {
+
+    },
     "Feature Routing" : {
       "localizations" : {
         "vi" : {
@@ -8258,7 +8340,11 @@
         }
       }
     },
+    "Focus Border" : {
+
+    },
     "Font" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -8275,6 +8361,7 @@
       }
     },
     "Font:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -8289,6 +8376,9 @@
           }
         }
       }
+    },
+    "Fonts" : {
+
     },
     "Forever" : {
       "localizations" : {
@@ -8369,6 +8459,9 @@
           }
         }
       }
+    },
+    "Function" : {
+
     },
     "General" : {
       "localizations" : {
@@ -8483,6 +8576,7 @@
       }
     },
     "Graphite" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -8754,6 +8848,15 @@
           }
         }
       }
+    },
+    "Hover" : {
+
+    },
+    "Huge" : {
+
+    },
+    "Icon Sizes" : {
+
     },
     "Ignore foreign key checks" : {
       "localizations" : {
@@ -9204,6 +9307,9 @@
         }
       }
     },
+    "Info" : {
+
+    },
     "Inline Suggestions" : {
       "localizations" : {
         "vi" : {
@@ -9251,6 +9357,9 @@
           }
         }
       }
+    },
+    "Inserted" : {
+
     },
     "Inspector" : {
       "localizations" : {
@@ -9333,6 +9442,9 @@
         }
       }
     },
+    "Install Theme" : {
+
+    },
     "Installation Failed" : {
       "localizations" : {
         "vi" : {
@@ -9397,6 +9509,9 @@
           }
         }
       }
+    },
+    "Interface" : {
+
     },
     "Invalid argument: %@" : {
       "extractionState" : "stale",
@@ -9561,6 +9676,9 @@
           }
         }
       }
+    },
+    "Invisibles" : {
+
     },
     "is empty" : {
       "localizations" : {
@@ -9803,6 +9921,9 @@
         }
       }
     },
+    "Keyword" : {
+
+    },
     "Language:" : {
       "localizations" : {
         "vi" : {
@@ -9818,6 +9939,9 @@
           }
         }
       }
+    },
+    "Large" : {
+
     },
     "Last query execution summary" : {
       "localizations" : {
@@ -9898,6 +10022,9 @@
           }
         }
       }
+    },
+    "Layout" : {
+
     },
     "Length" : {
       "extractionState" : "stale",
@@ -10045,6 +10172,9 @@
           }
         }
       }
+    },
+    "Line Number" : {
+
     },
     "Load" : {
       "extractionState" : "stale",
@@ -10292,6 +10422,9 @@
         }
       }
     },
+    "Massive" : {
+
+    },
     "Match ALL filters (AND) or ANY filter (OR)" : {
       "localizations" : {
         "vi" : {
@@ -10419,6 +10552,9 @@
           }
         }
       }
+    },
+    "Medium" : {
+
     },
     "METADATA" : {
       "localizations" : {
@@ -10910,6 +11046,9 @@
           }
         }
       }
+    },
+    "New Theme" : {
+
     },
     "New View..." : {
       "localizations" : {
@@ -12072,6 +12211,9 @@
         }
       }
     },
+    "NULL Value" : {
+
+    },
     "Nullable" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -12088,6 +12230,9 @@
           }
         }
       }
+    },
+    "Number" : {
+
     },
     "Number of documents per insertMany statement. Higher values create fewer statements." : {
       "extractionState" : "stale",
@@ -12381,6 +12526,9 @@
           }
         }
       }
+    },
+    "Operator" : {
+
     },
     "Optimize Query" : {
       "localizations" : {
@@ -13534,6 +13682,9 @@
         }
       }
     },
+    "Primary Key" : {
+
+    },
     "Primary Preferred" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -13550,6 +13701,9 @@
           }
         }
       }
+    },
+    "Primary Text" : {
+
     },
     "Privacy" : {
       "localizations" : {
@@ -14316,6 +14470,9 @@
         }
       }
     },
+    "Registry" : {
+
+    },
     "Remove filter" : {
       "localizations" : {
         "vi" : {
@@ -14693,6 +14850,9 @@
         }
       }
     },
+    "Row Heights" : {
+
+    },
     "Row number" : {
       "localizations" : {
         "vi" : {
@@ -14708,6 +14868,9 @@
           }
         }
       }
+    },
+    "Row Number" : {
+
     },
     "Rows" : {
       "localizations" : {
@@ -15375,7 +15538,14 @@
         }
       }
     },
+    "Secondary Text" : {
+
+    },
+    "Section Header" : {
+
+    },
     "SELECT * FROM users WHERE id = 1;" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -15390,6 +15560,9 @@
           }
         }
       }
+    },
+    "SELECT * FROM users WHERE id = 42;" : {
+
     },
     "Select a Plugin" : {
       "localizations" : {
@@ -15552,6 +15725,12 @@
           }
         }
       }
+    },
+    "Selected Item" : {
+
+    },
+    "Selection" : {
+
     },
     "Send Message" : {
       "localizations" : {
@@ -15980,6 +16159,9 @@
         }
       }
     },
+    "Sidebar" : {
+
+    },
     "Sidebar Panel" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -16062,6 +16244,7 @@
       }
     },
     "Size:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -16092,6 +16275,15 @@
           }
         }
       }
+    },
+    "Slow" : {
+
+    },
+    "Small" : {
+
+    },
+    "Smooth" : {
+
     },
     "Software Update" : {
       "localizations" : {
@@ -16125,6 +16317,9 @@
           }
         }
       }
+    },
+    "Spacing" : {
+
     },
     "Spacious" : {
       "localizations" : {
@@ -16668,6 +16863,12 @@
         }
       }
     },
+    "Status Colors" : {
+
+    },
+    "Status Dot" : {
+
+    },
     "Stop" : {
       "localizations" : {
         "vi" : {
@@ -16715,6 +16916,9 @@
           }
         }
       }
+    },
+    "String" : {
+
     },
     "Structure" : {
       "localizations" : {
@@ -16878,6 +17082,9 @@
           }
         }
       }
+    },
+    "Syntax Colors" : {
+
     },
     "System" : {
       "localizations" : {
@@ -17225,6 +17432,9 @@
         }
       }
     },
+    "Tertiary Text" : {
+
+    },
     "Test" : {
       "localizations" : {
         "vi" : {
@@ -17256,6 +17466,9 @@
           }
         }
       }
+    },
+    "Text" : {
+
     },
     "The %@ plugin is not installed. Would you like to download it from the plugin marketplace?" : {
       "localizations" : {
@@ -17429,6 +17642,12 @@
           }
         }
       }
+    },
+    "This is a built-in theme." : {
+
+    },
+    "This is a registry theme." : {
+
     },
     "This Month" : {
       "localizations" : {
@@ -17634,6 +17853,18 @@
           }
         }
       }
+    },
+    "Tiny" : {
+
+    },
+    "Tiny Dot" : {
+
+    },
+    "Title 2" : {
+
+    },
+    "Title 3" : {
+
     },
     "to view data" : {
       "localizations" : {
@@ -17896,6 +18127,9 @@
           }
         }
       }
+    },
+    "Toolbar" : {
+
     },
     "Total Size" : {
       "localizations" : {
@@ -18169,6 +18403,9 @@
           }
         }
       }
+    },
+    "Typography" : {
+
     },
     "Undo" : {
       "localizations" : {
@@ -18972,6 +19209,9 @@
         }
       }
     },
+    "Warning" : {
+
+    },
     "WARNING: Failed to re-enable foreign key checks: %@. Please manually verify FK constraints are enabled." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -19124,6 +19364,9 @@
           }
         }
       }
+    },
+    "Window Background" : {
+
     },
     "With Headers" : {
       "localizations" : {

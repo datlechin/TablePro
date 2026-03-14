@@ -18,6 +18,10 @@ extension Notification.Name {
     static let editorSettingsDidChange = Notification.Name("editorSettingsDidChange")
 
     /// Posted when the system accessibility text size preference changes.
-    /// Observers should reload fonts via SQLEditorTheme.reloadFromSettings().
+    /// Observers should reload fonts via ThemeEngine.shared.reloadFontCaches().
     static let accessibilityTextSizeDidChange = Notification.Name("accessibilityTextSizeDidChange")
+
+    /// Posted when the active theme changes (colors, fonts, or entire theme switch).
+    /// Used by AppKit components that cannot observe @Observable directly.
+    static let themeDidChange = Notification.Name("themeDidChange")
 }

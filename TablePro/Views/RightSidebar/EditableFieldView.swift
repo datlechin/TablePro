@@ -50,13 +50,13 @@ struct EditableFieldView: View {
                 }
 
                 Text(columnName)
-                    .font(.system(size: DesignConstants.FontSize.small))
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.small))
                     .lineLimit(1)
 
                 Spacer()
 
                 Text(columnTypeEnum.badgeLabel)
-                    .font(.system(size: DesignConstants.FontSize.tiny, weight: .medium))
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.tiny, weight: .medium))
                     .foregroundStyle(.tertiary)
                     .padding(.horizontal, 5)
                     .padding(.vertical, 1)
@@ -82,7 +82,7 @@ struct EditableFieldView: View {
         if isPendingNull || isPendingDefault {
             TextField(isPendingNull ? "NULL" : "DEFAULT", text: .constant(""))
                 .textFieldStyle(.roundedBorder)
-                .font(.system(size: DesignConstants.FontSize.small))
+                .font(.system(size: ThemeEngine.shared.activeTheme.typography.small))
                 .disabled(true)
         } else if columnTypeEnum.isEnumType,
                   let values = columnTypeEnum.enumValues, !values.isEmpty {
@@ -121,7 +121,7 @@ struct EditableFieldView: View {
             isSetPopoverPresented = true
         } label: {
             Text(displayLabel)
-                .font(.system(size: DesignConstants.FontSize.small))
+                .font(.system(size: ThemeEngine.shared.activeTheme.typography.small))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
         }
@@ -160,7 +160,7 @@ struct EditableFieldView: View {
             content()
         } label: {
             Text(label)
-                .font(.system(size: DesignConstants.FontSize.small))
+                .font(.system(size: ThemeEngine.shared.activeTheme.typography.small))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
         }
@@ -175,7 +175,7 @@ struct EditableFieldView: View {
     private var multiLineEditor: some View {
         TextField(placeholderText, text: $value, axis: .vertical)
             .textFieldStyle(.roundedBorder)
-            .font(.system(size: DesignConstants.FontSize.small))
+            .font(.system(size: ThemeEngine.shared.activeTheme.typography.small))
             .lineLimit(3...6)
             .focused($isFocused)
     }
@@ -183,7 +183,7 @@ struct EditableFieldView: View {
     private var singleLineEditor: some View {
         TextField(placeholderText, text: $value)
             .textFieldStyle(.roundedBorder)
-            .font(.system(size: DesignConstants.FontSize.small))
+            .font(.system(size: ThemeEngine.shared.activeTheme.typography.small))
             .focused($isFocused)
     }
 
@@ -268,13 +268,13 @@ struct ReadOnlyFieldView: View {
             // Line 1: field name + type badge
             HStack(spacing: 4) {
                 Text(columnName)
-                    .font(.system(size: DesignConstants.FontSize.small))
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.small))
                     .lineLimit(1)
 
                 Spacer()
 
                 Text(columnTypeEnum.badgeLabel)
-                    .font(.system(size: DesignConstants.FontSize.tiny, weight: .medium))
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.tiny, weight: .medium))
                     .foregroundStyle(.tertiary)
                     .padding(.horizontal, 5)
                     .padding(.vertical, 1)
@@ -286,19 +286,19 @@ struct ReadOnlyFieldView: View {
             if let value {
                 if isLongText {
                     Text(value)
-                        .font(.system(size: DesignConstants.FontSize.small, design: .monospaced))
+                        .font(.system(size: ThemeEngine.shared.activeTheme.typography.small, design: .monospaced))
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, maxHeight: 80, alignment: .topLeading)
                 } else {
                     TextField("", text: .constant(value))
                         .textFieldStyle(.roundedBorder)
-                        .font(.system(size: DesignConstants.FontSize.small))
+                        .font(.system(size: ThemeEngine.shared.activeTheme.typography.small))
                         .disabled(true)
                 }
             } else {
                 TextField("NULL", text: .constant(""))
                     .textFieldStyle(.roundedBorder)
-                    .font(.system(size: DesignConstants.FontSize.small))
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.small))
                     .disabled(true)
             }
         }

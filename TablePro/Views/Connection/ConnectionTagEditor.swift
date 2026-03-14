@@ -186,13 +186,13 @@ private struct TagColorPicker: View {
                 Button(action: { selectedColor = color }) {
                     Circle()
                         .fill(color.color)
-                        .frame(width: DesignConstants.IconSize.medium, height: DesignConstants.IconSize.medium)
+                        .frame(width: ThemeEngine.shared.activeTheme.iconSizes.medium, height: ThemeEngine.shared.activeTheme.iconSizes.medium)
                         .overlay(
                             Circle()
                                 .stroke(Color.primary, lineWidth: selectedColor == color ? 2 : 0)
                                 .frame(
-                                    width: DesignConstants.IconSize.large,
-                                    height: DesignConstants.IconSize.large
+                                    width: ThemeEngine.shared.activeTheme.iconSizes.large,
+                                    height: ThemeEngine.shared.activeTheme.iconSizes.large
                                 )
                         )
                 }

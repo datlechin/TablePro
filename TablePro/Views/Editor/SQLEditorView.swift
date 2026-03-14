@@ -124,18 +124,18 @@ struct SQLEditorView: View {
         SourceEditorConfiguration(
             appearance: .init(
                 theme: TableProEditorTheme.make(),
-                font: SQLEditorTheme.font,
-                wrapLines: SQLEditorTheme.wordWrap,
-                tabWidth: SQLEditorTheme.tabWidth
+                font: ThemeEngine.shared.editorFonts.font,
+                wrapLines: ThemeEngine.shared.wordWrap,
+                tabWidth: ThemeEngine.shared.tabWidth
             ),
             behavior: .init(
-                indentOption: .spaces(count: SQLEditorTheme.tabWidth)
+                indentOption: .spaces(count: ThemeEngine.shared.tabWidth)
             ),
             layout: .init(
                 contentInsets: NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
             ),
             peripherals: .init(
-                showGutter: SQLEditorTheme.showLineNumbers,
+                showGutter: ThemeEngine.shared.showLineNumbers,
                 showMinimap: false,
                 showFoldingRibbon: false
             )

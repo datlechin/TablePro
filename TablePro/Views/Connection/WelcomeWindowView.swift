@@ -152,11 +152,11 @@ struct WelcomeWindowView: View {
                     Text("TablePro")
                         .font(
                             .system(
-                                size: DesignConstants.IconSize.extraLarge, weight: .semibold,
+                                size: ThemeEngine.shared.activeTheme.iconSizes.extraLarge, weight: .semibold,
                                 design: .rounded))
 
                     Text("Version \(Bundle.main.appVersion)")
-                        .font(.system(size: DesignConstants.FontSize.medium))
+                        .font(.system(size: ThemeEngine.shared.activeTheme.typography.medium))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -181,9 +181,9 @@ struct WelcomeWindowView: View {
                 KeyboardHint(keys: "⌘N", label: "New")
                 KeyboardHint(keys: "⌘,", label: "Settings")
             }
-            .font(.system(size: DesignConstants.FontSize.small))
+            .font(.system(size: ThemeEngine.shared.activeTheme.typography.small))
             .foregroundStyle(.tertiary)
-            .padding(.bottom, DesignConstants.Spacing.lg)
+            .padding(.bottom, ThemeEngine.shared.activeTheme.spacing.lg)
         }
         .frame(width: 260)
     }
@@ -196,11 +196,11 @@ struct WelcomeWindowView: View {
             HStack(spacing: 8) {
                 Button(action: { openWindow(id: "connection-form") }) {
                     Image(systemName: "plus")
-                        .font(.system(size: DesignConstants.FontSize.medium, weight: .medium))
+                        .font(.system(size: ThemeEngine.shared.activeTheme.typography.medium, weight: .medium))
                         .foregroundStyle(.secondary)
                         .frame(
-                            width: DesignConstants.IconSize.extraLarge,
-                            height: DesignConstants.IconSize.extraLarge
+                            width: ThemeEngine.shared.activeTheme.iconSizes.extraLarge,
+                            height: ThemeEngine.shared.activeTheme.iconSizes.extraLarge
                         )
                         .background(
                             RoundedRectangle(cornerRadius: 6)
@@ -212,11 +212,11 @@ struct WelcomeWindowView: View {
 
                 Button(action: { showNewGroupSheet = true }) {
                     Image(systemName: "folder.badge.plus")
-                        .font(.system(size: DesignConstants.FontSize.medium, weight: .medium))
+                        .font(.system(size: ThemeEngine.shared.activeTheme.typography.medium, weight: .medium))
                         .foregroundStyle(.secondary)
                         .frame(
-                            width: DesignConstants.IconSize.extraLarge,
-                            height: DesignConstants.IconSize.extraLarge
+                            width: ThemeEngine.shared.activeTheme.iconSizes.extraLarge,
+                            height: ThemeEngine.shared.activeTheme.iconSizes.extraLarge
                         )
                         .background(
                             RoundedRectangle(cornerRadius: 6)
@@ -228,22 +228,22 @@ struct WelcomeWindowView: View {
 
                 HStack(spacing: 6) {
                     Image(systemName: "magnifyingglass")
-                        .font(.system(size: DesignConstants.FontSize.medium))
+                        .font(.system(size: ThemeEngine.shared.activeTheme.typography.medium))
                         .foregroundStyle(.tertiary)
 
                     TextField("Search for connection...", text: $searchText)
                         .textFieldStyle(.plain)
-                        .font(.system(size: DesignConstants.FontSize.body))
+                        .font(.system(size: ThemeEngine.shared.activeTheme.typography.body))
                 }
-                .padding(.horizontal, DesignConstants.Spacing.sm)
+                .padding(.horizontal, ThemeEngine.shared.activeTheme.spacing.sm)
                 .padding(.vertical, 6)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
                         .fill(Color(nsColor: .quaternaryLabelColor))
                 )
             }
-            .padding(.horizontal, DesignConstants.Spacing.md)
-            .padding(.vertical, DesignConstants.Spacing.sm)
+            .padding(.horizontal, ThemeEngine.shared.activeTheme.spacing.md)
+            .padding(.vertical, ThemeEngine.shared.activeTheme.spacing.sm)
 
             Divider()
 
@@ -331,7 +331,7 @@ struct WelcomeWindowView: View {
             }
         )
         .tag(connection.id)
-        .listRowInsets(DesignConstants.swiftUIListRowInsets)
+        .listRowInsets(ThemeEngine.shared.activeTheme.spacing.listRowInsets.swiftUI)
         .listRowSeparator(.hidden)
     }
 
@@ -351,7 +351,7 @@ struct WelcomeWindowView: View {
         }) {
             HStack(spacing: 6) {
                 Image(systemName: collapsedGroupIds.contains(group.id) ? "chevron.right" : "chevron.down")
-                    .font(.system(size: DesignConstants.FontSize.small, weight: .medium))
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.small, weight: .medium))
                     .foregroundStyle(.tertiary)
                     .frame(width: 12)
 
@@ -362,11 +362,11 @@ struct WelcomeWindowView: View {
                 }
 
                 Text(group.name)
-                    .font(.system(size: DesignConstants.FontSize.small, weight: .semibold))
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.small, weight: .semibold))
                     .foregroundStyle(.secondary)
 
                 Text("\(connections(in: group).count)")
-                    .font(.system(size: DesignConstants.FontSize.tiny))
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.tiny))
                     .foregroundStyle(.tertiary)
 
                 Spacer()
@@ -422,30 +422,30 @@ struct WelcomeWindowView: View {
             Spacer()
 
             Image(systemName: "cylinder.split.1x2")
-                .font(.system(size: DesignConstants.IconSize.huge))
+                .font(.system(size: ThemeEngine.shared.activeTheme.iconSizes.huge))
                 .foregroundStyle(.tertiary)
 
             if searchText.isEmpty {
                 Text("No Connections")
-                    .font(.system(size: DesignConstants.FontSize.title3, weight: .medium))
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.title3, weight: .medium))
                     .foregroundStyle(.secondary)
 
                 Text("Create a connection to get started")
-                    .font(.system(size: DesignConstants.FontSize.medium))
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.medium))
                     .foregroundStyle(.tertiary)
 
                 Button(action: { openWindow(id: "connection-form") }) {
                     Label("New Connection", systemImage: "plus")
                 }
                 .controlSize(.large)
-                .padding(.top, DesignConstants.Spacing.xxs)
+                .padding(.top, ThemeEngine.shared.activeTheme.spacing.xxs)
             } else {
                 Text("No Matching Connections")
-                    .font(.system(size: DesignConstants.FontSize.title3, weight: .medium))
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.title3, weight: .medium))
                     .foregroundStyle(.secondary)
 
                 Text("Try a different search term")
-                    .font(.system(size: DesignConstants.FontSize.medium))
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.medium))
                     .foregroundStyle(.tertiary)
             }
 
@@ -639,25 +639,25 @@ private struct ConnectionRow: View {
             // Database type icon
             Image(connection.type.iconName)
                 .renderingMode(.template)
-                .font(.system(size: DesignConstants.IconSize.medium))
+                .font(.system(size: ThemeEngine.shared.activeTheme.iconSizes.medium))
                 .foregroundStyle(connection.displayColor)
                 .frame(
-                    width: DesignConstants.IconSize.medium, height: DesignConstants.IconSize.medium)
+                    width: ThemeEngine.shared.activeTheme.iconSizes.medium, height: ThemeEngine.shared.activeTheme.iconSizes.medium)
 
             // Connection info
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text(connection.name)
-                        .font(.system(size: DesignConstants.FontSize.body, weight: .medium))
+                        .font(.system(size: ThemeEngine.shared.activeTheme.typography.body, weight: .medium))
                         .foregroundStyle(.primary)
 
                     // Tag (single)
                     if let tag = displayTag {
                         Text(tag.name)
-                            .font(.system(size: DesignConstants.FontSize.tiny))
+                            .font(.system(size: ThemeEngine.shared.activeTheme.typography.tiny))
                             .foregroundStyle(tag.color.color)
-                            .padding(.horizontal, DesignConstants.Spacing.xxs)
-                            .padding(.vertical, DesignConstants.Spacing.xxxs)
+                            .padding(.horizontal, ThemeEngine.shared.activeTheme.spacing.xxs)
+                            .padding(.vertical, ThemeEngine.shared.activeTheme.spacing.xxxs)
                             .background(
                                 RoundedRectangle(cornerRadius: 4).fill(
                                     tag.color.color.opacity(0.15)))
@@ -665,14 +665,14 @@ private struct ConnectionRow: View {
                 }
 
                 Text(connectionSubtitle)
-                    .font(.system(size: DesignConstants.FontSize.small))
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.small))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
 
             Spacer()
         }
-        .padding(.vertical, DesignConstants.Spacing.xxs)
+        .padding(.vertical, ThemeEngine.shared.activeTheme.spacing.xxs)
         .contentShape(Rectangle())
         .overlay(
             DoubleClickView { onConnect?() }
@@ -743,7 +743,7 @@ private struct EnvironmentBadge: View {
 
     var body: some View {
         Text("(\(environment.rawValue.lowercased()))")
-            .font(.system(size: DesignConstants.FontSize.small))
+            .font(.system(size: ThemeEngine.shared.activeTheme.typography.small))
             .foregroundStyle(environment.badgeColor)
     }
 }
@@ -753,10 +753,10 @@ private struct EnvironmentBadge: View {
 private struct WelcomeButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: DesignConstants.FontSize.body))
+            .font(.system(size: ThemeEngine.shared.activeTheme.typography.body))
             .foregroundStyle(.primary)
-            .padding(.horizontal, DesignConstants.Spacing.md)
-            .padding(.vertical, DesignConstants.Spacing.sm)
+            .padding(.horizontal, ThemeEngine.shared.activeTheme.spacing.md)
+            .padding(.vertical, ThemeEngine.shared.activeTheme.spacing.sm)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 8)
@@ -777,9 +777,9 @@ private struct KeyboardHint: View {
     var body: some View {
         HStack(spacing: 4) {
             Text(keys)
-                .font(.system(size: DesignConstants.FontSize.caption, design: .monospaced))
-                .padding(.horizontal, DesignConstants.Spacing.xxs + 1)
-                .padding(.vertical, DesignConstants.Spacing.xxxs)
+                .font(.system(size: ThemeEngine.shared.activeTheme.typography.caption, design: .monospaced))
+                .padding(.horizontal, ThemeEngine.shared.activeTheme.spacing.xxs + 1)
+                .padding(.vertical, ThemeEngine.shared.activeTheme.spacing.xxxs)
                 .background(
                     RoundedRectangle(cornerRadius: 3)
                         .fill(Color(nsColor: .quaternaryLabelColor))

@@ -148,17 +148,17 @@ struct RightSidebarView: View {
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(.tertiary)
-                    .font(.system(size: DesignConstants.FontSize.small))
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.small))
                 TextField("Search for field...", text: $searchText)
                     .textFieldStyle(.plain)
-                    .font(.system(size: DesignConstants.FontSize.small))
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.small))
                 if !searchText.isEmpty {
                     Button {
                         searchText = ""
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundStyle(.tertiary)
-                            .font(.system(size: DesignConstants.FontSize.small))
+                            .font(.system(size: ThemeEngine.shared.activeTheme.typography.small))
                     }
                     .buttonStyle(.plain)
                 }
@@ -172,7 +172,7 @@ struct RightSidebarView: View {
                 Section {
                     if filtered.isEmpty && !searchText.isEmpty {
                         Text("No matching fields")
-                            .font(.system(size: DesignConstants.FontSize.small))
+                            .font(.system(size: ThemeEngine.shared.activeTheme.typography.small))
                             .foregroundStyle(.tertiary)
                             .frame(maxWidth: .infinity)
                     } else {

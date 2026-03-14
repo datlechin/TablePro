@@ -157,7 +157,7 @@ struct ExportDialog: View {
             // Header with title and selection count
             HStack {
                 Text("Items")
-                    .font(.system(size: DesignConstants.FontSize.small, weight: .medium))
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.small, weight: .medium))
                     .foregroundStyle(.secondary)
 
                 Spacer()
@@ -165,7 +165,7 @@ struct ExportDialog: View {
                 if let plugin = currentPlugin {
                     ForEach(type(of: plugin).perTableOptionColumns) { column in
                         Text(column.label)
-                            .font(.system(size: DesignConstants.FontSize.small, weight: .medium))
+                            .font(.system(size: ThemeEngine.shared.activeTheme.typography.small, weight: .medium))
                             .foregroundStyle(.secondary)
                             .frame(width: column.width, alignment: .center)
                     }
@@ -184,7 +184,7 @@ struct ExportDialog: View {
                     ProgressView()
                         .scaleEffect(0.8)
                     Text("Loading databases...")
-                        .font(.system(size: DesignConstants.FontSize.small))
+                        .font(.system(size: ThemeEngine.shared.activeTheme.typography.small))
                         .foregroundStyle(.secondary)
                         .padding(.top, 8)
                     Spacer()
@@ -209,7 +209,7 @@ struct ExportDialog: View {
                     HStack {
                         Spacer()
                         Text("No export formats available. Enable export plugins in Settings > Plugins.")
-                            .font(.system(size: DesignConstants.FontSize.small))
+                            .font(.system(size: ThemeEngine.shared.activeTheme.typography.small))
                             .foregroundStyle(.secondary)
                         Spacer()
                     }
@@ -235,12 +235,12 @@ struct ExportDialog: View {
                 // Selection count (shows exportable count when some tables have no options)
                 VStack(spacing: 2) {
                     Text("\(exportableCount) table\(exportableCount == 1 ? "" : "s") to export")
-                        .font(.system(size: DesignConstants.FontSize.small))
+                        .font(.system(size: ThemeEngine.shared.activeTheme.typography.small))
                         .foregroundStyle(.secondary)
 
                     if let plugin = currentPlugin, !type(of: plugin).perTableOptionColumns.isEmpty, exportableCount < selectedCount {
                         Text("\(selectedCount - exportableCount) skipped (no options)")
-                            .font(.system(size: DesignConstants.FontSize.small))
+                            .font(.system(size: ThemeEngine.shared.activeTheme.typography.small))
                             .foregroundStyle(.orange)
                     }
                 }
@@ -271,17 +271,17 @@ struct ExportDialog: View {
             // File name section
             VStack(alignment: .leading, spacing: 6) {
                 Text("File name")
-                    .font(.system(size: DesignConstants.FontSize.small))
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.small))
                     .foregroundStyle(.secondary)
 
                 HStack(spacing: 4) {
                     TextField("export", text: $config.fileName)
                         .textFieldStyle(.roundedBorder)
-                        .font(.system(size: DesignConstants.FontSize.body))
+                        .font(.system(size: ThemeEngine.shared.activeTheme.typography.body))
 
                     Text(".\(fileExtension)")
                         .foregroundStyle(.secondary)
-                        .font(.system(size: DesignConstants.FontSize.body, design: .monospaced))
+                        .font(.system(size: ThemeEngine.shared.activeTheme.typography.body, design: .monospaced))
                         .lineLimit(1)
                         .fixedSize()
                 }
@@ -289,7 +289,7 @@ struct ExportDialog: View {
                 // Show validation error if filename is invalid
                 if let validationError = fileNameValidationError {
                     Text(validationError)
-                        .font(.system(size: DesignConstants.FontSize.small))
+                        .font(.system(size: ThemeEngine.shared.activeTheme.typography.small))
                         .foregroundStyle(.red)
                 }
             }
@@ -314,7 +314,7 @@ struct ExportDialog: View {
                         .scaleEffect(0.7)
 
                     Text(currentExportTable)
-                        .font(.system(size: DesignConstants.FontSize.small))
+                        .font(.system(size: ThemeEngine.shared.activeTheme.typography.small))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.middle)

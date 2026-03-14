@@ -400,17 +400,11 @@ struct TableProApp: App {
         }
     }
 
-    /// Get tint color from settings (nil for system default)
-    private var accentTint: Color? {
-        settingsManager.appearance.accentColor.tintColor
-    }
-
     var body: some Scene {
         // Welcome Window - opens on launch (must be first Window scene so SwiftUI
         // restores it by default when clicking the dock icon)
         Window("Welcome to TablePro", id: "welcome") {
             WelcomeWindowView()
-                .tint(accentTint)
                 .background(OpenWindowHandler())  // Handle window notifications from startup
         }
         .windowStyle(.hiddenTitleBar)
@@ -420,7 +414,6 @@ struct TableProApp: App {
         // Connection Form Window - opens when creating/editing a connection
         WindowGroup(id: "connection-form", for: UUID?.self) { $connectionId in
             ConnectionFormView(connectionId: connectionId ?? nil)
-                .tint(accentTint)
         }
         .windowResizability(.contentSize)
 
@@ -430,7 +423,6 @@ struct TableProApp: App {
             ContentView(payload: payload)
                 .environment(AppState.shared)
                 .background(OpenWindowHandler())
-                .tint(accentTint)
         }
         .windowStyle(.automatic)
         .defaultSize(width: 1_200, height: 800)
@@ -439,7 +431,6 @@ struct TableProApp: App {
         Settings {
             SettingsView()
                 .environment(updaterBridge)
-                .tint(accentTint)
         }
 
         .commands {

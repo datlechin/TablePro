@@ -70,16 +70,6 @@ final class DataGridCellFactory {
         }
     }
 
-    // MARK: - Cached Colors (avoid allocation per cell render)
-
-    private enum CellColors {
-        static let deletedBackground = NSColor.systemRed.withAlphaComponent(0.15).cgColor
-        static let insertedBackground = NSColor.systemGreen.withAlphaComponent(0.15).cgColor
-        static let modifiedBackground = NSColor.systemYellow.withAlphaComponent(0.3).cgColor
-        static let deletedText = NSColor.systemRed.withAlphaComponent(0.5)
-        static let focusBorder = NSColor.selectedControlColor.cgColor
-    }
-
     // MARK: - Row Number Cell
 
     func makeRowNumberCell(
@@ -96,14 +86,14 @@ final class DataGridCellFactory {
            let textField = reused.textField {
             cellView = reused
             cell = textField
-            cell.font = DataGridFontCache.rowNumber
+            cell.font = ThemeEngine.shared.dataGridFonts.rowNumber
         } else {
             cellView = NSTableCellView()
             cellView.identifier = cellViewId
 
             cell = NSTextField(labelWithString: "")
             cell.alignment = .right
-            cell.font = DataGridFontCache.rowNumber
+            cell.font = ThemeEngine.shared.dataGridFonts.rowNumber
             cell.tag = DataGridFontVariant.rowNumber
             cell.textColor = .secondaryLabelColor
             cell.translatesAutoresizingMaskIntoConstraints = false
@@ -124,7 +114,7 @@ final class DataGridCellFactory {
         }
 
         cell.stringValue = "\(row + 1)"
-        cell.textColor = visualState.isDeleted ? CellColors.deletedText : .secondaryLabelColor
+        cell.textColor = visualState.isDeleted ? ThemeEngine.shared.colors.dataGrid.deletedText : .secondaryLabelColor
         if Self.cachedVoiceOverEnabled {
             cellView.setAccessibilityLabel(String(localized: "Row \(row + 1)"))
         }
@@ -178,7 +168,7 @@ final class DataGridCellFactory {
             cellView.canDrawSubviewsIntoLayer = true
 
             cell = CellTextField()
-            cell.font = DataGridFontCache.regular
+            cell.font = ThemeEngine.shared.dataGridFonts.regular
             cell.drawsBackground = false
             cell.isBordered = false
             cell.focusRingType = .none
@@ -275,11 +265,11 @@ final class DataGridCellFactory {
 
         // Update background color
         if isDeleted {
-            cellView.layer?.backgroundColor = CellColors.deletedBackground
+            cellView.layer?.backgroundColor = ThemeEngine.shared.colors.dataGrid.deletedCG
         } else if isInserted {
-            cellView.layer?.backgroundColor = CellColors.insertedBackground
+            cellView.layer?.backgroundColor = ThemeEngine.shared.colors.dataGrid.insertedCG
         } else if isModified {
-            cellView.layer?.backgroundColor = CellColors.modifiedBackground
+            cellView.layer?.backgroundColor = ThemeEngine.shared.colors.dataGrid.modifiedCG
         } else {
             cellView.layer?.backgroundColor = nil
         }
@@ -289,7 +279,7 @@ final class DataGridCellFactory {
             cellView.layer?.borderWidth = 0
         } else if isFocused {
             cellView.layer?.borderWidth = 2
-            cellView.layer?.borderColor = CellColors.focusBorder
+            cellView.layer?.borderColor = ThemeEngine.shared.colors.dataGrid.focusBorderCG
         } else {
             cellView.layer?.borderWidth = 0
         }
@@ -314,7 +304,7 @@ final class DataGridCellFactory {
 
         if value == nil {
             cell.stringValue = ""
-            cell.font = DataGridFontCache.italic
+            cell.font = ThemeEngine.shared.dataGridFonts.italic
             cell.tag = DataGridFontVariant.italic
             if !isLargeDataset {
                 cell.placeholderString = nullDisplayString
@@ -322,7 +312,7 @@ final class DataGridCellFactory {
             cell.textColor = .secondaryLabelColor
         } else if value == "__DEFAULT__" {
             cell.stringValue = ""
-            cell.font = DataGridFontCache.medium
+            cell.font = ThemeEngine.shared.dataGridFonts.medium
             cell.tag = DataGridFontVariant.medium
             if !isLargeDataset {
                 cell.placeholderString = "DEFAULT"
@@ -330,7 +320,7 @@ final class DataGridCellFactory {
             cell.textColor = .systemBlue
         } else if value == "" {
             cell.stringValue = ""
-            cell.font = DataGridFontCache.italic
+            cell.font = ThemeEngine.shared.dataGridFonts.italic
             cell.tag = DataGridFontVariant.italic
             if !isLargeDataset {
                 cell.placeholderString = "Empty"
@@ -355,7 +345,7 @@ final class DataGridCellFactory {
             cell.stringValue = displayValue
             (cell as? CellTextField)?.originalValue = value
             cell.textColor = .labelColor
-            cell.font = DataGridFontCache.regular
+            cell.font = ThemeEngine.shared.dataGridFonts.regular
             cell.tag = DataGridFontVariant.regular
         }
     }
@@ -371,7 +361,7 @@ final class DataGridCellFactory {
     /// Maximum characters to consider per cell for width estimation
     private static let maxMeasureChars = 50
     /// Font for measuring header
-    private static let headerFont = NSFont.systemFont(ofSize: DesignConstants.FontSize.body, weight: .semibold)
+    private static let headerFont = NSFont.systemFont(ofSize: ThemeEngine.shared.activeTheme.typography.body, weight: .semibold)
 
     /// Calculate column width based on header name only (used for initial display)
     func calculateColumnWidth(for columnName: String) -> CGFloat {
@@ -401,14 +391,14 @@ final class DataGridCellFactory {
         // instead of CoreText measurement. ~0.6 of mono width is a good estimate
         // for proportional system font.
         let headerCharCount = (columnName as NSString).length
-        var maxWidth = CGFloat(headerCharCount) * DataGridFontCache.monoCharWidth * 0.75 + 48
+        var maxWidth = CGFloat(headerCharCount) * ThemeEngine.shared.dataGridFonts.monoCharWidth * 0.75 + 48
 
         let totalRows = rowProvider.totalRowCount
         let columnCount = rowProvider.columns.count
         // Reduce sample count for wide tables to keep total work bounded
         let effectiveSampleCount = columnCount > 50 ? 10 : Self.sampleRowCount
         let step = max(1, totalRows / effectiveSampleCount)
-        let charWidth = DataGridFontCache.monoCharWidth
+        let charWidth = ThemeEngine.shared.dataGridFonts.monoCharWidth
 
         for i in stride(from: 0, to: totalRows, by: step) {
             guard let value = rowProvider.value(atRow: i, column: columnIndex) else { continue }

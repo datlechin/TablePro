@@ -600,6 +600,10 @@ struct DataGridView: NSViewRepresentable {
             NotificationCenter.default.removeObserver(observer)
             coordinator.settingsObserver = nil
         }
+        if let observer = coordinator.themeObserver {
+            NotificationCenter.default.removeObserver(observer)
+            coordinator.themeObserver = nil
+        }
     }
 
     func makeCoordinator() -> TableViewCoordinator {
@@ -666,6 +670,8 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
 
     // Settings observer for real-time updates
     fileprivate var settingsObserver: NSObjectProtocol?
+    // Theme observer for font/color changes
+    fileprivate var themeObserver: NSObjectProtocol?
     /// Snapshot of last-seen data grid settings for change detection
     private var lastDataGridSettings: DataGridSettings
 
@@ -722,6 +728,9 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
         super.init()
         updateCache()
 
+        // Subscribe to theme changes for font/color updates
+        observeThemeChanges()
+
         // Subscribe to settings changes for real-time updates
         settingsObserver = NotificationCenter.default.addObserver(
             forName: .dataGridSettingsDidChange,
@@ -742,16 +751,10 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
                     tableView.tile()
                 }
 
-                // Font-only change: update fonts in-place without reloadData
-                // to avoid recycling cells through the reuse pool outside the
-                // normal SwiftUI update cycle, which can cause stale data.
-                let fontChanged = prev.fontFamily != settings.fontFamily || prev.fontSize != settings.fontSize
+                // Font changes are handled by .themeDidChange observer.
+                // Check for data format changes that need cell re-rendering.
                 let dataChanged = prev.dateFormat != settings.dateFormat
                     || prev.nullDisplay != settings.nullDisplay
-
-                if fontChanged {
-                    Self.updateVisibleCellFonts(tableView: tableView)
-                }
 
                 if dataChanged {
                     let visibleRect = tableView.visibleRect
@@ -767,8 +770,25 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
         }
     }
 
+    func observeThemeChanges() {
+        themeObserver = NotificationCenter.default.addObserver(
+            forName: .themeDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            DispatchQueue.main.async { [weak self] in
+                guard let self, let tableView = self.tableView else { return }
+                Self.updateVisibleCellFonts(tableView: tableView)
+            }
+        }
+    }
+
     deinit {
         if let observer = settingsObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        if let observer = themeObserver {
             NotificationCenter.default.removeObserver(observer)
         }
     }
@@ -797,13 +817,13 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
 
                 switch textField.tag {
                 case DataGridFontVariant.rowNumber:
-                    textField.font = DataGridFontCache.rowNumber
+                    textField.font = ThemeEngine.shared.dataGridFonts.rowNumber
                 case DataGridFontVariant.italic:
-                    textField.font = DataGridFontCache.italic
+                    textField.font = ThemeEngine.shared.dataGridFonts.italic
                 case DataGridFontVariant.medium:
-                    textField.font = DataGridFontCache.medium
+                    textField.font = ThemeEngine.shared.dataGridFonts.medium
                 default:
-                    textField.font = DataGridFontCache.regular
+                    textField.font = ThemeEngine.shared.dataGridFonts.regular
                 }
             }
         }

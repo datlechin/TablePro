@@ -26,7 +26,7 @@ internal struct QuickSwitcherSheet: View {
         VStack(spacing: 0) {
             // Header
             Text("Quick Switcher")
-                .font(.system(size: DesignConstants.FontSize.body, weight: .semibold))
+                .font(.system(size: ThemeEngine.shared.activeTheme.typography.body, weight: .semibold))
                 .padding(.vertical, 12)
 
             Divider()
@@ -79,12 +79,12 @@ internal struct QuickSwitcherSheet: View {
     private var searchToolbar: some View {
         HStack(spacing: 6) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: DesignConstants.FontSize.body))
+                .font(.system(size: ThemeEngine.shared.activeTheme.typography.body))
                 .foregroundStyle(.tertiary)
 
             TextField("Search tables, views, databases...", text: $viewModel.searchText)
                 .textFieldStyle(.plain)
-                .font(.system(size: DesignConstants.FontSize.body))
+                .font(.system(size: ThemeEngine.shared.activeTheme.typography.body))
 
             if !viewModel.searchText.isEmpty {
                 Button(action: { viewModel.searchText = "" }) {
@@ -116,7 +116,7 @@ internal struct QuickSwitcherSheet: View {
                             }
                         } header: {
                             Text(sectionTitle(for: group.kind))
-                                .font(.system(size: DesignConstants.FontSize.caption, weight: .semibold))
+                                .font(.system(size: ThemeEngine.shared.activeTheme.typography.caption, weight: .semibold))
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -144,18 +144,18 @@ internal struct QuickSwitcherSheet: View {
 
         return HStack(spacing: 10) {
             Image(systemName: item.iconName)
-                .font(.system(size: DesignConstants.IconSize.default))
+                .font(.system(size: ThemeEngine.shared.activeTheme.iconSizes.default))
                 .foregroundStyle(isSelected ? .white : .secondary)
 
             Text(item.name)
-                .font(.system(size: DesignConstants.FontSize.body))
+                .font(.system(size: ThemeEngine.shared.activeTheme.typography.body))
                 .foregroundStyle(isSelected ? .white : .primary)
                 .lineLimit(1)
                 .truncationMode(.tail)
 
             if !item.subtitle.isEmpty {
                 Text(item.subtitle)
-                    .font(.system(size: DesignConstants.FontSize.small))
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.small))
                     .foregroundStyle(isSelected ? Color.white.opacity(0.7) : Color.secondary)
                     .lineLimit(1)
             }
@@ -163,7 +163,7 @@ internal struct QuickSwitcherSheet: View {
             Spacer()
 
             Text(item.kindLabel)
-                .font(.system(size: DesignConstants.FontSize.caption, weight: .medium))
+                .font(.system(size: ThemeEngine.shared.activeTheme.typography.caption, weight: .medium))
                 .foregroundStyle(isSelected ? .white.opacity(0.7) : .secondary)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
@@ -179,7 +179,7 @@ internal struct QuickSwitcherSheet: View {
                 .fill(isSelected ? Color(nsColor: .selectedContentBackgroundColor) : Color.clear)
                 .padding(.horizontal, 4)
         )
-        .listRowInsets(DesignConstants.swiftUIListRowInsets)
+        .listRowInsets(ThemeEngine.shared.activeTheme.spacing.listRowInsets.swiftUI)
         .listRowSeparator(.hidden)
         .id(item.id)
         .tag(item.id)
@@ -198,7 +198,7 @@ internal struct QuickSwitcherSheet: View {
             ProgressView()
                 .scaleEffect(0.8)
             Text("Loading...")
-                .font(.system(size: DesignConstants.FontSize.medium))
+                .font(.system(size: ThemeEngine.shared.activeTheme.typography.medium))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -207,18 +207,18 @@ internal struct QuickSwitcherSheet: View {
     private var emptyState: some View {
         VStack(spacing: 12) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: DesignConstants.IconSize.extraLarge))
+                .font(.system(size: ThemeEngine.shared.activeTheme.iconSizes.extraLarge))
                 .foregroundStyle(.secondary)
 
             if viewModel.searchText.isEmpty {
                 Text("No objects found")
-                    .font(.system(size: DesignConstants.FontSize.body, weight: .medium))
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.body, weight: .medium))
             } else {
                 Text("No matching objects")
-                    .font(.system(size: DesignConstants.FontSize.body, weight: .medium))
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.body, weight: .medium))
 
                 Text("No objects match \"\(viewModel.searchText)\"")
-                    .font(.system(size: DesignConstants.FontSize.small))
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.small))
                     .foregroundStyle(.secondary)
             }
         }

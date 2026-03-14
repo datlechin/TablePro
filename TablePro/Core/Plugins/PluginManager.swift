@@ -515,7 +515,7 @@ final class PluginManager {
         if let hex = PluginMetadataRegistry.shared.snapshot(forTypeId: databaseType.pluginTypeId)?.brandColorHex {
             return Color(hex: hex)
         }
-        return Theme.defaultDatabaseColor
+        return Color.gray
     }
 
     func supportsDatabaseSwitching(for databaseType: DatabaseType) -> Bool {

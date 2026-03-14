@@ -26,7 +26,7 @@ struct ConnectionStatusView: View {
 
             // Vertical separator
             Divider()
-                .frame(height: DesignConstants.Spacing.sm)
+                .frame(height: ThemeEngine.shared.activeTheme.spacing.sm)
 
             // Database name (clickable to switch databases)
             if !databaseName.isEmpty {
@@ -40,8 +40,8 @@ struct ConnectionStatusView: View {
     /// Database type and version info
     private var databaseInfoSection: some View {
         Text(formattedDatabaseInfo)
-            .font(ToolbarDesignTokens.Typography.databaseType)
-            .foregroundStyle(ToolbarDesignTokens.Colors.secondaryText)
+            .font(.system(size: ThemeEngine.shared.activeTheme.typography.small, weight: .regular, design: .monospaced))
+            .foregroundStyle(ThemeEngine.shared.colors.toolbar.secondaryTextSwiftUI)
             .accessibilityLabel(
                 String(localized: "Database type: \(formattedDatabaseInfo)")
             )
@@ -71,7 +71,7 @@ struct ConnectionStatusView: View {
         HStack(spacing: 4) {
             Image(systemName: "cylinder")
                 .font(.system(size: 13))
-                .foregroundStyle(ToolbarDesignTokens.Colors.secondaryText)
+                .foregroundStyle(ThemeEngine.shared.colors.toolbar.secondaryTextSwiftUI)
                 .overlay(alignment: .bottomTrailing) {
                     if safeModeLevel != .silent {
                         Image(systemName: safeModeLevel.iconName)
@@ -83,7 +83,7 @@ struct ConnectionStatusView: View {
                 }
 
             Text(databaseName)
-                .font(ToolbarDesignTokens.Typography.databaseName)
+                .font(.system(size: ThemeEngine.shared.activeTheme.typography.medium, weight: .medium))
                 .foregroundStyle(.primary)
         }
     }

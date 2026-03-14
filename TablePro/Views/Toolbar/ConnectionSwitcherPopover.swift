@@ -75,12 +75,12 @@ struct ConnectionSwitcherPopover: View {
                                     )
                                     .padding(.horizontal, 4)
                             )
-                            .listRowInsets(DesignConstants.swiftUIListRowInsets)
+                            .listRowInsets(ThemeEngine.shared.activeTheme.spacing.listRowInsets.swiftUI)
                             .listRowSeparator(.hidden)
                         }
                     } header: {
                         Text("ACTIVE CONNECTIONS")
-                            .font(.system(size: DesignConstants.FontSize.caption, weight: .semibold))
+                            .font(.system(size: ThemeEngine.shared.activeTheme.typography.caption, weight: .semibold))
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -109,12 +109,12 @@ struct ConnectionSwitcherPopover: View {
                                     )
                                     .padding(.horizontal, 4)
                             )
-                            .listRowInsets(DesignConstants.swiftUIListRowInsets)
+                            .listRowInsets(ThemeEngine.shared.activeTheme.spacing.listRowInsets.swiftUI)
                             .listRowSeparator(.hidden)
                         }
                     } header: {
                         Text("SAVED CONNECTIONS")
-                            .font(.system(size: DesignConstants.FontSize.caption, weight: .semibold))
+                            .font(.system(size: ThemeEngine.shared.activeTheme.typography.caption, weight: .semibold))
                             .foregroundStyle(.secondary)
                     }
                 }
