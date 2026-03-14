@@ -16,6 +16,7 @@ enum SSHAuthMethod: String, CaseIterable, Identifiable, Codable {
     case password = "Password"
     case privateKey = "Private Key"
     case sshAgent = "SSH Agent"
+    case keyboardInteractive = "Keyboard Interactive"
 
     var id: String { rawValue }
 
@@ -24,6 +25,7 @@ enum SSHAuthMethod: String, CaseIterable, Identifiable, Codable {
         case .password: return String(localized: "Password")
         case .privateKey: return String(localized: "Private Key")
         case .sshAgent: return String(localized: "SSH Agent")
+        case .keyboardInteractive: return String(localized: "Keyboard Interactive")
         }
     }
 
@@ -32,6 +34,7 @@ enum SSHAuthMethod: String, CaseIterable, Identifiable, Codable {
         case .password: return "key.fill"
         case .privateKey: return "doc.text.fill"
         case .sshAgent: return "person.badge.key.fill"
+        case .keyboardInteractive: return "lock.rotation"
         }
     }
 }
@@ -118,6 +121,10 @@ struct SSHConfiguration: Codable, Hashable {
     var useSSHConfig: Bool = true  // Auto-fill from ~/.ssh/config when selecting host
     var agentSocketPath: String = ""  // Custom SSH_AUTH_SOCK path (empty = use system default)
     var jumpHosts: [SSHJumpHost] = []
+    var totpMode: TOTPMode = .none
+    var totpAlgorithm: TOTPAlgorithm = .sha1
+    var totpDigits: Int = 6
+    var totpPeriod: Int = 30
 
     /// Check if SSH configuration is complete enough for connection
     var isValid: Bool {
@@ -132,6 +139,8 @@ struct SSHConfiguration: Codable, Hashable {
             authValid = !privateKeyPath.isEmpty
         case .sshAgent:
             authValid = true
+        case .keyboardInteractive:
+            authValid = true
         }
 
         return authValid && jumpHosts.allSatisfy(\.isValid)
@@ -141,6 +150,7 @@ struct SSHConfiguration: Codable, Hashable {
 extension SSHConfiguration {
     enum CodingKeys: String, CodingKey {
         case enabled, host, port, username, authMethod, privateKeyPath, useSSHConfig, agentSocketPath, jumpHosts
+        case totpMode, totpAlgorithm, totpDigits, totpPeriod
     }
 
     init(from decoder: Decoder) throws {
@@ -154,6 +164,10 @@ extension SSHConfiguration {
         useSSHConfig = try container.decode(Bool.self, forKey: .useSSHConfig)
         agentSocketPath = try container.decode(String.self, forKey: .agentSocketPath)
         jumpHosts = try container.decodeIfPresent([SSHJumpHost].self, forKey: .jumpHosts) ?? []
+        totpMode = try container.decodeIfPresent(TOTPMode.self, forKey: .totpMode) ?? .none
+        totpAlgorithm = try container.decodeIfPresent(TOTPAlgorithm.self, forKey: .totpAlgorithm) ?? .sha1
+        totpDigits = try container.decodeIfPresent(Int.self, forKey: .totpDigits) ?? 6
+        totpPeriod = try container.decodeIfPresent(Int.self, forKey: .totpPeriod) ?? 30
     }
 }
 

@@ -353,10 +353,11 @@ final class DatabaseManager {
 
         // Load Keychain credentials off the main thread to avoid blocking UI
         let connectionId = connection.id
-        let (storedSshPassword, keyPassphrase) = await Task.detached {
+        let (storedSshPassword, keyPassphrase, totpSecret) = await Task.detached {
             let pwd = ConnectionStorage.shared.loadSSHPassword(for: connectionId)
             let phrase = ConnectionStorage.shared.loadKeyPassphrase(for: connectionId)
-            return (pwd, phrase)
+            let totp = ConnectionStorage.shared.loadTOTPSecret(for: connectionId)
+            return (pwd, phrase, totp)
         }.value
 
         let sshPassword = sshPasswordOverride ?? storedSshPassword
@@ -373,7 +374,12 @@ final class DatabaseManager {
             agentSocketPath: connection.sshConfig.agentSocketPath,
             remoteHost: connection.host,
             remotePort: connection.port,
-            jumpHosts: connection.sshConfig.jumpHosts
+            jumpHosts: connection.sshConfig.jumpHosts,
+            totpMode: connection.sshConfig.totpMode,
+            totpSecret: totpSecret,
+            totpAlgorithm: connection.sshConfig.totpAlgorithm,
+            totpDigits: connection.sshConfig.totpDigits,
+            totpPeriod: connection.sshConfig.totpPeriod
         )
 
         // Adapt SSL config for tunnel: SSH already authenticates the server,

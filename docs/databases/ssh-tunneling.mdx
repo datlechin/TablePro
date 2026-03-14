@@ -138,6 +138,48 @@ TablePro supports three SSH authentication methods:
   />
 </Frame>
 
+### Two-Factor Authentication (TOTP)
+
+If your SSH server requires two-factor authentication via PAM (e.g., `google-authenticator`, `duo_unix`), TablePro can handle TOTP (Time-based One-Time Password) codes during login.
+
+The TOTP option appears under **Two-Factor Authentication** when you select **Password** or **Keyboard Interactive** as your auth method.
+
+<Tabs>
+  <Tab title="Auto Generate">
+    TablePro generates the TOTP code automatically at connect time using a secret you provide. No need to open an authenticator app.
+
+    | Field | Description |
+    |-------|-------------|
+    | **TOTP Secret** | Your base32-encoded secret (the same key you used when setting up your authenticator app) |
+    | **Algorithm** | Hash algorithm: SHA1 (default), SHA256, or SHA512 |
+    | **Digits** | Code length: 6 (default) or 8 |
+    | **Period** | Code rotation interval: 30 seconds (default) or 60 seconds |
+
+    <Tip>
+    The TOTP secret is the base32 string you got when first enrolling in 2FA. If you only have a QR code, most authenticator apps let you view the underlying secret.
+    </Tip>
+  </Tab>
+  <Tab title="Prompt at Connect">
+    TablePro shows a dialog asking for your verification code each time you connect. Use this if you prefer entering codes from your authenticator app manually.
+
+    No additional configuration needed. Just select this mode and TablePro will prompt you when it needs the code.
+  </Tab>
+</Tabs>
+
+**Setup steps:**
+
+1. In the SSH tab of your connection settings, select **Password** or **Keyboard Interactive** as the auth method
+2. Under **Two-Factor Authentication**, choose your TOTP mode
+3. For Auto Generate: paste your base32-encoded TOTP secret
+
+TOTP works with common PAM configurations including `google-authenticator`, `duo_unix`, and similar modules.
+
+### Host Key Verification
+
+TablePro verifies SSH host keys to protect against man-in-the-middle attacks. On first connection to a server, you'll see the server's fingerprint and can choose to trust it. The key is then stored locally.
+
+If a previously trusted server's host key changes, TablePro shows a warning. This could mean the server was reinstalled, or it could indicate a security issue. You can choose to accept the new key or abort the connection.
+
 ### Using SSH Config
 
 If you have entries in `~/.ssh/config`, TablePro reads them automatically:

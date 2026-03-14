@@ -27,6 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- SSH TOTP/two-factor authentication support (auto-generate and prompt modes)
+- SSH host key verification with fingerprint confirmation
+- Keyboard Interactive SSH authentication method
 - Column visibility: toggle individual columns on/off via "Columns" button in the status bar or right-click header context menu "Hide Column", with per-tab and per-table persistence
 - `SQLDialectDescriptor` in TableProPluginKit: plugins can now self-describe their SQL dialect (keywords, functions, data types, identifier quoting), with `SQLDialectFactory` preferring plugin-provided dialect info over built-in structs
 - DDL schema generation protocol in TableProPluginKit: plugins can now optionally provide database-specific ALTER TABLE syntax (ADD/MODIFY/DROP COLUMN, ADD/DROP INDEX, ADD/DROP FK, MODIFY PK) via `PluginDatabaseDriver`, with `SchemaStatementGenerator` trying plugin methods first before falling back to built-in logic

@@ -138,6 +138,48 @@ TablePro hỗ trợ ba phương thức:
   />
 </Frame>
 
+### Xác thực Hai yếu tố (TOTP)
+
+Nếu SSH server yêu cầu xác thực hai yếu tố qua PAM (ví dụ: `google-authenticator`, `duo_unix`), TablePro có thể xử lý mã TOTP (Time-based One-Time Password) khi đăng nhập.
+
+Tùy chọn TOTP xuất hiện trong phần **Two-Factor Authentication** khi bạn chọn **Password** hoặc **Keyboard Interactive** làm phương thức xác thực.
+
+<Tabs>
+  <Tab title="Auto Generate">
+    TablePro tự tạo mã TOTP khi kết nối bằng secret bạn cung cấp. Không cần mở ứng dụng authenticator.
+
+    | Trường | Mô tả |
+    |-------|-------------|
+    | **TOTP Secret** | Secret dạng base32 (cùng key bạn dùng khi thiết lập authenticator) |
+    | **Algorithm** | Thuật toán hash: SHA1 (mặc định), SHA256, hoặc SHA512 |
+    | **Digits** | Độ dài mã: 6 (mặc định) hoặc 8 |
+    | **Period** | Chu kỳ xoay mã: 30 giây (mặc định) hoặc 60 giây |
+
+    <Tip>
+    TOTP secret là chuỗi base32 bạn nhận khi đăng ký 2FA lần đầu. Nếu chỉ có mã QR, hầu hết authenticator app cho phép xem secret bên dưới.
+    </Tip>
+  </Tab>
+  <Tab title="Prompt at Connect">
+    TablePro hiện hộp thoại yêu cầu mã xác thực mỗi lần kết nối. Dùng chế độ này nếu bạn muốn nhập mã từ authenticator app thủ công.
+
+    Không cần cấu hình thêm. Chọn chế độ này và TablePro sẽ hỏi mã khi cần.
+  </Tab>
+</Tabs>
+
+**Các bước thiết lập:**
+
+1. Trong tab SSH của cài đặt kết nối, chọn **Password** hoặc **Keyboard Interactive** làm phương thức xác thực
+2. Trong phần **Two-Factor Authentication**, chọn chế độ TOTP
+3. Với Auto Generate: dán TOTP secret dạng base32
+
+TOTP tương thích với các cấu hình PAM phổ biến gồm `google-authenticator`, `duo_unix`, và các module tương tự.
+
+### Xác minh Host Key
+
+TablePro xác minh host key SSH để bảo vệ chống tấn công man-in-the-middle. Khi kết nối lần đầu đến server, bạn sẽ thấy fingerprint của server và có thể chọn tin tưởng. Key sau đó được lưu local.
+
+Nếu host key của server đã tin tưởng thay đổi, TablePro hiển thị cảnh báo. Có thể server đã cài lại, hoặc có vấn đề bảo mật. Bạn có thể chấp nhận key mới hoặc hủy kết nối.
+
 ### Dùng SSH Config
 
 Nếu có entry trong `~/.ssh/config`, TablePro đọc tự động:
