@@ -43,15 +43,14 @@ final class DownloadCountService {
         do {
             let releases = try await fetchReleases()
             let pluginReleases = releases.filter { $0.tagName.hasPrefix("plugin-") }
-            let urlToPluginId = buildURLMap(from: manifest)
+            let tagPrefixToPluginId = buildTagPrefixMap(from: manifest)
 
             var totals: [String: Int] = [:]
             for release in pluginReleases {
-                for asset in release.assets {
-                    if let pluginId = urlToPluginId[asset.browserDownloadUrl] {
-                        totals[pluginId, default: 0] += asset.downloadCount
-                    }
-                }
+                let tagPrefix = extractTagPrefix(from: release.tagName)
+                guard let pluginId = tagPrefixToPluginId[tagPrefix] else { continue }
+                let releaseTotal = release.assets.reduce(0) { $0 + $1.downloadCount }
+                totals[pluginId, default: 0] += releaseTotal
             }
 
             counts = totals
@@ -80,21 +79,31 @@ final class DownloadCountService {
         return try decoder.decode([GitHubRelease].self, from: data)
     }
 
-    // MARK: - URL Mapping
+    // MARK: - Tag Prefix Mapping
 
-    private func buildURLMap(from manifest: RegistryManifest) -> [String: String] {
+    private func buildTagPrefixMap(from manifest: RegistryManifest) -> [String: String] {
         var map: [String: String] = [:]
         for plugin in manifest.plugins {
-            if let binaries = plugin.binaries {
-                for binary in binaries {
-                    map[binary.downloadURL] = plugin.id
-                }
-            }
-            if let url = plugin.downloadURL {
-                map[url] = plugin.id
-            }
+            let url = plugin.binaries?.first?.downloadURL ?? plugin.downloadURL
+            guard let url else { continue }
+            guard let tagComponent = extractTagComponent(from: url) else { continue }
+            let prefix = extractTagPrefix(from: tagComponent)
+            map[prefix] = plugin.id
         }
         return map
+    }
+
+    private func extractTagComponent(from downloadURL: String) -> String? {
+        guard let url = URL(string: downloadURL) else { return nil }
+        let components = url.pathComponents
+        guard let downloadIndex = components.firstIndex(of: "download"),
+              downloadIndex + 1 < components.count else { return nil }
+        return components[downloadIndex + 1]
+    }
+
+    private func extractTagPrefix(from tag: String) -> String {
+        guard let range = tag.range(of: #"-v\d"#, options: .regularExpression) else { return tag }
+        return String(tag[tag.startIndex..<range.lowerBound])
     }
 }
 
