@@ -85,7 +85,7 @@ final class PluginMetadataRegistry: @unchecked Sendable {
             ("MongoDB", PluginMetadataSnapshot(
                 displayName: "MongoDB", iconName: "mongodb-icon", defaultPort: 27_017,
                 requiresAuthentication: false, supportsForeignKeys: false, supportsSchemaEditing: false,
-                isDownloadable: false, primaryUrlScheme: "mongodb", parameterStyle: .questionMark,
+                isDownloadable: true, primaryUrlScheme: "mongodb", parameterStyle: .questionMark,
                 navigationModel: .standard, explainVariants: [], pathFieldRole: .database,
                 supportsHealthMonitor: true, urlSchemes: ["mongodb", "mongodb+srv"], postConnectActions: [],
                 brandColorHex: "#00ED63"
@@ -93,7 +93,7 @@ final class PluginMetadataRegistry: @unchecked Sendable {
             ("Redis", PluginMetadataSnapshot(
                 displayName: "Redis", iconName: "redis-icon", defaultPort: 6_379,
                 requiresAuthentication: false, supportsForeignKeys: false, supportsSchemaEditing: false,
-                isDownloadable: false, primaryUrlScheme: "redis", parameterStyle: .questionMark,
+                isDownloadable: true, primaryUrlScheme: "redis", parameterStyle: .questionMark,
                 navigationModel: .inPlace, explainVariants: [], pathFieldRole: .databaseIndex,
                 supportsHealthMonitor: true, urlSchemes: ["redis", "rediss"],
                 postConnectActions: [.selectDatabaseFromConnectionField(fieldId: "redisDatabase")],
@@ -102,7 +102,7 @@ final class PluginMetadataRegistry: @unchecked Sendable {
             ("SQL Server", PluginMetadataSnapshot(
                 displayName: "SQL Server", iconName: "mssql-icon", defaultPort: 1_433,
                 requiresAuthentication: true, supportsForeignKeys: true, supportsSchemaEditing: true,
-                isDownloadable: false, primaryUrlScheme: "sqlserver", parameterStyle: .questionMark,
+                isDownloadable: true, primaryUrlScheme: "sqlserver", parameterStyle: .questionMark,
                 navigationModel: .standard, explainVariants: [], pathFieldRole: .database,
                 supportsHealthMonitor: true, urlSchemes: ["sqlserver", "mssql"],
                 postConnectActions: [.selectDatabaseFromLastSession],
