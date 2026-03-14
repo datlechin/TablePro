@@ -262,6 +262,11 @@ final class PluginManager {
                 for additionalId in type(of: driver).additionalDatabaseTypeIds {
                     driverPlugins[additionalId] = driver
                 }
+
+                // Built-in defaults are pre-populated in PluginMetadataRegistry.init().
+                // Runtime-loaded plugins may be compiled against an older TableProPluginKit,
+                // so we don't read new protocol properties from them to avoid witness table crashes.
+
                 Self.logger.debug("Registered driver plugin '\(pluginId)' for database type '\(typeId)'")
                 registeredAny = true
             }
@@ -390,6 +395,16 @@ final class PluginManager {
 
     private func unregisterCapabilities(pluginId: String) {
         pluginInstances.removeValue(forKey: pluginId)
+
+        // Unregister from metadata registry
+        if let entry = plugins.first(where: { $0.id == pluginId }),
+           let principalClass = entry.bundle.principalClass as? any DriverPlugin.Type {
+            PluginMetadataRegistry.shared.unregister(typeId: principalClass.databaseTypeId)
+            for additionalId in principalClass.additionalDatabaseTypeIds {
+                PluginMetadataRegistry.shared.unregister(typeId: additionalId)
+            }
+        }
+
         driverPlugins = driverPlugins.filter { _, value in
             guard let entry = plugins.first(where: { $0.id == pluginId }) else { return true }
             if let principalClass = entry.bundle.principalClass as? any DriverPlugin.Type {
@@ -497,8 +512,10 @@ final class PluginManager {
     }
 
     func brandColor(for databaseType: DatabaseType) -> Color {
-        guard let plugin = driverPlugin(for: databaseType) else { return Theme.defaultDatabaseColor }
-        return Color(hex: Swift.type(of: plugin).brandColorHex)
+        if let hex = PluginMetadataRegistry.shared.snapshot(forTypeId: databaseType.pluginTypeId)?.brandColorHex {
+            return Color(hex: hex)
+        }
+        return Theme.defaultDatabaseColor
     }
 
     func supportsDatabaseSwitching(for databaseType: DatabaseType) -> Bool {

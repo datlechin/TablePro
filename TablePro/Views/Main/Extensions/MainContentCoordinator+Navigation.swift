@@ -16,10 +16,14 @@ extension MainContentCoordinator {
     // MARK: - Table Tab Opening
 
     func openTableTab(_ tableName: String, showStructure: Bool = false, isView: Bool = false) {
+        let navigationModel = PluginMetadataRegistry.shared.snapshot(
+            forTypeId: connection.type.pluginTypeId
+        )?.navigationModel ?? .standard
+
         // Get current database name from active session (may differ from connection default after Cmd+K switch)
         let currentDatabase: String
-        if connection.type == .redis {
-            // Extract db index from table name "db3" → "3"
+        if navigationModel == .inPlace {
+            // In-place navigation: extract db index from table name "db3" → "3"
             guard tableName.hasPrefix("db"), Int(String(tableName.dropFirst(2))) != nil else {
                 return
             }
@@ -90,9 +94,9 @@ extension MainContentCoordinator {
                 AppState.shared.isCurrentTabEditable = !isView && tableName.isEmpty == false
                 toolbarState.isTableTab = true
             }
-            // Redis needs selectRedisDatabaseAndQuery to ensure the correct
+            // In-place navigation needs selectRedisDatabaseAndQuery to ensure the correct
             // database is SELECTed and session state is updated before querying.
-            if connection.type == .redis, let dbIndex = Int(currentDatabase) {
+            if navigationModel == .inPlace, let dbIndex = Int(currentDatabase) {
                 selectRedisDatabaseAndQuery(dbIndex)
             } else {
                 runQuery()
@@ -100,12 +104,12 @@ extension MainContentCoordinator {
             return
         }
 
-        // Redis databases navigate in-place (replace current tab) rather than
-        // opening new native window tabs, matching TablePlus behavior.
-        if connection.type == .redis {
+        // In-place navigation: replace current tab content rather than
+        // opening new native window tabs (e.g. Redis database switching).
+        if navigationModel == .inPlace {
             if tabManager.replaceTabContent(
                 tableName: tableName,
-                databaseType: .redis,
+                databaseType: connection.type,
                 databaseName: currentDatabase
             ) {
                 if let tabIndex = tabManager.selectedTabIndex {
@@ -242,6 +246,13 @@ extension MainContentCoordinator {
             initialQuery: sql
         )
         WindowOpener.shared.openNativeTab(payload)
+    }
+
+    private func currentSchemaName(fallback: String) -> String {
+        if let schemaDriver = DatabaseManager.shared.driver(for: connectionId) as? SchemaSwitchable {
+            return schemaDriver.escapedSchema
+        }
+        return fallback
     }
 
     private func allTablesMetadataSQL() -> String? {

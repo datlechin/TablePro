@@ -123,6 +123,9 @@ public protocol PluginDatabaseDriver: AnyObject, Sendable {
 
     // All-tables metadata SQL (optional — returns nil for non-SQL databases)
     func allTablesMetadataSQL(schema: String?) -> String?
+
+    // Default export query (optional — returns nil to use app-level fallback)
+    func defaultExportQuery(table: String) -> String?
 }
 
 public extension PluginDatabaseDriver {
@@ -235,6 +238,7 @@ public extension PluginDatabaseDriver {
     func editViewFallbackTemplate(viewName: String) -> String? { nil }
     func castColumnToText(_ column: String) -> String { column }
     func allTablesMetadataSQL(schema: String?) -> String? { nil }
+    func defaultExportQuery(table: String) -> String? { nil }
 
     func quoteIdentifier(_ name: String) -> String {
         let escaped = name.replacingOccurrences(of: "\"", with: "\"\"")

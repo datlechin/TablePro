@@ -20,6 +20,14 @@ final class ClickHousePlugin: NSObject, TableProPlugin, DriverPlugin {
 
     // MARK: - UI/Capability Metadata
 
+    static let isDownloadable = true
+    static let explainVariants: [ExplainVariant] = [
+        ExplainVariant(id: "plan", label: "Plan", sqlPrefix: "EXPLAIN"),
+        ExplainVariant(id: "pipeline", label: "Pipeline", sqlPrefix: "EXPLAIN PIPELINE"),
+        ExplainVariant(id: "ast", label: "AST", sqlPrefix: "EXPLAIN AST"),
+        ExplainVariant(id: "syntax", label: "Syntax", sqlPrefix: "EXPLAIN SYNTAX"),
+        ExplainVariant(id: "estimate", label: "Estimate", sqlPrefix: "EXPLAIN ESTIMATE"),
+    ]
     static let brandColorHex = "#FFD100"
     static let supportsForeignKeys = false
     static let systemDatabaseNames: [String] = ["information_schema", "INFORMATION_SCHEMA", "system"]

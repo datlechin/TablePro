@@ -67,6 +67,11 @@ struct ConnectionFormView: View {
     @State private var sshConfigEntries: [SSHConfigEntry] = []
     @State private var selectedSSHConfigHost: String = ""
     @State private var jumpHosts: [SSHJumpHost] = []
+    @State private var totpMode: TOTPMode = .none
+    @State private var totpSecret: String = ""
+    @State private var totpAlgorithm: TOTPAlgorithm = .sha1
+    @State private var totpDigits: Int = 6
+    @State private var totpPeriod: Int = 30
 
     // SSL Configuration
     @State private var sslMode: SSLMode = .disabled
@@ -482,6 +487,13 @@ struct ConnectionFormView: View {
                         Text("Keys are provided by the SSH agent (e.g. 1Password, ssh-agent).")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                    } else if sshAuthMethod == .keyboardInteractive {
+                        SecureField(String(localized: "Password"), text: $sshPassword)
+                        Text(
+                            String(localized: "Password is sent via keyboard-interactive challenge-response.")
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                     } else {
                         LabeledContent(String(localized: "Key File")) {
                             HStack {
@@ -492,6 +504,46 @@ struct ConnectionFormView: View {
                             }
                         }
                         SecureField(String(localized: "Passphrase"), text: $keyPassphrase)
+                    }
+                }
+
+                if sshAuthMethod == .keyboardInteractive || sshAuthMethod == .password {
+                    Section(String(localized: "Two-Factor Authentication")) {
+                        Picker(String(localized: "TOTP"), selection: $totpMode) {
+                            ForEach(TOTPMode.allCases) { mode in
+                                Text(mode.displayName).tag(mode)
+                            }
+                        }
+
+                        if totpMode == .autoGenerate {
+                            SecureField(String(localized: "TOTP Secret"), text: $totpSecret)
+                                .help(String(localized: "Base32-encoded secret from your authenticator setup"))
+
+                            Picker(String(localized: "Algorithm"), selection: $totpAlgorithm) {
+                                ForEach(TOTPAlgorithm.allCases) { algo in
+                                    Text(algo.rawValue).tag(algo)
+                                }
+                            }
+
+                            Picker(String(localized: "Digits"), selection: $totpDigits) {
+                                Text("6").tag(6)
+                                Text("8").tag(8)
+                            }
+
+                            Picker(String(localized: "Period"), selection: $totpPeriod) {
+                                Text("30s").tag(30)
+                                Text("60s").tag(60)
+                            }
+                        } else if totpMode == .promptAtConnect {
+                            Text(
+                                String(
+                                    localized:
+                                        "You will be prompted for a verification code each time you connect."
+                                )
+                            )
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        }
                     }
                 }
 
@@ -790,7 +842,7 @@ struct ConnectionFormView: View {
             let sshValid = !sshHost.isEmpty && !sshUsername.isEmpty
             let authValid =
                 sshAuthMethod == .password || sshAuthMethod == .sshAgent
-                || !sshPrivateKeyPath.isEmpty
+                || sshAuthMethod == .keyboardInteractive || !sshPrivateKeyPath.isEmpty
             let jumpValid = jumpHosts.allSatisfy(\.isValid)
             return basicValid && sshValid && authValid && jumpValid
         }
@@ -832,6 +884,10 @@ struct ConnectionFormView: View {
             sshPrivateKeyPath = existing.sshConfig.privateKeyPath
             applySSHAgentSocketPath(existing.sshConfig.agentSocketPath)
             jumpHosts = existing.sshConfig.jumpHosts
+            totpMode = existing.sshConfig.totpMode
+            totpAlgorithm = existing.sshConfig.totpAlgorithm
+            totpDigits = existing.sshConfig.totpDigits
+            totpPeriod = existing.sshConfig.totpPeriod
 
             // Load SSL configuration
             sslMode = existing.sslConfig.mode
@@ -875,6 +931,9 @@ struct ConnectionFormView: View {
             if let savedPassword = storage.loadPassword(for: existing.id) {
                 password = savedPassword
             }
+            if let savedTOTPSecret = storage.loadTOTPSecret(for: existing.id) {
+                totpSecret = savedTOTPSecret
+            }
         }
         Task { @MainActor in
             hasLoadedData = true
@@ -891,7 +950,11 @@ struct ConnectionFormView: View {
             privateKeyPath: sshPrivateKeyPath,
             useSSHConfig: !selectedSSHConfigHost.isEmpty,
             agentSocketPath: resolvedSSHAgentSocketPath,
-            jumpHosts: jumpHosts
+            jumpHosts: jumpHosts,
+            totpMode: totpMode,
+            totpAlgorithm: totpAlgorithm,
+            totpDigits: totpDigits,
+            totpPeriod: totpPeriod
         )
 
         let sslConfig = SSLConfiguration(
@@ -941,11 +1004,18 @@ struct ConnectionFormView: View {
         if !password.isEmpty {
             storage.savePassword(password, for: connectionToSave.id)
         }
-        if sshEnabled && sshAuthMethod == .password && !sshPassword.isEmpty {
+        if sshEnabled && (sshAuthMethod == .password || sshAuthMethod == .keyboardInteractive)
+            && !sshPassword.isEmpty
+        {
             storage.saveSSHPassword(sshPassword, for: connectionToSave.id)
         }
         if sshEnabled && sshAuthMethod == .privateKey && !keyPassphrase.isEmpty {
             storage.saveKeyPassphrase(keyPassphrase, for: connectionToSave.id)
+        }
+        if sshEnabled && totpMode == .autoGenerate && !totpSecret.isEmpty {
+            storage.saveTOTPSecret(totpSecret, for: connectionToSave.id)
+        } else {
+            storage.deleteTOTPSecret(for: connectionToSave.id)
         }
 
         // Save to storage
@@ -1043,7 +1113,11 @@ struct ConnectionFormView: View {
             privateKeyPath: sshPrivateKeyPath,
             useSSHConfig: !selectedSSHConfigHost.isEmpty,
             agentSocketPath: resolvedSSHAgentSocketPath,
-            jumpHosts: jumpHosts
+            jumpHosts: jumpHosts,
+            totpMode: totpMode,
+            totpAlgorithm: totpAlgorithm,
+            totpDigits: totpDigits,
+            totpPeriod: totpPeriod
         )
 
         let sslConfig = SSLConfiguration(
@@ -1092,15 +1166,22 @@ struct ConnectionFormView: View {
                 if !password.isEmpty {
                     ConnectionStorage.shared.savePassword(password, for: testConn.id)
                 }
-                if sshEnabled && sshAuthMethod == .password && !sshPassword.isEmpty {
+                if sshEnabled
+                    && (sshAuthMethod == .password || sshAuthMethod == .keyboardInteractive)
+                    && !sshPassword.isEmpty
+                {
                     ConnectionStorage.shared.saveSSHPassword(sshPassword, for: testConn.id)
                 }
                 if sshEnabled && sshAuthMethod == .privateKey && !keyPassphrase.isEmpty {
                     ConnectionStorage.shared.saveKeyPassphrase(keyPassphrase, for: testConn.id)
                 }
+                if sshEnabled && totpMode == .autoGenerate && !totpSecret.isEmpty {
+                    ConnectionStorage.shared.saveTOTPSecret(totpSecret, for: testConn.id)
+                }
 
                 let success = try await DatabaseManager.shared.testConnection(
                     testConn, sshPassword: sshPassword)
+                ConnectionStorage.shared.deleteTOTPSecret(for: testConn.id)
                 await MainActor.run {
                     isTesting = false
                     if success {
@@ -1114,6 +1195,7 @@ struct ConnectionFormView: View {
                     }
                 }
             } catch {
+                ConnectionStorage.shared.deleteTOTPSecret(for: testConn.id)
                 await MainActor.run {
                     isTesting = false
                     if case PluginError.pluginNotInstalled = error {

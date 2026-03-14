@@ -110,8 +110,16 @@ struct ConnectionURLParser {
             dbType = .oracle
         case "clickhouse", "ch":
             dbType = .clickhouse
+        case "cassandra", "cql":
+            dbType = .cassandra
+        case "scylladb", "scylla":
+            dbType = .scylladb
         default:
-            return .failure(.unsupportedScheme(scheme))
+            if let resolvedType = PluginMetadataRegistry.shared.databaseType(forUrlScheme: scheme) {
+                dbType = resolvedType
+            } else {
+                return .failure(.unsupportedScheme(scheme))
+            }
         }
 
         if dbType == .sqlite {

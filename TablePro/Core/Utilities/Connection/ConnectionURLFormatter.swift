@@ -26,22 +26,9 @@ struct ConnectionURLFormatter {
 
     // MARK: - Private
 
-    private static let urlSchemeMap: [DatabaseType: String] = [
-        .mysql: "mysql",
-        .mariadb: "mariadb",
-        .postgresql: "postgresql",
-        .redshift: "redshift",
-        .sqlite: "sqlite",
-        .mongodb: "mongodb",
-        .redis: "redis",
-        .mssql: "sqlserver",
-        .oracle: "oracle",
-        .clickhouse: "clickhouse",
-        .duckdb: "duckdb",
-    ]
-
     private static func urlScheme(for type: DatabaseType) -> String {
-        urlSchemeMap[type] ?? type.rawValue.lowercased()
+        PluginMetadataRegistry.shared.snapshot(forTypeId: type.pluginTypeId)?.primaryUrlScheme
+            ?? type.rawValue.lowercased()
     }
 
     private static func formatSQLite(_ database: String) -> String {

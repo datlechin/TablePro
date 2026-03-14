@@ -21,6 +21,8 @@ final class DuckDBPlugin: NSObject, TableProPlugin, DriverPlugin {
 
     // MARK: - UI/Capability Metadata
 
+    static let isDownloadable = true
+    static let pathFieldRole: PathFieldRole = .filePath
     static let requiresAuthentication = false
     static let connectionMode: ConnectionMode = .fileBased
     static let urlSchemes: [String] = ["duckdb"]

@@ -24,6 +24,8 @@ final class SQLitePlugin: NSObject, TableProPlugin, DriverPlugin {
     static let requiresAuthentication = false
     static let supportsSSH = false
     static let supportsSSL = false
+    static let isDownloadable = true
+    static let pathFieldRole: PathFieldRole = .filePath
     static let connectionMode: ConnectionMode = .fileBased
     static let urlSchemes: [String] = ["sqlite"]
     static let fileExtensions: [String] = ["db", "sqlite", "sqlite3"]

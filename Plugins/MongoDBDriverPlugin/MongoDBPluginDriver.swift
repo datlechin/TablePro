@@ -22,6 +22,10 @@ final class MongoDBPluginDriver: PluginDatabaseDriver {
     func rollbackTransaction() async throws {}
     func quoteIdentifier(_ name: String) -> String { name }
 
+    func defaultExportQuery(table: String) -> String? {
+        "db.getCollection(\"\(table)\").find({})"
+    }
+
     init(config: DriverConnectionConfig) {
         self.config = config
         self.currentDb = config.database

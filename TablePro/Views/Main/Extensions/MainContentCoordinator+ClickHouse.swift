@@ -7,6 +7,7 @@
 
 import CodeEditSourceEditor
 import Foundation
+import TableProPluginKit
 
 extension MainContentCoordinator {
     func installClickHouseProgressHandler() {
@@ -21,7 +22,9 @@ extension MainContentCoordinator {
         toolbarState.clickHouseProgress = nil
     }
 
-    func runClickHouseExplain(variant: ClickHouseExplainVariant) {
+    /// Run EXPLAIN with a specific variant (e.g. ClickHouse Plan/Pipeline/AST).
+    /// Accepts the plugin-kit `ExplainVariant` type for generic dispatch.
+    func runVariantExplain(_ variant: ExplainVariant) {
         guard let index = tabManager.selectedTabIndex else { return }
         guard !tabManager.tabs[index].isExecuting else { return }
 
@@ -52,7 +55,7 @@ extension MainContentCoordinator {
         let statements = SQLStatementScanner.allStatements(in: trimmed)
         guard let stmt = statements.first else { return }
 
-        let explainSQL = "\(variant.sqlKeyword) \(stmt)"
+        let explainSQL = "\(variant.sqlPrefix) \(stmt)"
 
         Task { @MainActor in
             guard let driver = DatabaseManager.shared.driver(for: connectionId) else { return }
@@ -80,5 +83,15 @@ extension MainContentCoordinator {
             tabManager.tabs[index].isExecuting = false
             toolbarState.setExecuting(false)
         }
+    }
+
+    /// Legacy bridge: calls runVariantExplain with the matching ExplainVariant.
+    func runClickHouseExplain(variant: ClickHouseExplainVariant) {
+        let pluginVariant = ExplainVariant(
+            id: variant.rawValue.lowercased(),
+            label: variant.rawValue,
+            sqlPrefix: variant.sqlKeyword
+        )
+        runVariantExplain(pluginVariant)
     }
 }

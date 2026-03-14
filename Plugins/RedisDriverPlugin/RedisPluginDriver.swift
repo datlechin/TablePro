@@ -25,6 +25,10 @@ final class RedisPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
 
     func quoteIdentifier(_ name: String) -> String { name }
 
+    func defaultExportQuery(table: String) -> String? {
+        "SCAN 0 MATCH \"*\" COUNT 10000"
+    }
+
     init(config: DriverConnectionConfig) {
         self.config = config
     }

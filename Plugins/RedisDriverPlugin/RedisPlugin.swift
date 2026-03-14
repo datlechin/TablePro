@@ -33,6 +33,9 @@ final class RedisPlugin: NSObject, TableProPlugin, DriverPlugin {
 
     // MARK: - UI/Capability Metadata
 
+    static let navigationModel: NavigationModel = .inPlace
+    static let pathFieldRole: PathFieldRole = .databaseIndex
+    static let postConnectActions: [PostConnectAction] = [.selectDatabaseFromConnectionField(fieldId: "redisDatabase")]
     static let requiresAuthentication = false
     static let urlSchemes: [String] = ["redis"]
     static let brandColorHex = "#DC382D"

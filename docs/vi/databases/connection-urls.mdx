@@ -25,6 +25,8 @@ TablePro phân tích URL kết nối database chuẩn để import kết nối, 
 | `sqlserver://` | Microsoft SQL Server (alias) |
 | `oracle://` | Oracle Database |
 | `jdbc:oracle:thin:@//` | Oracle Database (JDBC thin) |
+| `cassandra://` | Cassandra |
+| `scylladb://` | ScyllaDB |
 
 Thêm `+ssh` vào bất kỳ scheme nào (trừ SQLite) để dùng SSH tunnel:
 
@@ -162,6 +164,16 @@ Phần path đặt chỉ số database (0--15). Scheme `rediss://` tự động 
 ```
 redis://:password@host:6379/2       # database index 2
 rediss://:password@host:6380        # TLS, index mặc định 0
+```
+
+### Cassandra / ScyllaDB
+
+Phần path đặt keyspace mặc định. Cả hai scheme `cassandra://` và `scylladb://` dùng cùng format.
+
+```text
+cassandra://user:pass@host:9042/my_keyspace
+scylladb://user:pass@host:9042/my_keyspace
+cassandra://host:9042                        # không auth, không keyspace mặc định
 ```
 
 ### SSH Tunnel

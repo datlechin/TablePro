@@ -25,6 +25,8 @@ TablePro parses standard database connection URLs for importing connections, ope
 | `sqlserver://` | Microsoft SQL Server (alias) |
 | `oracle://` | Oracle Database |
 | `jdbc:oracle:thin:@//` | Oracle Database (JDBC thin) |
+| `cassandra://` | Cassandra |
+| `scylladb://` | ScyllaDB |
 
 Append `+ssh` to any scheme (except SQLite) to use an SSH tunnel:
 
@@ -162,6 +164,16 @@ The path component sets the database index (0--15). The `rediss://` scheme autom
 ```
 redis://:password@host:6379/2       # database index 2
 rediss://:password@host:6380        # TLS, default index 0
+```
+
+### Cassandra / ScyllaDB
+
+The path component sets the default keyspace. Both `cassandra://` and `scylladb://` schemes use the same format.
+
+```text
+cassandra://user:pass@host:9042/my_keyspace
+scylladb://user:pass@host:9042/my_keyspace
+cassandra://host:9042                        # no auth, no default keyspace
 ```
 
 ### SSH Tunnel

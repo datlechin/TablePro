@@ -16,6 +16,7 @@ enum SSHAuthMethod: String, CaseIterable, Identifiable, Codable {
     case password = "Password"
     case privateKey = "Private Key"
     case sshAgent = "SSH Agent"
+    case keyboardInteractive = "Keyboard Interactive"
 
     var id: String { rawValue }
 
@@ -24,6 +25,7 @@ enum SSHAuthMethod: String, CaseIterable, Identifiable, Codable {
         case .password: return String(localized: "Password")
         case .privateKey: return String(localized: "Private Key")
         case .sshAgent: return String(localized: "SSH Agent")
+        case .keyboardInteractive: return String(localized: "Keyboard Interactive")
         }
     }
 
@@ -32,6 +34,7 @@ enum SSHAuthMethod: String, CaseIterable, Identifiable, Codable {
         case .password: return "key.fill"
         case .privateKey: return "doc.text.fill"
         case .sshAgent: return "person.badge.key.fill"
+        case .keyboardInteractive: return "lock.rotation"
         }
     }
 }
@@ -118,6 +121,10 @@ struct SSHConfiguration: Codable, Hashable {
     var useSSHConfig: Bool = true  // Auto-fill from ~/.ssh/config when selecting host
     var agentSocketPath: String = ""  // Custom SSH_AUTH_SOCK path (empty = use system default)
     var jumpHosts: [SSHJumpHost] = []
+    var totpMode: TOTPMode = .none
+    var totpAlgorithm: TOTPAlgorithm = .sha1
+    var totpDigits: Int = 6
+    var totpPeriod: Int = 30
 
     /// Check if SSH configuration is complete enough for connection
     var isValid: Bool {
@@ -132,6 +139,8 @@ struct SSHConfiguration: Codable, Hashable {
             authValid = !privateKeyPath.isEmpty
         case .sshAgent:
             authValid = true
+        case .keyboardInteractive:
+            authValid = true
         }
 
         return authValid && jumpHosts.allSatisfy(\.isValid)
@@ -141,6 +150,7 @@ struct SSHConfiguration: Codable, Hashable {
 extension SSHConfiguration {
     enum CodingKeys: String, CodingKey {
         case enabled, host, port, username, authMethod, privateKeyPath, useSSHConfig, agentSocketPath, jumpHosts
+        case totpMode, totpAlgorithm, totpDigits, totpPeriod
     }
 
     init(from decoder: Decoder) throws {
@@ -154,6 +164,10 @@ extension SSHConfiguration {
         useSSHConfig = try container.decode(Bool.self, forKey: .useSSHConfig)
         agentSocketPath = try container.decode(String.self, forKey: .agentSocketPath)
         jumpHosts = try container.decodeIfPresent([SSHJumpHost].self, forKey: .jumpHosts) ?? []
+        totpMode = try container.decodeIfPresent(TOTPMode.self, forKey: .totpMode) ?? .none
+        totpAlgorithm = try container.decodeIfPresent(TOTPAlgorithm.self, forKey: .totpAlgorithm) ?? .sha1
+        totpDigits = try container.decodeIfPresent(Int.self, forKey: .totpDigits) ?? 6
+        totpPeriod = try container.decodeIfPresent(Int.self, forKey: .totpPeriod) ?? 30
     }
 }
 
@@ -216,6 +230,8 @@ extension DatabaseType {
     static let oracle = DatabaseType(rawValue: "Oracle")
     static let clickhouse = DatabaseType(rawValue: "ClickHouse")
     static let duckdb = DatabaseType(rawValue: "DuckDB")
+    static let cassandra = DatabaseType(rawValue: "Cassandra")
+    static let scylladb = DatabaseType(rawValue: "ScyllaDB")
 }
 
 extension DatabaseType: Codable {
@@ -235,6 +251,7 @@ extension DatabaseType {
     static let allKnownTypes: [DatabaseType] = [
         .mysql, .mariadb, .postgresql, .sqlite, .redshift,
         .mongodb, .redis, .mssql, .oracle, .clickhouse, .duckdb,
+        .cassandra, .scylladb,
     ]
 
     /// Compatibility shim for CaseIterable call sites.
@@ -256,27 +273,27 @@ extension DatabaseType {
     }
 
     var isDownloadablePlugin: Bool {
-        Self.isDownloadablePluginSet.contains(self)
+        PluginMetadataRegistry.shared.snapshot(forTypeId: pluginTypeId)?.isDownloadable ?? false
     }
 
     var iconName: String {
-        Self.iconNameMap[self] ?? "database-icon"
+        PluginMetadataRegistry.shared.snapshot(forTypeId: pluginTypeId)?.iconName ?? "database-icon"
     }
 
     var defaultPort: Int {
-        Self.defaultPortMap[self] ?? 0
+        PluginMetadataRegistry.shared.snapshot(forTypeId: pluginTypeId)?.defaultPort ?? 0
     }
 
     var requiresAuthentication: Bool {
-        Self.requiresAuthenticationSet.contains(self)
+        PluginMetadataRegistry.shared.snapshot(forTypeId: pluginTypeId)?.requiresAuthentication ?? true
     }
 
     var supportsForeignKeys: Bool {
-        Self.supportsForeignKeysSet.contains(self)
+        PluginMetadataRegistry.shared.snapshot(forTypeId: pluginTypeId)?.supportsForeignKeys ?? true
     }
 
     var supportsSchemaEditing: Bool {
-        Self.supportsSchemaEditingSet.contains(self)
+        PluginMetadataRegistry.shared.snapshot(forTypeId: pluginTypeId)?.supportsSchemaEditing ?? true
     }
 
     private static let pluginTypeIdMap: [DatabaseType: String] = [
@@ -289,49 +306,7 @@ extension DatabaseType {
         .oracle: "Oracle",
         .clickhouse: "ClickHouse",
         .duckdb: "DuckDB",
-    ]
-
-    private static let isDownloadablePluginSet: Set<DatabaseType> = [
-        .oracle, .clickhouse, .sqlite, .duckdb,
-    ]
-
-    private static let iconNameMap: [DatabaseType: String] = [
-        .mysql: "mysql-icon",
-        .mariadb: "mariadb-icon",
-        .postgresql: "postgresql-icon",
-        .sqlite: "sqlite-icon",
-        .redshift: "redshift-icon",
-        .mongodb: "mongodb-icon",
-        .redis: "redis-icon",
-        .mssql: "mssql-icon",
-        .oracle: "oracle-icon",
-        .clickhouse: "clickhouse-icon",
-        .duckdb: "duckdb-icon",
-    ]
-
-    private static let defaultPortMap: [DatabaseType: Int] = [
-        .mysql: 3_306, .mariadb: 3_306,
-        .postgresql: 5_432,
-        .sqlite: 0,
-        .redshift: 5_439,
-        .mongodb: 27_017,
-        .redis: 6_379,
-        .mssql: 1_433,
-        .oracle: 1_521,
-        .clickhouse: 8_123,
-        .duckdb: 0,
-    ]
-
-    private static let requiresAuthenticationSet: Set<DatabaseType> = [
-        .mysql, .mariadb, .postgresql, .redshift, .mssql, .oracle, .clickhouse,
-    ]
-
-    private static let supportsForeignKeysSet: Set<DatabaseType> = [
-        .mysql, .mariadb, .postgresql, .sqlite, .redshift, .mssql, .oracle, .duckdb,
-    ]
-
-    private static let supportsSchemaEditingSet: Set<DatabaseType> = [
-        .mysql, .mariadb, .postgresql, .sqlite, .mssql, .oracle, .clickhouse, .duckdb,
+        .cassandra: "Cassandra", .scylladb: "Cassandra",
     ]
 }
 

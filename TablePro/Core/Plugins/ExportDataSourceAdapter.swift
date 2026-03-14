@@ -22,17 +22,10 @@ final class ExportDataSourceAdapter: PluginExportDataSource, @unchecked Sendable
 
     func fetchRows(table: String, databaseName: String, offset: Int, limit: Int) async throws -> PluginQueryResult {
         let query: String
-        switch dbType {
-        case .mongodb:
-            let escaped = escapeJSIdentifier(table)
-            if escaped.hasPrefix("[") {
-                query = "db\(escaped).find({})"
-            } else {
-                query = "db.\(escaped).find({})"
-            }
-        case .redis:
-            query = "SCAN 0 MATCH \"*\" COUNT 10000"
-        default:
+        if let pluginDriver = (driver as? PluginDriverAdapter)?.schemaPluginDriver,
+           let customQuery = pluginDriver.defaultExportQuery(table: table) {
+            query = customQuery
+        } else {
             let tableRef = qualifiedTableRef(table: table, databaseName: databaseName)
             query = "SELECT * FROM \(tableRef)"
         }
@@ -81,15 +74,6 @@ final class ExportDataSourceAdapter: PluginExportDataSource, @unchecked Sendable
             let quotedTable = driver.quoteIdentifier(table)
             return "\(quotedDb).\(quotedTable)"
         }
-    }
-
-    private func escapeJSIdentifier(_ name: String) -> String {
-        guard let firstChar = name.first,
-              !firstChar.isNumber,
-              name.allSatisfy({ $0.isLetter || $0.isNumber || $0 == "_" }) else {
-            return "[\"\(PluginExportUtilities.escapeJSONString(name))\"]"
-        }
-        return name
     }
 
     private func mapToPluginResult(_ result: QueryResult) -> PluginQueryResult {

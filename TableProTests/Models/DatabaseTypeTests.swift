@@ -37,9 +37,9 @@ struct DatabaseTypeTests {
         #expect(DatabaseType.mongodb.defaultPort == 27_017)
     }
 
-    @Test("allKnownTypes count is 11")
+    @Test("allKnownTypes count is 13")
     func testAllKnownTypesCount() {
-        #expect(DatabaseType.allKnownTypes.count == 11)
+        #expect(DatabaseType.allKnownTypes.count == 13)
     }
 
     @Test("allCases shim matches allKnownTypes")
@@ -58,7 +58,9 @@ struct DatabaseTypeTests {
         (DatabaseType.mssql, "SQL Server"),
         (DatabaseType.oracle, "Oracle"),
         (DatabaseType.clickhouse, "ClickHouse"),
-        (DatabaseType.duckdb, "DuckDB")
+        (DatabaseType.duckdb, "DuckDB"),
+        (DatabaseType.cassandra, "Cassandra"),
+        (DatabaseType.scylladb, "ScyllaDB")
     ])
     func testRawValueMatchesDisplayName(dbType: DatabaseType, expectedRawValue: String) {
         #expect(dbType.rawValue == expectedRawValue)

@@ -685,8 +685,12 @@ final class MainContentCoordinator {
         let level = connection.safeModeLevel
         let needsConfirmation = level.appliesToAllQueries && level.requiresConfirmation
 
-        // ClickHouse interactive explain gets special handling
-        if connection.type == .clickhouse {
+        // Multi-variant EXPLAIN: use plugin-declared variants if available
+        let explainVariants = PluginMetadataRegistry.shared.snapshot(
+            forTypeId: connection.type.pluginTypeId
+        )?.explainVariants ?? []
+
+        if !explainVariants.isEmpty {
             if needsConfirmation {
                 Task { @MainActor in
                     let window = NSApp.keyWindow
@@ -699,17 +703,20 @@ final class MainContentCoordinator {
                         databaseType: connection.type
                     )
                     if case .allowed = permission {
-                        runClickHouseExplain(variant: .plan)
+                        runVariantExplain(explainVariants[0])
                     }
                 }
             } else {
-                runClickHouseExplain(variant: .plan)
+                runVariantExplain(explainVariants[0])
             }
             return
         }
 
         guard let adapter = DatabaseManager.shared.driver(for: connectionId) as? PluginDriverAdapter,
               let explainSQL = adapter.buildExplainQuery(stmt) else {
+            if let index = tabManager.selectedTabIndex {
+                tabManager.tabs[index].errorMessage = String(localized: "EXPLAIN is not supported for this database type.")
+            }
             return
         }
 

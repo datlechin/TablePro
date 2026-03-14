@@ -146,19 +146,41 @@ final class DatabaseManager {
             // Initialize schema for drivers that support schema switching
             if let schemaDriver = driver as? SchemaSwitchable {
                 activeSessions[connection.id]?.currentSchema = schemaDriver.currentSchema
-            } else if connection.type == .redis {
-                // Redis defaults to db0 on connect; SELECT the configured database if non-default
-                let initialDb = connection.redisDatabase ?? Int(connection.database) ?? 0
-                if initialDb != 0 {
-                    try? await (driver as? PluginDriverAdapter)?.switchDatabase(to: String(initialDb))
-                }
-                activeSessions[connection.id]?.currentDatabase = String(initialDb)
-            } else if connection.type == .mssql,
-                      connection.database.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                      let adapter = driver as? PluginDriverAdapter {
-                if let savedDb = AppSettingsStorage.shared.loadLastDatabase(for: connection.id) {
-                    try? await adapter.switchDatabase(to: savedDb)
-                    activeSessions[connection.id]?.currentDatabase = savedDb
+            }
+
+            // Run post-connect actions declared by the plugin
+            let postConnectActions = PluginMetadataRegistry.shared.snapshot(
+                forTypeId: connection.type.pluginTypeId
+            )?.postConnectActions ?? []
+
+            for action in postConnectActions {
+                switch action {
+                case .selectDatabaseFromLastSession:
+                    // Restore saved database (e.g. MSSQL) only when no explicit database is configured
+                    if connection.database.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                       let adapter = driver as? PluginDriverAdapter,
+                       let savedDb = AppSettingsStorage.shared.loadLastDatabase(for: connection.id) {
+                        try? await adapter.switchDatabase(to: savedDb)
+                        activeSessions[connection.id]?.currentDatabase = savedDb
+                    }
+                case .selectDatabaseFromConnectionField(let fieldId):
+                    // Select database from a connection field (e.g. Redis database index).
+                    // Check additionalFields first, then legacy dedicated properties, then
+                    // fall back to parsing the main database field.
+                    let initialDb: Int
+                    if let fieldValue = connection.additionalFields[fieldId], let parsed = Int(fieldValue) {
+                        initialDb = parsed
+                    } else if fieldId == "redisDatabase", let legacy = connection.redisDatabase {
+                        initialDb = legacy
+                    } else if let fallback = Int(connection.database) {
+                        initialDb = fallback
+                    } else {
+                        initialDb = 0
+                    }
+                    if initialDb != 0 {
+                        try? await (driver as? PluginDriverAdapter)?.switchDatabase(to: String(initialDb))
+                    }
+                    activeSessions[connection.id]?.currentDatabase = String(initialDb)
                 }
             }
 
@@ -177,8 +199,12 @@ final class DatabaseManager {
             // Post notification for reliable delivery
             NotificationCenter.default.post(name: .databaseDidConnect, object: nil)
 
-            // Start health monitoring for network databases (skip SQLite and DuckDB)
-            if connection.type != .sqlite && connection.type != .duckdb {
+            // Start health monitoring if the plugin supports it
+            let supportsHealth = PluginMetadataRegistry.shared.snapshot(
+                forTypeId: connection.type.pluginTypeId
+            )?.supportsHealthMonitor ?? true
+
+            if supportsHealth {
                 await startHealthMonitor(for: connection.id)
             }
         } catch {
@@ -353,10 +379,11 @@ final class DatabaseManager {
 
         // Load Keychain credentials off the main thread to avoid blocking UI
         let connectionId = connection.id
-        let (storedSshPassword, keyPassphrase) = await Task.detached {
+        let (storedSshPassword, keyPassphrase, totpSecret) = await Task.detached {
             let pwd = ConnectionStorage.shared.loadSSHPassword(for: connectionId)
             let phrase = ConnectionStorage.shared.loadKeyPassphrase(for: connectionId)
-            return (pwd, phrase)
+            let totp = ConnectionStorage.shared.loadTOTPSecret(for: connectionId)
+            return (pwd, phrase, totp)
         }.value
 
         let sshPassword = sshPasswordOverride ?? storedSshPassword
@@ -373,7 +400,12 @@ final class DatabaseManager {
             agentSocketPath: connection.sshConfig.agentSocketPath,
             remoteHost: connection.host,
             remotePort: connection.port,
-            jumpHosts: connection.sshConfig.jumpHosts
+            jumpHosts: connection.sshConfig.jumpHosts,
+            totpMode: connection.sshConfig.totpMode,
+            totpSecret: totpSecret,
+            totpAlgorithm: connection.sshConfig.totpAlgorithm,
+            totpDigits: connection.sshConfig.totpDigits,
+            totpPeriod: connection.sshConfig.totpPeriod
         )
 
         // Adapt SSL config for tunnel: SSH already authenticates the server,
@@ -575,8 +607,12 @@ final class DatabaseManager {
                 session.effectiveConnection = effectiveConnection
             }
 
-            // Restart health monitoring
-            if session.connection.type != .sqlite && session.connection.type != .duckdb {
+            // Restart health monitoring if the plugin supports it
+            let supportsHealthReconnect = PluginMetadataRegistry.shared.snapshot(
+                forTypeId: session.connection.type.pluginTypeId
+            )?.supportsHealthMonitor ?? true
+
+            if supportsHealthReconnect {
                 await startHealthMonitor(for: sessionId)
             }
 

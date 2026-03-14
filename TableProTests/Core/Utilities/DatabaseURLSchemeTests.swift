@@ -195,13 +195,18 @@ struct DatabaseURLSchemeTests {
         #expect(error == .unsupportedScheme("http"))
     }
 
-    @Test("Cassandra scheme returns unsupported error")
-    func cassandraSchemeUnsupported() {
+    @Test("Cassandra scheme parses successfully")
+    func cassandraSchemeSupported() {
         let result = ConnectionURLParser.parse("cassandra://user:pass@host:9042/keyspace")
-        guard case .failure(let error) = result else {
-            Issue.record("Expected failure"); return
+        guard case .success(let parsed) = result else {
+            Issue.record("Expected success, got: \(result)"); return
         }
-        #expect(error == .unsupportedScheme("cassandra"))
+        #expect(parsed.type == .cassandra)
+        #expect(parsed.host == "host")
+        #expect(parsed.port == nil) // 9042 is the default port, so parser normalizes to nil
+        #expect(parsed.database == "keyspace")
+        #expect(parsed.username == "user")
+        #expect(parsed.password == "pass")
     }
 
     // MARK: - Case Insensitivity

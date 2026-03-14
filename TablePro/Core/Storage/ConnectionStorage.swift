@@ -98,6 +98,7 @@ final class ConnectionStorage {
         deletePassword(for: connection.id)
         deleteSSHPassword(for: connection.id)
         deleteKeyPassphrase(for: connection.id)
+        deleteTOTPSecret(for: connection.id)
     }
 
     /// Duplicate a connection with a new UUID and "(Copy)" suffix
@@ -140,6 +141,9 @@ final class ConnectionStorage {
         }
         if let keyPassphrase = loadKeyPassphrase(for: connection.id) {
             saveKeyPassphrase(keyPassphrase, for: newId)
+        }
+        if let totpSecret = loadTOTPSecret(for: connection.id) {
+            saveTOTPSecret(totpSecret, for: newId)
         }
 
         return duplicate
@@ -325,6 +329,53 @@ final class ConnectionStorage {
 
         SecItemDelete(query as CFDictionary)
     }
+
+    // MARK: - TOTP Secret Storage
+
+    /// Save TOTP secret to Keychain
+    func saveTOTPSecret(_ secret: String, for connectionId: UUID) {
+        let key = "com.TablePro.totpsecret.\(connectionId.uuidString)"
+        guard let data = secret.data(using: .utf8) else { return }
+        keychainUpsert(key: key, data: data)
+    }
+
+    /// Load TOTP secret from Keychain
+    func loadTOTPSecret(for connectionId: UUID) -> String? {
+        let key = "com.TablePro.totpsecret.\(connectionId.uuidString)"
+
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: "com.TablePro",
+            kSecAttrAccount as String: key,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne,
+        ]
+
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+
+        guard status == errSecSuccess,
+              let data = result as? Data,
+              let secret = String(data: data, encoding: .utf8)
+        else {
+            return nil
+        }
+
+        return secret
+    }
+
+    /// Delete TOTP secret from Keychain
+    func deleteTOTPSecret(for connectionId: UUID) {
+        let key = "com.TablePro.totpsecret.\(connectionId.uuidString)"
+
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: "com.TablePro",
+            kSecAttrAccount as String: key,
+        ]
+
+        SecItemDelete(query as CFDictionary)
+    }
 }
 
 // MARK: - Stored Connection (Codable wrapper)
@@ -382,6 +433,12 @@ private struct StoredConnection: Codable {
     // Startup commands
     let startupCommands: String?
 
+    // TOTP configuration
+    let totpMode: String
+    let totpAlgorithm: String
+    let totpDigits: Int
+    let totpPeriod: Int
+
     // Plugin-driven additional fields
     let additionalFields: [String: String]?
 
@@ -403,6 +460,12 @@ private struct StoredConnection: Codable {
         self.sshPrivateKeyPath = connection.sshConfig.privateKeyPath
         self.sshUseSSHConfig = connection.sshConfig.useSSHConfig
         self.sshAgentSocketPath = connection.sshConfig.agentSocketPath
+
+        // TOTP configuration
+        self.totpMode = connection.sshConfig.totpMode.rawValue
+        self.totpAlgorithm = connection.sshConfig.totpAlgorithm.rawValue
+        self.totpDigits = connection.sshConfig.totpDigits
+        self.totpPeriod = connection.sshConfig.totpPeriod
 
         // SSL Configuration
         self.sslMode = connection.sslConfig.mode.rawValue
@@ -446,6 +509,7 @@ private struct StoredConnection: Codable {
         case id, name, host, port, database, username, type
         case sshEnabled, sshHost, sshPort, sshUsername, sshAuthMethod, sshPrivateKeyPath
         case sshUseSSHConfig, sshAgentSocketPath
+        case totpMode, totpAlgorithm, totpDigits, totpPeriod
         case sslMode, sslCaCertificatePath, sslClientCertificatePath, sslClientKeyPath
         case color, tagId, groupId
         case safeModeLevel
@@ -473,6 +537,10 @@ private struct StoredConnection: Codable {
         try container.encode(sshPrivateKeyPath, forKey: .sshPrivateKeyPath)
         try container.encode(sshUseSSHConfig, forKey: .sshUseSSHConfig)
         try container.encode(sshAgentSocketPath, forKey: .sshAgentSocketPath)
+        try container.encode(totpMode, forKey: .totpMode)
+        try container.encode(totpAlgorithm, forKey: .totpAlgorithm)
+        try container.encode(totpDigits, forKey: .totpDigits)
+        try container.encode(totpPeriod, forKey: .totpPeriod)
         try container.encode(sslMode, forKey: .sslMode)
         try container.encode(sslCaCertificatePath, forKey: .sslCaCertificatePath)
         try container.encode(sslClientCertificatePath, forKey: .sslClientCertificatePath)
@@ -508,6 +576,16 @@ private struct StoredConnection: Codable {
         sshUseSSHConfig = try container.decode(Bool.self, forKey: .sshUseSSHConfig)
         sshAgentSocketPath = try container.decodeIfPresent(String.self, forKey: .sshAgentSocketPath) ?? ""
 
+        // TOTP configuration (migration: use defaults if missing)
+        totpMode = try container.decodeIfPresent(String.self, forKey: .totpMode) ?? TOTPMode.none.rawValue
+        totpAlgorithm = try container.decodeIfPresent(
+            String.self, forKey: .totpAlgorithm
+        ) ?? TOTPAlgorithm.sha1.rawValue
+        let decodedDigits = try container.decodeIfPresent(Int.self, forKey: .totpDigits) ?? 6
+        totpDigits = max(6, min(8, decodedDigits))
+        let decodedPeriod = try container.decodeIfPresent(Int.self, forKey: .totpPeriod) ?? 30
+        totpPeriod = max(15, min(120, decodedPeriod))
+
         // SSL Configuration (migration: use defaults if missing)
         sslMode = try container.decodeIfPresent(String.self, forKey: .sslMode) ?? SSLMode.disabled.rawValue
         sslCaCertificatePath = try container.decodeIfPresent(String.self, forKey: .sslCaCertificatePath) ?? ""
@@ -539,7 +617,7 @@ private struct StoredConnection: Codable {
     }
 
     func toConnection() -> DatabaseConnection {
-        let sshConfig = SSHConfiguration(
+        var sshConfig = SSHConfiguration(
             enabled: sshEnabled,
             host: sshHost,
             port: sshPort,
@@ -549,6 +627,10 @@ private struct StoredConnection: Codable {
             useSSHConfig: sshUseSSHConfig,
             agentSocketPath: sshAgentSocketPath
         )
+        sshConfig.totpMode = TOTPMode(rawValue: totpMode) ?? .none
+        sshConfig.totpAlgorithm = TOTPAlgorithm(rawValue: totpAlgorithm) ?? .sha1
+        sshConfig.totpDigits = totpDigits
+        sshConfig.totpPeriod = totpPeriod
 
         let sslConfig = SSLConfiguration(
             mode: SSLMode(rawValue: sslMode) ?? .disabled,

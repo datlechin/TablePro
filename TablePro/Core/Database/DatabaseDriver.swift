@@ -298,28 +298,11 @@ extension DatabaseDriver {
         // No-op by default
     }
 
-    /// Default timeout implementation using database-specific session variables
+    /// Default timeout implementation — delegates to each plugin's PluginDatabaseDriver.
+    /// The PluginDriverAdapter bridges this call to the plugin.
     func applyQueryTimeout(_ seconds: Int) async throws {
-        guard seconds > 0 else { return }
-        let ms = seconds * 1_000
-        do {
-            let type = connection.type
-            if type == .mysql {
-                _ = try await execute(query: "SET SESSION max_execution_time = \(ms)")
-            } else if type == .mariadb {
-                _ = try await execute(query: "SET SESSION max_statement_time = \(seconds)")
-            } else if type == .postgresql || type == .redshift {
-                _ = try await execute(query: "SET statement_timeout = '\(ms)'")
-            } else if type == .mssql {
-                _ = try await execute(query: "SET LOCK_TIMEOUT \(ms)")
-            } else if type == .clickhouse {
-                _ = try await execute(query: "SET max_execution_time = \(seconds)")
-            }
-            // sqlite, duckdb, mongodb, redis, oracle: no session-level timeout
-        } catch {
-            Logger(subsystem: "com.TablePro", category: "DatabaseDriver")
-                .warning("Failed to set query timeout: \(error.localizedDescription)")
-        }
+        // No-op: each plugin's PluginDatabaseDriver implements its own timeout command.
+        // The PluginDriverAdapter bridges this call to the plugin.
     }
 }
 
@@ -381,6 +364,14 @@ enum DatabaseDriverFactory {
         switch connection.type {
         case .mongodb:
             fields["sslCACertPath"] = ssl.caCertificatePath
+            fields["mongoReadPreference"] = connection.mongoReadPreference ?? ""
+            fields["mongoWriteConcern"] = connection.mongoWriteConcern ?? ""
+        case .redis:
+            fields["redisDatabase"] = String(connection.redisDatabase ?? 0)
+        case .mssql:
+            fields["mssqlSchema"] = connection.mssqlSchema ?? "dbo"
+        case .oracle:
+            fields["oracleServiceName"] = connection.oracleServiceName ?? ""
         default:
             break
         }

@@ -1260,6 +1260,9 @@
         }
       }
     },
+    "6" : {
+
+    },
     "7 days" : {
       "localizations" : {
         "vi" : {
@@ -1275,6 +1278,9 @@
           }
         }
       }
+    },
+    "8" : {
+
     },
     "8 spaces" : {
       "localizations" : {
@@ -1355,6 +1361,12 @@
           }
         }
       }
+    },
+    "30s" : {
+
+    },
+    "60s" : {
+
     },
     "90 days" : {
       "localizations" : {
@@ -1908,6 +1920,9 @@
     "Alert (Full)" : {
 
     },
+    "Algorithm" : {
+
+    },
     "All" : {
 
     },
@@ -2445,6 +2460,9 @@
         }
       }
     },
+    "Auto Generate" : {
+
+    },
     "Auto Inc" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2542,6 +2560,9 @@
           }
         }
       }
+    },
+    "Base32-encoded secret from your authenticator setup" : {
+
     },
     "bastion.example.com" : {
       "localizations" : {
@@ -3711,6 +3732,9 @@
           }
         }
       }
+    },
+    "Connect Anyway" : {
+
     },
     "Connected" : {
       "localizations" : {
@@ -5575,6 +5599,9 @@
         }
       }
     },
+    "Digits" : {
+
+    },
     "Disable foreign key checks" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5657,7 +5684,6 @@
       }
     },
     "Disconnect" : {
-      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -6352,6 +6378,9 @@
         }
       }
     },
+    "Enter the TOTP verification code for SSH authentication." : {
+
+    },
     "equals" : {
       "localizations" : {
         "vi" : {
@@ -6627,6 +6656,9 @@
           }
         }
       }
+    },
+    "EXPLAIN is not supported for this database type." : {
+
     },
     "Explain Query" : {
       "localizations" : {
@@ -7205,6 +7237,9 @@
           }
         }
       }
+    },
+    "Failed to open SSH channel for port forwarding" : {
+
     },
     "Failed to parse any columns from table '%@'. Check console for debug info." : {
       "extractionState" : "stale",
@@ -9068,6 +9103,9 @@
           }
         }
       }
+    },
+    "Keyboard Interactive" : {
+
     },
     "Keys are provided by the SSH agent (e.g. 1Password, ssh-agent)." : {
       "localizations" : {
@@ -11786,6 +11824,9 @@
         }
       }
     },
+    "Password is sent via keyboard-interactive challenge-response." : {
+
+    },
     "Paste" : {
       "localizations" : {
         "vi" : {
@@ -11866,6 +11907,9 @@
           }
         }
       }
+    },
+    "Period" : {
+
     },
     "Pink" : {
       "localizations" : {
@@ -12589,6 +12633,9 @@
           }
         }
       }
+    },
+    "Prompt at Connect" : {
+
     },
     "Providers" : {
       "localizations" : {
@@ -15064,6 +15111,7 @@
       }
     },
     "SSH command not found. Please ensure OpenSSH is installed." : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -15110,6 +15158,12 @@
           }
         }
       }
+    },
+    "SSH Host Key Changed" : {
+
+    },
+    "SSH host key verification failed" : {
+
     },
     "SSH Port" : {
       "localizations" : {
@@ -15948,6 +16002,16 @@
     "The %@ plugin is not installed. You can download it from the plugin marketplace." : {
 
     },
+    "The authenticity of host '%@' can't be established.\n\n%@ key fingerprint is:\n%@\n\nAre you sure you want to continue connecting?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The authenticity of host '%1$@' can't be established.\n\n%2$@ key fingerprint is:\n%3$@\n\nAre you sure you want to continue connecting?"
+          }
+        }
+      }
+    },
     "The following %lld queries may permanently modify or delete data. This action cannot be undone.\n\n%@" : {
       "localizations" : {
         "en" : {
@@ -16537,6 +16601,12 @@
         }
       }
     },
+    "TOTP" : {
+
+    },
+    "TOTP Secret" : {
+
+    },
     "true" : {
       "localizations" : {
         "vi" : {
@@ -16637,6 +16707,9 @@
         }
       }
     },
+    "Trust" : {
+
+    },
     "Try a different search term" : {
       "localizations" : {
         "vi" : {
@@ -16684,6 +16757,9 @@
           }
         }
       }
+    },
+    "Two-Factor Authentication" : {
+
     },
     "Type" : {
       "localizations" : {
@@ -16851,6 +16927,9 @@
           }
         }
       }
+    },
+    "Unknown SSH Host" : {
+
     },
     "Unlicensed" : {
       "localizations" : {
@@ -17235,6 +17314,9 @@
         }
       }
     },
+    "Verification Code Required" : {
+
+    },
     "Verified" : {
 
     },
@@ -17406,6 +17488,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "警告：重新启用外键检查失败：%@。请手动验证外键约束已启用。"
+          }
+        }
+      }
+    },
+    "WARNING: The host key for '%@' has changed!\n\nThis could mean someone is doing something malicious, or the server was reinstalled.\n\nPrevious fingerprint: %@\nCurrent fingerprint: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "WARNING: The host key for '%1$@' has changed!\n\nThis could mean someone is doing something malicious, or the server was reinstalled.\n\nPrevious fingerprint: %2$@\nCurrent fingerprint: %3$@"
           }
         }
       }
@@ -17647,6 +17739,9 @@
           }
         }
       }
+    },
+    "You will be prompted for a verification code each time you connect." : {
+
     },
     "You're all set!" : {
       "localizations" : {

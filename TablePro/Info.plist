@@ -200,6 +200,10 @@
 				<string>mssql</string>
 				<string>sqlserver</string>
 				<string>duckdb</string>
+				<string>cassandra</string>
+				<string>cql</string>
+				<string>scylladb</string>
+				<string>scylla</string>
 			</array>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>

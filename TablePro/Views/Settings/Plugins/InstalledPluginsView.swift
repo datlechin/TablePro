@@ -32,6 +32,7 @@ struct InstalledPluginsView: View {
                 pluginList
                     .frame(minWidth: 200, idealWidth: 240, maxWidth: 280)
 
+
                 detailPane
                     .frame(minWidth: 340)
             }
