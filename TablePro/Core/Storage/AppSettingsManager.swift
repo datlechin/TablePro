@@ -23,6 +23,7 @@ final class AppSettingsManager {
         didSet {
             general.language.apply()
             storage.saveGeneral(general)
+            SyncChangeTracker.shared.markDirty(.settings, id: "general")
         }
     }
 
@@ -31,6 +32,7 @@ final class AppSettingsManager {
             storage.saveAppearance(appearance)
             ThemeEngine.shared.activateTheme(id: appearance.activeThemeId)
             ThemeEngine.shared.updateAppearanceMode(appearance.appearanceMode)
+            SyncChangeTracker.shared.markDirty(.settings, id: "appearance")
         }
     }
 
@@ -46,6 +48,7 @@ final class AppSettingsManager {
                 wordWrap: editor.wordWrap
             )
             notifyChange(.editorSettingsDidChange)
+            SyncChangeTracker.shared.markDirty(.settings, id: "editor")
         }
     }
 
@@ -68,6 +71,7 @@ final class AppSettingsManager {
             // Update date formatting service with new format
             DateFormattingService.shared.updateFormat(validated.dateFormat)
             notifyChange(.dataGridSettingsDidChange)
+            SyncChangeTracker.shared.markDirty(.settings, id: "dataGrid")
         }
     }
 
@@ -89,24 +93,28 @@ final class AppSettingsManager {
             storage.saveHistory(validated)
             // Apply history settings immediately (cleanup if auto-cleanup enabled)
             Task { await applyHistorySettingsImmediately() }
+            SyncChangeTracker.shared.markDirty(.settings, id: "history")
         }
     }
 
     var tabs: TabSettings {
         didSet {
             storage.saveTabs(tabs)
+            SyncChangeTracker.shared.markDirty(.settings, id: "tabs")
         }
     }
 
     var keyboard: KeyboardSettings {
         didSet {
             storage.saveKeyboard(keyboard)
+            SyncChangeTracker.shared.markDirty(.settings, id: "keyboard")
         }
     }
 
     var ai: AISettings {
         didSet {
             storage.saveAI(ai)
+            SyncChangeTracker.shared.markDirty(.settings, id: "ai")
         }
     }
 

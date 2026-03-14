@@ -98,6 +98,9 @@
         }
       }
     },
+    "\"%@\" was modified on both this Mac and another device." : {
+
+    },
     "\"%@\" will be removed from your system. This action cannot be undone." : {
       "localizations" : {
         "vi" : {
@@ -470,6 +473,9 @@
           }
         }
       }
+    },
+    "%@ requires a Pro license" : {
+
     },
     "%@ rows" : {
       "localizations" : {
@@ -1225,6 +1231,9 @@
         }
       }
     },
+    "1 of %lld conflicts" : {
+
+    },
     "1 year" : {
       "localizations" : {
         "vi" : {
@@ -1643,6 +1652,9 @@
         }
       }
     },
+    "A sync conflict was detected and needs to be resolved." : {
+
+    },
     "About TablePro" : {
       "localizations" : {
         "vi" : {
@@ -1676,6 +1688,9 @@
         }
       }
     },
+    "Account:" : {
+
+    },
     "Activate" : {
       "localizations" : {
         "vi" : {
@@ -1691,6 +1706,9 @@
           }
         }
       }
+    },
+    "Activate License..." : {
+
     },
     "Activation Failed" : {
       "localizations" : {
@@ -2338,6 +2356,9 @@
           }
         }
       }
+    },
+    "An unknown sync error occurred: %@" : {
+
     },
     "and" : {
       "localizations" : {
@@ -4422,6 +4443,9 @@
           }
         }
       }
+    },
+    "Connections:" : {
+
     },
     "Constraint name" : {
       "extractionState" : "stale",
@@ -7676,6 +7700,9 @@
         }
       }
     },
+    "Failed to encode sync data: %@" : {
+
+    },
     "Failed to fetch table structure: %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8688,6 +8715,9 @@
         }
       }
     },
+    "Groups & Tags:" : {
+
+    },
     "Help improve TablePro by sharing anonymous usage statistics (no personal data or queries)." : {
       "localizations" : {
         "vi" : {
@@ -8817,6 +8847,9 @@
         }
       }
     },
+    "History Limit:" : {
+
+    },
     "Homepage" : {
       "localizations" : {
         "vi" : {
@@ -8853,6 +8886,27 @@
 
     },
     "Huge" : {
+
+    },
+    "iCloud account is not available. Sign in to iCloud in System Settings." : {
+
+    },
+    "iCloud Connected" : {
+
+    },
+    "iCloud server error: %@" : {
+
+    },
+    "iCloud storage is full. Free up space or reduce the history sync limit." : {
+
+    },
+    "iCloud Sync" : {
+
+    },
+    "iCloud Sync is active" : {
+
+    },
+    "iCloud Sync:" : {
 
     },
     "Icon Sizes" : {
@@ -9857,6 +9911,12 @@
         }
       }
     },
+    "Keep Other Version" : {
+
+    },
+    "Keep This Mac's Version" : {
+
+    },
     "Key File" : {
       "localizations" : {
         "vi" : {
@@ -10007,6 +10067,12 @@
         }
       }
     },
+    "Last synced %@" : {
+
+    },
+    "Last Synced:" : {
+
+    },
     "Latency: %lldms" : {
       "localizations" : {
         "vi" : {
@@ -10107,6 +10173,9 @@
           }
         }
       }
+    },
+    "License expired — sync paused" : {
+
     },
     "License Key:" : {
       "localizations" : {
@@ -10653,6 +10722,9 @@
         }
       }
     },
+    "Modified:" : {
+
+    },
     "MongoDB" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -10852,6 +10924,9 @@
           }
         }
       }
+    },
+    "Network is unavailable. Changes will sync when connectivity is restored." : {
+
     },
     "Never" : {
       "localizations" : {
@@ -11355,6 +11430,9 @@
           }
         }
       }
+    },
+    "No iCloud" : {
+
     },
     "No Indexes Defined" : {
       "localizations" : {
@@ -11953,6 +12031,9 @@
           }
         }
       }
+    },
+    "Not Available" : {
+
     },
     "Not connected" : {
       "localizations" : {
@@ -12676,6 +12757,9 @@
           }
         }
       }
+    },
+    "Other Device" : {
+
     },
     "Page size must be between %@ and %@" : {
       "localizations" : {
@@ -13737,6 +13821,9 @@
         }
       }
     },
+    "Pro license required for iCloud Sync" : {
+
+    },
     "Prompt at Connect" : {
       "localizations" : {
         "vi" : {
@@ -13914,6 +14001,9 @@
           }
         }
       }
+    },
+    "Query History:" : {
+
     },
     "Query timeout:" : {
       "localizations" : {
@@ -14552,6 +14642,9 @@
           }
         }
       }
+    },
+    "Renew License..." : {
+
     },
     "Reopen Last Session" : {
       "localizations" : {
@@ -15900,6 +15993,15 @@
         }
       }
     },
+    "Settings were changed" : {
+
+    },
+    "Settings were changed on both this Mac and another device." : {
+
+    },
+    "Settings:" : {
+
+    },
     "Share anonymous usage data" : {
       "localizations" : {
         "vi" : {
@@ -16178,6 +16280,12 @@
           }
         }
       }
+    },
+    "Sign in to iCloud in System Settings to enable sync." : {
+
+    },
+    "Sign in to iCloud to enable sync" : {
+
     },
     "Silent" : {
       "localizations" : {
@@ -17083,6 +17191,45 @@
         }
       }
     },
+    "Sync" : {
+
+    },
+    "Sync Categories" : {
+
+    },
+    "Sync Conflict" : {
+
+    },
+    "Sync connections, settings, and history across your Macs." : {
+
+    },
+    "Sync Error" : {
+
+    },
+    "Sync Now" : {
+
+    },
+    "Sync Off" : {
+
+    },
+    "Sync paused — Pro license expired" : {
+
+    },
+    "Sync zone not found. A full sync will be performed." : {
+
+    },
+    "Synced" : {
+
+    },
+    "Syncing with iCloud..." : {
+
+    },
+    "Syncing..." : {
+
+    },
+    "Syncs connections, settings, and history across your Macs via iCloud." : {
+
+    },
     "Syntax Colors" : {
 
     },
@@ -17647,6 +17794,9 @@
 
     },
     "This is a registry theme." : {
+
+    },
+    "This Mac" : {
 
     },
     "This Month" : {
@@ -19577,6 +19727,9 @@
           }
         }
       }
+    },
+    "Your license has expired" : {
+
     },
     "Zero Fill" : {
       "extractionState" : "stale",

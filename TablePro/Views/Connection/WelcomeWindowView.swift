@@ -178,6 +178,7 @@ struct WelcomeWindowView: View {
 
             // Footer hints
             HStack(spacing: 16) {
+                SyncStatusIndicator()
                 KeyboardHint(keys: "⌘N", label: "New")
                 KeyboardHint(keys: "⌘,", label: "Settings")
             }

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- iCloud Sync (Pro): sync connections, groups, tags, settings, and query history across Macs via CloudKit
+- Pro feature gating system with license-aware UI overlay for Pro-only features
+- Sync settings tab with per-category toggles and configurable history sync limit
+- Sync status indicator in welcome window showing real-time sync state
+- Conflict resolution dialog for handling simultaneous edits across devices
+
 ## [0.18.1] - 2026-03-14
 
 ### Fixed

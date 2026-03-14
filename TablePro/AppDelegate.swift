@@ -60,6 +60,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         AnalyticsService.shared.startPeriodicHeartbeat()
 
+        SyncCoordinator.shared.start()
+
         Task.detached(priority: .background) {
             _ = QueryHistoryStorage.shared
         }
@@ -94,6 +96,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self, selector: #selector(handleDatabaseDidConnect),
             name: .databaseDidConnect, object: nil
         )
+    }
+
+    func applicationDidBecomeActive(_ notification: Notification) {
+        SyncCoordinator.shared.syncIfNeeded()
     }
 
     func applicationWillTerminate(_ notification: Notification) {

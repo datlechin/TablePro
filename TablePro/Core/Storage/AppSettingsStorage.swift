@@ -29,6 +29,7 @@ final class AppSettingsStorage {
         static let tabs = "com.TablePro.settings.tabs"
         static let keyboard = "com.TablePro.settings.keyboard"
         static let ai = "com.TablePro.settings.ai"
+        static let sync = "com.TablePro.settings.sync"
         static let lastConnectionId = "com.TablePro.settings.lastConnectionId"
         static let hasCompletedOnboarding = "com.TablePro.settings.hasCompletedOnboarding"
     }
@@ -114,6 +115,16 @@ final class AppSettingsStorage {
 
     func saveAI(_ settings: AISettings) {
         save(settings, key: Keys.ai)
+    }
+
+    // MARK: - Sync Settings
+
+    func loadSync() -> SyncSettings {
+        load(key: Keys.sync, default: .default)
+    }
+
+    func saveSync(_ settings: SyncSettings) {
+        save(settings, key: Keys.sync)
     }
 
     // MARK: - Last Connection (for Reopen Last Session)

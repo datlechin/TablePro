@@ -60,6 +60,9 @@ final class ConnectionStorage {
         } catch {
             Self.logger.error("Failed to save connections: \(error)")
         }
+
+        // Mark all saved connections as dirty for sync
+        SyncChangeTracker.shared.markDirty(.connection, ids: connections.map { $0.id.uuidString })
     }
 
     /// Add a new connection
@@ -92,6 +95,7 @@ final class ConnectionStorage {
 
     /// Delete a connection
     func deleteConnection(_ connection: DatabaseConnection) {
+        SyncChangeTracker.shared.markDeleted(.connection, id: connection.id.uuidString)
         var connections = loadConnections()
         connections.removeAll { $0.id == connection.id }
         saveConnections(connections)
