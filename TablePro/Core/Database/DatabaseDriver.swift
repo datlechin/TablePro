@@ -391,6 +391,8 @@ enum DatabaseDriverFactory {
             fields["oracleServiceName"] = connection.oracleServiceName ?? ""
         case .mysql, .mariadb, .sqlite, .clickhouse, .postgresql, .redshift, .cassandra, .scylladb, .duckdb:
             break
+        default:
+            break
         }
 
         return fields

@@ -268,8 +268,6 @@ extension MainContentCoordinator {
             )
             runQuery()
             return nil
-        case .cassandra, .scylladb:
-            return nil
         }
 
         // SQL databases: delegate to plugin driver
