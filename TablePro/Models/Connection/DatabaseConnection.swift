@@ -230,6 +230,8 @@ extension DatabaseType {
     static let oracle = DatabaseType(rawValue: "Oracle")
     static let clickhouse = DatabaseType(rawValue: "ClickHouse")
     static let duckdb = DatabaseType(rawValue: "DuckDB")
+    static let cassandra = DatabaseType(rawValue: "Cassandra")
+    static let scylladb = DatabaseType(rawValue: "ScyllaDB")
 }
 
 extension DatabaseType: Codable {
@@ -249,6 +251,7 @@ extension DatabaseType {
     static let allKnownTypes: [DatabaseType] = [
         .mysql, .mariadb, .postgresql, .sqlite, .redshift,
         .mongodb, .redis, .mssql, .oracle, .clickhouse, .duckdb,
+        .cassandra, .scylladb,
     ]
 
     /// Compatibility shim for CaseIterable call sites.
@@ -303,10 +306,11 @@ extension DatabaseType {
         .oracle: "Oracle",
         .clickhouse: "ClickHouse",
         .duckdb: "DuckDB",
+        .cassandra: "Cassandra", .scylladb: "Cassandra",
     ]
 
     private static let isDownloadablePluginSet: Set<DatabaseType> = [
-        .oracle, .clickhouse, .sqlite, .duckdb,
+        .oracle, .clickhouse, .sqlite, .duckdb, .cassandra, .scylladb,
     ]
 
     private static let iconNameMap: [DatabaseType: String] = [
@@ -321,6 +325,8 @@ extension DatabaseType {
         .oracle: "oracle-icon",
         .clickhouse: "clickhouse-icon",
         .duckdb: "duckdb-icon",
+        .cassandra: "cassandra-icon",
+        .scylladb: "scylladb-icon",
     ]
 
     private static let defaultPortMap: [DatabaseType: Int] = [
@@ -334,6 +340,7 @@ extension DatabaseType {
         .oracle: 1_521,
         .clickhouse: 8_123,
         .duckdb: 0,
+        .cassandra: 9_042, .scylladb: 9_042,
     ]
 
     private static let requiresAuthenticationSet: Set<DatabaseType> = [
@@ -345,7 +352,7 @@ extension DatabaseType {
     ]
 
     private static let supportsSchemaEditingSet: Set<DatabaseType> = [
-        .mysql, .mariadb, .postgresql, .sqlite, .mssql, .oracle, .clickhouse, .duckdb,
+        .mysql, .mariadb, .postgresql, .sqlite, .mssql, .oracle, .clickhouse, .duckdb, .cassandra, .scylladb,
     ]
 }
 

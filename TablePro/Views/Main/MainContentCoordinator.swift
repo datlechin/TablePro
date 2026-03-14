@@ -710,6 +710,9 @@ final class MainContentCoordinator {
 
         guard let adapter = DatabaseManager.shared.driver(for: connectionId) as? PluginDriverAdapter,
               let explainSQL = adapter.buildExplainQuery(stmt) else {
+            if let index = tabManager.selectedTabIndex {
+                tabManager.tabs[index].errorMessage = String(localized: "EXPLAIN is not supported for this database type.")
+            }
             return
         }
 

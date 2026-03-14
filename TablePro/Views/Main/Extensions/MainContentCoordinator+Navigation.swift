@@ -244,6 +244,13 @@ extension MainContentCoordinator {
         WindowOpener.shared.openNativeTab(payload)
     }
 
+    private func currentSchemaName(fallback: String) -> String {
+        if let schemaDriver = DatabaseManager.shared.driver(for: connectionId) as? SchemaSwitchable {
+            return schemaDriver.escapedSchema
+        }
+        return fallback
+    }
+
     private func allTablesMetadataSQL() -> String? {
         let editorLang = PluginManager.shared.editorLanguage(for: connection.type)
         // Non-SQL databases: open a command tab instead

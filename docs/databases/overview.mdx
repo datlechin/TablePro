@@ -1,15 +1,15 @@
 ---
 title: Connection Management
-description: Create, organize, and manage database connections across 10 supported engines in TablePro
+description: Create, organize, and manage database connections across 12 supported engines in TablePro
 ---
 
 # Connection Management
 
-TablePro connects to ten database systems from a single interface. Create connections, organize them with colors, tags, and groups, and switch between them without leaving your workflow.
+TablePro connects to twelve database systems from a single interface. Create connections, organize them with colors, tags, and groups, and switch between them without leaving your workflow.
 
 ## Supported Databases
 
-TablePro supports ten database systems natively:
+TablePro supports twelve database systems natively:
 
 <CardGroup cols={2}>
   <Card title="MySQL" icon="database">
@@ -41,6 +41,9 @@ TablePro supports ten database systems natively:
   </Card>
   <Card title="ClickHouse" icon="database">
     ClickHouse OLAP database via HTTP API. Default port: 8123
+  </Card>
+  <Card title="Cassandra / ScyllaDB" icon="database">
+    Cassandra 3.11+ and ScyllaDB 4.0+ via CQL native protocol. Default port: 9042
   </Card>
 </CardGroup>
 
@@ -105,7 +108,7 @@ open "mysql://root:secret@localhost:3306/myapp"
 open "redis://:password@localhost:6379"
 ```
 
-TablePro registers `postgresql`, `postgres`, `mysql`, `mariadb`, `sqlite`, `mongodb`, `mongodb+srv`, `redis`, `rediss`, `redshift`, `mssql`, `sqlserver`, `oracle`, and `clickhouse` as URL schemes on macOS, so the OS routes these URLs directly to the app.
+TablePro registers `postgresql`, `postgres`, `mysql`, `mariadb`, `sqlite`, `mongodb`, `mongodb+srv`, `redis`, `rediss`, `redshift`, `mssql`, `sqlserver`, `oracle`, `clickhouse`, `cassandra`, and `scylladb` as URL schemes on macOS, so the OS routes these URLs directly to the app.
 
 **What happens:**
 
@@ -128,7 +131,7 @@ This is different from **Import from URL**, which fills in the connection form s
 | Field | Description |
 |-------|-------------|
 | **Name** | A friendly name to identify this connection |
-| **Type** | Database type: MySQL, MariaDB, PostgreSQL, SQLite, MongoDB, Redis, Redshift, SQL Server, or Oracle |
+| **Type** | Database type: MySQL, MariaDB, PostgreSQL, SQLite, MongoDB, Redis, Redshift, SQL Server, Oracle, ClickHouse, Cassandra, or ScyllaDB |
 
 #### Appearance Section
 
@@ -569,6 +572,8 @@ TablePro auto-fills the port when you select a database type:
 | Microsoft SQL Server | 1433 |
 | Oracle Database | 1521 |
 | ClickHouse | 8123 |
+| Cassandra | 9042 |
+| ScyllaDB | 9042 |
 
 ## Related Guides
 
@@ -599,6 +604,9 @@ TablePro auto-fills the port when you select a database type:
   </Card>
   <Card title="ClickHouse" icon="database" href="/databases/clickhouse">
     ClickHouse OLAP database connections
+  </Card>
+  <Card title="Cassandra / ScyllaDB" icon="database" href="/databases/cassandra">
+    Cassandra and ScyllaDB CQL connections
   </Card>
   <Card title="SSH Tunneling" icon="lock" href="/databases/ssh-tunneling">
     Secure connections through SSH

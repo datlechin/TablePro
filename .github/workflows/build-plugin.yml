@@ -57,22 +57,27 @@ jobs:
                 TARGET="OracleDriver"; BUNDLE_ID="com.TablePro.OracleDriver"
                 DISPLAY_NAME="Oracle Driver"; SUMMARY="Oracle Database 12c+ driver via OracleNIO"
                 DB_TYPE_IDS='["Oracle"]'; ICON="server.rack"; BUNDLE_NAME="OracleDriver"
-                HOMEPAGE="https://tablepro.app/databases/oracle" ;;
+                HOMEPAGE="https://docs.tablepro.app/databases/oracle" ;;
               clickhouse)
                 TARGET="ClickHouseDriver"; BUNDLE_ID="com.TablePro.ClickHouseDriver"
                 DISPLAY_NAME="ClickHouse Driver"; SUMMARY="ClickHouse OLAP database driver via HTTP interface"
                 DB_TYPE_IDS='["ClickHouse"]'; ICON="chart.bar.xaxis"; BUNDLE_NAME="ClickHouseDriver"
-                HOMEPAGE="https://tablepro.app/databases/clickhouse" ;;
+                HOMEPAGE="https://docs.tablepro.app/databases/clickhouse" ;;
               sqlite)
                 TARGET="SQLiteDriver"; BUNDLE_ID="com.TablePro.SQLiteDriver"
                 DISPLAY_NAME="SQLite Driver"; SUMMARY="SQLite embedded database driver"
                 DB_TYPE_IDS='["SQLite"]'; ICON="internaldrive"; BUNDLE_NAME="SQLiteDriver"
-                HOMEPAGE="https://tablepro.app" ;;
+                HOMEPAGE="https://docs.tablepro.app/databases/sqlite" ;;
               duckdb)
                 TARGET="DuckDBDriver"; BUNDLE_ID="com.TablePro.DuckDBDriver"
                 DISPLAY_NAME="DuckDB Driver"; SUMMARY="DuckDB analytical database driver"
                 DB_TYPE_IDS='["DuckDB"]'; ICON="bird"; BUNDLE_NAME="DuckDBDriver"
-                HOMEPAGE="https://tablepro.app" ;;
+                HOMEPAGE="https://docs.tablepro.app/databases/duckdb" ;;
+              cassandra)
+                TARGET="CassandraDriver"; BUNDLE_ID="com.TablePro.CassandraDriver"
+                DISPLAY_NAME="Cassandra Driver"; SUMMARY="Apache Cassandra and ScyllaDB driver via DataStax C driver"
+                DB_TYPE_IDS='["Cassandra", "ScyllaDB"]'; ICON="cassandra-icon"; BUNDLE_NAME="CassandraDriver"
+                HOMEPAGE="https://docs.tablepro.app/databases/cassandra" ;;
               *) echo "Unknown plugin: $plugin_name"; return 1 ;;
             esac
           }
@@ -90,6 +95,11 @@ jobs:
             resolve_plugin_info "$PLUGIN_NAME" || continue
 
             echo "Building $TARGET v$VERSION"
+
+            # Build Cassandra dependencies if needed
+            if [ "$PLUGIN_NAME" = "cassandra" ]; then
+              ./scripts/build-cassandra.sh both
+            fi
 
             # Build both architectures
             ./scripts/build-plugin.sh "$TARGET" arm64

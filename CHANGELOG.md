@@ -53,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pre-connect script: run a shell command before each connection (e.g., to refresh credentials or update ~/.pgpass)
 - `ParameterStyle` enum in TableProPluginKit: plugins declare `?` or `$1` placeholder style via `parameterStyle` property on `PluginDatabaseDriver`
 - DML statement generation in ClickHouse, MSSQL, and Oracle plugins via `generateStatements()` for database-specific UPDATE/DELETE syntax
+- Cassandra and ScyllaDB database support via DataStax C driver (downloadable plugin)
 - `quoteIdentifier` method on `PluginDatabaseDriver` and `DatabaseDriver` protocols: plugins provide database-specific identifier quoting (backticks for MySQL/SQLite/ClickHouse, brackets for MSSQL, double-quotes for PostgreSQL/Oracle/DuckDB, passthrough for MongoDB/Redis)
 
 ### Changed

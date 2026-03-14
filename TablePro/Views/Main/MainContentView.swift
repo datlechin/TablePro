@@ -331,12 +331,13 @@ struct MainContentView: View {
                 }
                 // Lazy-load: execute query for restored tabs that skipped auto-execute,
                 // or re-query tabs whose row data was evicted while inactive.
-                if let tab = tabManager.selectedTab,
-                   tab.tabType == .table,
-                   tab.resultRows.isEmpty || tab.rowBuffer.isEvicted,
-                   tab.lastExecutedAt == nil || tab.rowBuffer.isEvicted,
-                   !tab.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                {
+                let needsLazyLoad = tabManager.selectedTab.map { tab in
+                    tab.tabType == .table
+                        && (tab.resultRows.isEmpty || tab.rowBuffer.isEvicted)
+                        && (tab.lastExecutedAt == nil || tab.rowBuffer.isEvicted)
+                        && !tab.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                } ?? false
+                if needsLazyLoad {
                     coordinator.runQuery()
                 }
             }

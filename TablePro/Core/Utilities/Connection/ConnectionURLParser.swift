@@ -110,6 +110,10 @@ struct ConnectionURLParser {
             dbType = .oracle
         case "clickhouse", "ch":
             dbType = .clickhouse
+        case "cassandra", "cql":
+            dbType = .cassandra
+        case "scylladb", "scylla":
+            dbType = .scylladb
         default:
             return .failure(.unsupportedScheme(scheme))
         }
