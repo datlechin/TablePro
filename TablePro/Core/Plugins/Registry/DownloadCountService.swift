@@ -96,7 +96,6 @@ final class DownloadCountService {
         }
         return map
     }
-
 }
 
 // MARK: - GitHub API Models

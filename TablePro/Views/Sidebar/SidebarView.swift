@@ -238,7 +238,6 @@ struct SidebarView: View {
             sidebarState.selectedTables.removeAll()
         }
     }
-
 }
 
 // MARK: - Preview

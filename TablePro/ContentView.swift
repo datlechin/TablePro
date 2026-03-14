@@ -396,7 +396,6 @@ struct ContentView: View {
 
         storage.deleteConnection(connection)
     }
-
 }
 
 #Preview {

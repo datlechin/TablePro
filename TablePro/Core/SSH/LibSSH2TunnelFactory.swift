@@ -31,7 +31,6 @@ internal enum LibSSH2TunnelFactory {
 
     // MARK: - Public
 
-    // swiftlint:disable:next function_body_length
     static func createTunnel(
         connectionId: UUID,
         config: SSHConfiguration,
@@ -185,7 +184,6 @@ internal enum LibSSH2TunnelFactory {
                 )
 
                 return tunnel
-
             } catch {
                 // Clean up currentSession if it differs from all hop sessions
                 // (happens when a nextSession was created but failed auth/verify)

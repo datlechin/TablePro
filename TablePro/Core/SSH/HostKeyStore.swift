@@ -149,7 +149,7 @@ internal final class HostKeyStore: @unchecked Sendable {
 
     /// Build the host identifier string: [hostname]:port
     private func hostIdentifier(_ hostname: String, _ port: Int) -> String {
-        return "[\(hostname)]:\(port)"
+        "[\(hostname)]:\(port)"
     }
 
     /// Load all entries from the known_hosts file

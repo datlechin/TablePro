@@ -181,8 +181,8 @@ struct BrowsePluginsView: View {
     }
 
     private func formattedCount(_ count: Int) -> String {
-        if count >= 1000 {
-            return String(format: "%.1fk", Double(count) / 1000.0)
+        if count >= 1_000 {
+            return String(format: "%.1fk", Double(count) / 1_000.0)
         }
         return "\(count)"
     }

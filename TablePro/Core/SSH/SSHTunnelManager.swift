@@ -52,9 +52,7 @@ actor SSHTunnelManager {
 
     private init() {}
 
-    /// Create an SSH tunnel for a database connection
-    /// - Returns: Local port number for the tunnel
-    // swiftlint:disable:next function_parameter_count
+    /// Create an SSH tunnel for a database connection.
     func createTunnel(
         connectionId: UUID,
         sshHost: String,
@@ -129,7 +127,6 @@ actor SSHTunnelManager {
 
                 Self.logger.info("Tunnel created for \(connectionId) on local port \(localPort)")
                 return localPort
-
             } catch let error as SSHTunnelError {
                 if case .tunnelCreationFailed(let msg) = error,
                    msg.contains("already in use") {

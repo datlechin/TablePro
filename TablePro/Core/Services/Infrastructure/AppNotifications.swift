@@ -18,5 +18,4 @@ extension Notification.Name {
 
     static let connectionUpdated = Notification.Name("connectionUpdated")
     static let databaseDidConnect = Notification.Name("databaseDidConnect")
-
 }
