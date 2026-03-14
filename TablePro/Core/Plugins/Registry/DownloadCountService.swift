@@ -11,11 +11,9 @@ final class DownloadCountService {
     static let shared = DownloadCountService()
 
     private var counts: [String: Int] = [:]
+    private var lastFetchDate: Date?
+    private static let cooldown: TimeInterval = 300 // 5 minutes
     private static let logger = Logger(subsystem: "com.TablePro", category: "DownloadCountService")
-
-    private static let cacheKey = "downloadCountsCache"
-    private static let cacheDateKey = "downloadCountsCacheDate"
-    private static let cacheTTL: TimeInterval = 3_600 // 1 hour
 
     // swiftlint:disable:next force_unwrapping
     private static let releasesURL = URL(string: "https://api.github.com/repos/datlechin/TablePro/releases?per_page=100")!
@@ -27,8 +25,6 @@ final class DownloadCountService {
         config.timeoutIntervalForRequest = 15
         config.timeoutIntervalForResource = 30
         self.session = URLSession(configuration: config)
-
-        loadCache()
     }
 
     // MARK: - Public
@@ -40,8 +36,7 @@ final class DownloadCountService {
     func fetchCounts(for manifest: RegistryManifest?) async {
         guard let manifest else { return }
 
-        if isCacheValid() {
-            Self.logger.debug("Using cached download counts")
+        if let lastFetchDate, Date().timeIntervalSince(lastFetchDate) < Self.cooldown {
             return
         }
 
@@ -60,7 +55,7 @@ final class DownloadCountService {
             }
 
             counts = totals
-            saveCache(totals)
+            lastFetchDate = Date()
             Self.logger.info("Fetched download counts for \(totals.count) plugin(s)")
         } catch {
             Self.logger.error("Failed to fetch download counts: \(error.localizedDescription)")
@@ -102,31 +97,6 @@ final class DownloadCountService {
         return map
     }
 
-    // MARK: - Cache
-
-    private func isCacheValid() -> Bool {
-        guard let cacheDate = UserDefaults.standard.object(forKey: Self.cacheDateKey) as? Date else {
-            return false
-        }
-        return Date().timeIntervalSince(cacheDate) < Self.cacheTTL
-    }
-
-    private func loadCache() {
-        guard isCacheValid(),
-              let data = UserDefaults.standard.data(forKey: Self.cacheKey),
-              let cached = try? JSONDecoder().decode([String: Int].self, from: data) else {
-            counts = [:]
-            return
-        }
-        counts = cached
-    }
-
-    private func saveCache(_ totals: [String: Int]) {
-        if let data = try? JSONEncoder().encode(totals) {
-            UserDefaults.standard.set(data, forKey: Self.cacheKey)
-            UserDefaults.standard.set(Date(), forKey: Self.cacheDateKey)
-        }
-    }
 }
 
 // MARK: - GitHub API Models

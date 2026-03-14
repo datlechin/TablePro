@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Redesigned Plugins settings tab with HSplitView master-detail layout: plugin list on the left, detail pane on the right, matching macOS conventions
+- Redesigned Plugins settings tab with HSplitView master-detail layout: plugin list on the left, detail pane on the right, matching macOS conventions. Plugin rows now show version, author/capability, and install status at a glance
+- Download counts in browse tab now always fetch latest from GitHub API (5-minute in-memory cooldown per session)
 - Replaced ~40 hardcoded `DatabaseType` switches across ~20 UI files with dynamic plugin property lookups via `PluginManager`, so third-party plugins get correct UI behavior (colors, labels, editor language, feature toggles) automatically
 - ConnectionFormView now fully dynamic: pgpass toggle, password visibility, and SSH/SSL tab visibility all driven by plugin metadata (`FieldSection`, `hidesPassword`, `supportsSSH`/`supportsSSL`) instead of hardcoded type checks
 - Replaced `AppState.isMongoDB`/`isRedis` booleans with `AppState.editorLanguage: EditorLanguage` for extensible editor language detection

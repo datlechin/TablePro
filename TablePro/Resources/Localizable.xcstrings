@@ -274,6 +274,16 @@
         }
       }
     },
+    "%@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@"
+          }
+        }
+      }
+    },
     "%@ cannot be empty" : {
       "localizations" : {
         "vi" : {
@@ -7637,6 +7647,9 @@
         }
       }
     },
+    "Filter..." : {
+
+    },
     "Filters" : {
       "localizations" : {
         "vi" : {
@@ -14124,6 +14137,7 @@
       }
     },
     "Search plugins..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -17156,7 +17170,6 @@
       }
     },
     "User" : {
-      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -17237,7 +17250,6 @@
       }
     },
     "v%@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {

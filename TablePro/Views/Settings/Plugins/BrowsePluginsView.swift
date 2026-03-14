@@ -111,18 +111,81 @@ struct BrowsePluginsView: View {
 
     @ViewBuilder
     private func browseRow(_ plugin: RegistryPlugin) -> some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 8) {
             pluginIcon(plugin.iconName ?? "puzzlepiece")
-                .frame(width: 16)
+                .font(.title3)
+                .frame(width: 24, height: 24)
                 .foregroundStyle(.secondary)
-            Text(plugin.name)
-                .lineLimit(1)
-            if plugin.isVerified {
-                Image(systemName: "checkmark.seal.fill")
-                    .foregroundStyle(.blue)
-                    .font(.caption2)
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 4) {
+                    Text(plugin.name)
+                        .lineLimit(1)
+                    if plugin.isVerified {
+                        Image(systemName: "checkmark.seal.fill")
+                            .foregroundStyle(.blue)
+                            .font(.caption2)
+                    }
+                }
+
+                HStack(spacing: 4) {
+                    Text("v\(plugin.version)")
+                    Text("·")
+                    Text(plugin.author.name)
+                        .lineLimit(1)
+                    if let count = downloadCountService.downloadCount(for: plugin.id) {
+                        Text("·")
+                        Text("\(Image(systemName: "arrow.down.circle")) \(formattedCount(count))")
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
+
+            Spacer()
+
+            rowStatusBadge(for: plugin)
         }
+        .padding(.vertical, 2)
+    }
+
+    // MARK: - Row Status Badge
+
+    @ViewBuilder
+    private func rowStatusBadge(for plugin: RegistryPlugin) -> some View {
+        if isPluginInstalled(plugin.id) {
+            Text("Installed")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        } else if let progress = installTracker.state(for: plugin.id) {
+            switch progress.phase {
+            case .downloading(let fraction):
+                ProgressView(value: fraction)
+                    .frame(width: 40)
+                    .progressViewStyle(.linear)
+            case .installing:
+                ProgressView()
+                    .controlSize(.mini)
+            case .completed:
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                    .font(.caption)
+            case .failed:
+                Button("Retry") { installPlugin(plugin) }
+                    .controlSize(.mini)
+            }
+        } else {
+            Button("Install") { installPlugin(plugin) }
+                .buttonStyle(.bordered)
+                .controlSize(.mini)
+        }
+    }
+
+    private func formattedCount(_ count: Int) -> String {
+        if count >= 1000 {
+            return String(format: "%.1fk", Double(count) / 1000.0)
+        }
+        return "\(count)"
     }
 
     // MARK: - Detail

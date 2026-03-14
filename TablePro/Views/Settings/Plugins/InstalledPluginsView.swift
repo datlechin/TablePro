@@ -32,7 +32,6 @@ struct InstalledPluginsView: View {
                 pluginList
                     .frame(minWidth: 200, idealWidth: 240, maxWidth: 280)
 
-
                 detailPane
                     .frame(minWidth: 340)
             }
@@ -146,14 +145,35 @@ struct InstalledPluginsView: View {
 
     @ViewBuilder
     private func pluginRow(_ plugin: PluginEntry) -> some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 8) {
             pluginIcon(plugin.iconName)
-                .frame(width: 16)
-                .foregroundStyle(plugin.isEnabled ? .primary : .tertiary)
-            Text(plugin.name)
-                .lineLimit(1)
-                .foregroundStyle(plugin.isEnabled ? .primary : .secondary)
+                .font(.title3)
+                .frame(width: 24, height: 24)
+                .foregroundStyle(plugin.isEnabled ? .secondary : .tertiary)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(plugin.name)
+                    .lineLimit(1)
+                    .foregroundStyle(plugin.isEnabled ? .primary : .secondary)
+
+                HStack(spacing: 4) {
+                    Text("v\(plugin.version)")
+                    if let capability = plugin.capabilities.first {
+                        Text("·")
+                        Text(capability.displayName)
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Text(plugin.source == .builtIn ? String(localized: "Built-in") : String(localized: "User"))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
         }
+        .padding(.vertical, 2)
     }
 
     @ViewBuilder
