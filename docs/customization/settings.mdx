@@ -1,6 +1,6 @@
 ---
 title: Settings Overview
-description: All settings categories - General, Appearance, Editor, Data Grid, Tabs, Keyboard, AI, History, Plugins, and License
+description: All settings categories - General, Appearance, Editor, Data Grid, Tabs, Keyboard, AI, History, Plugins, Sync, and License
 ---
 
 # Settings Overview
@@ -50,6 +50,9 @@ Open settings via **TablePro** > **Settings** or `Cmd+,`.
   </Card>
   <Card title="Plugins" icon="puzzle-piece">
     Manage database driver plugins
+  </Card>
+  <Card title="Sync" icon="cloud" href="/features/icloud-sync">
+    iCloud sync for connections, settings, and history across Macs (Pro)
   </Card>
   <Card title="License" icon="key">
     License activation and management
@@ -423,6 +426,62 @@ Some settings are available via `defaults write` for advanced users:
 | Custom plugin registry | `defaults write com.TablePro com.TablePro.customRegistryURL <url>` | Use a private plugin registry |
 | Clear custom registry | `defaults delete com.TablePro com.TablePro.customRegistryURL` | Revert to default registry |
 
+## Sync Settings
+
+Manage iCloud sync from the **Sync** tab in Settings. This is a Pro feature.
+
+### iCloud Sync Toggle
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| **iCloud Sync** | Off | Enable or disable iCloud sync across all Macs |
+
+### Status
+
+| Element | Description |
+|---------|-------------|
+| **iCloud Account** | Shows the current iCloud account status |
+| **Last Sync** | Timestamp of the most recent sync |
+| **Sync Now** | Manually trigger a sync |
+
+### Sync Categories
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| **Connections** | On | Sync connection details (not passwords) |
+| **Groups & Tags** | On | Sync connection organization |
+| **App Settings** | On | Sync all 8 settings categories |
+| **Query History** | On | Sync query history |
+
+### History Limit
+
+| Option | Description |
+|--------|-------------|
+| **100** | Sync last 100 queries |
+| **500** | Sync last 500 queries |
+| **1,000** | Sync last 1,000 queries |
+| **Unlimited** | Sync all query history |
+
+<Note>
+Passwords are never synced. They remain in each Mac's local Keychain.
+</Note>
+
+See [iCloud Sync](/features/icloud-sync) for full details on conflict resolution, sync behavior, and troubleshooting.
+
+{/* Screenshot: Sync settings */}
+<Frame caption="Sync settings: iCloud sync configuration">
+  <img
+    className="block dark:hidden"
+    src="/images/settings-sync.png"
+    alt="Sync settings"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/settings-sync-dark.png"
+    alt="Sync settings"
+  />
+</Frame>
+
 ## License Settings
 
 Manage your license from the **License** tab in Settings.
@@ -536,6 +595,17 @@ See [Appearance](/customization/appearance) for details.
 |---------|----------|-------------|
 | Shortcut bindings | Keyboard | Customize menu keyboard shortcuts |
 | Reset to Defaults | Keyboard | Restore all shortcuts to original values |
+
+### Sync-Related
+
+| Setting | Location | Description |
+|---------|----------|-------------|
+| iCloud Sync | Sync | Enable/disable iCloud sync (Pro) |
+| Sync Connections | Sync | Sync connection details across Macs |
+| Sync Groups & Tags | Sync | Sync connection organization |
+| Sync App Settings | Sync | Sync preferences across Macs |
+| Sync Query History | Sync | Sync query history with configurable limit |
+| History Limit | Sync | Max history entries to sync (100/500/1,000/unlimited) |
 
 ### Filter-Related
 

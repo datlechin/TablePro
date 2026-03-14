@@ -63,7 +63,8 @@
                   "features/ai-chat",
                   "features/keyboard-shortcuts",
                   "features/deep-links",
-                  "features/safe-mode"
+                  "features/safe-mode",
+                  "features/icloud-sync"
                 ]
               },
               {
@@ -157,7 +158,8 @@
                   "vi/features/ai-chat",
                   "vi/features/keyboard-shortcuts",
                   "vi/features/deep-links",
-                  "vi/features/safe-mode"
+                  "vi/features/safe-mode",
+                  "vi/features/icloud-sync"
                 ]
               },
               {
@@ -256,7 +258,8 @@
                   "zh/features/ai-chat",
                   "zh/features/keyboard-shortcuts",
                   "zh/features/deep-links",
-                  "zh/features/safe-mode"
+                  "zh/features/safe-mode",
+                  "zh/features/icloud-sync"
                 ]
               },
               {
