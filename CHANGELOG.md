@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Extracted MSSQL, MongoDB, Redis, XLSX export, MQL export, and SQL import plugins from the app bundle into separately distributed plugins, downloadable from the plugin registry. MySQL, PostgreSQL, SQLite, CSV, JSON, and SQL export remain built-in
+- Replaced fragmented Theme/DesignConstants/SQLEditorTheme/ToolbarDesignTokens with unified ThemeEngine
+- Moved editor and data grid font settings into the theme system (Settings > Appearance)
+- Extracted MSSQL, MongoDB, Redis, XLSX export, MQL export, and SQL import plugins from the app bundle into separately distributed plugins, downloadable from the plugin registry. MySQL, PostgreSQL, CSV, JSON, and SQL export remain built-in
 - Redesigned Plugins settings tab with HSplitView master-detail layout: plugin list on the left, detail pane on the right, matching macOS conventions. Plugin rows now show version, author/capability, and install status at a glance
 - Download counts in browse tab now always fetch latest from GitHub API (5-minute in-memory cooldown per session)
 - Replaced ~40 hardcoded `DatabaseType` switches across ~20 UI files with dynamic plugin property lookups via `PluginManager`, so third-party plugins get correct UI behavior (colors, labels, editor language, feature toggles) automatically
@@ -29,6 +31,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Full theme engine with 9 built-in presets (Default Light/Dark, Dracula, Solarized Light/Dark, One Dark, GitHub Light/Dark, Nord) and custom theme support
+- Theme browser with visual preview cards in Settings > Appearance
+- Per-theme customization of all colors (editor syntax, data grid, UI, sidebar, toolbar) and fonts
+- Theme import/export as JSON files for sharing
 - SSH TOTP/two-factor authentication support (auto-generate and prompt modes)
 - SSH host key verification with fingerprint confirmation
 - Keyboard Interactive SSH authentication method
@@ -48,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SQL import options (wrap in transaction, disable FK checks) now persist across launches
 - `needsRestart` banner persists across app quit/relaunch after plugin uninstall
 - Copy as INSERT/UPDATE SQL statements from data grid context menu
-- Configurable font family and size for data grid (Settings > Data Grid > Font)
+- Configurable font family and size for data grid (now via theme customization in Settings > Appearance)
 - Plugin download count display in Browse Plugins — fetched from GitHub Releases API and cached for 1 hour
 - MSSQL query cancellation (`cancelQuery`) and lock timeout (`applyQueryTimeout`) support
 - `~/.pgpass` file support for PostgreSQL/Redshift connections with live validation in the connection form
