@@ -100,6 +100,14 @@ Hai database driver này được phân phối dưới dạng plugin tải về 
 
 Thay `<sha256-cua-zip>` bằng SHA-256 thực tế từ output của `build-plugin.sh`. Mảng `binaries` cung cấp tải về theo kiến trúc; trường phẳng `downloadURL`/`sha256` trỏ đến arm64 làm fallback cho phiên bản ứng dụng cũ.
 
+## Phân phối Theme
+
+Theme sử dụng cùng manifest registry nhưng với `category: "theme"`. Khác với plugin driver, theme chỉ là dữ liệu JSON thuần túy: không có mã thực thi, không cần code signing, không cần `.tableplugin` bundle.
+
+ZIP chứa một hoặc nhiều file `.json`, mỗi file là một `ThemeDefinition` hợp lệ. Khi cài đặt, TablePro giải nén các JSON, gán lại ID thành `registry.{pluginId}.{originalSuffix}`, và lưu vào `~/Library/Application Support/TablePro/Themes/Registry/`.
+
+Theme pack (nhiều theme trong một ZIP) được hỗ trợ. Tất cả theme trong pack liên kết cùng một registry plugin ID, nên gỡ cài đặt sẽ xóa tất cả.
+
 ## URL Registry Tùy Chỉnh
 
 Đối với registry plugin riêng hoặc doanh nghiệp, bạn có thể thay đổi URL registry mặc định:

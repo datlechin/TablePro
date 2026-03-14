@@ -216,16 +216,26 @@ struct BrowsePluginsView: View {
 
     private func isPluginInstalled(_ pluginId: String) -> Bool {
         pluginManager.plugins.contains { $0.id == pluginId }
+            || ThemeRegistryInstaller.shared.isInstalled(pluginId)
     }
 
     private func installPlugin(_ plugin: RegistryPlugin) {
         Task {
             installTracker.beginInstall(pluginId: plugin.id)
             do {
-                _ = try await pluginManager.installFromRegistry(plugin) { fraction in
-                    installTracker.updateProgress(pluginId: plugin.id, fraction: fraction)
-                    if fraction >= 1.0 {
-                        installTracker.markInstalling(pluginId: plugin.id)
+                if plugin.category == .theme {
+                    try await ThemeRegistryInstaller.shared.install(plugin) { fraction in
+                        installTracker.updateProgress(pluginId: plugin.id, fraction: fraction)
+                        if fraction >= 1.0 {
+                            installTracker.markInstalling(pluginId: plugin.id)
+                        }
+                    }
+                } else {
+                    _ = try await pluginManager.installFromRegistry(plugin) { fraction in
+                        installTracker.updateProgress(pluginId: plugin.id, fraction: fraction)
+                        if fraction >= 1.0 {
+                            installTracker.markInstalling(pluginId: plugin.id)
+                        }
                     }
                 }
                 installTracker.completeInstall(pluginId: plugin.id)

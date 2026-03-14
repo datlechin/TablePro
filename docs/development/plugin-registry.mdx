@@ -100,6 +100,31 @@ These two database drivers ship as downloadable plugins instead of being bundled
 
 Replace `<sha256-of-zip>` with the actual SHA-256 output from `build-plugin.sh`. The `binaries` array provides per-architecture downloads; `downloadURL`/`sha256` flat fields point to arm64 as fallback for older app versions.
 
+## Theme Distribution
+
+Themes use the same registry manifest but with `category: "theme"`. Unlike database driver plugins, themes are pure JSON data with no executable code, no code signing, and no `.tableplugin` bundle.
+
+A theme registry entry's ZIP contains one or more `.json` files, each a valid `ThemeDefinition`. On install, TablePro extracts the JSONs, rewrites their IDs to `registry.{pluginId}.{originalSuffix}`, and stores them in `~/Library/Application Support/TablePro/Themes/Registry/`.
+
+Example theme registry entry:
+
+```json
+{
+  "id": "com.example.monokai-theme",
+  "name": "Monokai Theme",
+  "version": "1.0.0",
+  "summary": "Classic Monokai color scheme for TablePro",
+  "author": { "name": "Theme Author" },
+  "category": "theme",
+  "downloadURL": "https://example.com/monokai-theme.zip",
+  "sha256": "<sha256-of-zip>",
+  "iconName": "paintpalette",
+  "isVerified": false
+}
+```
+
+Theme packs (multiple themes in one ZIP) are supported. All themes from a pack are linked to the same registry plugin ID, so uninstalling removes all of them.
+
 ## Custom Registry URL
 
 For enterprise or private plugin registries, you can override the default registry URL:

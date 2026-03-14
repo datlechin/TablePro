@@ -86,6 +86,11 @@ struct RegistryPluginDetailView: View {
                 if !isInstalled {
                     Divider()
                     installActionView
+                } else if plugin.category == .theme {
+                    Divider()
+                    Label("Installed", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                        .font(.callout)
                 }
             }
             .padding(20)
@@ -123,7 +128,9 @@ struct RegistryPluginDetailView: View {
                     .controlSize(.regular)
             }
         } else {
-            Button("Install Plugin") { onInstall() }
+            Button(plugin.category == .theme
+                ? String(localized: "Install Theme")
+                : String(localized: "Install Plugin")) { onInstall() }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.regular)
         }

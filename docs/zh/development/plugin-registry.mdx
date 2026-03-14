@@ -100,6 +100,14 @@ description: 如何将可下载插件发布到 TablePro 插件注册表
 
 将 `<sha256-of-zip>` 替换为 `build-plugin.sh` 输出的实际 SHA-256 值。`binaries` 数组提供按架构区分的下载；`downloadURL`/`sha256` 平级字段指向 arm64 作为旧版应用的后备。
 
+## 主题分发
+
+主题使用相同的注册表 manifest，但 `category` 为 `"theme"`。与数据库驱动插件不同，主题是纯 JSON 数据：没有可执行代码，不需要代码签名，不需要 `.tableplugin` bundle。
+
+ZIP 包含一个或多个 `.json` 文件，每个文件是一个有效的 `ThemeDefinition`。安装时，TablePro 解压 JSON 文件，将 ID 重写为 `registry.{pluginId}.{originalSuffix}`，并存储到 `~/Library/Application Support/TablePro/Themes/Registry/`。
+
+支持主题包（一个 ZIP 中包含多个主题）。同一包中的所有主题关联相同的 registry plugin ID，卸载时会一并移除。
+
 ## 自定义 Registry URL
 
 对于企业或私有插件 registry，可以覆盖默认的 registry URL：

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Theme registry distribution: browse, install, uninstall, and update community themes from the plugin registry (Settings > Plugins > Browse, filtered by Themes category)
+
 ### Changed
 
 - Replaced fragmented Theme/DesignConstants/SQLEditorTheme/ToolbarDesignTokens with unified ThemeEngine
