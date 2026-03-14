@@ -118,7 +118,6 @@ internal final class ThemeEngine {
         self.dataGridFonts = DataGridFontCacheResolved(from: theme.fonts)
         self.availableThemes = allThemes
 
-        applyAppearance(for: theme)
         observeAccessibilityChanges()
     }
 
@@ -141,7 +140,6 @@ internal final class ThemeEngine {
         editorFonts = EditorFontCache(from: theme.fonts)
         dataGridFonts = DataGridFontCacheResolved(from: theme.fonts)
 
-        applyAppearance(for: theme)
         ThemeStorage.saveActiveThemeId(theme.id)
         notifyThemeDidChange()
 
@@ -262,8 +260,15 @@ internal final class ThemeEngine {
 
     // MARK: - Appearance
 
-    private func applyAppearance(for theme: ThemeDefinition) {
-        switch theme.appearance {
+    @ObservationIgnored private(set) var appearanceMode: AppAppearanceMode = .auto
+
+    func updateAppearanceMode(_ mode: AppAppearanceMode) {
+        appearanceMode = mode
+        applyAppearance(mode)
+    }
+
+    private func applyAppearance(_ mode: AppAppearanceMode) {
+        switch mode {
         case .light:
             NSApp?.appearance = NSAppearance(named: .aqua)
         case .dark:
