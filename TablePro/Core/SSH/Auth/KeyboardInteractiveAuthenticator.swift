@@ -77,7 +77,7 @@ private let kbdintCallback: @convention(c) (
             responseText = context.password ?? ""
         }
 
-        let duplicated = strdup(responseText)
+        let duplicated = strdup(responseText) ?? strdup("")
         responses[i].text = duplicated
         responses[i].length = duplicated.map { UInt32(strlen($0)) } ?? 0
     }

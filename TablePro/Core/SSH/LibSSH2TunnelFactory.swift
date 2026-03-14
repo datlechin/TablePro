@@ -124,7 +124,14 @@ internal enum LibSSH2TunnelFactory {
                         jumpHops.append(hop)
 
                         // Create new session on fds[1]
-                        let nextSession = try createSession(socketFD: fds[1])
+                        let nextSession: OpaquePointer
+                        do {
+                            nextSession = try createSession(socketFD: fds[1])
+                        } catch {
+                            Darwin.close(fds[1])
+                            relayTask.cancel()
+                            throw error
+                        }
 
                         do {
                             // Verify host key for next hop
@@ -535,7 +542,10 @@ internal enum LibSSH2TunnelFactory {
             throw SSHTunnelError.tunnelCreationFailed("Port \(port) already in use")
         }
 
-        listen(listenFD, 5)
+        guard listen(listenFD, 5) == 0 else {
+            Darwin.close(listenFD)
+            throw SSHTunnelError.tunnelCreationFailed("Failed to listen on port \(port)")
+        }
         return listenFD
     }
 }
