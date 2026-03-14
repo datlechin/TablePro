@@ -150,6 +150,16 @@ jobs:
       - name: Pull LFS files
         run: git lfs pull
 
+      - name: Install Rosetta 2
+        run: softwareupdate --install-rosetta --agree-to-license || true
+
+      - name: Install x86_64 Homebrew
+        run: |
+          if [ ! -f /usr/local/bin/brew ]; then
+            echo "Installing x86_64 Homebrew..."
+            arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          fi
+
       - name: Install x86_64 dependencies
         run: |
           echo "Installing x86_64 dependencies..."
