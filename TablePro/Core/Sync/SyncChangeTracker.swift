@@ -20,7 +20,12 @@ final class SyncChangeTracker {
     private let metadataStorage = SyncMetadataStorage.shared
 
     /// When true, changes are not tracked (used during remote apply to avoid sync loops)
-    var isSuppressed = false
+    private let suppressionLock = OSAllocatedUnfairLock(initialState: false)
+
+    var isSuppressed: Bool {
+        get { suppressionLock.withLock { $0 } }
+        set { suppressionLock.withLock { $0 = newValue } }
+    }
 
     private init() {}
 

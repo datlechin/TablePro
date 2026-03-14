@@ -185,7 +185,11 @@ struct ConflictResolutionView: View {
     // MARK: - Actions
 
     private func resolveConflict(keepLocal: Bool) {
-        conflictResolver.resolveCurrentConflict(keepLocal: keepLocal)
+        let resolvedRecord = conflictResolver.resolveCurrentConflict(keepLocal: keepLocal)
+
+        if let record = resolvedRecord {
+            SyncCoordinator.shared.pushResolvedConflict(record)
+        }
 
         if !conflictResolver.hasConflicts {
             dismiss()

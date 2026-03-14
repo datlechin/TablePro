@@ -5,6 +5,7 @@
 //  Sync-specific error types
 //
 
+import CloudKit
 import Foundation
 
 /// Errors that can occur during sync operations
@@ -46,19 +47,18 @@ enum SyncError: LocalizedError, Equatable {
         }
 
         // Map CKError codes to SyncError
-        let nsError = error as NSError
-        if nsError.domain == "CKErrorDomain" {
-            switch nsError.code {
-            case 3, 36: // networkUnavailable, networkFailure
+        if let ckError = error as? CKError {
+            switch ckError.code {
+            case .networkUnavailable, .networkFailure:
                 return .networkUnavailable
-            case 9: // notAuthenticated
+            case .notAuthenticated:
                 return .accountUnavailable
-            case 25: // quotaExceeded
+            case .quotaExceeded:
                 return .quotaExceeded
-            case 26: // zoneNotFound
+            case .zoneNotFound:
                 return .zoneNotFound
             default:
-                return .serverError(nsError.localizedDescription)
+                return .serverError(ckError.localizedDescription)
             }
         }
 

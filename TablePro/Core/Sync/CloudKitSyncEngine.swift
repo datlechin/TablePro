@@ -44,20 +44,8 @@ actor CloudKitSyncEngine {
 
     func ensureZoneExists() async throws {
         let zone = CKRecordZone(zoneID: zoneID)
-
-        do {
-            _ = try await database.save(zone)
-            Self.logger.trace("Created or confirmed sync zone: \(Self.zoneName)")
-        } catch let error as CKError {
-            // Zone save can fail if zone already exists — that's fine.
-            // Only re-throw if the error is something else.
-            let ignorableCodes: Set<CKError.Code> = [.serverRejectedRequest]
-            if ignorableCodes.contains(error.code) {
-                Self.logger.trace("Sync zone already exists")
-            } else {
-                throw error
-            }
-        }
+        _ = try await database.save(zone)
+        Self.logger.trace("Created or confirmed sync zone: \(Self.zoneName)")
     }
 
     // MARK: - Push

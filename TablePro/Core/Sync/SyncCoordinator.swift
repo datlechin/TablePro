@@ -254,6 +254,28 @@ final class SyncCoordinator {
             collectDirtyTags(into: &recordsToSave, deletions: &recordIDsToDelete, zoneID: zoneID)
         }
 
+        // Collect unsynced query history
+        if settings.syncQueryHistory {
+            let limit = settings.historySyncLimit.limit ?? Int.max
+            let unsyncedEntries = await QueryHistoryStorage.shared.unsyncedHistoryEntries(limit: limit)
+            for entry in unsyncedEntries {
+                recordsToSave.append(
+                    SyncRecordMapper.toCKRecord(
+                        entryId: entry.id.uuidString,
+                        query: entry.query,
+                        connectionId: entry.connectionId.uuidString,
+                        databaseName: entry.databaseName,
+                        executedAt: entry.executedAt,
+                        executionTime: entry.executionTime,
+                        rowCount: Int64(entry.rowCount),
+                        wasSuccessful: entry.wasSuccessful,
+                        errorMessage: entry.errorMessage,
+                        in: zoneID
+                    )
+                )
+            }
+        }
+
         // Collect dirty settings
         if settings.syncSettings {
             let dirtySettingsIds = changeTracker.dirtyRecords(for: .settings)
@@ -271,15 +293,51 @@ final class SyncCoordinator {
         do {
             try await engine.push(records: recordsToSave, deletions: recordIDsToDelete)
 
-            // Clear dirty flags on success
-            for type in SyncRecordType.allCases {
-                changeTracker.clearAllDirty(type)
+            // Clear dirty flags only for types that were actually pushed
+            if settings.syncConnections {
+                changeTracker.clearAllDirty(.connection)
+            }
+            if settings.syncGroupsAndTags {
+                changeTracker.clearAllDirty(.group)
+                changeTracker.clearAllDirty(.tag)
+            }
+            if settings.syncSettings {
+                changeTracker.clearAllDirty(.settings)
+            }
+            if settings.syncQueryHistory {
+                changeTracker.clearAllDirty(.queryHistory)
             }
 
-            // Clear tombstones for pushed deletions
-            for type in SyncRecordType.allCases {
-                for tombstone in metadataStorage.tombstones(for: type) {
-                    metadataStorage.removeTombstone(type: type, id: tombstone.id)
+            // Clear tombstones only for types that were actually pushed
+            if settings.syncConnections {
+                for tombstone in metadataStorage.tombstones(for: .connection) {
+                    metadataStorage.removeTombstone(type: .connection, id: tombstone.id)
+                }
+            }
+            if settings.syncGroupsAndTags {
+                for tombstone in metadataStorage.tombstones(for: .group) {
+                    metadataStorage.removeTombstone(type: .group, id: tombstone.id)
+                }
+                for tombstone in metadataStorage.tombstones(for: .tag) {
+                    metadataStorage.removeTombstone(type: .tag, id: tombstone.id)
+                }
+            }
+            if settings.syncSettings {
+                for tombstone in metadataStorage.tombstones(for: .settings) {
+                    metadataStorage.removeTombstone(type: .settings, id: tombstone.id)
+                }
+            }
+            if settings.syncQueryHistory {
+                for tombstone in metadataStorage.tombstones(for: .queryHistory) {
+                    metadataStorage.removeTombstone(type: .queryHistory, id: tombstone.id)
+                }
+
+                // Mark pushed history entries as synced in local storage
+                let syncedIds = recordsToSave
+                    .filter { $0.recordType == SyncRecordType.queryHistory.rawValue }
+                    .compactMap { $0["entryId"] as? String }
+                if !syncedIds.isEmpty {
+                    await QueryHistoryStorage.shared.markHistoryEntriesSynced(ids: syncedIds)
                 }
             }
 
@@ -301,27 +359,40 @@ final class SyncCoordinator {
 
         do {
             let result = try await engine.pull(since: token)
-
-            Self.logger.info("Pull fetched: \(result.changedRecords.count) changed, \(result.deletedRecordIDs.count) deleted")
-
-            for record in result.changedRecords {
-                Self.logger.info("Pulled record: \(record.recordType)/\(record.recordID.recordName)")
+            applyPullResult(result)
+        } catch let error as CKError where error.code == .changeTokenExpired {
+            Self.logger.warning("Change token expired, clearing and retrying with full fetch")
+            metadataStorage.clearSyncToken()
+            do {
+                let result = try await engine.pull(since: nil)
+                applyPullResult(result)
+            } catch {
+                Self.logger.error("Full fetch after token expiry failed: \(error.localizedDescription)")
             }
-
-            if let newToken = result.newToken {
-                metadataStorage.saveSyncToken(newToken)
-            }
-
-            applyRemoteChanges(result)
-
-            Self.logger.info(
-                "Pull completed: \(result.changedRecords.count) changed, \(result.deletedRecordIDs.count) deleted"
-            )
         } catch {
             Self.logger.error("Pull failed: \(error.localizedDescription)")
         }
     }
 
+    private func applyPullResult(_ result: PullResult) {
+        Self.logger.info("Pull fetched: \(result.changedRecords.count) changed, \(result.deletedRecordIDs.count) deleted")
+
+        for record in result.changedRecords {
+            Self.logger.info("Pulled record: \(record.recordType)/\(record.recordID.recordName)")
+        }
+
+        if let newToken = result.newToken {
+            metadataStorage.saveSyncToken(newToken)
+        }
+
+        applyRemoteChanges(result)
+
+        Self.logger.info(
+            "Pull completed: \(result.changedRecords.count) changed, \(result.deletedRecordIDs.count) deleted"
+        )
+    }
+
+    // TODO: Move storage I/O off @MainActor for large datasets
     private func applyRemoteChanges(_ result: PullResult) {
         let settings = AppSettingsStorage.shared.loadSync()
 
@@ -347,6 +418,8 @@ final class SyncCoordinator {
                 groupsOrTagsChanged = true
             case SyncRecordType.settings.rawValue where settings.syncSettings:
                 applyRemoteSettings(record)
+            case SyncRecordType.queryHistory.rawValue where settings.syncQueryHistory:
+                applyRemoteQueryHistory(record)
             default:
                 break
             }
@@ -426,6 +499,38 @@ final class SyncCoordinator {
               let data = SyncRecordMapper.settingsData(from: record)
         else { return }
         applySettingsData(data, for: category)
+    }
+
+    private func applyRemoteQueryHistory(_ record: CKRecord) {
+        guard let entryIdString = record["entryId"] as? String,
+              let entryId = UUID(uuidString: entryIdString),
+              let query = record["query"] as? String,
+              let executedAt = record["executedAt"] as? Date
+        else { return }
+
+        let connectionId = (record["connectionId"] as? String).flatMap { UUID(uuidString: $0) } ?? UUID()
+        let databaseName = record["databaseName"] as? String ?? ""
+        let executionTime = record["executionTime"] as? Double ?? 0
+        let rowCount = (record["rowCount"] as? Int64).map { Int($0) } ?? 0
+        let wasSuccessful = (record["wasSuccessful"] as? Int64 ?? 1) != 0
+        let errorMessage = record["errorMessage"] as? String
+
+        let entry = QueryHistoryEntry(
+            id: entryId,
+            query: query,
+            connectionId: connectionId,
+            databaseName: databaseName,
+            executedAt: executedAt,
+            executionTime: executionTime,
+            rowCount: rowCount,
+            wasSuccessful: wasSuccessful,
+            errorMessage: errorMessage
+        )
+
+        Task {
+            _ = await QueryHistoryStorage.shared.addHistory(entry)
+            await QueryHistoryStorage.shared.markHistoryEntriesSynced(ids: [entryIdString])
+        }
     }
 
     private func applyRemoteDeletion(_ recordID: CKRecord.ID) {
@@ -564,6 +669,17 @@ final class SyncCoordinator {
         }
     }
 
+    /// Push a resolved conflict record back to CloudKit
+    func pushResolvedConflict(_ record: CKRecord) {
+        Task {
+            do {
+                try await engine.push(records: [record], deletions: [])
+            } catch {
+                Self.logger.error("Failed to push resolved conflict: \(error.localizedDescription)")
+            }
+        }
+    }
+
     // MARK: - Settings Helpers
 
     private func settingsData(for category: String) -> Data? {
@@ -632,7 +748,16 @@ final class SyncCoordinator {
         deletions: inout [CKRecord.ID],
         zoneID: CKRecordZone.ID
     ) {
-        // Will be fully wired in Phase C when GroupStorage integration is added
+        let dirtyGroupIds = changeTracker.dirtyRecords(for: .group)
+        if !dirtyGroupIds.isEmpty {
+            let groups = GroupStorage.shared.loadGroups()
+            for id in dirtyGroupIds {
+                if let group = groups.first(where: { $0.id.uuidString == id }) {
+                    records.append(SyncRecordMapper.toCKRecord(group, in: zoneID))
+                }
+            }
+        }
+
         for tombstone in metadataStorage.tombstones(for: .group) {
             deletions.append(
                 SyncRecordMapper.recordID(type: .group, id: tombstone.id, in: zoneID)
@@ -645,7 +770,16 @@ final class SyncCoordinator {
         deletions: inout [CKRecord.ID],
         zoneID: CKRecordZone.ID
     ) {
-        // Will be fully wired in Phase C when TagStorage integration is added
+        let dirtyTagIds = changeTracker.dirtyRecords(for: .tag)
+        if !dirtyTagIds.isEmpty {
+            let tags = TagStorage.shared.loadTags()
+            for id in dirtyTagIds {
+                if let tag = tags.first(where: { $0.id.uuidString == id }) {
+                    records.append(SyncRecordMapper.toCKRecord(tag, in: zoneID))
+                }
+            }
+        }
+
         for tombstone in metadataStorage.tombstones(for: .tag) {
             deletions.append(
                 SyncRecordMapper.recordID(type: .tag, id: tombstone.id, in: zoneID)
