@@ -8,6 +8,7 @@
 import AppKit
 import os
 import SwiftUI
+import TableProPluginKit
 
 struct ContentView: View {
     private static let logger = Logger(subsystem: "com.TablePro", category: "ContentView")
@@ -40,11 +41,8 @@ struct ContentView: View {
             defaultTitle = tableName
         } else if let connectionId = payload?.connectionId,
                   let connection = ConnectionStorage.shared.loadConnections().first(where: { $0.id == connectionId }) {
-            switch connection.type {
-            case .mongodb: defaultTitle = "MQL Query"
-            case .redis: defaultTitle = "Redis CLI"
-            default: defaultTitle = "SQL Query"
-            }
+            let langName = PluginManager.shared.queryLanguageName(for: connection.type)
+            defaultTitle = "\(langName) Query"
         } else {
             defaultTitle = "SQL Query"
         }
@@ -94,8 +92,10 @@ struct ContentView: View {
                         }
                         AppState.shared.isConnected = true
                         AppState.shared.safeModeLevel = session.connection.safeModeLevel
-                        AppState.shared.isMongoDB = session.connection.type == .mongodb
-                        AppState.shared.isRedis = session.connection.type == .redis
+                        AppState.shared.editorLanguage = PluginManager.shared.editorLanguage(for: session.connection.type)
+                        AppState.shared.currentDatabaseType = session.connection.type
+                        AppState.shared.supportsDatabaseSwitching = PluginManager.shared.supportsDatabaseSwitching(
+                            for: session.connection.type)
                     }
                 } else {
                     currentSession = nil
@@ -119,8 +119,9 @@ struct ContentView: View {
                         columnVisibility = .detailOnly
                         AppState.shared.isConnected = false
                         AppState.shared.safeModeLevel = .silent
-                        AppState.shared.isMongoDB = false
-                        AppState.shared.isRedis = false
+                        AppState.shared.editorLanguage = .sql
+                        AppState.shared.currentDatabaseType = nil
+                        AppState.shared.supportsDatabaseSwitching = true
 
                         // Close all native tab windows for this connection and
                         // force AppKit to deallocate them instead of pooling.
@@ -150,8 +151,10 @@ struct ContentView: View {
                 }
                 AppState.shared.isConnected = true
                 AppState.shared.safeModeLevel = newSession.connection.safeModeLevel
-                AppState.shared.isMongoDB = newSession.connection.type == .mongodb
-                AppState.shared.isRedis = newSession.connection.type == .redis
+                AppState.shared.editorLanguage = PluginManager.shared.editorLanguage(for: newSession.connection.type)
+                AppState.shared.currentDatabaseType = newSession.connection.type
+                AppState.shared.supportsDatabaseSwitching = PluginManager.shared.supportsDatabaseSwitching(
+                    for: newSession.connection.type)
             }
             .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { notification in
                 // Only process notifications for our own window to avoid every
@@ -178,13 +181,16 @@ struct ContentView: View {
                 if let session = DatabaseManager.shared.activeSessions[connectionId] {
                     AppState.shared.isConnected = true
                     AppState.shared.safeModeLevel = session.connection.safeModeLevel
-                    AppState.shared.isMongoDB = session.connection.type == .mongodb
-                    AppState.shared.isRedis = session.connection.type == .redis
+                    AppState.shared.editorLanguage = PluginManager.shared.editorLanguage(for: session.connection.type)
+                    AppState.shared.currentDatabaseType = session.connection.type
+                    AppState.shared.supportsDatabaseSwitching = PluginManager.shared.supportsDatabaseSwitching(
+                        for: session.connection.type)
                 } else {
                     AppState.shared.isConnected = false
                     AppState.shared.safeModeLevel = .silent
-                    AppState.shared.isMongoDB = false
-                    AppState.shared.isRedis = false
+                    AppState.shared.editorLanguage = .sql
+                    AppState.shared.currentDatabaseType = nil
+                    AppState.shared.supportsDatabaseSwitching = true
                 }
             }
     }

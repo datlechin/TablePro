@@ -8,6 +8,7 @@
 import AppKit
 import Foundation
 import os
+import TableProPluginKit
 
 private let navigationLogger = Logger(subsystem: "com.TablePro", category: "MainContentCoordinator+Navigation")
 
@@ -251,137 +252,16 @@ extension MainContentCoordinator {
     }
 
     private func allTablesMetadataSQL() -> String? {
-        switch connection.type {
-        case .postgresql:
-            let schema = currentSchemaName(fallback: "public")
-            return """
-            SELECT
-                schemaname as schema,
-                relname as name,
-                'TABLE' as kind,
-                n_live_tup as estimated_rows,
-                pg_size_pretty(pg_total_relation_size(schemaname||'.'||relname)) as total_size,
-                pg_size_pretty(pg_relation_size(schemaname||'.'||relname)) as data_size,
-                pg_size_pretty(pg_indexes_size(schemaname||'.'||relname)) as index_size,
-                obj_description((schemaname||'.'||relname)::regclass) as comment
-            FROM pg_stat_user_tables
-            WHERE schemaname = '\(schema)'
-            ORDER BY relname
-            """
-        case .redshift:
-            let schema = currentSchemaName(fallback: "public")
-            return """
-            SELECT
-                schema,
-                "table" as name,
-                'TABLE' as kind,
-                tbl_rows as estimated_rows,
-                size as size_mb,
-                pct_used,
-                unsorted,
-                stats_off
-            FROM svv_table_info
-            WHERE schema = '\(schema)'
-            ORDER BY "table"
-            """
-        case .clickhouse:
-            return """
-            SELECT
-                database as `schema`,
-                name,
-                engine as kind,
-                total_rows as estimated_rows,
-                formatReadableSize(total_bytes) as total_size,
-                comment
-            FROM system.tables
-            WHERE database = currentDatabase()
-            ORDER BY name
-            """
-        case .mysql, .mariadb:
-            return """
-            SELECT
-                TABLE_SCHEMA as `schema`,
-                TABLE_NAME as name,
-                TABLE_TYPE as kind,
-                IFNULL(CCSA.CHARACTER_SET_NAME, '') as charset,
-                TABLE_COLLATION as collation,
-                TABLE_ROWS as estimated_rows,
-                CONCAT(ROUND((DATA_LENGTH + INDEX_LENGTH) / 1024 / 1024, 2), ' MB') as total_size,
-                CONCAT(ROUND(DATA_LENGTH / 1024 / 1024, 2), ' MB') as data_size,
-                CONCAT(ROUND(INDEX_LENGTH / 1024 / 1024, 2), ' MB') as index_size,
-                TABLE_COMMENT as comment
-            FROM information_schema.TABLES
-            LEFT JOIN information_schema.COLLATION_CHARACTER_SET_APPLICABILITY CCSA
-                ON TABLE_COLLATION = CCSA.COLLATION_NAME
-            WHERE TABLE_SCHEMA = DATABASE()
-            ORDER BY TABLE_NAME
-            """
-        case .sqlite:
-            return """
-            SELECT
-                '' as schema,
-                name,
-                type as kind,
-                '' as charset,
-                '' as collation,
-                '' as estimated_rows,
-                '' as total_size,
-                '' as data_size,
-                '' as index_size,
-                '' as comment
-            FROM sqlite_master
-            WHERE type IN ('table', 'view')
-            AND name NOT LIKE 'sqlite_%'
-            ORDER BY name
-            """
-        case .mssql:
-            return """
-            SELECT
-                s.name as schema_name,
-                t.name as name,
-                CASE WHEN v.object_id IS NOT NULL THEN 'VIEW' ELSE 'TABLE' END as kind,
-                p.rows as estimated_rows,
-                CAST(ROUND(SUM(a.total_pages) * 8 / 1024.0, 2) AS VARCHAR) + ' MB' as total_size
-            FROM sys.tables t
-            INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
-            INNER JOIN sys.indexes i ON t.object_id = i.object_id AND i.index_id IN (0, 1)
-            INNER JOIN sys.partitions p ON i.object_id = p.object_id AND i.index_id = p.index_id
-            INNER JOIN sys.allocation_units a ON p.partition_id = a.container_id
-            LEFT JOIN sys.views v ON t.object_id = v.object_id
-            GROUP BY s.name, t.name, p.rows, v.object_id
-            ORDER BY t.name
-            """
-        case .oracle:
-            let schema = currentSchemaName(fallback: "SYSTEM")
-            return """
-            SELECT
-                OWNER as schema_name,
-                TABLE_NAME as name,
-                'TABLE' as kind,
-                NUM_ROWS as estimated_rows
-            FROM ALL_TABLES
-            WHERE OWNER = '\(schema)'
-            ORDER BY TABLE_NAME
-            """
-        case .duckdb:
-            let schema = currentSchemaName(fallback: "main")
-            return """
-            SELECT
-                table_schema as schema_name,
-                table_name as name,
-                table_type as kind
-            FROM information_schema.tables
-            WHERE table_schema = '\(schema)'
-            ORDER BY table_name
-            """
-        case .mongodb:
+        let editorLang = PluginManager.shared.editorLanguage(for: connection.type)
+        // Non-SQL databases: open a command tab instead
+        if editorLang == .javascript {
             tabManager.addTab(
                 initialQuery: "db.runCommand({\"listCollections\": 1, \"nameOnly\": false})",
                 databaseName: connection.database
             )
             runQuery()
             return nil
-        case .redis:
+        } else if editorLang == .bash {
             tabManager.addTab(
                 initialQuery: "SCAN 0 MATCH * COUNT 100",
                 databaseName: connection.database
@@ -391,6 +271,11 @@ extension MainContentCoordinator {
         case .cassandra, .scylladb:
             return nil
         }
+
+        // SQL databases: delegate to plugin driver
+        guard let driver = DatabaseManager.shared.driver(for: connectionId) else { return nil }
+        let schema = (driver as? SchemaSwitchable)?.escapedSchema
+        return (driver as? PluginDriverAdapter)?.allTablesMetadataSQL(schema: schema)
     }
 
     // MARK: - Database Switching
@@ -437,92 +322,40 @@ extension MainContentCoordinator {
         await Task.yield()
 
         do {
-            // For MySQL/MariaDB/ClickHouse, use USE command
-            if connection.type == .mysql || connection.type == .mariadb || connection.type == .clickhouse {
-                _ = try await driver.execute(query: "USE `\(database)`")
-
-                DatabaseManager.shared.updateSession(connectionId) { session in
-                    session.currentDatabase = database
-                }
-
-                await loadSchema()
-
-                reloadSidebar()
-            } else if connection.type == .postgresql {
+            let pm = PluginManager.shared
+            if pm.requiresReconnectForDatabaseSwitch(for: connection.type) {
+                // PostgreSQL: full reconnection required for database switch
                 DatabaseManager.shared.updateSession(connectionId) { session in
                     session.connection.database = database
                     session.currentDatabase = database
                     session.currentSchema = nil
                 }
-
                 await DatabaseManager.shared.reconnectSession(connectionId)
-
-                await loadSchema()
-
-                reloadSidebar()
-            } else if connection.type == .redshift {
+            } else if pm.supportsSchemaSwitching(for: connection.type) {
+                // Redshift, Oracle: schema switching
                 guard let schemaDriver = driver as? SchemaSwitchable else { return }
                 try await schemaDriver.switchSchema(to: database)
-
                 DatabaseManager.shared.updateSession(connectionId) { session in
                     session.currentSchema = database
                 }
-
-                await loadSchema()
-
-                reloadSidebar()
-            } else if connection.type == .oracle {
-                guard let schemaDriver = driver as? SchemaSwitchable else { return }
-                try await schemaDriver.switchSchema(to: database)
-
-                DatabaseManager.shared.updateSession(connectionId) { session in
-                    session.currentSchema = database
-                }
-
-                await loadSchema()
-
-                reloadSidebar()
-            } else if connection.type == .mssql {
+            } else {
+                // All others (MySQL, MariaDB, ClickHouse, MSSQL, MongoDB, Redis, etc.)
                 if let adapter = driver as? PluginDriverAdapter {
                     try await adapter.switchDatabase(to: database)
                 }
-
+                let grouping = pm.databaseGroupingStrategy(for: connection.type)
                 DatabaseManager.shared.updateSession(connectionId) { session in
                     session.currentDatabase = database
-                    session.currentSchema = "dbo"
+                    // Schema-grouped databases (e.g. MSSQL) need currentSchema
+                    // reset to the plugin default (e.g. "dbo") on database switch.
+                    if grouping == .bySchema {
+                        session.currentSchema = pm.defaultSchemaName(for: connection.type)
+                    }
                 }
-                AppSettingsStorage.shared.saveLastDatabase(database, for: connectionId)
-
-                await loadSchema()
-
-                reloadSidebar()
-            } else if connection.type == .mongodb {
-                if let adapter = driver as? PluginDriverAdapter {
-                    try await adapter.switchDatabase(to: database)
-                }
-
-                DatabaseManager.shared.updateSession(connectionId) { session in
-                    session.currentDatabase = database
-                }
-
-                await loadSchema()
-
-                reloadSidebar()
-            } else if connection.type == .redis {
-                guard let dbIndex = Int(database) else { return }
-
-                if let adapter = driver as? PluginDriverAdapter {
-                    try await adapter.switchDatabase(to: String(dbIndex))
-                }
-
-                DatabaseManager.shared.updateSession(connectionId) { session in
-                    session.currentDatabase = database
-                }
-
-                await loadSchema()
-
-                reloadSidebar()
             }
+            AppSettingsStorage.shared.saveLastDatabase(database, for: connectionId)
+            await loadSchema()
+            reloadSidebar()
         } catch {
             // Restore toolbar to previous database on failure
             toolbarState.databaseName = previousDatabase
@@ -540,7 +373,7 @@ extension MainContentCoordinator {
 
     /// Switch to a different PostgreSQL schema (used for URL-based schema selection)
     func switchSchema(to schema: String) async {
-        guard connection.type == .postgresql else { return }
+        guard PluginManager.shared.supportsSchemaSwitching(for: connection.type) else { return }
         guard let driver = DatabaseManager.shared.driver(for: connectionId) else { return }
 
         // Clear stale filter state from previous schema

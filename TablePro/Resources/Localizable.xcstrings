@@ -168,6 +168,9 @@
         }
       }
     },
+    "(%lld hidden)" : {
+
+    },
     "(%lld)" : {
       "localizations" : {
         "vi" : {
@@ -232,10 +235,8 @@
         }
       }
     },
-    "/path/to/database.duckdb" : {
-
-    },
     "/path/to/database.sqlite" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -418,6 +419,9 @@
           }
         }
       }
+    },
+    "%@ Preview" : {
+
     },
     "%@ rows" : {
       "localizations" : {
@@ -861,6 +865,9 @@
         }
       }
     },
+    "%lld%%" : {
+
+    },
     "%lldm %llds" : {
       "localizations" : {
         "en" : {
@@ -1086,6 +1093,9 @@
           }
         }
       }
+    },
+    "1  John Doe  john@example.com  NULL" : {
+
     },
     "1 (no batching)" : {
       "extractionState" : "stale",
@@ -1898,6 +1908,9 @@
     "Alert (Full)" : {
 
     },
+    "All" : {
+
+    },
     "All %lld rows selected" : {
       "localizations" : {
         "vi" : {
@@ -2026,7 +2039,11 @@
         }
       }
     },
+    "Also handles" : {
+
+    },
     "Also handles:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -2392,6 +2409,9 @@
     "Authentication required to execute write operations" : {
 
     },
+    "Author" : {
+
+    },
     "AUTO" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2426,6 +2446,7 @@
       }
     },
     "Auto Inc" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -2634,7 +2655,11 @@
         }
       }
     },
+    "Bundle ID" : {
+
+    },
     "Bundle ID:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -2717,7 +2742,11 @@
         }
       }
     },
+    "Capabilities" : {
+
+    },
     "Capabilities:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -2748,6 +2777,9 @@
           }
         }
       }
+    },
+    "Category" : {
+
     },
     "Cell Renderer" : {
       "extractionState" : "stale",
@@ -3347,6 +3379,7 @@
       }
     },
     "CMD" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -3565,6 +3598,7 @@
       }
     },
     "Command Preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -3581,6 +3615,7 @@
       }
     },
     "Comment" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -4961,7 +4996,11 @@
         }
       }
     },
+    "Database Type" : {
+
+    },
     "Database Type:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -5267,7 +5306,11 @@
         }
       }
     },
+    "Default Port" : {
+
+    },
     "Default Port:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -5646,6 +5689,9 @@
         }
       }
     },
+    "Dismiss" : {
+
+    },
     "Display" : {
       "localizations" : {
         "vi" : {
@@ -5790,6 +5836,9 @@
           }
         }
       }
+    },
+    "Drop all tables that depend on this table" : {
+
     },
     "Drop table '%@'" : {
       "localizations" : {
@@ -7019,6 +7068,9 @@
         }
       }
     },
+    "Failed to Load" : {
+
+    },
     "Failed to load databases" : {
       "localizations" : {
         "vi" : {
@@ -7052,6 +7104,7 @@
       }
     },
     "Failed to load plugin registry" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -7920,6 +7973,12 @@
         }
       }
     },
+    "Hide All" : {
+
+    },
+    "Hide Column" : {
+
+    },
     "Higher values create fewer INSERT statements, resulting in smaller files and faster imports" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8550,6 +8609,7 @@
       }
     },
     "Install from File..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -8580,6 +8640,9 @@
           }
         }
       }
+    },
+    "Install plugin from file" : {
+
     },
     "Installation Failed" : {
       "localizations" : {
@@ -8614,6 +8677,7 @@
       }
     },
     "Installed Plugins" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -8629,7 +8693,7 @@
         }
       }
     },
-    "Installing plugin..." : {
+    "Installing..." : {
 
     },
     "Invalid argument: %@" : {
@@ -9348,6 +9412,7 @@
       }
     },
     "Loading plugins..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -9807,6 +9872,7 @@
       }
     },
     "MQL" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -9823,6 +9889,7 @@
       }
     },
     "MQL Preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -10177,6 +10244,9 @@
         }
       }
     },
+    "No %@" : {
+
+    },
     "No active connection" : {
       "localizations" : {
         "vi" : {
@@ -10435,6 +10505,9 @@
         }
       }
     },
+    "No matching %@" : {
+
+    },
     "No matching connections" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -10623,6 +10696,7 @@
       }
     },
     "No plugins found" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -11058,6 +11132,15 @@
         }
       }
     },
+    "Not supported for this database." : {
+
+    },
+    "Not supported for this database. Use CASCADE instead." : {
+
+    },
+    "Not supported for TRUNCATE with this database" : {
+
+    },
     "NOW()" : {
       "localizations" : {
         "vi" : {
@@ -11155,6 +11238,7 @@
       }
     },
     "Nullable" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -11267,6 +11351,9 @@
         }
       }
     },
+    "Open %@ Editor" : {
+
+    },
     "Open Connection" : {
       "localizations" : {
         "vi" : {
@@ -11365,6 +11452,7 @@
       }
     },
     "Open MQL Editor" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -11381,6 +11469,7 @@
       }
     },
     "Open Redis CLI" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -11413,6 +11502,7 @@
       }
     },
     "Open SQL Editor" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -11805,6 +11895,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "请选择一列"
+          }
+        }
+      }
+    },
+    "Plugin '%@' has an invalid descriptor: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Plugin '%1$@' has an invalid descriptor: %2$@"
           }
         }
       }
@@ -12253,7 +12353,14 @@
         }
       }
     },
+    "Preview %@" : {
+
+    },
+    "Preview %@ (⌘⇧P)" : {
+
+    },
     "Preview Commands" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -12270,6 +12377,7 @@
       }
     },
     "Preview Commands (⌘⇧P)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -12286,6 +12394,7 @@
       }
     },
     "Preview MQL" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -12302,6 +12411,7 @@
       }
     },
     "Preview MQL (⌘⇧P)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -12350,6 +12460,7 @@
       }
     },
     "Preview SQL (⌘⇧P)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -13285,6 +13396,9 @@
         }
       }
     },
+    "Requires" : {
+
+    },
     "Reset to Defaults" : {
       "localizations" : {
         "vi" : {
@@ -13365,6 +13479,9 @@
         }
       }
     },
+    "Retry Install" : {
+
+    },
     "Reuse clean table tab" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -13381,6 +13498,9 @@
           }
         }
       }
+    },
+    "Right-click to show all %@" : {
+
     },
     "Right-click to show all tables" : {
       "extractionState" : "stale",
@@ -13889,6 +14009,9 @@
         }
       }
     },
+    "Search columns..." : {
+
+    },
     "Search databases..." : {
       "localizations" : {
         "vi" : {
@@ -14101,6 +14224,12 @@
           }
         }
       }
+    },
+    "Select a Plugin" : {
+
+    },
+    "Select a plugin to view details" : {
+
     },
     "Select a Query" : {
       "localizations" : {
@@ -14458,7 +14587,14 @@
         }
       }
     },
+    "Show All" : {
+
+    },
+    "Show All %@" : {
+
+    },
     "Show All Collections" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -14475,6 +14611,7 @@
       }
     },
     "Show All Databases" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -14491,6 +14628,7 @@
       }
     },
     "Show All Tables" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -14729,6 +14867,7 @@
       }
     },
     "Source:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -14761,6 +14900,7 @@
       }
     },
     "SQL" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -14842,6 +14982,7 @@
       }
     },
     "SQL Preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -15234,6 +15375,9 @@
           }
         }
       }
+    },
+    "Status" : {
+
     },
     "Stop" : {
       "localizations" : {
@@ -15858,6 +16002,9 @@
         }
       }
     },
+    "This database has no %@ yet." : {
+
+    },
     "This database has no tables yet." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -16455,6 +16602,9 @@
         }
       }
     },
+    "Truncate all tables linked by foreign keys" : {
+
+    },
     "Truncate Table" : {
       "localizations" : {
         "vi" : {
@@ -16615,6 +16765,9 @@
         }
       }
     },
+    "Uninstall %@" : {
+
+    },
     "Uninstall Failed" : {
       "localizations" : {
         "vi" : {
@@ -16630,6 +16783,9 @@
           }
         }
       }
+    },
+    "Uninstall plugin" : {
+
     },
     "Uninstall Plugin?" : {
       "localizations" : {
@@ -16878,6 +17034,7 @@
       }
     },
     "Use ~/.pgpass" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -16920,6 +17077,7 @@
       }
     },
     "User" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -17000,6 +17158,7 @@
       }
     },
     "v%@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -17014,6 +17173,19 @@
           }
         }
       }
+    },
+    "v%@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "v%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "v%@+" : {
+
     },
     "Validation Failed" : {
       "localizations" : {
@@ -17063,7 +17235,11 @@
         }
       }
     },
+    "Verified" : {
+
+    },
     "Verified by TablePro" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {
@@ -17111,6 +17287,9 @@
         }
       }
     },
+    "Version" : {
+
+    },
     "Version %@" : {
       "localizations" : {
         "vi" : {
@@ -17150,6 +17329,7 @@
       }
     },
     "Version:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "vi" : {
           "stringUnit" : {

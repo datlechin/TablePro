@@ -166,6 +166,21 @@ final class PostgreSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         "EXPLAIN \(sql)"
     }
 
+    // MARK: - View Templates
+
+    func createViewTemplate() -> String? {
+        "CREATE OR REPLACE VIEW view_name AS\nSELECT column1, column2\nFROM table_name\nWHERE condition;"
+    }
+
+    func editViewFallbackTemplate(viewName: String) -> String? {
+        let quoted = quoteIdentifier(viewName)
+        return "CREATE OR REPLACE VIEW \(quoted) AS\nSELECT * FROM table_name;"
+    }
+
+    func castColumnToText(_ column: String) -> String {
+        "CAST(\(column) AS TEXT)"
+    }
+
     // MARK: - Schema
 
     func fetchTables(schema: String?) async throws -> [PluginTableInfo] {
@@ -732,6 +747,26 @@ final class PostgreSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
             query += " LC_COLLATE '\(escapedCollation)'"
         }
         _ = try await execute(query: query)
+    }
+
+    // MARK: - All Tables Metadata
+
+    func allTablesMetadataSQL(schema: String?) -> String? {
+        let s = schema ?? currentSchema ?? "public"
+        return """
+        SELECT
+            schemaname as schema,
+            relname as name,
+            'TABLE' as kind,
+            n_live_tup as estimated_rows,
+            pg_size_pretty(pg_total_relation_size(schemaname||'.'||relname)) as total_size,
+            pg_size_pretty(pg_relation_size(schemaname||'.'||relname)) as data_size,
+            pg_size_pretty(pg_indexes_size(schemaname||'.'||relname)) as index_size,
+            obj_description((schemaname||'.'||relname)::regclass) as comment
+        FROM pg_stat_user_tables
+        WHERE schemaname = '\(s)'
+        ORDER BY relname
+        """
     }
 
     // MARK: - Helpers

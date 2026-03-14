@@ -33,6 +33,7 @@ struct SQLStatementGenerator {
         primaryKeyColumn: String?,
         databaseType: DatabaseType,
         parameterStyle: ParameterStyle? = nil,
+        dialect: SQLDialectDescriptor? = nil,
         quoteIdentifier: ((String) -> String)? = nil
     ) {
         self.tableName = tableName
@@ -40,16 +41,13 @@ struct SQLStatementGenerator {
         self.primaryKeyColumn = primaryKeyColumn
         self.databaseType = databaseType
         self.parameterStyle = parameterStyle ?? Self.defaultParameterStyle(for: databaseType)
-        self.quoteIdentifierFn = quoteIdentifier ?? databaseType.quoteIdentifier
+        self.quoteIdentifierFn = quoteIdentifier ?? quoteIdentifierFromDialect(dialect)
     }
 
+    private static let dollarStyleTypes: Set<DatabaseType> = [.postgresql, .redshift, .duckdb]
+
     private static func defaultParameterStyle(for databaseType: DatabaseType) -> ParameterStyle {
-        switch databaseType {
-        case .postgresql, .redshift, .duckdb:
-            return .dollar
-        case .mysql, .mariadb, .sqlite, .mongodb, .redis, .mssql, .oracle, .clickhouse, .cassandra, .scylladb:
-            return .questionMark
-        }
+        dollarStyleTypes.contains(databaseType) ? .dollar : .questionMark
     }
 
     // MARK: - Public API

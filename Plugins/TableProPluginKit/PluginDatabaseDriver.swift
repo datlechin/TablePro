@@ -116,6 +116,13 @@ public protocol PluginDatabaseDriver: AnyObject, Sendable {
 
     // String escaping
     func escapeStringLiteral(_ value: String) -> String
+
+    func createViewTemplate() -> String?
+    func editViewFallbackTemplate(viewName: String) -> String?
+    func castColumnToText(_ column: String) -> String
+
+    // All-tables metadata SQL (optional — returns nil for non-SQL databases)
+    func allTablesMetadataSQL(schema: String?) -> String?
 }
 
 public extension PluginDatabaseDriver {
@@ -223,6 +230,11 @@ public extension PluginDatabaseDriver {
     func foreignKeyEnableStatements() -> [String]? { nil }
 
     func buildExplainQuery(_ sql: String) -> String? { nil }
+
+    func createViewTemplate() -> String? { nil }
+    func editViewFallbackTemplate(viewName: String) -> String? { nil }
+    func castColumnToText(_ column: String) -> String { column }
+    func allTablesMetadataSQL(schema: String?) -> String? { nil }
 
     func quoteIdentifier(_ name: String) -> String {
         let escaped = name.replacingOccurrences(of: "\"", with: "\"\"")

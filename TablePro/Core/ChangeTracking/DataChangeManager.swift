@@ -647,24 +647,12 @@ final class DataChangeManager {
                 deletedRowIndices: deletedRowIndices,
                 insertedRowIndices: insertedRowIndices
             ) {
-                // Validate MongoDB _id requirement
-                if databaseType == .mongodb {
-                    let expectedUpdates = changes.count(where: { $0.type == .update })
-                    let actualUpdates = statements.count(where: { $0.statement.contains("updateOne(") || $0.statement.contains("updateMany(") })
-
-                    if expectedUpdates > 0 && actualUpdates < expectedUpdates {
-                        throw DatabaseError.queryFailed(
-                            "Cannot save UPDATE changes to collection '\(tableName)' without an _id field. " +
-                                "Please ensure the collection has _id values."
-                        )
-                    }
-                }
                 return statements.map { ParameterizedStatement(sql: $0.statement, parameters: $0.parameters) }
             }
         }
 
         // Safety: prevent SQL generation for NoSQL databases if plugin driver is unavailable
-        if databaseType == .mongodb || databaseType == .redis {
+        if PluginManager.shared.editorLanguage(for: databaseType) != .sql {
             throw DatabaseError.queryFailed(
                 "Cannot generate statements for \(databaseType.rawValue) — plugin driver not initialized"
             )

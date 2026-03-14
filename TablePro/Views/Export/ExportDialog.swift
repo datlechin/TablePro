@@ -434,94 +434,44 @@ struct ExportDialog: View {
         do {
             var items: [ExportDatabaseItem] = []
 
-            switch connection.type {
-            case .postgresql, .redshift:
-                // PostgreSQL: fetch schemas within current database (can't query across databases)
-                let schemas = try await fetchPostgreSQLSchemas(driver: driver)
+            let dbType = connection.type
+            let grouping = PluginManager.shared.databaseGroupingStrategy(for: dbType)
+            switch grouping {
+            case .bySchema:
+                let schemas = try await driver.fetchSchemas()
+                let defaultSchema = PluginManager.shared.defaultSchemaName(for: dbType)
                 for schema in schemas {
                     let tables = try await fetchTablesForSchema(schema, driver: driver)
                     let tableItems = tables.map { table in
                         ExportTableItem(
                             name: table.name,
-                            databaseName: schema,  // schema name for PostgreSQL
+                            databaseName: schema,
                             type: table.type,
-                            isSelected: schema == "public" && preselectedTables.contains(table.name)
+                            isSelected: schema.caseInsensitiveCompare(defaultSchema) == .orderedSame
+                                && preselectedTables.contains(table.name)
                         )
                     }
                     if !tableItems.isEmpty {
                         items.append(ExportDatabaseItem(
                             name: schema,
                             tables: tableItems,
-                            isExpanded: schema == "public"
+                            isExpanded: schema.caseInsensitiveCompare(defaultSchema) == .orderedSame
                         ))
                     }
                 }
-                // Sort: public schema first
                 items.sort { item1, item2 in
-                    if item1.name == "public" { return true }
-                    if item2.name == "public" { return false }
+                    if item1.name.caseInsensitiveCompare(defaultSchema) == .orderedSame { return true }
+                    if item2.name.caseInsensitiveCompare(defaultSchema) == .orderedSame { return false }
                     return item1.name < item2.name
                 }
-
-            case .sqlite, .mongodb, .redis, .duckdb, .cassandra, .scylladb:
-                let fallbackName = connection.type == .redis ? "db0" : "main"
+            case .flat:
+                let fallbackName = PluginManager.shared.defaultGroupName(for: dbType)
                 let dbItem = try await buildFlatDatabaseItem(
                     driver: driver,
                     name: connection.database.isEmpty ? fallbackName : connection.database
                 )
                 if let dbItem { items.append(dbItem) }
-
-            case .mssql:
-                // MSSQL: fetch schemas within current database
-                let schemas = try await driver.fetchSchemas()
-                for schema in schemas {
-                    let tables = try await fetchTablesForSchema(schema, driver: driver)
-                    let tableItems = tables.map { table in
-                        ExportTableItem(
-                            name: table.name,
-                            databaseName: schema,
-                            type: table.type,
-                            isSelected: schema == "dbo" && preselectedTables.contains(table.name)
-                        )
-                    }
-                    if !tableItems.isEmpty {
-                        items.append(ExportDatabaseItem(
-                            name: schema,
-                            tables: tableItems,
-                            isExpanded: schema == "dbo"
-                        ))
-                    }
-                }
-                items.sort { item1, item2 in
-                    if item1.name == "dbo" { return true }
-                    if item2.name == "dbo" { return false }
-                    return item1.name < item2.name
-                }
-
-            case .oracle:
-                // Oracle: fetch schemas (users) and their tables
-                let schemas = try await driver.fetchSchemas()
-                for schema in schemas {
-                    let tables = try await fetchTablesForSchema(schema, driver: driver)
-                    let tableItems = tables.map { table in
-                        ExportTableItem(
-                            name: table.name,
-                            databaseName: schema,
-                            type: table.type,
-                            isSelected: preselectedTables.contains(table.name)
-                        )
-                    }
-                    if !tableItems.isEmpty {
-                        items.append(ExportDatabaseItem(
-                            name: schema,
-                            tables: tableItems,
-                            isExpanded: schema == connection.username.uppercased()
-                        ))
-                    }
-                }
-
-            case .clickhouse, .mysql, .mariadb:
-                // MySQL/MariaDB/ClickHouse: fetch all databases and their tables
+            case .byDatabase:
                 let databases = try await driver.fetchDatabases()
                 for dbName in databases {
                     let tables = try await fetchTablesForDatabase(dbName, driver: driver)
@@ -541,7 +491,6 @@ struct ExportDialog: View {
                         ))
                     }
                 }
-                // Sort: current database first
                 items.sort { item1, item2 in
                     if item1.name == connection.database { return true }
                     if item2.name == connection.database { return false }
@@ -568,17 +517,6 @@ struct ExportDialog: View {
         }
     }
 
-    private func fetchPostgreSQLSchemas(driver: DatabaseDriver) async throws -> [String] {
-        let query = """
-            SELECT schema_name
-            FROM information_schema.schemata
-            WHERE schema_name NOT IN ('pg_catalog', 'information_schema', 'pg_toast')
-            ORDER BY schema_name
-            """
-        let result = try await driver.execute(query: query)
-        return result.rows.compactMap { $0[0] }
-    }
-
     private func buildFlatDatabaseItem(
         driver: DatabaseDriver,
         name: String
@@ -598,7 +536,7 @@ struct ExportDialog: View {
 
     private func fetchTablesForSchema(_ schema: String, driver: DatabaseDriver) async throws -> [TableInfo] {
         // Oracle does not have information_schema — use ALL_TABLES/ALL_VIEWS
-        if connection.type == .oracle {
+        if connection.type.pluginTypeId == "Oracle" {
             let escapedSchema = schema.replacingOccurrences(of: "'", with: "''")
             let query = """
                 SELECT TABLE_NAME, 'BASE TABLE' AS TABLE_TYPE FROM ALL_TABLES WHERE OWNER = '\(escapedSchema)'

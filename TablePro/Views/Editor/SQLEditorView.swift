@@ -37,7 +37,7 @@ struct SQLEditorView: View {
             if editorReady {
             SourceEditor(
                 $text,
-                language: databaseType == .mongodb ? .javascript : databaseType == .redis ? .bash : .sql,
+                language: PluginManager.shared.editorLanguage(for: databaseType ?? .mysql).treeSitterLanguage,
                 configuration: editorConfiguration,
                 state: $editorState,
                 coordinators: [coordinator],

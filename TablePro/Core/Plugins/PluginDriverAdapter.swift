@@ -350,10 +350,30 @@ final class PluginDriverAdapter: DatabaseDriver, SchemaSwitchable {
         pluginDriver.foreignKeyEnableStatements()
     }
 
+    // MARK: - All Tables Metadata SQL
+
+    func allTablesMetadataSQL(schema: String?) -> String? {
+        pluginDriver.allTablesMetadataSQL(schema: schema)
+    }
+
     // MARK: - EXPLAIN
 
     func buildExplainQuery(_ sql: String) -> String? {
         pluginDriver.buildExplainQuery(sql)
+    }
+
+    // MARK: - View Templates
+
+    func createViewTemplate() -> String? {
+        pluginDriver.createViewTemplate()
+    }
+
+    func editViewFallbackTemplate(viewName: String) -> String? {
+        pluginDriver.editViewFallbackTemplate(viewName: viewName)
+    }
+
+    func castColumnToText(_ column: String) -> String {
+        pluginDriver.castColumnToText(column)
     }
 
     // MARK: - Identifier Quoting

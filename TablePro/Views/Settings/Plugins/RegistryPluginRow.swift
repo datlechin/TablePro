@@ -9,9 +9,7 @@ struct RegistryPluginRow: View {
     let plugin: RegistryPlugin
     let isInstalled: Bool
     let installProgress: InstallProgress?
-    let downloadCount: Int?
     let onInstall: () -> Void
-    let onToggleDetail: () -> Void
 
     var body: some View {
         HStack(spacing: 10) {
@@ -31,29 +29,9 @@ struct RegistryPluginRow: View {
                     }
                 }
 
-                HStack(spacing: 6) {
-                    Text("v\(plugin.version)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    Text("\u{2022}")
-                        .font(.caption2)
-                        .foregroundStyle(.quaternary)
-
-                    Text(plugin.author.name)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    if let downloadCount {
-                        Text("\u{2022}")
-                            .font(.caption2)
-                            .foregroundStyle(.quaternary)
-
-                        Text(formattedCount(downloadCount))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
+                Text("v\(plugin.version) · \(plugin.author.name)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Spacer()
@@ -61,10 +39,6 @@ struct RegistryPluginRow: View {
             actionButton
         }
         .padding(.vertical, 8)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            onToggleDetail()
-        }
     }
 
     @ViewBuilder
@@ -75,19 +49,6 @@ struct RegistryPluginRow: View {
             Image(name)
                 .renderingMode(.template)
         }
-    }
-
-    private static let decimalFormatter: NumberFormatter = {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        return formatter
-    }()
-
-    private func formattedCount(_ count: Int) -> String {
-        let formatted = Self.decimalFormatter.string(from: NSNumber(value: count)) ?? "\(count)"
-        return count == 1
-            ? String(localized: "\(formatted) download")
-            : String(localized: "\(formatted) downloads")
     }
 
     @ViewBuilder

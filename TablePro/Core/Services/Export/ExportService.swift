@@ -191,7 +191,7 @@ final class ExportService {
         var total = 0
         var failedCount = 0
 
-        if databaseType == .mongodb || databaseType == .redis {
+        if PluginManager.shared.editorLanguage(for: databaseType) != .sql {
             for table in tables {
                 do {
                     if let count = try await driver.fetchApproximateRowCount(table: table.name) {

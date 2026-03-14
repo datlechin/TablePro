@@ -22,6 +22,8 @@ final class SQLitePlugin: NSObject, TableProPlugin, DriverPlugin {
     // MARK: - UI/Capability Metadata
 
     static let requiresAuthentication = false
+    static let supportsSSH = false
+    static let supportsSSL = false
     static let connectionMode: ConnectionMode = .fileBased
     static let urlSchemes: [String] = ["sqlite"]
     static let fileExtensions: [String] = ["db", "sqlite", "sqlite3"]
@@ -405,6 +407,27 @@ final class SQLitePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         "EXPLAIN QUERY PLAN \(sql)"
     }
 
+    // MARK: - View Templates
+
+    func createViewTemplate() -> String? {
+        "CREATE VIEW IF NOT EXISTS view_name AS\nSELECT column1, column2\nFROM table_name\nWHERE condition;"
+    }
+
+    func editViewFallbackTemplate(viewName: String) -> String? {
+        let quoted = quoteIdentifier(viewName)
+        return "DROP VIEW IF EXISTS \(quoted);\nCREATE VIEW \(quoted) AS\nSELECT * FROM table_name;"
+    }
+
+    // MARK: - Foreign Key Checks
+
+    func foreignKeyDisableStatements() -> [String]? {
+        ["PRAGMA foreign_keys = OFF"]
+    }
+
+    func foreignKeyEnableStatements() -> [String]? {
+        ["PRAGMA foreign_keys = ON"]
+    }
+
     // MARK: - Pagination
 
     func fetchRowCount(query: String) async throws -> Int {
@@ -646,6 +669,28 @@ final class SQLitePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
 
     func createDatabase(name: String, charset: String, collation: String?) async throws {
         throw SQLitePluginError.unsupportedOperation
+    }
+
+    // MARK: - All Tables Metadata
+
+    func allTablesMetadataSQL(schema: String?) -> String? {
+        """
+        SELECT
+            '' as schema,
+            name,
+            type as kind,
+            '' as charset,
+            '' as collation,
+            '' as estimated_rows,
+            '' as total_size,
+            '' as data_size,
+            '' as index_size,
+            '' as comment
+        FROM sqlite_master
+        WHERE type IN ('table', 'view')
+        AND name NOT LIKE 'sqlite_%'
+        ORDER BY name
+        """
     }
 
     // MARK: - Private Helpers

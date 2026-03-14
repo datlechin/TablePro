@@ -15,12 +15,21 @@ struct TableQueryBuilder {
 
     private let databaseType: DatabaseType
     private var pluginDriver: (any PluginDatabaseDriver)?
+    private let dialectQuote: (String) -> String
 
     // MARK: - Initialization
 
-    init(databaseType: DatabaseType, pluginDriver: (any PluginDatabaseDriver)? = nil) {
+    init(
+        databaseType: DatabaseType,
+        pluginDriver: (any PluginDatabaseDriver)? = nil,
+        dialectQuote: ((String) -> String)? = nil
+    ) {
         self.databaseType = databaseType
         self.pluginDriver = pluginDriver
+        self.dialectQuote = dialectQuote ?? { name in
+            let escaped = name.replacingOccurrences(of: "\"", with: "\"\"")
+            return "\"\(escaped)\""
+        }
     }
 
     mutating func setPluginDriver(_ driver: (any PluginDatabaseDriver)?) {
@@ -31,8 +40,7 @@ struct TableQueryBuilder {
 
     private func quote(_ name: String) -> String {
         if let pluginDriver { return pluginDriver.quoteIdentifier(name) }
-        let escaped = name.replacingOccurrences(of: "\"", with: "\"\"")
-        return "\"\(escaped)\""
+        return dialectQuote(name)
     }
 
     // MARK: - Query Building

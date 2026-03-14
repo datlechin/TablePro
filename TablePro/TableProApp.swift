@@ -9,6 +9,7 @@ import CodeEditTextView
 import Observation
 import Sparkle
 import SwiftUI
+import TableProPluginKit
 
 // MARK: - App State for Menu Commands
 
@@ -19,8 +20,9 @@ final class AppState {
     var isConnected: Bool = false
     var safeModeLevel: SafeModeLevel = .silent
     var isReadOnly: Bool { safeModeLevel.blocksAllWrites }
-    var isMongoDB: Bool = false
-    var isRedis: Bool = false
+    var editorLanguage: EditorLanguage = .sql
+    var currentDatabaseType: DatabaseType?
+    var supportsDatabaseSwitching: Bool = true
     var isCurrentTabEditable: Bool = false  // True when current tab is an editable table
     var hasRowSelection: Bool = false  // True when rows are selected in data grid
     var hasTableSelection: Bool = false  // True when tables are selected in sidebar
@@ -171,13 +173,13 @@ struct AppMenuCommands: Commands {
                 actions?.openDatabaseSwitcher()
             }
             .optionalKeyboardShortcut(shortcut(for: .openDatabase))
-            .disabled(!appState.isConnected || appState.isRedis)
+            .disabled(!appState.isConnected || !appState.supportsDatabaseSwitching)
 
             Button("Switch Connection...") {
                 NotificationCenter.default.post(name: .openConnectionSwitcher, object: nil)
             }
             .optionalKeyboardShortcut(shortcut(for: .switchConnection))
-            .disabled(!appState.isConnected || appState.isRedis)
+            .disabled(!appState.isConnected)
 
             Button("Quick Switcher...") {
                 actions?.openQuickSwitcher()
@@ -193,8 +195,14 @@ struct AppMenuCommands: Commands {
             .optionalKeyboardShortcut(shortcut(for: .saveChanges))
             .disabled(!appState.isConnected || appState.isReadOnly)
 
-            Button(appState.isMongoDB ? "Preview MQL" : appState.isRedis ? "Preview Commands" : "Preview SQL") {
+            Button {
                 actions?.previewSQL()
+            } label: {
+                if let dbType = appState.currentDatabaseType {
+                    Text("Preview \(PluginManager.shared.queryLanguageName(for: dbType))")
+                } else {
+                    Text("Preview SQL")
+                }
             }
             .optionalKeyboardShortcut(shortcut(for: .previewSQL))
             .disabled(!appState.isConnected)
@@ -230,7 +238,7 @@ struct AppMenuCommands: Commands {
             .optionalKeyboardShortcut(shortcut(for: .export))
             .disabled(!appState.isConnected)
 
-            if !appState.isMongoDB && !appState.isRedis {
+            if appState.currentDatabaseType.map({ PluginManager.shared.supportsImport(for: $0) }) ?? true {
                 Button("Import...") {
                     actions?.importTables()
                 }

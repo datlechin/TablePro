@@ -231,7 +231,7 @@ struct FilterPanelView: View {
             .controlSize(.small)
             .disabled(!filterState.hasAppliedFilters)
 
-            Button(databaseType == .mongodb ? "MQL" : databaseType == .redis ? "CMD" : "SQL") {
+            Button(PluginManager.shared.queryLanguageName(for: databaseType)) {
                 generatedSQL = filterState.generatePreviewSQL(databaseType: databaseType)
                 showSQLSheet = true
             }

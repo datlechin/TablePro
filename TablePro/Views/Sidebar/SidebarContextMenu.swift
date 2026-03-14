@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import TableProPluginKit
 
 /// Extracted logic from SidebarContextMenu for testability
 enum SidebarContextMenuLogic {
@@ -17,8 +18,8 @@ enum SidebarContextMenuLogic {
         clickedTable?.type == .view
     }
 
-    static func importVisible(isView: Bool, isMongoDB: Bool) -> Bool {
-        !isView && !isMongoDB
+    static func importVisible(isView: Bool, supportsImport: Bool) -> Bool {
+        !isView && supportsImport
     }
 
     static func truncateVisible(isView: Bool) -> Bool {
@@ -92,7 +93,12 @@ struct SidebarContextMenu: View {
         .keyboardShortcut("e", modifiers: [.command, .shift])
         .disabled(!hasSelection)
 
-        if !isView && !AppState.shared.isMongoDB && !AppState.shared.isRedis {
+        if SidebarContextMenuLogic.importVisible(
+            isView: isView,
+            supportsImport: PluginManager.shared.supportsImport(
+                for: AppState.shared.currentDatabaseType ?? .mysql
+            )
+        ) {
             Button("Import...") {
                 coordinator?.openImportDialog()
             }

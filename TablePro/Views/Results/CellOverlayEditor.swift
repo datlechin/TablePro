@@ -56,7 +56,7 @@ final class CellOverlayEditor: NSObject, NSTextViewDelegate {
         let cellRect = cellView.convert(cellView.bounds, to: tableView)
 
         // Determine overlay height — at least the cell height, up to 120pt
-        let lineHeight: CGFloat = CellOverlayFonts.regular.boundingRectForFont.height + 4
+        let lineHeight: CGFloat = DataGridFontCache.regular.boundingRectForFont.height + 4
         let lineCount = CGFloat(value.components(separatedBy: .newlines).count)
         let contentHeight = max(lineCount * lineHeight + 8, cellRect.height)
         let overlayHeight = min(contentHeight, 120)
@@ -73,7 +73,7 @@ final class CellOverlayEditor: NSObject, NSTextViewDelegate {
         textView.overlayEditor = self
         textView.isRichText = false
         textView.allowsUndo = true
-        textView.font = CellOverlayFonts.regular
+        textView.font = DataGridFontCache.regular
         textView.textColor = .labelColor
         textView.backgroundColor = .textBackgroundColor
         textView.isVerticallyResizable = true
@@ -215,15 +215,6 @@ final class CellOverlayEditor: NSObject, NSTextViewDelegate {
 
         // Up/Down arrows — let NSTextView handle natively for line navigation
         return false
-    }
-
-    // MARK: - Fonts
-
-    private enum CellOverlayFonts {
-        static let regular = NSFont.monospacedSystemFont(
-            ofSize: DesignConstants.FontSize.body,
-            weight: .regular
-        )
     }
 }
 

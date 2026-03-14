@@ -42,6 +42,9 @@ final class RedisPlugin: NSObject, TableProPlugin, DriverPlugin {
     static let supportsSchemaEditing = false
     static let supportsDatabaseSwitching = false
     static let supportsImport = false
+    static let tableEntityName = "Keys"
+    static let supportsForeignKeyDisable = false
+    static let supportsReadOnlyMode = false
     static let databaseGroupingStrategy: GroupingStrategy = .flat
     static let defaultGroupName = "db0"
     static let columnTypesByCategory: [String: [String]] = [
@@ -56,7 +59,53 @@ final class RedisPlugin: NSObject, TableProPlugin, DriverPlugin {
         "Geospatial": ["geo"]
     ]
 
+    static let structureColumnFields: [StructureColumnField] = [.name, .type, .nullable]
+    static let defaultPrimaryKeyColumn: String? = "Key"
+
     static let sqlDialect: SQLDialectDescriptor? = nil
+
+    static var statementCompletions: [CompletionEntry] {
+        [
+            CompletionEntry(label: "GET", insertText: "GET"),
+            CompletionEntry(label: "SET", insertText: "SET"),
+            CompletionEntry(label: "DEL", insertText: "DEL"),
+            CompletionEntry(label: "EXISTS", insertText: "EXISTS"),
+            CompletionEntry(label: "KEYS", insertText: "KEYS"),
+            CompletionEntry(label: "HGET", insertText: "HGET"),
+            CompletionEntry(label: "HSET", insertText: "HSET"),
+            CompletionEntry(label: "HGETALL", insertText: "HGETALL"),
+            CompletionEntry(label: "HDEL", insertText: "HDEL"),
+            CompletionEntry(label: "LPUSH", insertText: "LPUSH"),
+            CompletionEntry(label: "RPUSH", insertText: "RPUSH"),
+            CompletionEntry(label: "LRANGE", insertText: "LRANGE"),
+            CompletionEntry(label: "LLEN", insertText: "LLEN"),
+            CompletionEntry(label: "SADD", insertText: "SADD"),
+            CompletionEntry(label: "SMEMBERS", insertText: "SMEMBERS"),
+            CompletionEntry(label: "SREM", insertText: "SREM"),
+            CompletionEntry(label: "SCARD", insertText: "SCARD"),
+            CompletionEntry(label: "ZADD", insertText: "ZADD"),
+            CompletionEntry(label: "ZRANGE", insertText: "ZRANGE"),
+            CompletionEntry(label: "ZREM", insertText: "ZREM"),
+            CompletionEntry(label: "ZSCORE", insertText: "ZSCORE"),
+            CompletionEntry(label: "EXPIRE", insertText: "EXPIRE"),
+            CompletionEntry(label: "TTL", insertText: "TTL"),
+            CompletionEntry(label: "PERSIST", insertText: "PERSIST"),
+            CompletionEntry(label: "TYPE", insertText: "TYPE"),
+            CompletionEntry(label: "SCAN", insertText: "SCAN"),
+            CompletionEntry(label: "HSCAN", insertText: "HSCAN"),
+            CompletionEntry(label: "SSCAN", insertText: "SSCAN"),
+            CompletionEntry(label: "ZSCAN", insertText: "ZSCAN"),
+            CompletionEntry(label: "INFO", insertText: "INFO"),
+            CompletionEntry(label: "DBSIZE", insertText: "DBSIZE"),
+            CompletionEntry(label: "FLUSHDB", insertText: "FLUSHDB"),
+            CompletionEntry(label: "SELECT", insertText: "SELECT"),
+            CompletionEntry(label: "INCR", insertText: "INCR"),
+            CompletionEntry(label: "DECR", insertText: "DECR"),
+            CompletionEntry(label: "APPEND", insertText: "APPEND"),
+            CompletionEntry(label: "MGET", insertText: "MGET"),
+            CompletionEntry(label: "MSET", insertText: "MSET")
+        ]
+    }
 
     func createDriver(config: DriverConnectionConfig) -> any PluginDatabaseDriver {
         RedisPluginDriver(config: config)

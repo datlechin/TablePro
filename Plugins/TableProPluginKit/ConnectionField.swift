@@ -1,5 +1,10 @@
 import Foundation
 
+public enum FieldSection: String, Codable, Sendable {
+    case authentication
+    case advanced
+}
+
 public struct ConnectionField: Codable, Sendable {
     public struct IntRange: Codable, Sendable, Equatable {
         public let lowerBound: Int
@@ -70,6 +75,8 @@ public struct ConnectionField: Codable, Sendable {
     public let isRequired: Bool
     public let defaultValue: String?
     public let fieldType: FieldType
+    public let section: FieldSection
+    public let hidesPassword: Bool
 
     /// Backward-compatible convenience: true when fieldType is .secure
     public var isSecure: Bool {
@@ -84,7 +91,9 @@ public struct ConnectionField: Codable, Sendable {
         required: Bool = false,
         secure: Bool = false,
         defaultValue: String? = nil,
-        fieldType: FieldType? = nil
+        fieldType: FieldType? = nil,
+        section: FieldSection = .advanced,
+        hidesPassword: Bool = false
     ) {
         self.id = id
         self.label = label
@@ -92,5 +101,23 @@ public struct ConnectionField: Codable, Sendable {
         self.isRequired = required
         self.defaultValue = defaultValue
         self.fieldType = fieldType ?? (secure ? .secure : .text)
+        self.section = section
+        self.hidesPassword = hidesPassword
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        label = try container.decode(String.self, forKey: .label)
+        placeholder = try container.decodeIfPresent(String.self, forKey: .placeholder) ?? ""
+        isRequired = try container.decodeIfPresent(Bool.self, forKey: .isRequired) ?? false
+        defaultValue = try container.decodeIfPresent(String.self, forKey: .defaultValue)
+        fieldType = try container.decode(FieldType.self, forKey: .fieldType)
+        section = try container.decodeIfPresent(FieldSection.self, forKey: .section) ?? .advanced
+        hidesPassword = try container.decodeIfPresent(Bool.self, forKey: .hidesPassword) ?? false
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, label, placeholder, isRequired, defaultValue, fieldType, section, hidesPassword
     }
 }

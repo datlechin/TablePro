@@ -16,6 +16,7 @@ enum QueuedURLEntry {
     case databaseURL(URL)
     case sqliteFile(URL)
     case duckdbFile(URL)
+    case genericDatabaseFile(URL, DatabaseType)
 }
 
 extension AppDelegate {
@@ -172,6 +173,51 @@ extension AppDelegate {
         }
     }
 
+    // MARK: - Generic Database File Handler
+
+    func handleGenericDatabaseFile(_ url: URL, type dbType: DatabaseType) {
+        guard WindowOpener.shared.openWindow != nil else {
+            queuedURLEntries.append(.genericDatabaseFile(url, dbType))
+            scheduleQueuedURLProcessing()
+            return
+        }
+
+        let filePath = url.path(percentEncoded: false)
+        let connectionName = url.deletingPathExtension().lastPathComponent
+
+        for (sessionId, session) in DatabaseManager.shared.activeSessions {
+            if session.connection.type == dbType
+                && session.connection.database == filePath
+                && session.driver != nil {
+                bringConnectionWindowToFront(sessionId)
+                return
+            }
+        }
+
+        let connection = DatabaseConnection(
+            name: connectionName,
+            host: "",
+            port: 0,
+            database: filePath,
+            username: "",
+            type: dbType
+        )
+
+        openNewConnectionWindow(for: connection)
+
+        Task { @MainActor in
+            do {
+                try await DatabaseManager.shared.connectToSession(connection)
+                for window in NSApp.windows where self.isWelcomeWindow(window) {
+                    window.close()
+                }
+            } catch {
+                connectionLogger.error("File open failed for '\(filePath, privacy: .public)' (\(dbType.rawValue)): \(error.localizedDescription)")
+                await self.handleConnectionFailure(error)
+            }
+        }
+    }
+
     // MARK: - Unified Queue
 
     func scheduleQueuedURLProcessing() {
@@ -203,6 +249,7 @@ extension AppDelegate {
                 case .databaseURL(let url): self.handleDatabaseURL(url)
                 case .sqliteFile(let url): self.handleSQLiteFile(url)
                 case .duckdbFile(let url): self.handleDuckDBFile(url)
+                case .genericDatabaseFile(let url, let dbType): self.handleGenericDatabaseFile(url, type: dbType)
                 }
             }
             self.scheduleWelcomeWindowSuppression()

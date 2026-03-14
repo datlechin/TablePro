@@ -30,8 +30,18 @@ final class CompletionEngine {
 
     // MARK: - Initialization
 
-    init(schemaProvider: SQLSchemaProvider, databaseType: DatabaseType? = nil, dialect: SQLDialectDescriptor? = nil) {
-        self.provider = SQLCompletionProvider(schemaProvider: schemaProvider, databaseType: databaseType, dialect: dialect)
+    init(
+        schemaProvider: SQLSchemaProvider,
+        databaseType: DatabaseType? = nil,
+        dialect: SQLDialectDescriptor? = nil,
+        statementCompletions: [CompletionEntry] = []
+    ) {
+        self.provider = SQLCompletionProvider(
+            schemaProvider: schemaProvider,
+            databaseType: databaseType,
+            dialect: dialect,
+            statementCompletions: statementCompletions
+        )
     }
 
     // MARK: - Public API

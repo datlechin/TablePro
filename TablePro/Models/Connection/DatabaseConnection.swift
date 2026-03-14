@@ -197,155 +197,149 @@ struct SSLConfiguration: Codable, Hashable {
 // MARK: - Database Type
 
 /// Represents the type of database
-enum DatabaseType: String, CaseIterable, Identifiable, Codable {
-    case mysql = "MySQL"
-    case mariadb = "MariaDB"
-    case postgresql = "PostgreSQL"
-    case sqlite = "SQLite"
-    case redshift = "Redshift"
-    case mongodb = "MongoDB"
-    case redis = "Redis"
-    case mssql = "SQL Server"
-    case oracle = "Oracle"
-    case clickhouse = "ClickHouse"
-    case cassandra = "Cassandra"
-    case scylladb = "ScyllaDB"
-    case duckdb = "DuckDB"
-
+struct DatabaseType: Hashable, Identifiable, Sendable {
+    let rawValue: String
+    init(rawValue: String) { self.rawValue = rawValue }
     var id: String { rawValue }
-
     var displayName: String { rawValue }
+}
 
+extension DatabaseType {
+    static let mysql = DatabaseType(rawValue: "MySQL")
+    static let mariadb = DatabaseType(rawValue: "MariaDB")
+    static let postgresql = DatabaseType(rawValue: "PostgreSQL")
+    static let sqlite = DatabaseType(rawValue: "SQLite")
+    static let redshift = DatabaseType(rawValue: "Redshift")
+    static let mongodb = DatabaseType(rawValue: "MongoDB")
+    static let redis = DatabaseType(rawValue: "Redis")
+    static let mssql = DatabaseType(rawValue: "SQL Server")
+    static let oracle = DatabaseType(rawValue: "Oracle")
+    static let clickhouse = DatabaseType(rawValue: "ClickHouse")
+    static let duckdb = DatabaseType(rawValue: "DuckDB")
+    static let cassandra = DatabaseType(rawValue: "Cassandra")
+    static let scylladb = DatabaseType(rawValue: "ScyllaDB")
+}
+
+extension DatabaseType: Codable {
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        self.rawValue = try container.decode(String.self)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+}
+
+extension DatabaseType {
+    /// All built-in database types.
+    static let allKnownTypes: [DatabaseType] = [
+        .mysql, .mariadb, .postgresql, .sqlite, .redshift,
+        .mongodb, .redis, .mssql, .oracle, .clickhouse, .duckdb,
+        .cassandra, .scylladb,
+    ]
+
+    /// Compatibility shim for CaseIterable call sites.
+    static var allCases: [DatabaseType] { allKnownTypes }
+}
+
+extension DatabaseType {
+    /// Returns nil if rawValue doesn't match any known type.
+    init?(validating rawValue: String) {
+        guard Self.allKnownTypes.contains(where: { $0.rawValue == rawValue }) else { return nil }
+        self.rawValue = rawValue
+    }
+}
+
+extension DatabaseType {
     /// Plugin type ID used for PluginManager lookup.
-    /// Maps database types that share a plugin (e.g., MySQL/MariaDB, PostgreSQL/Redshift).
     var pluginTypeId: String {
-        switch self {
-        case .mysql, .mariadb: return "MySQL"
-        case .postgresql, .redshift: return "PostgreSQL"
-        case .mssql: return "SQL Server"
-        case .sqlite: return "SQLite"
-        case .mongodb: return "MongoDB"
-        case .redis: return "Redis"
-        case .oracle: return "Oracle"
-        case .clickhouse: return "ClickHouse"
-        case .cassandra, .scylladb: return "Cassandra"
-        case .duckdb: return "DuckDB"
-        }
+        Self.pluginTypeIdMap[self] ?? rawValue
     }
 
     var isDownloadablePlugin: Bool {
-        switch self {
-        case .oracle, .clickhouse, .sqlite, .duckdb, .cassandra, .scylladb: return true
-        default: return false
-        }
+        Self.isDownloadablePluginSet.contains(self)
     }
 
-    /// Asset name for each database type icon
     var iconName: String {
-        switch self {
-        case .mysql:
-            return "mysql-icon"
-        case .mariadb:
-            return "mariadb-icon"
-        case .postgresql:
-            return "postgresql-icon"
-        case .sqlite:
-            return "sqlite-icon"
-        case .redshift:
-            return "redshift-icon"
-        case .mongodb:
-            return "mongodb-icon"
-        case .redis:
-            return "redis-icon"
-        case .mssql:
-            return "mssql-icon"
-        case .oracle:
-            return "oracle-icon"
-        case .clickhouse:
-            return "clickhouse-icon"
-        case .cassandra:
-            return "cassandra-icon"
-        case .scylladb:
-            return "scylladb-icon"
-        case .duckdb:
-            return "duckdb-icon"
-        }
+        Self.iconNameMap[self] ?? "database-icon"
     }
 
-    /// Default port for each database type
     var defaultPort: Int {
-        switch self {
-        case .mysql, .mariadb: return 3_306
-        case .postgresql: return 5_432
-        case .sqlite: return 0
-        case .redshift: return 5_439
-        case .mongodb: return 27_017
-        case .redis: return 6_379
-        case .mssql: return 1_433
-        case .oracle: return 1_521
-        case .clickhouse: return 8_123
-        case .cassandra, .scylladb: return 9_042
-        case .duckdb: return 0
-        }
+        Self.defaultPortMap[self] ?? 0
     }
 
-    /// Whether this database type typically requires authentication credentials.
-    /// MySQL, MariaDB, and PostgreSQL default to "root" when no username is provided;
-    /// MongoDB and SQLite commonly run without authentication.
     var requiresAuthentication: Bool {
-        switch self {
-        case .mysql, .mariadb, .postgresql, .redshift, .mssql, .oracle, .clickhouse: return true
-        case .sqlite, .duckdb, .mongodb, .redis, .cassandra, .scylladb: return false
-        }
+        Self.requiresAuthenticationSet.contains(self)
     }
 
-    /// Whether this database type supports foreign key constraints
     var supportsForeignKeys: Bool {
-        switch self {
-        case .mysql, .mariadb, .postgresql, .sqlite, .redshift, .mssql, .oracle, .duckdb:
-            return true
-        case .mongodb, .redis, .clickhouse, .cassandra, .scylladb:
-            return false
-        }
+        Self.supportsForeignKeysSet.contains(self)
     }
 
-    /// Whether this database type supports SQL-based schema editing (ALTER TABLE etc.)
     var supportsSchemaEditing: Bool {
-        switch self {
-        case .mysql, .mariadb, .postgresql, .sqlite, .mssql, .oracle, .clickhouse, .cassandra, .scylladb, .duckdb:
-            return true
-        case .redshift, .mongodb, .redis:
-            return false
-        }
+        Self.supportsSchemaEditingSet.contains(self)
     }
 
-    /// Quote character for identifiers (table/column names)
-    /// MySQL/MariaDB/SQLite use backticks, PostgreSQL uses double quotes
-    var identifierQuote: String {
-        switch self {
-        case .mysql, .mariadb, .sqlite, .clickhouse:
-            return "`"
-        case .postgresql, .redshift, .mongodb, .redis, .oracle, .cassandra, .scylladb, .duckdb:
-            return "\""
-        case .mssql:
-            return "["
-        }
-    }
+    private static let pluginTypeIdMap: [DatabaseType: String] = [
+        .mysql: "MySQL", .mariadb: "MySQL",
+        .postgresql: "PostgreSQL", .redshift: "PostgreSQL",
+        .mssql: "SQL Server",
+        .sqlite: "SQLite",
+        .mongodb: "MongoDB",
+        .redis: "Redis",
+        .oracle: "Oracle",
+        .clickhouse: "ClickHouse",
+        .duckdb: "DuckDB",
+        .cassandra: "Cassandra", .scylladb: "Cassandra",
+    ]
 
-    /// Quote an identifier (table or column name) for this database type.
-    /// Escapes embedded quote characters to prevent SQL injection.
-    func quoteIdentifier(_ name: String) -> String {
-        switch self {
-        case .mongodb, .redis:
-            return name
-        case .mssql:
-            return "[\(name.replacingOccurrences(of: "]", with: "]]"))]"
-        default:
-            let q = identifierQuote
-            let escaped = name.replacingOccurrences(of: q, with: q + q)
-            return "\(q)\(escaped)\(q)"
-        }
-    }
+    private static let isDownloadablePluginSet: Set<DatabaseType> = [
+        .oracle, .clickhouse, .sqlite, .duckdb, .cassandra, .scylladb,
+    ]
+
+    private static let iconNameMap: [DatabaseType: String] = [
+        .mysql: "mysql-icon",
+        .mariadb: "mariadb-icon",
+        .postgresql: "postgresql-icon",
+        .sqlite: "sqlite-icon",
+        .redshift: "redshift-icon",
+        .mongodb: "mongodb-icon",
+        .redis: "redis-icon",
+        .mssql: "mssql-icon",
+        .oracle: "oracle-icon",
+        .clickhouse: "clickhouse-icon",
+        .duckdb: "duckdb-icon",
+        .cassandra: "cassandra-icon",
+        .scylladb: "scylladb-icon",
+    ]
+
+    private static let defaultPortMap: [DatabaseType: Int] = [
+        .mysql: 3_306, .mariadb: 3_306,
+        .postgresql: 5_432,
+        .sqlite: 0,
+        .redshift: 5_439,
+        .mongodb: 27_017,
+        .redis: 6_379,
+        .mssql: 1_433,
+        .oracle: 1_521,
+        .clickhouse: 8_123,
+        .duckdb: 0,
+        .cassandra: 9_042, .scylladb: 9_042,
+    ]
+
+    private static let requiresAuthenticationSet: Set<DatabaseType> = [
+        .mysql, .mariadb, .postgresql, .redshift, .mssql, .oracle, .clickhouse,
+    ]
+
+    private static let supportsForeignKeysSet: Set<DatabaseType> = [
+        .mysql, .mariadb, .postgresql, .sqlite, .redshift, .mssql, .oracle, .duckdb,
+    ]
+
+    private static let supportsSchemaEditingSet: Set<DatabaseType> = [
+        .mysql, .mariadb, .postgresql, .sqlite, .mssql, .oracle, .clickhouse, .duckdb, .cassandra, .scylladb,
+    ]
 }
 
 // MARK: - Connection Color
@@ -508,7 +502,7 @@ struct DatabaseConnection: Identifiable, Hashable {
     }
 
     /// Returns the display color (custom color or database type color)
-    var displayColor: Color {
+    @MainActor var displayColor: Color {
         color.isDefault ? type.themeColor : color.color
     }
 }

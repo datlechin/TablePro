@@ -15,9 +15,12 @@ struct MainStatusBarLayoutTests {
     @Test("Status bar can be instantiated with nil tab")
     func instantiateWithNilTab() {
         let filterManager = FilterStateManager()
+        let colVisManager = ColumnVisibilityManager()
         let view = MainStatusBarView(
             tab: nil,
             filterStateManager: filterManager,
+            columnVisibilityManager: colVisManager,
+            allColumns: [],
             selectedRowIndices: [],
             showStructure: .constant(false),
             onFirstPage: {},

@@ -356,8 +356,10 @@ final class FilterStateManager {
     /// Generate preview SQL for the "SQL" button
     /// Uses selected filters if any are selected, otherwise uses all valid filters
     func generatePreviewSQL(databaseType: DatabaseType) -> String {
-        let dialect = PluginManager.shared.sqlDialect(for: databaseType)
-        let generator = FilterSQLGenerator(databaseType: databaseType, dialect: dialect)
+        guard let dialect = PluginManager.shared.sqlDialect(for: databaseType) else {
+            return "-- Filters are applied natively"
+        }
+        let generator = FilterSQLGenerator(dialect: dialect)
         let filtersToPreview = getFiltersForPreview()
 
         // If no valid filters but filters exist, show helpful message

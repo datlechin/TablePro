@@ -70,6 +70,14 @@ When adding a new driver: create a new plugin bundle under `Plugins/`, implement
 
 When adding a new method to the driver protocol: add to `PluginDatabaseDriver` (with default implementation), then update `PluginDriverAdapter` to bridge it to `DatabaseDriver`.
 
+### DatabaseType (String-Based Struct)
+
+`DatabaseType` is a string-based struct (not an enum). Key rules:
+- All `switch` statements on `DatabaseType` must include `default:` — the type is open
+- Use static constants (`.mysql`, `.postgresql`) for known types
+- Unknown types (from future plugins) are valid — they round-trip through Codable
+- Use `DatabaseType.allKnownTypes` (not `allCases`) for the canonical list of built-in types
+
 ### Editor Architecture (CodeEditSourceEditor)
 
 - **`SQLEditorTheme`** — single source of truth for editor colors/fonts

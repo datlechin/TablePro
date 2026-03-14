@@ -32,6 +32,7 @@ struct DataGridIdentity: Equatable {
     let rowCount: Int
     let columnCount: Int
     let isEditable: Bool
+    let hiddenColumns: Set<String>
 }
 
 /// High-performance table view using AppKit NSTableView
@@ -60,6 +61,8 @@ struct DataGridView: NSViewRepresentable {
     var databaseType: DatabaseType?
     var tableName: String?
     var primaryKeyColumn: String?
+    var hiddenColumns: Set<String> = []
+    var onHideColumn: ((String) -> Void)?
 
     @Binding var selectedRowIndices: Set<Int>
     @Binding var sortState: SortState
@@ -149,6 +152,9 @@ struct DataGridView: NSViewRepresentable {
         }
         context.coordinator.isRebuildingColumns = false
 
+        // Apply column visibility
+        applyColumnVisibility(to: tableView)
+
         if let headerView = tableView.headerView {
             let headerMenu = NSMenu()
             headerMenu.delegate = context.coordinator
@@ -178,7 +184,8 @@ struct DataGridView: NSViewRepresentable {
             metadataVersion: metadataVersion,
             rowCount: rowProvider.totalRowCount,
             columnCount: rowProvider.columns.count,
-            isEditable: isEditable
+            isEditable: isEditable,
+            hiddenColumns: hiddenColumns
         )
         if currentIdentity == coordinator.lastIdentity {
             // Only refresh closure callbacks — they capture new state on each body eval
@@ -187,6 +194,7 @@ struct DataGridView: NSViewRepresentable {
             coordinator.onAddRow = onAddRow
             coordinator.onUndoInsert = onUndoInsert
             coordinator.onFilterColumn = onFilterColumn
+            coordinator.onHideColumn = onHideColumn
             coordinator.onRefresh = onRefresh
             coordinator.onDeleteRows = onDeleteRows
             coordinator.getVisualState = getVisualState
@@ -244,6 +252,7 @@ struct DataGridView: NSViewRepresentable {
         coordinator.onAddRow = onAddRow
         coordinator.onUndoInsert = onUndoInsert
         coordinator.onFilterColumn = onFilterColumn
+        coordinator.onHideColumn = onHideColumn
         coordinator.getVisualState = getVisualState
         coordinator.onNavigateFK = onNavigateFK
         coordinator.dropdownColumns = dropdownColumns
@@ -275,6 +284,9 @@ struct DataGridView: NSViewRepresentable {
             shouldRebuild: shouldRebuildColumns,
             structureChanged: structureChanged
         )
+
+        // Sync column visibility
+        applyColumnVisibility(to: tableView)
 
         syncSortDescriptors(tableView: tableView, coordinator: coordinator)
 
@@ -507,6 +519,21 @@ struct DataGridView: NSViewRepresentable {
         }
     }
 
+    // MARK: - Column Visibility
+
+    /// Apply hidden column state to the table view
+    private func applyColumnVisibility(to tableView: NSTableView) {
+        for column in tableView.tableColumns where column.identifier.rawValue != "__rowNumber__" {
+            guard let colIndex = Self.columnIndex(from: column.identifier),
+                  colIndex < rowProvider.columns.count else { continue }
+            let columnName = rowProvider.columns[colIndex]
+            let shouldHide = hiddenColumns.contains(columnName)
+            if column.isHidden != shouldHide {
+                column.isHidden = shouldHide
+            }
+        }
+    }
+
     // MARK: - Column Layout Helpers
 
     /// Extract column index from a stable identifier like "col_3"
@@ -613,6 +640,7 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
     var onAddRow: (() -> Void)?
     var onUndoInsert: ((Int) -> Void)?
     var onFilterColumn: ((String) -> Void)?
+    var onHideColumn: ((String) -> Void)?
     var onNavigateFK: ((String, ForeignKeyInfo) -> Void)?
     var getVisualState: ((Int) -> RowVisualState)?
     var dropdownColumns: Set<Int>?
@@ -638,6 +666,8 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
 
     // Settings observer for real-time updates
     fileprivate var settingsObserver: NSObjectProtocol?
+    /// Snapshot of last-seen data grid settings for change detection
+    private var lastDataGridSettings: DataGridSettings
 
     @Binding var selectedRowIndices: Set<Int>
 
@@ -688,6 +718,7 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
         self.onPasteRows = onPasteRows
         self.onUndo = onUndo
         self.onRedo = onRedo
+        self.lastDataGridSettings = AppSettingsManager.shared.dataGrid
         super.init()
         updateCache()
 
@@ -701,14 +732,28 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
 
             DispatchQueue.main.async { [weak self] in
                 guard let self, let tableView = self.tableView else { return }
-                let newRowHeight = CGFloat(AppSettingsManager.shared.dataGrid.rowHeight.rawValue)
+                let settings = AppSettingsManager.shared.dataGrid
+                let prev = self.lastDataGridSettings
+                self.lastDataGridSettings = settings
 
-                // Only reload if row height changed (requires full reload)
+                let newRowHeight = CGFloat(settings.rowHeight.rawValue)
                 if tableView.rowHeight != newRowHeight {
                     tableView.rowHeight = newRowHeight
                     tableView.tile()
-                } else {
-                    // For other settings (date format, NULL display), just reload visible rows
+                }
+
+                // Font-only change: update fonts in-place without reloadData
+                // to avoid recycling cells through the reuse pool outside the
+                // normal SwiftUI update cycle, which can cause stale data.
+                let fontChanged = prev.fontFamily != settings.fontFamily || prev.fontSize != settings.fontSize
+                let dataChanged = prev.dateFormat != settings.dateFormat
+                    || prev.nullDisplay != settings.nullDisplay
+
+                if fontChanged {
+                    Self.updateVisibleCellFonts(tableView: tableView)
+                }
+
+                if dataChanged {
                     let visibleRect = tableView.visibleRect
                     let visibleRange = tableView.rows(in: visibleRect)
                     if visibleRange.length > 0 {
@@ -731,6 +776,37 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
     func updateCache() {
         cachedRowCount = rowProvider.totalRowCount
         cachedColumnCount = rowProvider.columns.count
+    }
+
+    // MARK: - Font Updates
+
+    /// Update fonts on existing visible cell views in-place.
+    /// Uses `DataGridFontVariant` tags set during cell configuration
+    /// to apply the correct font variant without inspecting cell content.
+    @MainActor
+    static func updateVisibleCellFonts(tableView: NSTableView) {
+        let visibleRect = tableView.visibleRect
+        let visibleRange = tableView.rows(in: visibleRect)
+        guard visibleRange.length > 0 else { return }
+
+        let columnCount = tableView.numberOfColumns
+        for row in visibleRange.location..<(visibleRange.location + visibleRange.length) {
+            for col in 0..<columnCount {
+                guard let cellView = tableView.view(atColumn: col, row: row, makeIfNecessary: false) as? NSTableCellView,
+                      let textField = cellView.textField else { continue }
+
+                switch textField.tag {
+                case DataGridFontVariant.rowNumber:
+                    textField.font = DataGridFontCache.rowNumber
+                case DataGridFontVariant.italic:
+                    textField.font = DataGridFontCache.italic
+                case DataGridFontVariant.medium:
+                    textField.font = DataGridFontCache.medium
+                default:
+                    textField.font = DataGridFontCache.regular
+                }
+            }
+        }
     }
 
     // MARK: - Row Visual State Cache

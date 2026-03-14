@@ -12,6 +12,27 @@ struct DataGridSettingsView: View {
 
     var body: some View {
         Form {
+            Section("Font") {
+                Picker("Font:", selection: $settings.fontFamily) {
+                    ForEach(EditorFont.allCases.filter { $0.isAvailable }) { font in
+                        Text(font.displayName).tag(font)
+                    }
+                }
+
+                Picker("Size:", selection: $settings.fontSize) {
+                    ForEach(10...18, id: \.self) { size in
+                        Text("\(size) pt").tag(size)
+                    }
+                }
+
+                GroupBox("Preview") {
+                    Text("1  John Doe  john@example.com  NULL")
+                        .font(Font(settings.fontFamily.font(size: CGFloat(settings.clampedFontSize))))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(8)
+                }
+            }
+
             Section("Display") {
                 Picker("Row height:", selection: $settings.rowHeight) {
                     ForEach(DataGridRowHeight.allCases) { height in

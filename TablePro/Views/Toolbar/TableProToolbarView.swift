@@ -12,6 +12,7 @@
 //
 
 import SwiftUI
+import TableProPluginKit
 
 /// Content for the principal (center) toolbar area
 /// Displays environment badge, connection status, and execution indicator in a unified card
@@ -61,21 +62,21 @@ struct TableProToolbar: ViewModifier {
             .toolbar {
                 // MARK: - Navigation (Left)
 
-                if state.databaseType != .redis {
-                    ToolbarItem(placement: .navigation) {
-                        Button {
-                            showConnectionSwitcher.toggle()
-                        } label: {
-                            Label("Connection", systemImage: "network")
-                        }
-                        .help("Switch Connection (⌘⌥C)")
-                        .popover(isPresented: $showConnectionSwitcher) {
-                            ConnectionSwitcherPopover {
-                                showConnectionSwitcher = false
-                            }
+                ToolbarItem(placement: .navigation) {
+                    Button {
+                        showConnectionSwitcher.toggle()
+                    } label: {
+                        Label("Connection", systemImage: "network")
+                    }
+                    .help("Switch Connection (⌘⌥C)")
+                    .popover(isPresented: $showConnectionSwitcher) {
+                        ConnectionSwitcherPopover {
+                            showConnectionSwitcher = false
                         }
                     }
+                }
 
+                if PluginManager.shared.supportsDatabaseSwitching(for: state.databaseType) {
                     ToolbarItem(placement: .navigation) {
                         Button {
                             actions?.openDatabaseSwitcher()
@@ -84,7 +85,8 @@ struct TableProToolbar: ViewModifier {
                         }
                         .help("Open Database (⌘K)")
                         .disabled(
-                            state.connectionState != .connected || state.databaseType == .sqlite || state.databaseType == .duckdb)
+                            state.connectionState != .connected
+                                || PluginManager.shared.connectionMode(for: state.databaseType) == .fileBased)
                     }
                 }
 
@@ -139,15 +141,10 @@ struct TableProToolbar: ViewModifier {
                     Button {
                         actions?.previewSQL()
                     } label: {
-                        Label(
-                            state.databaseType == .mongodb ? "Preview MQL"
-                                : state.databaseType == .redis ? "Preview Commands"
-                                : "Preview SQL",
-                            systemImage: "eye")
+                        let langName = PluginManager.shared.queryLanguageName(for: state.databaseType)
+                        Label("Preview \(langName)", systemImage: "eye")
                     }
-                    .help(state.databaseType == .mongodb ? "Preview MQL (⌘⇧P)"
-                        : state.databaseType == .redis ? "Preview Commands (⌘⇧P)"
-                        : "Preview SQL (⌘⇧P)")
+                    .help("Preview \(PluginManager.shared.queryLanguageName(for: state.databaseType)) (⌘⇧P)")
                     .disabled(!state.hasPendingChanges || state.connectionState != .connected)
                     .popover(isPresented: $state.showSQLReviewPopover) {
                         SQLReviewPopover(statements: state.previewStatements, databaseType: state.databaseType)
@@ -181,7 +178,7 @@ struct TableProToolbar: ViewModifier {
                     .help("Export Data (⌘⇧E)")
                     .disabled(state.connectionState != .connected)
 
-                    if state.databaseType != .mongodb && state.databaseType != .redis {
+                    if PluginManager.shared.supportsImport(for: state.databaseType) {
                         Button {
                             actions?.importTables()
                         } label: {

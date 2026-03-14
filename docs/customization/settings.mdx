@@ -147,6 +147,19 @@ Fully anonymous: no personal information, queries, or database content is transm
 
 ## Data Grid Settings
 
+### Font
+
+| Setting | Default | Range | Description |
+|---------|---------|-------|-------------|
+| **Font family** | System Mono | System Mono, SF Mono, Menlo, Monaco, Courier New | Monospace font for data grid cells |
+| **Font size** | 13 pt | 10-18 pt | Text size in data grid cells |
+
+The font setting affects all data grid cells, including NULL placeholders and cell editing overlays. A live preview is shown in the settings panel.
+
+<Tip>
+The data grid font is independent of the SQL editor font. You can use different fonts and sizes for each.
+</Tip>
+
 ### Row Height
 
 | Option | Height | Best For |
@@ -359,6 +372,8 @@ Manage database driver plugins from the **Plugins** tab in Settings.
 
 ### Installed Plugins
 
+The **Installed** tab uses a split-view layout: the plugin list on the left, and the detail pane on the right.
+
 TablePro ships with 8 built-in database driver plugins:
 
 | Plugin | Database Types | Default Port |
@@ -376,13 +391,19 @@ Each plugin has a toggle to enable or disable it. Disabled plugins hide their da
 
 ### Plugin Details
 
-Click a plugin to view its details: version, bundle ID, supported capabilities, database type, and default port. Driver plugins can provide custom settings panels that appear in this detail view.
+Select a plugin in the list to view its details in the right pane: version, bundle ID, supported capabilities, database type, and default port. Driver plugins can provide custom settings panels that appear in this detail view.
+
+### Browse plugins
+
+The **Browse** tab also uses a split-view layout. Search and filter plugins by category using the controls at the top. Select a plugin in the list to view its full details and install it from the right pane.
 
 ### Installing Third-Party Plugins
 
-1. Click **Install from File...**
+1. Click the **+** button below the plugin list
 2. Select a `.zip` archive containing a `.tableplugin` bundle
 3. TablePro verifies the code signature and installs the plugin
+
+You can also drag and drop a `.tableplugin` or `.zip` file onto the Plugins settings view to install it.
 
 <Warning>
 Only install plugins from sources you trust. TablePro checks the code signature of sideloaded plugins but cannot guarantee their behavior.
@@ -390,7 +411,7 @@ Only install plugins from sources you trust. TablePro checks the code signature 
 
 ### Uninstalling Plugins
 
-User-installed plugins show an **Uninstall** button in the plugin details view. Built-in plugins cannot be uninstalled, only disabled.
+Select a user-installed plugin and click the **-** button below the list, or use the **Uninstall** button in the detail pane. Built-in plugins cannot be uninstalled, only disabled.
 
 ### Advanced Settings
 
@@ -502,6 +523,8 @@ See [Editor Settings](/customization/editor-settings) for details.
 | Accent color | Appearance | UI accent color |
 | Row height | Data Grid | Grid row height |
 | Date format | Data Grid | Date display format |
+| Font family | Data Grid | Monospace font for data cells |
+| Font size | Data Grid | Data cell text size (10-18 pt) |
 
 See [Appearance](/customization/appearance) for details.
 

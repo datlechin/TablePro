@@ -28,27 +28,22 @@ struct DatabaseTypeRedisTests {
         #expect(DatabaseType.redis.supportsSchemaEditing == false)
     }
 
-    @Test("Identifier quote is double quote")
-    func identifierQuote() {
-        #expect(DatabaseType.redis.identifierQuote == "\"")
-    }
-
-    @Test("quoteIdentifier returns name unchanged")
-    func quoteIdentifier() {
-        #expect(DatabaseType.redis.quoteIdentifier("mykey") == "mykey")
-    }
-
     @Test("Raw value is Redis")
     func rawValue() {
         #expect(DatabaseType.redis.rawValue == "Redis")
     }
 
-    @Test("Theme color matches Theme.redisColor")
-    func themeColor() {
-        #expect(DatabaseType.redis.themeColor == Theme.redisColor)
+    @Test("Theme color is derived from plugin brand color")
+    @MainActor func themeColor() {
+        #expect(DatabaseType.redis.themeColor == PluginManager.shared.brandColor(for: .redis))
     }
 
-    @Test("Included in allCases")
+    @Test("Included in allKnownTypes")
+    func includedInAllKnownTypes() {
+        #expect(DatabaseType.allKnownTypes.contains(.redis))
+    }
+
+    @Test("Included in allCases shim")
     func includedInAllCases() {
         #expect(DatabaseType.allCases.contains(.redis))
     }

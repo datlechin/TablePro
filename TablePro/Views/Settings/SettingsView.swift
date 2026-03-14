@@ -74,7 +74,7 @@ struct SettingsView: View {
                 }
                 .tag(SettingsTab.license.rawValue)
         }
-        .frame(width: 620, height: 500)
+        .frame(width: 720, height: 500)
     }
 }
 

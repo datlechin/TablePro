@@ -15,25 +15,9 @@ extension MainContentCoordinator {
     func createView() {
         guard !connection.safeModeLevel.blocksAllWrites else { return }
 
-        let template: String
-        switch connection.type {
-        case .postgresql, .redshift, .duckdb:
-            template = "CREATE OR REPLACE VIEW view_name AS\nSELECT column1, column2\nFROM table_name\nWHERE condition;"
-        case .mysql, .mariadb, .clickhouse:
-            template = "CREATE VIEW view_name AS\nSELECT column1, column2\nFROM table_name\nWHERE condition;"
-        case .sqlite:
-            template = "CREATE VIEW IF NOT EXISTS view_name AS\nSELECT column1, column2\nFROM table_name\nWHERE condition;"
-        case .mssql:
-            template = "CREATE OR ALTER VIEW view_name AS\nSELECT column1, column2\nFROM table_name\nWHERE condition;"
-        case .oracle:
-            template = "CREATE OR REPLACE VIEW view_name AS\nSELECT column1, column2\nFROM table_name\nWHERE condition;"
-        case .mongodb:
-            template = "db.createView(\"view_name\", \"source_collection\", [\n  {\"$match\": {}},\n  {\"$project\": {\"_id\": 1}}\n])"
-        case .redis:
-            template = "-- Redis does not support views"
-        case .cassandra, .scylladb:
-            template = "-- Cassandra does not support views via CQL CREATE VIEW"
-        }
+        let driver = DatabaseManager.shared.driver(for: connection.id)
+        let template = driver?.createViewTemplate()
+            ?? "CREATE VIEW view_name AS\nSELECT column1, column2\nFROM table_name\nWHERE condition;"
 
         let payload = EditorTabPayload(
             connectionId: connection.id,
@@ -57,25 +41,10 @@ extension MainContentCoordinator {
                 )
                 WindowOpener.shared.openNativeTab(payload)
             } catch {
-                let fallbackSQL: String
-                switch connection.type {
-                case .postgresql, .redshift, .duckdb:
-                    fallbackSQL = "CREATE OR REPLACE VIEW \(viewName) AS\n-- Could not fetch view definition: \(error.localizedDescription)\nSELECT * FROM table_name;"
-                case .mysql, .mariadb, .clickhouse:
-                    fallbackSQL = "ALTER VIEW \(viewName) AS\n-- Could not fetch view definition: \(error.localizedDescription)\nSELECT * FROM table_name;"
-                case .sqlite:
-                    fallbackSQL = "-- SQLite does not support ALTER VIEW. Drop and recreate:\nDROP VIEW IF EXISTS \(viewName);\nCREATE VIEW \(viewName) AS\nSELECT * FROM table_name;"
-                case .mssql:
-                    fallbackSQL = "CREATE OR ALTER VIEW \(viewName) AS\n-- Could not fetch view definition: \(error.localizedDescription)\nSELECT * FROM table_name;"
-                case .oracle:
-                    fallbackSQL = "CREATE OR REPLACE VIEW \(viewName) AS\n-- Could not fetch view definition: \(error.localizedDescription)\nSELECT * FROM table_name;"
-                case .mongodb:
-                    fallbackSQL = "db.runCommand({\"collMod\": \"\(viewName)\", \"viewOn\": \"source_collection\", \"pipeline\": [{\"$match\": {}}]})"
-                case .redis:
-                    fallbackSQL = "-- Redis does not support views"
-                case .cassandra, .scylladb:
-                    fallbackSQL = "-- Cassandra does not support ALTER VIEW"
-                }
+                let driver = DatabaseManager.shared.driver(for: self.connection.id)
+                let template = driver?.editViewFallbackTemplate(viewName: viewName)
+                    ?? "CREATE OR REPLACE VIEW \(viewName) AS\nSELECT * FROM table_name;"
+                let fallbackSQL = "-- Could not fetch view definition: \(error.localizedDescription)\n\(template)"
 
                 let payload = EditorTabPayload(
                     connectionId: connection.id,
@@ -95,11 +64,10 @@ extension MainContentCoordinator {
 
     func openImportDialog() {
         guard !connection.safeModeLevel.blocksAllWrites else { return }
-        guard connection.type != .mongodb && connection.type != .redis else {
-            let typeName = connection.type == .mongodb ? "MongoDB" : "Redis"
+        guard PluginManager.shared.supportsImport(for: connection.type) else {
             AlertHelper.showErrorSheet(
                 title: String(localized: "Import Not Supported"),
-                message: String(localized: "SQL import is not supported for \(typeName) connections."),
+                message: String(localized: "SQL import is not supported for \(connection.type.rawValue) connections."),
                 window: nil
             )
             return

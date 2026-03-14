@@ -35,6 +35,19 @@ public protocol DriverPlugin: TableProPlugin {
     static var defaultGroupName: String { get }
     static var columnTypesByCategory: [String: [String]] { get }
     static var sqlDialect: SQLDialectDescriptor? { get }
+    static var statementCompletions: [CompletionEntry] { get }
+    static var tableEntityName: String { get }
+    static var supportsCascadeDrop: Bool { get }
+    static var supportsForeignKeyDisable: Bool { get }
+    static var immutableColumns: [String] { get }
+    static var supportsReadOnlyMode: Bool { get }
+    static var defaultSchemaName: String { get }
+    static var requiresReconnectForDatabaseSwitch: Bool { get }
+    static var structureColumnFields: [StructureColumnField] { get }
+    static var defaultPrimaryKeyColumn: String? { get }
+    static var supportsQueryProgress: Bool { get }
+    static var supportsSSH: Bool { get }
+    static var supportsSSL: Bool { get }
 }
 
 public extension DriverPlugin {
@@ -74,4 +87,19 @@ public extension DriverPlugin {
         ]
     }
     static var sqlDialect: SQLDialectDescriptor? { nil }
+    static var statementCompletions: [CompletionEntry] { [] }
+    static var tableEntityName: String { "Tables" }
+    static var supportsCascadeDrop: Bool { false }
+    static var supportsForeignKeyDisable: Bool { true }
+    static var immutableColumns: [String] { [] }
+    static var supportsReadOnlyMode: Bool { true }
+    static var defaultSchemaName: String { "public" }
+    static var requiresReconnectForDatabaseSwitch: Bool { false }
+    static var structureColumnFields: [StructureColumnField] {
+        [.name, .type, .nullable, .defaultValue, .autoIncrement, .comment]
+    }
+    static var defaultPrimaryKeyColumn: String? { nil }
+    static var supportsQueryProgress: Bool { false }
+    static var supportsSSH: Bool { true }
+    static var supportsSSL: Bool { true }
 }

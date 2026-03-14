@@ -26,6 +26,7 @@ struct MainEditorContentView: View {
     var coordinator: MainContentCoordinator
     var changeManager: DataChangeManager
     var filterStateManager: FilterStateManager
+    var columnVisibilityManager: ColumnVisibilityManager
     let connection: DatabaseConnection
     let windowId: UUID
     let connectionId: UUID
@@ -329,6 +330,10 @@ struct MainEditorContentView: View {
             databaseType: connection.type,
             tableName: tab.tableName,
             primaryKeyColumn: changeManager.primaryKeyColumn,
+            hiddenColumns: columnVisibilityManager.hiddenColumns,
+            onHideColumn: { [coordinator] columnName in
+                coordinator.hideColumn(columnName)
+            },
             selectedRowIndices: $selectedRowIndices,
             sortState: sortStateBinding(for: tab),
             editingCell: $editingCell,
@@ -457,6 +462,8 @@ struct MainEditorContentView: View {
         MainStatusBarView(
             tab: tab,
             filterStateManager: filterStateManager,
+            columnVisibilityManager: columnVisibilityManager,
+            allColumns: tab.resultColumns,
             selectedRowIndices: selectedRowIndices,
             showStructure: showStructureBinding(for: tab),
             onFirstPage: onFirstPage,
@@ -509,7 +516,7 @@ struct MainEditorContentView: View {
                             RoundedRectangle(cornerRadius: 4)
                                 .fill(Color(nsColor: .quaternaryLabelColor))
                         )
-                    Text(connection.type == .mongodb ? "Open MQL Editor" : connection.type == .redis ? "Open Redis CLI" : "Open SQL Editor")
+                    Text("Open \(PluginManager.shared.queryLanguageName(for: connection.type)) Editor")
                         .font(.callout)
                         .foregroundStyle(.tertiary)
                 }

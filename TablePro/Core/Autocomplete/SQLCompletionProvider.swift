@@ -16,6 +16,7 @@ final class SQLCompletionProvider {
     private let schemaProvider: SQLSchemaProvider
     private var databaseType: DatabaseType?
     private var cachedDialect: SQLDialectDescriptor?
+    private var cachedStatementCompletions: [CompletionEntry] = []
 
     /// Minimum prefix length to trigger suggestions
     private let minPrefixLength = 1
@@ -25,16 +26,19 @@ final class SQLCompletionProvider {
 
     // MARK: - Init
 
-    init(schemaProvider: SQLSchemaProvider, databaseType: DatabaseType? = nil, dialect: SQLDialectDescriptor? = nil) {
+    init(schemaProvider: SQLSchemaProvider, databaseType: DatabaseType? = nil,
+         dialect: SQLDialectDescriptor? = nil, statementCompletions: [CompletionEntry] = []) {
         self.schemaProvider = schemaProvider
         self.databaseType = databaseType
         self.cachedDialect = dialect
+        self.cachedStatementCompletions = statementCompletions
     }
 
     /// Update the database type for context-aware completions
-    func setDatabaseType(_ type: DatabaseType, dialect: SQLDialectDescriptor? = nil) {
+    func setDatabaseType(_ type: DatabaseType, dialect: SQLDialectDescriptor? = nil, statementCompletions: [CompletionEntry] = []) {
         self.databaseType = type
         self.cachedDialect = dialect
+        self.cachedStatementCompletions = statementCompletions
     }
 
     // MARK: - Public API
@@ -385,45 +389,12 @@ final class SQLCompletionProvider {
             items += await schemaProvider.tableCompletionItems()
 
         case .unknown:
-            // Start of query - suggest statement keywords and tables
-            if databaseType == .redis {
-                // Redis: command completions
-                items = [
-                    "GET", "SET", "DEL", "EXISTS", "KEYS",
-                    "HGET", "HSET", "HGETALL", "HDEL",
-                    "LPUSH", "RPUSH", "LRANGE", "LLEN",
-                    "SADD", "SMEMBERS", "SREM", "SCARD",
-                    "ZADD", "ZRANGE", "ZREM", "ZSCORE",
-                    "EXPIRE", "TTL", "PERSIST", "TYPE",
-                    "SCAN", "HSCAN", "SSCAN", "ZSCAN",
-                    "INFO", "DBSIZE", "FLUSHDB", "SELECT",
-                    "INCR", "DECR", "APPEND", "MGET", "MSET",
-                ].map { cmd in
+            if !cachedStatementCompletions.isEmpty {
+                items = cachedStatementCompletions.map { entry in
                     SQLCompletionItem(
-                        label: cmd,
+                        label: entry.label,
                         kind: .keyword,
-                        insertText: cmd
-                    )
-                }
-            } else if databaseType == .mongodb {
-                // MongoDB: only MQL method completions, no SQL keywords
-                items = [
-                    "db.", "db.runCommand", "db.adminCommand",
-                    "db.createView", "db.createCollection",
-                    "show dbs", "show collections",
-                    ".find", ".findOne", ".aggregate",
-                    ".insertOne", ".insertMany",
-                    ".updateOne", ".updateMany",
-                    ".deleteOne", ".deleteMany",
-                    ".replaceOne",
-                    ".findOneAndUpdate", ".findOneAndReplace", ".findOneAndDelete",
-                    ".countDocuments", ".count",
-                    ".createIndex", ".dropIndex", ".drop",
-                ].map { mql in
-                    SQLCompletionItem(
-                        label: mql,
-                        kind: .keyword,
-                        insertText: mql
+                        insertText: entry.insertText
                     )
                 }
             } else {
@@ -454,28 +425,6 @@ final class SQLCompletionProvider {
     /// so they sort before generic constraint keywords in CREATE TABLE context.
     /// Uses plugin-provided dialect data when available; falls back to common SQL types.
     private func dataTypeKeywords() -> [SQLCompletionItem] {
-        // MongoDB and Redis use case-sensitive, non-SQL types
-        if databaseType == .mongodb {
-            return [
-                "ObjectId", "String", "Int32", "Int64", "Double", "Decimal128",
-                "Boolean", "Date", "Timestamp", "BinData", "Array", "Object",
-                "Null", "Regex", "UUID"
-            ].map { typeName in
-                var item = SQLCompletionItem(label: typeName, kind: .keyword, insertText: typeName)
-                item.sortPriority = 380
-                return item
-            }
-        }
-        if databaseType == .redis {
-            return [
-                "String", "List", "Set", "Sorted Set", "Hash", "Stream"
-            ].map { typeName in
-                var item = SQLCompletionItem(label: typeName, kind: .keyword, insertText: typeName)
-                item.sortPriority = 380
-                return item
-            }
-        }
-
         if let descriptor = cachedDialect, !descriptor.dataTypes.isEmpty {
             return descriptor.dataTypes.sorted().map { typeName in
                 var item = SQLCompletionItem(label: typeName, kind: .keyword, insertText: typeName)

@@ -53,6 +53,10 @@ final class MongoDBPlugin: NSObject, TableProPlugin, DriverPlugin {
     static let supportsForeignKeys = false
     static let supportsSchemaEditing = false
     static let systemDatabaseNames: [String] = ["admin", "local", "config"]
+    static let tableEntityName = "Collections"
+    static let supportsForeignKeyDisable = false
+    static let immutableColumns: [String] = ["_id"]
+    static let supportsReadOnlyMode = false
     static let databaseGroupingStrategy: GroupingStrategy = .flat
     static let columnTypesByCategory: [String: [String]] = [
         "String": ["string", "objectId", "regex"],
@@ -66,7 +70,37 @@ final class MongoDBPlugin: NSObject, TableProPlugin, DriverPlugin {
         "Other": ["javascript", "minKey", "maxKey"]
     ]
 
+    static let structureColumnFields: [StructureColumnField] = [.name, .type, .nullable]
+    static let defaultPrimaryKeyColumn: String? = "_id"
+
     static let sqlDialect: SQLDialectDescriptor? = nil
+
+    static var statementCompletions: [CompletionEntry] {
+        [
+            CompletionEntry(label: "db.", insertText: "db."),
+            CompletionEntry(label: "db.runCommand", insertText: "db.runCommand"),
+            CompletionEntry(label: "db.adminCommand", insertText: "db.adminCommand"),
+            CompletionEntry(label: "db.createView", insertText: "db.createView"),
+            CompletionEntry(label: "db.createCollection", insertText: "db.createCollection"),
+            CompletionEntry(label: "show dbs", insertText: "show dbs"),
+            CompletionEntry(label: "show collections", insertText: "show collections"),
+            CompletionEntry(label: ".find", insertText: ".find"),
+            CompletionEntry(label: ".findOne", insertText: ".findOne"),
+            CompletionEntry(label: ".aggregate", insertText: ".aggregate"),
+            CompletionEntry(label: ".insertOne", insertText: ".insertOne"),
+            CompletionEntry(label: ".insertMany", insertText: ".insertMany"),
+            CompletionEntry(label: ".updateOne", insertText: ".updateOne"),
+            CompletionEntry(label: ".updateMany", insertText: ".updateMany"),
+            CompletionEntry(label: ".deleteOne", insertText: ".deleteOne"),
+            CompletionEntry(label: ".deleteMany", insertText: ".deleteMany"),
+            CompletionEntry(label: ".replaceOne", insertText: ".replaceOne"),
+            CompletionEntry(label: ".findOneAndUpdate", insertText: ".findOneAndUpdate"),
+            CompletionEntry(label: ".findOneAndReplace", insertText: ".findOneAndReplace"),
+            CompletionEntry(label: ".findOneAndDelete", insertText: ".findOneAndDelete"),
+            CompletionEntry(label: ".countDocuments", insertText: ".countDocuments"),
+            CompletionEntry(label: ".createIndex", insertText: ".createIndex")
+        ]
+    }
 
     func createDriver(config: DriverConnectionConfig) -> any PluginDatabaseDriver {
         MongoDBPluginDriver(config: config)

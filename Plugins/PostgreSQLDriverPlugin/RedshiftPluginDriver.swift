@@ -642,6 +642,26 @@ final class RedshiftPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         _ = try await execute(query: query)
     }
 
+    // MARK: - All Tables Metadata
+
+    func allTablesMetadataSQL(schema: String?) -> String? {
+        let s = schema ?? currentSchema ?? "public"
+        return """
+        SELECT
+            schema,
+            "table" as name,
+            'TABLE' as kind,
+            tbl_rows as estimated_rows,
+            size as size_mb,
+            pct_used,
+            unsorted,
+            stats_off
+        FROM svv_table_info
+        WHERE schema = '\(s)'
+        ORDER BY "table"
+        """
+    }
+
     // MARK: - Helpers
 
     private func stripLimitOffset(from query: String) -> String {

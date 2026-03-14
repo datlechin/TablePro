@@ -23,6 +23,7 @@ final class OraclePlugin: NSObject, TableProPlugin, DriverPlugin {
 
     // MARK: - UI/Capability Metadata
 
+    static let supportsForeignKeyDisable = false
     static let brandColorHex = "#C3160B"
     static let systemDatabaseNames: [String] = ["SYS", "SYSTEM", "OUTLN", "DBSNMP", "APPQOSSYS", "WMSYS", "XDB"]
     static let databaseGroupingStrategy: GroupingStrategy = .bySchema
@@ -86,7 +87,9 @@ final class OraclePlugin: NSObject, TableProPlugin, DriverPlugin {
         regexSyntax: .regexpLike,
         booleanLiteralStyle: .numeric,
         likeEscapeStyle: .explicit,
-        paginationStyle: .offsetFetch
+        paginationStyle: .offsetFetch,
+        offsetFetchOrderBy: "ORDER BY 1",
+        autoLimitStyle: .fetchFirst
     )
 
     func createDriver(config: DriverConnectionConfig) -> any PluginDatabaseDriver {
@@ -109,6 +112,17 @@ final class OraclePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
 
     init(config: DriverConnectionConfig) {
         self.config = config
+    }
+
+    // MARK: - View Templates
+
+    func createViewTemplate() -> String? {
+        "CREATE OR REPLACE VIEW view_name AS\nSELECT column1, column2\nFROM table_name\nWHERE condition;"
+    }
+
+    func editViewFallbackTemplate(viewName: String) -> String? {
+        let quoted = quoteIdentifier(viewName)
+        return "CREATE OR REPLACE VIEW \(quoted) AS\nSELECT * FROM table_name;"
     }
 
     // MARK: - Connection
@@ -730,6 +744,22 @@ final class OraclePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         let escaped = schema.replacingOccurrences(of: "\"", with: "\"\"")
         _ = try await execute(query: "ALTER SESSION SET CURRENT_SCHEMA = \"\(escaped)\"")
         _currentSchema = schema
+    }
+
+    // MARK: - All Tables Metadata
+
+    func allTablesMetadataSQL(schema: String?) -> String? {
+        let s = schema ?? currentSchema ?? "SYSTEM"
+        return """
+        SELECT
+            OWNER as schema_name,
+            TABLE_NAME as name,
+            'TABLE' as kind,
+            NUM_ROWS as estimated_rows
+        FROM ALL_TABLES
+        WHERE OWNER = '\(s)'
+        ORDER BY TABLE_NAME
+        """
     }
 
     // MARK: - Query Building

@@ -26,6 +26,7 @@ final class MSSQLPlugin: NSObject, TableProPlugin, DriverPlugin {
 
     static let brandColorHex = "#E34517"
     static let systemDatabaseNames: [String] = ["master", "tempdb", "model", "msdb"]
+    static let defaultSchemaName = "dbo"
     static let databaseGroupingStrategy: GroupingStrategy = .bySchema
     static let columnTypesByCategory: [String: [String]] = [
         "Integer": ["TINYINT", "SMALLINT", "INT", "BIGINT"],
@@ -87,7 +88,8 @@ final class MSSQLPlugin: NSObject, TableProPlugin, DriverPlugin {
         regexSyntax: .unsupported,
         booleanLiteralStyle: .numeric,
         likeEscapeStyle: .explicit,
-        paginationStyle: .offsetFetch
+        paginationStyle: .offsetFetch,
+        autoLimitStyle: .top
     )
 
     func createDriver(config: DriverConnectionConfig) -> any PluginDatabaseDriver {
@@ -426,6 +428,21 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     func quoteIdentifier(_ name: String) -> String {
         let escaped = name.replacingOccurrences(of: "]", with: "]]")
         return "[\(escaped)]"
+    }
+
+    // MARK: - View Templates
+
+    func createViewTemplate() -> String? {
+        "CREATE OR ALTER VIEW view_name AS\nSELECT column1, column2\nFROM table_name\nWHERE condition;"
+    }
+
+    func editViewFallbackTemplate(viewName: String) -> String? {
+        let quoted = quoteIdentifier(viewName)
+        return "CREATE OR ALTER VIEW \(quoted) AS\nSELECT * FROM table_name;"
+    }
+
+    func castColumnToText(_ column: String) -> String {
+        "CAST(\(column) AS NVARCHAR(MAX))"
     }
 
     init(config: DriverConnectionConfig) {
@@ -1158,6 +1175,27 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     func createDatabase(name: String, charset: String, collation: String?) async throws {
         let quotedName = "[\(name.replacingOccurrences(of: "]", with: "]]"))]"
         _ = try await execute(query: "CREATE DATABASE \(quotedName)")
+    }
+
+    // MARK: - All Tables Metadata
+
+    func allTablesMetadataSQL(schema: String?) -> String? {
+        """
+        SELECT
+            s.name as schema_name,
+            t.name as name,
+            CASE WHEN v.object_id IS NOT NULL THEN 'VIEW' ELSE 'TABLE' END as kind,
+            p.rows as estimated_rows,
+            CAST(ROUND(SUM(a.total_pages) * 8 / 1024.0, 2) AS VARCHAR) + ' MB' as total_size
+        FROM sys.tables t
+        INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
+        INNER JOIN sys.indexes i ON t.object_id = i.object_id AND i.index_id IN (0, 1)
+        INNER JOIN sys.partitions p ON i.object_id = p.object_id AND i.index_id = p.index_id
+        INNER JOIN sys.allocation_units a ON p.partition_id = a.container_id
+        LEFT JOIN sys.views v ON t.object_id = v.object_id
+        GROUP BY s.name, t.name, p.rows, v.object_id
+        ORDER BY t.name
+        """
     }
 
     // MARK: - Query Building

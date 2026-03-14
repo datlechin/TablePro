@@ -19,6 +19,7 @@ enum PluginError: LocalizedError {
     case downloadFailed(String)
     case pluginNotInstalled(String)
     case incompatibleWithCurrentApp(minimumRequired: String)
+    case invalidDescriptor(pluginId: String, reason: String)
 
     var errorDescription: String? {
         switch self {
@@ -48,6 +49,8 @@ enum PluginError: LocalizedError {
             return String(localized: "The \(databaseType) plugin is not installed. You can download it from the plugin marketplace.")
         case .incompatibleWithCurrentApp(let minimumRequired):
             return String(localized: "This plugin requires TablePro \(minimumRequired) or later")
+        case .invalidDescriptor(let pluginId, let reason):
+            return String(localized: "Plugin '\(pluginId)' has an invalid descriptor: \(reason)")
         }
     }
 }

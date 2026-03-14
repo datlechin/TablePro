@@ -125,7 +125,7 @@ struct MainContentView: View {
             let session = DatabaseManager.shared.session(for: connection.id)
             let activeDatabase = session?.currentDatabase ?? connection.database
             let activeSchema = session?.currentSchema
-            let currentSelection = connection.type == .redshift
+            let currentSelection = PluginManager.shared.supportsSchemaSwitching(for: connection.type)
                 ? (activeSchema ?? activeDatabase)
                 : activeDatabase
             DatabaseSwitcherSheet(
@@ -389,6 +389,7 @@ struct MainContentView: View {
             coordinator: coordinator,
             changeManager: changeManager,
             filterStateManager: filterStateManager,
+            columnVisibilityManager: coordinator.columnVisibilityManager,
             connection: connection,
             windowId: windowId,
             connectionId: connection.id,
@@ -620,7 +621,8 @@ struct MainContentView: View {
         )
 
         // Update window title to reflect selected tab
-        let queryLabel = connection.type == .mongodb ? "MQL Query" : connection.type == .redis ? "Redis Query" : "SQL Query"
+        let langName = PluginManager.shared.queryLanguageName(for: connection.type)
+        let queryLabel = "\(langName) Query"
         windowTitle = tabManager.selectedTab?.tableName
             ?? (tabManager.tabs.isEmpty ? connection.name : queryLabel)
 
@@ -639,7 +641,8 @@ struct MainContentView: View {
 
     private func handleTabsChange(_ newTabs: [QueryTab]) {
         // Always update window title to reflect current tab, even during restoration
-        let queryLabel = connection.type == .mongodb ? "MQL Query" : connection.type == .redis ? "Redis Query" : "SQL Query"
+        let langName = PluginManager.shared.queryLanguageName(for: connection.type)
+        let queryLabel = "\(langName) Query"
         windowTitle = tabManager.selectedTab?.tableName
             ?? (tabManager.tabs.isEmpty ? connection.name : queryLabel)
 
@@ -669,6 +672,11 @@ struct MainContentView: View {
     private func handleColumnsChange(newColumns: [String]?) {
         // Skip during tab switch — handleTabChange already configures the change manager
         guard !coordinator.isHandlingTabSwitch else { return }
+
+        // Prune hidden columns that no longer exist in results
+        if let newColumns = newColumns {
+            coordinator.pruneHiddenColumns(currentColumns: newColumns)
+        }
 
         guard let newColumns = newColumns, !newColumns.isEmpty,
               let tab = tabManager.selectedTab,

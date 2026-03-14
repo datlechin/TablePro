@@ -13,20 +13,7 @@ enum Theme {
     // MARK: - Brand Colors
 
     static let primaryColor = Color("AccentColor")
-
-    static let mysqlColor = Color(nsColor: .systemOrange)
-    static let postgresqlColor = Color(nsColor: .systemBlue)
-    static let sqliteColor = Color(nsColor: .systemGreen)
-    static let mariadbColor = Color(nsColor: .systemCyan)
-    static let mongodbColor = Color(red: 0.0, green: 0.93, blue: 0.39)
-    static let redshiftColor = Color(red: 0.13, green: 0.36, blue: 0.59)
-    static let redisColor = Color(red: 0.86, green: 0.22, blue: 0.18) // #DC382D
-    static let mssqlColor = Color(red: 0.89, green: 0.27, blue: 0.09)
-    static let oracleColor = Color(red: 0.76, green: 0.09, blue: 0.07) // #C3160B Oracle red
-    static let clickhouseColor = Color(red: 1.0, green: 0.82, blue: 0.0)
-    static let cassandraColor = Color(red: 0.15, green: 0.68, blue: 0.85)
-    static let scylladbColor = Color(red: 0.42, green: 0.18, blue: 0.89)
-    static let duckdbColor = Color(red: 1.0, green: 0.85, blue: 0.0)
+    static let defaultDatabaseColor = Color.gray
 
     // MARK: - Semantic Colors
 
@@ -101,34 +88,7 @@ extension View {
 // MARK: - Database Type Colors
 
 extension DatabaseType {
-    var themeColor: Color {
-        switch self {
-        case .mysql:
-            return Theme.mysqlColor
-        case .mariadb:
-            return Theme.mariadbColor
-        case .postgresql:
-            return Theme.postgresqlColor
-        case .sqlite:
-            return Theme.sqliteColor
-        case .redshift:
-            return Theme.redshiftColor
-        case .mongodb:
-            return Theme.mongodbColor
-        case .redis:
-            return Theme.redisColor
-        case .mssql:
-            return Theme.mssqlColor
-        case .oracle:
-            return Theme.oracleColor
-        case .clickhouse:
-            return Theme.clickhouseColor
-        case .cassandra:
-            return Theme.cassandraColor
-        case .scylladb:
-            return Theme.scylladbColor
-        case .duckdb:
-            return Theme.duckdbColor
-        }
+    @MainActor var themeColor: Color {
+        PluginManager.shared.brandColor(for: self)
     }
 }

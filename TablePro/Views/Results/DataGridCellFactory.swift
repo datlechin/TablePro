@@ -70,24 +70,6 @@ final class DataGridCellFactory {
         }
     }
 
-    // MARK: - Cached Fonts (avoid recreation per cell render)
-
-    private enum CellFonts {
-        static let regular = NSFont.monospacedSystemFont(
-            ofSize: DesignConstants.FontSize.body,
-            weight: .regular
-        )
-        static let italic = regular.withTraits(.italic)
-        static let medium = NSFont.monospacedSystemFont(
-            ofSize: DesignConstants.FontSize.body,
-            weight: .medium
-        )
-        static let rowNumber = NSFont.monospacedDigitSystemFont(
-            ofSize: DesignConstants.FontSize.medium,
-            weight: .regular
-        )
-    }
-
     // MARK: - Cached Colors (avoid allocation per cell render)
 
     private enum CellColors {
@@ -114,13 +96,15 @@ final class DataGridCellFactory {
            let textField = reused.textField {
             cellView = reused
             cell = textField
+            cell.font = DataGridFontCache.rowNumber
         } else {
             cellView = NSTableCellView()
             cellView.identifier = cellViewId
 
             cell = NSTextField(labelWithString: "")
             cell.alignment = .right
-            cell.font = CellFonts.rowNumber
+            cell.font = DataGridFontCache.rowNumber
+            cell.tag = DataGridFontVariant.rowNumber
             cell.textColor = .secondaryLabelColor
             cell.translatesAutoresizingMaskIntoConstraints = false
 
@@ -194,7 +178,7 @@ final class DataGridCellFactory {
             cellView.canDrawSubviewsIntoLayer = true
 
             cell = CellTextField()
-            cell.font = CellFonts.regular
+            cell.font = DataGridFontCache.regular
             cell.drawsBackground = false
             cell.isBordered = false
             cell.focusRingType = .none
@@ -330,35 +314,28 @@ final class DataGridCellFactory {
 
         if value == nil {
             cell.stringValue = ""
+            cell.font = DataGridFontCache.italic
+            cell.tag = DataGridFontVariant.italic
             if !isLargeDataset {
                 cell.placeholderString = nullDisplayString
-                cell.textColor = .secondaryLabelColor
-                if cell.font !== CellFonts.italic {
-                    cell.font = CellFonts.italic
-                }
-            } else {
-                cell.textColor = .secondaryLabelColor
             }
+            cell.textColor = .secondaryLabelColor
         } else if value == "__DEFAULT__" {
             cell.stringValue = ""
+            cell.font = DataGridFontCache.medium
+            cell.tag = DataGridFontVariant.medium
             if !isLargeDataset {
                 cell.placeholderString = "DEFAULT"
-                cell.textColor = .systemBlue
-                cell.font = CellFonts.medium
-            } else {
-                cell.textColor = .systemBlue
             }
+            cell.textColor = .systemBlue
         } else if value == "" {
             cell.stringValue = ""
+            cell.font = DataGridFontCache.italic
+            cell.tag = DataGridFontVariant.italic
             if !isLargeDataset {
                 cell.placeholderString = "Empty"
-                cell.textColor = .secondaryLabelColor
-                if cell.font !== CellFonts.italic {
-                    cell.font = CellFonts.italic
-                }
-            } else {
-                cell.textColor = .secondaryLabelColor
             }
+            cell.textColor = .secondaryLabelColor
         } else {
             var displayValue = value ?? ""
 
@@ -378,9 +355,8 @@ final class DataGridCellFactory {
             cell.stringValue = displayValue
             (cell as? CellTextField)?.originalValue = value
             cell.textColor = .labelColor
-            if cell.font !== CellFonts.regular {
-                cell.font = CellFonts.regular
-            }
+            cell.font = DataGridFontCache.regular
+            cell.tag = DataGridFontVariant.regular
         }
     }
 
@@ -394,13 +370,6 @@ final class DataGridCellFactory {
     private static let sampleRowCount = 30
     /// Maximum characters to consider per cell for width estimation
     private static let maxMeasureChars = 50
-    /// Font for measuring cell content (monospaced — all glyphs have equal advance)
-    private static let measureFont = NSFont.monospacedSystemFont(ofSize: DesignConstants.FontSize.body, weight: .regular)
-    /// Pre-computed advance width of a single monospaced glyph (avoids per-row CoreText calls)
-    private static let monoCharWidth: CGFloat = {
-        let attrs: [NSAttributedString.Key: Any] = [.font: measureFont]
-        return ("M" as NSString).size(withAttributes: attrs).width
-    }()
     /// Font for measuring header
     private static let headerFont = NSFont.systemFont(ofSize: DesignConstants.FontSize.body, weight: .semibold)
 
@@ -432,14 +401,14 @@ final class DataGridCellFactory {
         // instead of CoreText measurement. ~0.6 of mono width is a good estimate
         // for proportional system font.
         let headerCharCount = (columnName as NSString).length
-        var maxWidth = CGFloat(headerCharCount) * Self.monoCharWidth * 0.75 + 48
+        var maxWidth = CGFloat(headerCharCount) * DataGridFontCache.monoCharWidth * 0.75 + 48
 
         let totalRows = rowProvider.totalRowCount
         let columnCount = rowProvider.columns.count
         // Reduce sample count for wide tables to keep total work bounded
         let effectiveSampleCount = columnCount > 50 ? 10 : Self.sampleRowCount
         let step = max(1, totalRows / effectiveSampleCount)
-        let charWidth = Self.monoCharWidth
+        let charWidth = DataGridFontCache.monoCharWidth
 
         for i in stride(from: 0, to: totalRows, by: step) {
             guard let value = rowProvider.value(atRow: i, column: columnIndex) else { continue }

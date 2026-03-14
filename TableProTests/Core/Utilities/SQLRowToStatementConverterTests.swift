@@ -5,23 +5,66 @@
 
 import Foundation
 @testable import TablePro
+import TableProPluginKit
 import Testing
 
 @Suite("SQL Row To Statement Converter")
 struct SQLRowToStatementConverterTests {
+    // MARK: - Test Dialect Helpers
+
+    private static let mysqlDialect = SQLDialectDescriptor(
+        identifierQuote: "`",
+        keywords: [],
+        functions: [],
+        dataTypes: [],
+        requiresBackslashEscaping: true
+    )
+
+    private static let postgresDialect = SQLDialectDescriptor(
+        identifierQuote: "\"",
+        keywords: [],
+        functions: [],
+        dataTypes: []
+    )
+
+    private static let mssqlDialect = SQLDialectDescriptor(
+        identifierQuote: "[",
+        keywords: [],
+        functions: [],
+        dataTypes: [],
+        paginationStyle: .offsetFetch
+    )
+
+    private static let clickhouseDialect = SQLDialectDescriptor(
+        identifierQuote: "`",
+        keywords: [],
+        functions: [],
+        dataTypes: [],
+        requiresBackslashEscaping: true
+    )
+
+    private static let duckdbDialect = SQLDialectDescriptor(
+        identifierQuote: "\"",
+        keywords: [],
+        functions: [],
+        dataTypes: []
+    )
+
     // MARK: - Factory
 
     private func makeConverter(
         tableName: String = "users",
         columns: [String] = ["id", "name", "email"],
         primaryKeyColumn: String? = "id",
-        databaseType: DatabaseType = .mysql
+        databaseType: DatabaseType = .mysql,
+        dialect: SQLDialectDescriptor? = Self.mysqlDialect
     ) -> SQLRowToStatementConverter {
         SQLRowToStatementConverter(
             tableName: tableName,
             columns: columns,
             primaryKeyColumn: primaryKeyColumn,
-            databaseType: databaseType
+            databaseType: databaseType,
+            dialect: dialect
         )
     }
 
@@ -101,23 +144,23 @@ struct SQLRowToStatementConverterTests {
 
     // MARK: - Database-Specific Quoting
 
-    @Test("ClickHouse uses ALTER TABLE ... UPDATE syntax")
-    func clickhouseUsesAlterTableUpdate() {
-        let converter = makeConverter(databaseType: .clickhouse)
+    @Test("ClickHouse fallback uses standard UPDATE syntax (plugin handles ALTER TABLE at runtime)")
+    func clickhouseFallbackUsesStandardUpdate() {
+        let converter = makeConverter(databaseType: .clickhouse, dialect: Self.clickhouseDialect)
         let result = converter.generateUpdates(rows: [["1", "Alice", "alice@example.com"]])
-        #expect(result == "ALTER TABLE `users` UPDATE `name` = 'Alice', `email` = 'alice@example.com' WHERE `id` = '1';")
+        #expect(result == "UPDATE `users` SET `name` = 'Alice', `email` = 'alice@example.com' WHERE `id` = '1';")
     }
 
     @Test("MSSQL uses bracket quoting")
     func mssqlUsesBracketQuoting() {
-        let converter = makeConverter(databaseType: .mssql)
+        let converter = makeConverter(databaseType: .mssql, dialect: Self.mssqlDialect)
         let result = converter.generateInserts(rows: [["1", "Alice", "alice@example.com"]])
         #expect(result == "INSERT INTO [users] ([id], [name], [email]) VALUES ('1', 'Alice', 'alice@example.com');")
     }
 
     @Test("PostgreSQL uses double-quote quoting")
     func postgresqlUsesDoubleQuoteQuoting() {
-        let converter = makeConverter(databaseType: .postgresql)
+        let converter = makeConverter(databaseType: .postgresql, dialect: Self.postgresDialect)
         let result = converter.generateInserts(rows: [["1", "Alice", "alice@example.com"]])
         #expect(result == "INSERT INTO \"users\" (\"id\", \"name\", \"email\") VALUES ('1', 'Alice', 'alice@example.com');")
     }
@@ -131,7 +174,7 @@ struct SQLRowToStatementConverterTests {
 
     @Test("DuckDB uses double-quote quoting and standard UPDATE syntax")
     func duckdbUsesDoubleQuoteAndStandardUpdate() {
-        let converter = makeConverter(databaseType: .duckdb)
+        let converter = makeConverter(databaseType: .duckdb, dialect: Self.duckdbDialect)
         let insert = converter.generateInserts(rows: [["1", "Alice", "alice@example.com"]])
         #expect(insert == "INSERT INTO \"users\" (\"id\", \"name\", \"email\") VALUES ('1', 'Alice', 'alice@example.com');")
         let update = converter.generateUpdates(rows: [["1", "Alice", "alice@example.com"]])
@@ -147,7 +190,7 @@ struct SQLRowToStatementConverterTests {
 
     @Test("PostgreSQL does not escape backslashes")
     func postgresqlNoBackslashEscaping() {
-        let converter = makeConverter(databaseType: .postgresql)
+        let converter = makeConverter(databaseType: .postgresql, dialect: Self.postgresDialect)
         let result = converter.generateInserts(rows: [["1", "C:\\Users\\test", "a@b.com"]])
         #expect(result == "INSERT INTO \"users\" (\"id\", \"name\", \"email\") VALUES ('1', 'C:\\Users\\test', 'a@b.com');")
     }

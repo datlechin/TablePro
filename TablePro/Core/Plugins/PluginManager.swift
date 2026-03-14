@@ -6,12 +6,22 @@
 import Foundation
 import os
 import Security
+import SwiftUI
 import TableProPluginKit
 
 @MainActor @Observable
 final class PluginManager {
     static let shared = PluginManager()
     static let currentPluginKitVersion = 1
+    static let defaultColumnTypes: [String: [String]] = [
+        "Integer": ["INTEGER", "INT", "SMALLINT", "BIGINT", "TINYINT"],
+        "Float": ["FLOAT", "DOUBLE", "DECIMAL", "NUMERIC", "REAL"],
+        "String": ["VARCHAR", "CHAR", "TEXT", "NVARCHAR", "NCHAR"],
+        "Date": ["DATE", "TIME", "DATETIME", "TIMESTAMP"],
+        "Binary": ["BLOB", "BINARY", "VARBINARY"],
+        "Boolean": ["BOOLEAN", "BOOL"],
+        "JSON": ["JSON"]
+    ]
     private static let disabledPluginsKey = "com.TablePro.disabledPlugins"
     private static let legacyDisabledPluginsKey = "disabledPlugins"
 
@@ -52,6 +62,8 @@ final class PluginManager {
     private static let logger = Logger(subsystem: "com.TablePro", category: "PluginManager")
 
     private var pendingPluginURLs: [(url: URL, source: PluginSource)] = []
+    private var validatedConnectionFieldPlugins: Set<String> = []
+    private var validatedDialectPlugins: Set<String> = []
 
     private init() {}
 
@@ -232,19 +244,27 @@ final class PluginManager {
     // MARK: - Capability Registration
 
     private func registerCapabilities(_ instance: any TableProPlugin, pluginId: String) {
-        pluginInstances[pluginId] = instance
         let declared = Set(type(of: instance).capabilities)
+        var registeredAny = false
 
         if let driver = instance as? any DriverPlugin {
             if !declared.contains(.databaseDriver) {
                 Self.logger.warning("Plugin '\(pluginId)' conforms to DriverPlugin but does not declare .databaseDriver capability — registering anyway")
             }
-            let typeId = type(of: driver).databaseTypeId
-            driverPlugins[typeId] = driver
-            for additionalId in type(of: driver).additionalDatabaseTypeIds {
-                driverPlugins[additionalId] = driver
+            do {
+                try validateDriverDescriptor(type(of: driver), pluginId: pluginId)
+            } catch {
+                Self.logger.error("Plugin '\(pluginId)' driver rejected: \(error.localizedDescription)")
             }
-            Self.logger.debug("Registered driver plugin '\(pluginId)' for database type '\(typeId)'")
+            if !driverPlugins.keys.contains(type(of: driver).databaseTypeId) {
+                let typeId = type(of: driver).databaseTypeId
+                driverPlugins[typeId] = driver
+                for additionalId in type(of: driver).additionalDatabaseTypeIds {
+                    driverPlugins[additionalId] = driver
+                }
+                Self.logger.debug("Registered driver plugin '\(pluginId)' for database type '\(typeId)'")
+                registeredAny = true
+            }
         }
 
         if let exportPlugin = instance as? any ExportFormatPlugin {
@@ -254,6 +274,7 @@ final class PluginManager {
             let formatId = type(of: exportPlugin).formatId
             exportPlugins[formatId] = exportPlugin
             Self.logger.debug("Registered export plugin '\(pluginId)' for format '\(formatId)'")
+            registeredAny = true
         }
 
         if let importPlugin = instance as? any ImportFormatPlugin {
@@ -263,6 +284,11 @@ final class PluginManager {
             let formatId = type(of: importPlugin).formatId
             importPlugins[formatId] = importPlugin
             Self.logger.debug("Registered import plugin '\(pluginId)' for format '\(formatId)'")
+            registeredAny = true
+        }
+
+        if registeredAny {
+            pluginInstances[pluginId] = instance
         }
     }
 
@@ -280,6 +306,77 @@ final class PluginManager {
         }
         if declared.contains(.importFormat) && !isImporter {
             Self.logger.warning("Plugin '\(pluginId)' declares .importFormat but does not conform to ImportFormatPlugin")
+        }
+    }
+
+    // MARK: - Descriptor Validation
+
+    /// Reject-level validation: runs synchronously before registration.
+    /// Checks only properties already accessed during the loading flow.
+    func validateDriverDescriptor(_ driverType: any DriverPlugin.Type, pluginId: String) throws {
+        guard !driverType.databaseTypeId.trimmingCharacters(in: .whitespaces).isEmpty else {
+            throw PluginError.invalidDescriptor(pluginId: pluginId, reason: "databaseTypeId is empty")
+        }
+
+        guard !driverType.databaseDisplayName.trimmingCharacters(in: .whitespaces).isEmpty else {
+            throw PluginError.invalidDescriptor(pluginId: pluginId, reason: "databaseDisplayName is empty")
+        }
+
+        let typeId = driverType.databaseTypeId
+        if let existingPlugin = driverPlugins[typeId] {
+            let existingName = Swift.type(of: existingPlugin).databaseDisplayName
+            throw PluginError.invalidDescriptor(
+                pluginId: pluginId,
+                reason: "databaseTypeId '\(typeId)' is already registered by '\(existingName)'"
+            )
+        }
+
+        let allAdditionalIds = driverType.additionalDatabaseTypeIds
+        // Warn-only (not reject): redundant but harmless — the primary ID is already registered,
+        // so the duplicate entry in additionalIds just overwrites with the same value.
+        // Cross-plugin duplicates are rejected above because they indicate a real conflict.
+        if allAdditionalIds.contains(typeId) {
+            Self.logger.warning("Plugin '\(pluginId)': additionalDatabaseTypeIds contains the primary databaseTypeId '\(typeId)'")
+        }
+
+        for additionalId in allAdditionalIds {
+            if let existingPlugin = driverPlugins[additionalId] {
+                let existingName = Swift.type(of: existingPlugin).databaseDisplayName
+                throw PluginError.invalidDescriptor(
+                    pluginId: pluginId,
+                    reason: "additionalDatabaseTypeId '\(additionalId)' is already registered by '\(existingName)'"
+                )
+            }
+        }
+    }
+
+    /// Warn-level connection field validation. Called lazily on first access via
+    /// `additionalConnectionFields(for:)`, not during plugin loading (protocol witness
+    /// tables may be unstable for dynamically loaded bundles during the loading path).
+    func validateConnectionFields(_ fields: [ConnectionField], pluginId: String) {
+        var seenIds = Set<String>()
+        for field in fields {
+            if field.id.trimmingCharacters(in: .whitespaces).isEmpty {
+                Self.logger.warning("Plugin '\(pluginId)': connection field has empty id")
+            }
+            if field.label.trimmingCharacters(in: .whitespaces).isEmpty {
+                Self.logger.warning("Plugin '\(pluginId)': connection field '\(field.id)' has empty label")
+            }
+            if !seenIds.insert(field.id).inserted {
+                Self.logger.warning("Plugin '\(pluginId)': duplicate connection field id '\(field.id)'")
+            }
+            if case .dropdown(let options) = field.fieldType, options.isEmpty {
+                Self.logger.warning("Plugin '\(pluginId)': connection field '\(field.id)' is a dropdown with no options")
+            }
+        }
+    }
+
+    private func validateDialectDescriptor(_ dialect: SQLDialectDescriptor, pluginId: String) {
+        if dialect.identifierQuote.trimmingCharacters(in: .whitespaces).isEmpty {
+            Self.logger.warning("Plugin '\(pluginId)': sqlDialect.identifierQuote is empty")
+        }
+        if dialect.keywords.isEmpty {
+            Self.logger.warning("Plugin '\(pluginId)': sqlDialect.keywords is empty")
         }
     }
 
@@ -319,6 +416,22 @@ final class PluginManager {
         }
     }
 
+    // MARK: - Available Database Types
+
+    /// All database types with loaded plugins, ordered by display name.
+    var availableDatabaseTypes: [DatabaseType] {
+        var types: [DatabaseType] = []
+        for entry in plugins where entry.isEnabled {
+            if let typeId = entry.databaseTypeId {
+                types.append(DatabaseType(rawValue: typeId))
+            }
+            for additionalId in entry.additionalTypeIds {
+                types.append(DatabaseType(rawValue: additionalId))
+            }
+        }
+        return types.sorted { $0.rawValue < $1.rawValue }
+    }
+
     // MARK: - Driver Availability
 
     func isDriverAvailable(for databaseType: DatabaseType) -> Bool {
@@ -334,13 +447,223 @@ final class PluginManager {
     func sqlDialect(for databaseType: DatabaseType) -> SQLDialectDescriptor? {
         loadPendingPlugins()
         guard let plugin = driverPlugins[databaseType.pluginTypeId] else { return nil }
-        return Swift.type(of: plugin).sqlDialect
+        let dialect = Swift.type(of: plugin).sqlDialect
+        let pluginId = databaseType.pluginTypeId
+        if let dialect, !validatedDialectPlugins.contains(pluginId) {
+            validatedDialectPlugins.insert(pluginId)
+            validateDialectDescriptor(dialect, pluginId: pluginId)
+        }
+        return dialect
+    }
+
+    func statementCompletions(for databaseType: DatabaseType) -> [CompletionEntry] {
+        loadPendingPlugins()
+        guard let plugin = driverPlugins[databaseType.pluginTypeId] else { return [] }
+        return Swift.type(of: plugin).statementCompletions
     }
 
     func additionalConnectionFields(for databaseType: DatabaseType) -> [ConnectionField] {
         loadPendingPlugins()
         guard let plugin = driverPlugins[databaseType.pluginTypeId] else { return [] }
-        return Swift.type(of: plugin).additionalConnectionFields
+        let fields = Swift.type(of: plugin).additionalConnectionFields
+        let pluginId = databaseType.pluginTypeId
+        if !validatedConnectionFieldPlugins.contains(pluginId) {
+            validatedConnectionFieldPlugins.insert(pluginId)
+            validateConnectionFields(fields, pluginId: pluginId)
+        }
+        return fields
+    }
+
+    // MARK: - Plugin Property Lookups
+
+    func driverPlugin(for databaseType: DatabaseType) -> (any DriverPlugin)? {
+        loadPendingPlugins()
+        return driverPlugins[databaseType.pluginTypeId]
+    }
+
+    func editorLanguage(for databaseType: DatabaseType) -> EditorLanguage {
+        guard let plugin = driverPlugin(for: databaseType) else { return .sql }
+        return Swift.type(of: plugin).editorLanguage
+    }
+
+    func queryLanguageName(for databaseType: DatabaseType) -> String {
+        guard let plugin = driverPlugin(for: databaseType) else { return "SQL" }
+        return Swift.type(of: plugin).queryLanguageName
+    }
+
+    func connectionMode(for databaseType: DatabaseType) -> ConnectionMode {
+        guard let plugin = driverPlugin(for: databaseType) else { return .network }
+        return Swift.type(of: plugin).connectionMode
+    }
+
+    func brandColor(for databaseType: DatabaseType) -> Color {
+        guard let plugin = driverPlugin(for: databaseType) else { return Theme.defaultDatabaseColor }
+        return Color(hex: Swift.type(of: plugin).brandColorHex)
+    }
+
+    func supportsDatabaseSwitching(for databaseType: DatabaseType) -> Bool {
+        guard let plugin = driverPlugin(for: databaseType) else { return true }
+        return Swift.type(of: plugin).supportsDatabaseSwitching
+    }
+
+    func supportsSchemaSwitching(for databaseType: DatabaseType) -> Bool {
+        guard let plugin = driverPlugin(for: databaseType) else { return false }
+        return Swift.type(of: plugin).supportsSchemaSwitching
+    }
+
+    func supportsImport(for databaseType: DatabaseType) -> Bool {
+        guard let plugin = driverPlugin(for: databaseType) else { return true }
+        return Swift.type(of: plugin).supportsImport
+    }
+
+    func systemDatabaseNames(for databaseType: DatabaseType) -> [String] {
+        guard let plugin = driverPlugin(for: databaseType) else { return [] }
+        return Swift.type(of: plugin).systemDatabaseNames
+    }
+
+    func systemSchemaNames(for databaseType: DatabaseType) -> [String] {
+        guard let plugin = driverPlugin(for: databaseType) else { return [] }
+        return Swift.type(of: plugin).systemSchemaNames
+    }
+
+    func columnTypesByCategory(for databaseType: DatabaseType) -> [String: [String]] {
+        guard let plugin = driverPlugin(for: databaseType) else { return Self.defaultColumnTypes }
+        return Swift.type(of: plugin).columnTypesByCategory
+    }
+
+    func requiresAuthentication(for databaseType: DatabaseType) -> Bool {
+        guard let plugin = driverPlugin(for: databaseType) else { return true }
+        return Swift.type(of: plugin).requiresAuthentication
+    }
+
+    func fileExtensions(for databaseType: DatabaseType) -> [String] {
+        guard let plugin = driverPlugin(for: databaseType) else { return [] }
+        return Swift.type(of: plugin).fileExtensions
+    }
+
+    func tableEntityName(for databaseType: DatabaseType) -> String {
+        guard let plugin = driverPlugin(for: databaseType) else { return "Tables" }
+        return Swift.type(of: plugin).tableEntityName
+    }
+
+    func supportsCascadeDrop(for databaseType: DatabaseType) -> Bool {
+        guard let plugin = driverPlugin(for: databaseType) else { return false }
+        return Swift.type(of: plugin).supportsCascadeDrop
+    }
+
+    func supportsForeignKeyDisable(for databaseType: DatabaseType) -> Bool {
+        guard let plugin = driverPlugin(for: databaseType) else { return true }
+        return Swift.type(of: plugin).supportsForeignKeyDisable
+    }
+
+    func immutableColumns(for databaseType: DatabaseType) -> [String] {
+        guard let plugin = driverPlugin(for: databaseType) else { return [] }
+        return Swift.type(of: plugin).immutableColumns
+    }
+
+    func supportsReadOnlyMode(for databaseType: DatabaseType) -> Bool {
+        guard let plugin = driverPlugin(for: databaseType) else { return true }
+        return Swift.type(of: plugin).supportsReadOnlyMode
+    }
+
+    func defaultSchemaName(for databaseType: DatabaseType) -> String {
+        guard let plugin = driverPlugin(for: databaseType) else { return "public" }
+        return Swift.type(of: plugin).defaultSchemaName
+    }
+
+    func requiresReconnectForDatabaseSwitch(for databaseType: DatabaseType) -> Bool {
+        guard let plugin = driverPlugin(for: databaseType) else { return false }
+        return Swift.type(of: plugin).requiresReconnectForDatabaseSwitch
+    }
+
+    func structureColumnFields(for databaseType: DatabaseType) -> [StructureColumnField] {
+        guard let plugin = driverPlugin(for: databaseType) else {
+            return [.name, .type, .nullable, .defaultValue, .autoIncrement, .comment]
+        }
+        return Swift.type(of: plugin).structureColumnFields
+    }
+
+    func defaultPrimaryKeyColumn(for databaseType: DatabaseType) -> String? {
+        guard let plugin = driverPlugin(for: databaseType) else { return nil }
+        return Swift.type(of: plugin).defaultPrimaryKeyColumn
+    }
+
+    func supportsQueryProgress(for databaseType: DatabaseType) -> Bool {
+        guard let plugin = driverPlugin(for: databaseType) else { return false }
+        return Swift.type(of: plugin).supportsQueryProgress
+    }
+
+    func supportsSSH(for databaseType: DatabaseType) -> Bool {
+        guard let plugin = driverPlugin(for: databaseType) else { return true }
+        return Swift.type(of: plugin).supportsSSH
+    }
+
+    func supportsSSL(for databaseType: DatabaseType) -> Bool {
+        guard let plugin = driverPlugin(for: databaseType) else { return true }
+        return Swift.type(of: plugin).supportsSSL
+    }
+
+    func autoLimitStyle(for databaseType: DatabaseType) -> AutoLimitStyle {
+        guard let plugin = driverPlugin(for: databaseType) else { return .limit }
+        guard let dialect = Swift.type(of: plugin).sqlDialect else { return .none }
+        return dialect.autoLimitStyle
+    }
+
+    func paginationStyle(for databaseType: DatabaseType) -> SQLDialectDescriptor.PaginationStyle {
+        sqlDialect(for: databaseType)?.paginationStyle ?? .limit
+    }
+
+    func offsetFetchOrderBy(for databaseType: DatabaseType) -> String {
+        sqlDialect(for: databaseType)?.offsetFetchOrderBy ?? "ORDER BY (SELECT NULL)"
+    }
+
+    func databaseGroupingStrategy(for databaseType: DatabaseType) -> GroupingStrategy {
+        guard let plugin = driverPlugin(for: databaseType) else { return .byDatabase }
+        return Swift.type(of: plugin).databaseGroupingStrategy
+    }
+
+    func defaultGroupName(for databaseType: DatabaseType) -> String {
+        guard let plugin = driverPlugin(for: databaseType) else { return "main" }
+        return Swift.type(of: plugin).defaultGroupName
+    }
+
+    /// All file extensions across all loaded plugins.
+    var allRegisteredFileExtensions: [String: DatabaseType] {
+        loadPendingPlugins()
+        var result: [String: DatabaseType] = [:]
+        var seen = Set<ObjectIdentifier>()
+        for typeId in driverPlugins.keys.sorted() {
+            guard let plugin = driverPlugins[typeId] else { continue }
+            let pluginId = ObjectIdentifier(Swift.type(of: plugin))
+            guard seen.insert(pluginId).inserted else { continue }
+            let dbType = DatabaseType(rawValue: typeId)
+            for ext in Swift.type(of: plugin).fileExtensions {
+                let key = ext.lowercased()
+                if let existing = result[key], existing != dbType {
+                    Self.logger.warning(
+                        "File extension '\(key)' is registered by multiple plugins; keeping '\(existing.rawValue)', ignoring '\(dbType.rawValue)'"
+                    )
+                    continue
+                }
+                result[key] = dbType
+            }
+        }
+        return result
+    }
+
+    /// All URL schemes across all loaded plugins.
+    var allRegisteredURLSchemes: Set<String> {
+        loadPendingPlugins()
+        var result: Set<String> = []
+        var seen = Set<ObjectIdentifier>()
+        for plugin in driverPlugins.values {
+            let pluginId = ObjectIdentifier(Swift.type(of: plugin))
+            guard seen.insert(pluginId).inserted else { continue }
+            for scheme in Swift.type(of: plugin).urlSchemes {
+                result.insert(scheme.lowercased())
+            }
+        }
+        return result
     }
 
     func installMissingPlugin(

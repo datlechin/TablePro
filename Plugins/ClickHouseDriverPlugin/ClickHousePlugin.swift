@@ -42,6 +42,9 @@ final class ClickHousePlugin: NSObject, TableProPlugin, DriverPlugin {
         "Geo": ["Point", "Ring", "Polygon", "MultiPolygon"]
     ]
 
+    static let structureColumnFields: [StructureColumnField] = [.name, .type, .nullable, .defaultValue, .comment]
+    static let supportsQueryProgress = true
+
     static let sqlDialect: SQLDialectDescriptor? = SQLDialectDescriptor(
         identifierQuote: "`",
         keywords: [
@@ -91,7 +94,8 @@ final class ClickHousePlugin: NSObject, TableProPlugin, DriverPlugin {
         regexSyntax: .match,
         booleanLiteralStyle: .numeric,
         likeEscapeStyle: .implicit,
-        paginationStyle: .limit
+        paginationStyle: .limit,
+        requiresBackslashEscaping: true
     )
 
     func createDriver(config: DriverConnectionConfig) -> any PluginDatabaseDriver {
@@ -570,6 +574,23 @@ final class ClickHousePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         _ = try await execute(query: "CREATE DATABASE `\(escapedName)`")
     }
 
+    // MARK: - All Tables Metadata
+
+    func allTablesMetadataSQL(schema: String?) -> String? {
+        """
+        SELECT
+            database as `schema`,
+            name,
+            engine as kind,
+            total_rows as estimated_rows,
+            formatReadableSize(total_bytes) as total_size,
+            comment
+        FROM system.tables
+        WHERE database = currentDatabase()
+        ORDER BY name
+        """
+    }
+
     // MARK: - DML Statement Generation
 
     func generateStatements(
@@ -722,6 +743,17 @@ final class ClickHousePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
 
     func buildExplainQuery(_ sql: String) -> String? {
         "EXPLAIN \(sql)"
+    }
+
+    // MARK: - View Templates
+
+    func createViewTemplate() -> String? {
+        "CREATE VIEW view_name AS\nSELECT column1, column2\nFROM table_name\nWHERE condition;"
+    }
+
+    func editViewFallbackTemplate(viewName: String) -> String? {
+        let quoted = quoteIdentifier(viewName)
+        return "CREATE OR REPLACE VIEW \(quoted) AS\nSELECT * FROM table_name;"
     }
 
     // MARK: - Kill Query

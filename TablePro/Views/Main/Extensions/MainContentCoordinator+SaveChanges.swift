@@ -156,7 +156,7 @@ extension MainContentCoordinator {
         let dbType = connection.type
 
         // Track if FK checks were disabled (need to re-enable on failure)
-        let fkWasDisabled = dbType != .postgresql && deletedTables.union(truncatedTables).contains { tableName in
+        let fkWasDisabled = PluginManager.shared.supportsForeignKeyDisable(for: dbType) && deletedTables.union(truncatedTables).contains { tableName in
             tableOperationOptions[tableName]?.ignoreForeignKeys == true
         }
 

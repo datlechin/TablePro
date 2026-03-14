@@ -25,6 +25,7 @@ struct CoordinatorShowAIChatTests {
             tabManager: tabManager,
             changeManager: changeManager,
             filterStateManager: filterStateManager,
+            columnVisibilityManager: ColumnVisibilityManager(),
             toolbarState: toolbarState
         )
         defer { coordinator.teardown() }
@@ -53,6 +54,7 @@ struct CoordinatorShowAIChatTests {
             tabManager: tabManager,
             changeManager: changeManager,
             filterStateManager: filterStateManager,
+            columnVisibilityManager: ColumnVisibilityManager(),
             toolbarState: toolbarState
         )
         defer { coordinator.teardown() }
@@ -81,6 +83,7 @@ struct CoordinatorShowAIChatTests {
             tabManager: tabManager,
             changeManager: changeManager,
             filterStateManager: filterStateManager,
+            columnVisibilityManager: ColumnVisibilityManager(),
             toolbarState: toolbarState
         )
         defer { coordinator.teardown() }

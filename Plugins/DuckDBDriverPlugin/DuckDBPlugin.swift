@@ -24,7 +24,7 @@ final class DuckDBPlugin: NSObject, TableProPlugin, DriverPlugin {
     static let requiresAuthentication = false
     static let connectionMode: ConnectionMode = .fileBased
     static let urlSchemes: [String] = ["duckdb"]
-    static let fileExtensions: [String] = ["duckdb", "db"]
+    static let fileExtensions: [String] = ["duckdb", "ddb"]
     static let brandColorHex = "#FFD900"
     static let supportsDatabaseSwitching = false
     static let systemDatabaseNames: [String] = ["information_schema", "pg_catalog"]
@@ -819,6 +819,32 @@ final class DuckDBPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
 
     func buildExplainQuery(_ sql: String) -> String? {
         "EXPLAIN \(sql)"
+    }
+
+    // MARK: - View Templates
+
+    func createViewTemplate() -> String? {
+        "CREATE OR REPLACE VIEW view_name AS\nSELECT column1, column2\nFROM table_name\nWHERE condition;"
+    }
+
+    func editViewFallbackTemplate(viewName: String) -> String? {
+        let quoted = quoteIdentifier(viewName)
+        return "CREATE OR REPLACE VIEW \(quoted) AS\nSELECT * FROM table_name;"
+    }
+
+    // MARK: - All Tables Metadata
+
+    func allTablesMetadataSQL(schema: String?) -> String? {
+        let s = schema ?? currentSchema ?? "main"
+        return """
+        SELECT
+            table_schema as schema_name,
+            table_name as name,
+            table_type as kind
+        FROM information_schema.tables
+        WHERE table_schema = '\(s)'
+        ORDER BY table_name
+        """
     }
 
     // MARK: - Private Helpers

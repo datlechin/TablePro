@@ -15,12 +15,12 @@ extension TableViewCoordinator {
         guard columnId != "__rowNumber__",
               !changeManager.isRowDeleted(row) else { return false }
 
-        // MongoDB _id is immutable — block editing
-        if databaseType == .mongodb,
+        let immutable = databaseType.map { PluginManager.shared.immutableColumns(for: $0) } ?? []
+        if !immutable.isEmpty,
            columnId.hasPrefix("col_"),
            let columnIndex = Int(columnId.dropFirst(4)),
            columnIndex < rowProvider.columns.count,
-           rowProvider.columns[columnIndex] == "_id" {
+           immutable.contains(rowProvider.columns[columnIndex]) {
             return false
         }
 

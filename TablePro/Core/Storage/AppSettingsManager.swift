@@ -60,6 +60,7 @@ final class AppSettingsManager {
             storage.saveDataGrid(validated)
             // Update date formatting service with new format
             DateFormattingService.shared.updateFormat(validated.dateFormat)
+            DataGridFontCache.reloadFromSettings(validated)
             notifyChange(.dataGridSettingsDidChange)
         }
     }
@@ -135,6 +136,8 @@ final class AppSettingsManager {
         // Initialize DateFormattingService with current format
         DateFormattingService.shared.updateFormat(dataGrid.dateFormat)
 
+        DataGridFontCache.reloadFromSettings(dataGrid)
+
         // Observe system accessibility text size changes and re-apply editor fonts
         observeAccessibilityTextSizeChanges()
     }
@@ -169,6 +172,8 @@ final class AppSettingsManager {
                 Self.logger.debug("Accessibility text size changed, scale: \(newScale, format: .fixed(precision: 2))")
                 // Re-apply editor fonts with the updated accessibility scale factor
                 SQLEditorTheme.reloadFromSettings(editor)
+                DataGridFontCache.reloadFromSettings(dataGrid)
+                notifyChange(.dataGridSettingsDidChange)
                 // Notify the editor view to rebuild its configuration
                 NotificationCenter.default.post(name: .accessibilityTextSizeDidChange, object: self)
             }

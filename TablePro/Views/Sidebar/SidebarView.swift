@@ -151,20 +151,19 @@ struct SidebarView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 6) {
+        let entityName = PluginManager.shared.tableEntityName(for: viewModel.databaseType)
+        let noItemsLabel = String(localized: "No \(entityName)")
+        let noItemsDetail = String(localized: "This database has no \(entityName.lowercased()) yet.")
+        return VStack(spacing: 6) {
             Image(systemName: "tablecells")
                 .font(.system(size: 28, weight: .thin))
                 .foregroundStyle(Color(nsColor: .tertiaryLabelColor))
 
-            Text(sidebarLabel(mongodb: "No Collections", redis: "No Databases", default: "No Tables"))
+            Text(noItemsLabel)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(Color(nsColor: .secondaryLabelColor))
 
-            Text(sidebarLabel(
-                mongodb: "This database has no collections yet.",
-                redis: "All databases are empty.",
-                default: "This database has no tables yet."
-            ))
+            Text(noItemsDetail)
                 .font(.system(size: 11))
                 .foregroundStyle(Color(nsColor: .tertiaryLabelColor))
         }
@@ -174,10 +173,14 @@ struct SidebarView: View {
     // MARK: - Table List
 
     private var tableList: some View {
-        List(selection: selectedTablesBinding) {
+        let entityLabel = PluginManager.shared.tableEntityName(for: viewModel.databaseType)
+        let noMatchLabel = String(localized: "No matching \(entityLabel.lowercased())")
+        let helpLabel = String(localized: "Right-click to show all \(entityLabel.lowercased())")
+        let showAllLabel = String(localized: "Show All \(entityLabel)")
+        return List(selection: selectedTablesBinding) {
             if filteredTables.isEmpty {
                 ContentUnavailableView(
-                    sidebarLabel(mongodb: "No matching collections", redis: "No matching databases", default: "No matching tables"),
+                    noMatchLabel,
                     systemImage: "magnifyingglass"
                 )
                 .listRowSeparator(.hidden)
@@ -209,18 +212,10 @@ struct SidebarView: View {
                         }
                     }
                 } header: {
-                    Text(sidebarLabel(mongodb: "Collections", redis: "Databases", default: "Tables"))
-                        .help(sidebarLabel(
-                            mongodb: "Right-click to show all collections",
-                            redis: "Right-click to show all databases",
-                            default: "Right-click to show all tables"
-                        ))
+                    Text(entityLabel)
+                        .help(helpLabel)
                         .contextMenu {
-                            Button(sidebarLabel(
-                                mongodb: String(localized: "Show All Collections"),
-                                redis: String(localized: "Show All Databases"),
-                                default: String(localized: "Show All Tables")
-                            )) {
+                            Button(showAllLabel) {
                                 coordinator?.showAllTablesMetadata()
                             }
                         }
@@ -244,15 +239,6 @@ struct SidebarView: View {
         }
     }
 
-    // MARK: - Helpers
-
-    private func sidebarLabel(mongodb: String, redis: String, default defaultLabel: String) -> String {
-        switch viewModel.databaseType {
-        case .mongodb: return mongodb
-        case .redis: return redis
-        default: return defaultLabel
-        }
-    }
 }
 
 // MARK: - Preview

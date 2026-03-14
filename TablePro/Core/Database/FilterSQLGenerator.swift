@@ -10,73 +10,15 @@ import TableProPluginKit
 
 /// Generates SQL WHERE clauses from filter definitions
 struct FilterSQLGenerator {
-    let databaseType: DatabaseType
     private let dialect: SQLDialectDescriptor
     private let quoteIdentifierFn: (String) -> String
 
     init(
-        databaseType: DatabaseType,
-        dialect: SQLDialectDescriptor? = nil,
+        dialect: SQLDialectDescriptor,
         quoteIdentifier: ((String) -> String)? = nil
     ) {
-        self.databaseType = databaseType
-        self.dialect = dialect ?? Self.fallbackDialect(for: databaseType)
-        self.quoteIdentifierFn = quoteIdentifier ?? databaseType.quoteIdentifier
-    }
-
-    /// Fallback dialect properties when no plugin-provided descriptor is available.
-    /// Preserves pre-existing behavior for each database type.
-    private static func fallbackDialect(for databaseType: DatabaseType) -> SQLDialectDescriptor {
-        switch databaseType {
-        case .mysql, .mariadb:
-            return SQLDialectDescriptor(
-                identifierQuote: "`", keywords: [], functions: [], dataTypes: [],
-                regexSyntax: .regexp, booleanLiteralStyle: .numeric,
-                likeEscapeStyle: .implicit, paginationStyle: .limit
-            )
-        case .postgresql, .redshift:
-            return SQLDialectDescriptor(
-                identifierQuote: "\"", keywords: [], functions: [], dataTypes: [],
-                regexSyntax: .tilde, booleanLiteralStyle: .truefalse,
-                likeEscapeStyle: .explicit, paginationStyle: .limit
-            )
-        case .sqlite:
-            return SQLDialectDescriptor(
-                identifierQuote: "`", keywords: [], functions: [], dataTypes: [],
-                regexSyntax: .unsupported, booleanLiteralStyle: .numeric,
-                likeEscapeStyle: .explicit, paginationStyle: .limit
-            )
-        case .clickhouse:
-            return SQLDialectDescriptor(
-                identifierQuote: "`", keywords: [], functions: [], dataTypes: [],
-                regexSyntax: .match, booleanLiteralStyle: .numeric,
-                likeEscapeStyle: .implicit, paginationStyle: .limit
-            )
-        case .mssql:
-            return SQLDialectDescriptor(
-                identifierQuote: "[", keywords: [], functions: [], dataTypes: [],
-                regexSyntax: .unsupported, booleanLiteralStyle: .numeric,
-                likeEscapeStyle: .explicit, paginationStyle: .offsetFetch
-            )
-        case .oracle:
-            return SQLDialectDescriptor(
-                identifierQuote: "\"", keywords: [], functions: [], dataTypes: [],
-                regexSyntax: .regexpLike, booleanLiteralStyle: .numeric,
-                likeEscapeStyle: .explicit, paginationStyle: .offsetFetch
-            )
-        case .duckdb:
-            return SQLDialectDescriptor(
-                identifierQuote: "\"", keywords: [], functions: [], dataTypes: [],
-                regexSyntax: .regexpMatches, booleanLiteralStyle: .truefalse,
-                likeEscapeStyle: .explicit, paginationStyle: .limit
-            )
-        case .mongodb, .redis:
-            return SQLDialectDescriptor(
-                identifierQuote: "`", keywords: [], functions: [], dataTypes: [],
-                regexSyntax: .unsupported, booleanLiteralStyle: .numeric,
-                likeEscapeStyle: .explicit, paginationStyle: .limit
-            )
-        }
+        self.dialect = dialect
+        self.quoteIdentifierFn = quoteIdentifier ?? quoteIdentifierFromDialect(dialect)
     }
 
     // MARK: - Public API
@@ -169,8 +111,6 @@ struct FilterSQLGenerator {
             return "\(quotedColumn) BETWEEN \(escapeValue(filter.value)) AND \(escapeValue(secondValue))"
 
         case .regex:
-            // MongoDB/Redis filters are handled natively by their query builders
-            if databaseType == .mongodb || databaseType == .redis { return nil }
             let syntax = dialect.regexSyntax
             if syntax == .unsupported {
                 let escaped = escapeSQLQuote(filter.value)
@@ -340,7 +280,7 @@ extension FilterSQLGenerator {
         }
 
         if dialect.paginationStyle == .offsetFetch {
-            let orderBy = databaseType == .oracle ? "ORDER BY 1" : "ORDER BY (SELECT NULL)"
+            let orderBy = dialect.offsetFetchOrderBy
             sql += "\n\(orderBy) OFFSET 0 ROWS FETCH NEXT \(limit) ROWS ONLY"
         } else {
             sql += "\nLIMIT \(limit)"
