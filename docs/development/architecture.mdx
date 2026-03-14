@@ -205,13 +205,13 @@ class DatabaseManager: ObservableObject {
 
 ### Database Driver Plugins
 
-Each driver is a `.tableplugin` bundle under `Plugins/`. MySQL and PostgreSQL are built into the app bundle; the rest are distributed via the plugin registry and downloaded on demand.
+Each driver is a `.tableplugin` bundle under `Plugins/`. MySQL, PostgreSQL, and SQLite are built into the app bundle; the rest are distributed via the plugin registry and downloaded on demand.
 
 | Plugin | Database Types | C Bridge | Distribution |
 |--------|---------------|----------|--------------|
 | MySQLDriverPlugin | MySQL, MariaDB | CMariaDB (libmariadb) | Built-in |
 | PostgreSQLDriverPlugin | PostgreSQL, Redshift | CLibPQ (libpq) | Built-in |
-| SQLiteDriverPlugin | SQLite | Foundation sqlite3 | Registry |
+| SQLiteDriverPlugin | SQLite | Foundation sqlite3 | Built-in |
 | ClickHouseDriverPlugin | ClickHouse | URLSession HTTP | Registry |
 | MSSQLDriverPlugin | SQL Server | CFreeTDS | Registry |
 | MongoDBDriverPlugin | MongoDB | CLibMongoc | Registry |

@@ -84,12 +84,12 @@ and `CURRENT_PROJECT_VERSION = 1`:
 - **Test target** (TableProTests)
 - **TableProPluginKit** framework
 - **Bundled plugins** (included in app bundle): MySQLDriverPlugin,
-  PostgreSQLDriverPlugin, plus export plugins (CSV, JSON, SQL export)
+  PostgreSQLDriverPlugin, SQLiteDriverPlugin, plus export plugins
+  (CSV, JSON, SQL export)
 - **Separate plugin bundles** (not included in app bundle, distributed
   independently): OracleDriverPlugin, ClickHouseDriverPlugin,
-  SQLiteDriverPlugin, DuckDBDriverPlugin, MSSQLDriverPlugin,
-  MongoDBDriverPlugin, RedisDriverPlugin, XLSXExportPlugin,
-  MQLExportPlugin, SQLImportPlugin
+  DuckDBDriverPlugin, MSSQLDriverPlugin, MongoDBDriverPlugin,
+  RedisDriverPlugin, XLSXExportPlugin, MQLExportPlugin, SQLImportPlugin
 
 Use `replace_all: true` for each edit — the main app target's version
 values are always unique (e.g., `MARKETING_VERSION = 0.16.1` and
@@ -219,7 +219,7 @@ with the release in Step 3 — no separate commit needed.
 ### Step 7: Check for Separate Plugin Changes
 
 After the app release is pushed, check if any **separate plugin bundles**
-(Oracle, ClickHouse, SQLite, DuckDB, MSSQL, MongoDB, Redis, XLSX, MQL,
+(Oracle, ClickHouse, DuckDB, MSSQL, MongoDB, Redis, XLSX, MQL,
 SQLImport) have changes since their last
 release. Also check `Plugins/TableProPluginKit/` — changes there affect
 all plugins.
@@ -231,7 +231,6 @@ for commits:
 # Separate plugins and their directory + tag-name mappings:
 #   Oracle:     Plugins/OracleDriverPlugin/     plugin-oracle
 #   ClickHouse: Plugins/ClickHouseDriverPlugin/  plugin-clickhouse
-#   SQLite:     Plugins/SQLiteDriverPlugin/      plugin-sqlite
 #   DuckDB:     Plugins/DuckDBDriverPlugin/      plugin-duckdb
 #   MSSQL:      Plugins/MSSQLDriverPlugin/       plugin-mssql
 #   MongoDB:    Plugins/MongoDBDriverPlugin/     plugin-mongodb
@@ -281,9 +280,9 @@ Plugin releases:
 
 ## Plugin Releases
 
-Separate plugin bundles (Oracle, ClickHouse, SQLite, DuckDB, MSSQL,
-MongoDB, Redis, XLSX, MQL, SQLImport) are released independently from
-the main app via a dedicated workflow
+Separate plugin bundles (Oracle, ClickHouse, DuckDB, MSSQL, MongoDB,
+Redis, XLSX, MQL, SQLImport) are released independently from the main
+app via a dedicated workflow
 (`.github/workflows/build-plugin.yml`). They are also checked
 automatically during app releases (Step 7 above).
 
@@ -304,8 +303,8 @@ plugin-<name>-v<version>
 Examples: `plugin-oracle-v1.0.0`, `plugin-clickhouse-v1.2.0`
 
 The `<name>` must match one of the cases in the workflow's mapping:
-`oracle`, `clickhouse`, `sqlite`, `duckdb`, `cassandra`, `mssql`,
-`mongodb`, `redis`, `xlsx`, `mql`, `sqlimport`.
+`oracle`, `clickhouse`, `duckdb`, `cassandra`, `mssql`, `mongodb`,
+`redis`, `xlsx`, `mql`, `sqlimport`.
 
 ### Plugin Release Steps
 

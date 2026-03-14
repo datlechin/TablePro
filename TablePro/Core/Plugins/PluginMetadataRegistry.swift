@@ -77,7 +77,7 @@ final class PluginMetadataRegistry: @unchecked Sendable {
             ("SQLite", PluginMetadataSnapshot(
                 displayName: "SQLite", iconName: "sqlite-icon", defaultPort: 0,
                 requiresAuthentication: false, supportsForeignKeys: true, supportsSchemaEditing: true,
-                isDownloadable: true, primaryUrlScheme: "sqlite", parameterStyle: .questionMark,
+                isDownloadable: false, primaryUrlScheme: "sqlite", parameterStyle: .questionMark,
                 navigationModel: .standard, explainVariants: [], pathFieldRole: .filePath,
                 supportsHealthMonitor: false, urlSchemes: ["sqlite"], postConnectActions: [],
                 brandColorHex: "#003B57"
