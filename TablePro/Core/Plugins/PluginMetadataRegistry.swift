@@ -164,8 +164,6 @@ final class PluginMetadataRegistry: @unchecked Sendable {
             }
         }
     }
-    // swiftlint:enable function_body_length
-
     func register(snapshot: PluginMetadataSnapshot, forTypeId typeId: String) {
         lock.lock()
         defer { lock.unlock() }
