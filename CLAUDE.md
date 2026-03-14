@@ -64,6 +64,7 @@ Plugin bundles under `Plugins/`:
 | MSSQLDriverPlugin      | SQL Server           | CFreeTDS             | Registry     |
 | MongoDBDriverPlugin    | MongoDB              | CLibMongoc           | Registry     |
 | RedisDriverPlugin      | Redis                | CRedis               | Registry     |
+| DuckDBDriverPlugin     | DuckDB               | CDuckDB              | Registry     |
 | OracleDriverPlugin     | Oracle               | OracleNIO (SPM)      | Registry     |
 
 When adding a new driver: create a new plugin bundle under `Plugins/`, implement `DriverPlugin` + `PluginDatabaseDriver`, add target to pbxproj. See `docs/development/plugin-system/` for details.

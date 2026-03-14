@@ -57,57 +57,57 @@ jobs:
                 TARGET="OracleDriver"; BUNDLE_ID="com.TablePro.OracleDriver"
                 DISPLAY_NAME="Oracle Driver"; SUMMARY="Oracle Database 12c+ driver via OracleNIO"
                 DB_TYPE_IDS='["Oracle"]'; ICON="server.rack"; BUNDLE_NAME="OracleDriver"
-                HOMEPAGE="https://docs.tablepro.app/databases/oracle" ;;
+                CATEGORY="database-driver"; HOMEPAGE="https://docs.tablepro.app/databases/oracle" ;;
               clickhouse)
                 TARGET="ClickHouseDriver"; BUNDLE_ID="com.TablePro.ClickHouseDriver"
                 DISPLAY_NAME="ClickHouse Driver"; SUMMARY="ClickHouse OLAP database driver via HTTP interface"
                 DB_TYPE_IDS='["ClickHouse"]'; ICON="chart.bar.xaxis"; BUNDLE_NAME="ClickHouseDriver"
-                HOMEPAGE="https://docs.tablepro.app/databases/clickhouse" ;;
+                CATEGORY="database-driver"; HOMEPAGE="https://docs.tablepro.app/databases/clickhouse" ;;
               sqlite)
                 TARGET="SQLiteDriver"; BUNDLE_ID="com.TablePro.SQLiteDriver"
                 DISPLAY_NAME="SQLite Driver"; SUMMARY="SQLite embedded database driver"
                 DB_TYPE_IDS='["SQLite"]'; ICON="internaldrive"; BUNDLE_NAME="SQLiteDriver"
-                HOMEPAGE="https://docs.tablepro.app/databases/sqlite" ;;
+                CATEGORY="database-driver"; HOMEPAGE="https://docs.tablepro.app/databases/sqlite" ;;
               duckdb)
                 TARGET="DuckDBDriver"; BUNDLE_ID="com.TablePro.DuckDBDriver"
                 DISPLAY_NAME="DuckDB Driver"; SUMMARY="DuckDB analytical database driver"
                 DB_TYPE_IDS='["DuckDB"]'; ICON="bird"; BUNDLE_NAME="DuckDBDriver"
-                HOMEPAGE="https://docs.tablepro.app/databases/duckdb" ;;
+                CATEGORY="database-driver"; HOMEPAGE="https://docs.tablepro.app/databases/duckdb" ;;
               cassandra)
                 TARGET="CassandraDriver"; BUNDLE_ID="com.TablePro.CassandraDriver"
                 DISPLAY_NAME="Cassandra Driver"; SUMMARY="Apache Cassandra and ScyllaDB driver via DataStax C driver"
                 DB_TYPE_IDS='["Cassandra", "ScyllaDB"]'; ICON="cassandra-icon"; BUNDLE_NAME="CassandraDriver"
-                HOMEPAGE="https://docs.tablepro.app/databases/cassandra" ;;
+                CATEGORY="database-driver"; HOMEPAGE="https://docs.tablepro.app/databases/cassandra" ;;
               mssql)
                 TARGET="MSSQLDriver"; BUNDLE_ID="com.TablePro.MSSQLDriver"
                 DISPLAY_NAME="MSSQL Driver"; SUMMARY="Microsoft SQL Server driver via FreeTDS"
                 DB_TYPE_IDS='["SQL Server"]'; ICON="mssql-icon"; BUNDLE_NAME="MSSQLDriver"
-                HOMEPAGE="https://docs.tablepro.app/databases/mssql" ;;
+                CATEGORY="database-driver"; HOMEPAGE="https://docs.tablepro.app/databases/mssql" ;;
               mongodb)
                 TARGET="MongoDBDriver"; BUNDLE_ID="com.TablePro.MongoDBDriver"
                 DISPLAY_NAME="MongoDB Driver"; SUMMARY="MongoDB document database driver via libmongoc"
                 DB_TYPE_IDS='["MongoDB"]'; ICON="mongodb-icon"; BUNDLE_NAME="MongoDBDriver"
-                HOMEPAGE="https://docs.tablepro.app/databases/mongodb" ;;
+                CATEGORY="database-driver"; HOMEPAGE="https://docs.tablepro.app/databases/mongodb" ;;
               redis)
                 TARGET="RedisDriver"; BUNDLE_ID="com.TablePro.RedisDriver"
                 DISPLAY_NAME="Redis Driver"; SUMMARY="Redis in-memory data store driver via hiredis"
                 DB_TYPE_IDS='["Redis"]'; ICON="redis-icon"; BUNDLE_NAME="RedisDriver"
-                HOMEPAGE="https://docs.tablepro.app/databases/redis" ;;
+                CATEGORY="database-driver"; HOMEPAGE="https://docs.tablepro.app/databases/redis" ;;
               xlsx)
                 TARGET="XLSXExport"; BUNDLE_ID="com.TablePro.XLSXExportPlugin"
                 DISPLAY_NAME="XLSX Export"; SUMMARY="Export data to Microsoft Excel XLSX format"
                 DB_TYPE_IDS='null'; ICON="doc.richtext"; BUNDLE_NAME="XLSXExport"
-                HOMEPAGE="https://docs.tablepro.app/features/export" ;;
+                CATEGORY="export-format"; HOMEPAGE="https://docs.tablepro.app/features/export" ;;
               mql)
                 TARGET="MQLExport"; BUNDLE_ID="com.TablePro.MQLExportPlugin"
                 DISPLAY_NAME="MQL Export"; SUMMARY="Export MongoDB data as MQL statements"
                 DB_TYPE_IDS='null'; ICON="doc.text"; BUNDLE_NAME="MQLExport"
-                HOMEPAGE="https://docs.tablepro.app/features/export" ;;
+                CATEGORY="export-format"; HOMEPAGE="https://docs.tablepro.app/features/export" ;;
               sqlimport)
                 TARGET="SQLImport"; BUNDLE_ID="com.TablePro.SQLImportPlugin"
                 DISPLAY_NAME="SQL Import"; SUMMARY="Import data from SQL dump files"
                 DB_TYPE_IDS='null'; ICON="square.and.arrow.down"; BUNDLE_NAME="SQLImport"
-                HOMEPAGE="https://docs.tablepro.app/features/import" ;;
+                CATEGORY="import-format"; HOMEPAGE="https://docs.tablepro.app/features/import" ;;
               *) echo "Unknown plugin: $plugin_name"; return 1 ;;
             esac
           }
@@ -187,7 +187,7 @@ jobs:
                 "$BUNDLE_ID" "$DISPLAY_NAME" "$VERSION" "$SUMMARY" \
                 "$DB_TYPE_IDS" "$ARM64_URL" "$ARM64_SHA" \
                 "$X86_64_URL" "$X86_SHA" "$MIN_APP_VERSION" \
-                "$ICON" "$HOMEPAGE" \
+                "$ICON" "$HOMEPAGE" "$CATEGORY" \
                 <<'PYTHON_SCRIPT'
           import json, sys
 
@@ -196,6 +196,7 @@ jobs:
           arm64_url, arm64_sha = sys.argv[6], sys.argv[7]
           x86_64_url, x86_64_sha = sys.argv[8], sys.argv[9]
           min_app_version, icon, homepage = sys.argv[10], sys.argv[11], sys.argv[12]
+          category = sys.argv[13] if len(sys.argv) > 13 else "database-driver"
 
           with open("plugins.json", "r") as f:
               manifest = json.load(f)
@@ -204,7 +205,7 @@ jobs:
               "id": bundle_id, "name": name, "version": version,
               "summary": summary,
               "author": {"name": "TablePro", "url": "https://tablepro.app"},
-              "homepage": homepage, "category": "database-driver",
+              "homepage": homepage, "category": category,
               "databaseTypeIds": db_type_ids,
               "downloadURL": arm64_url, "sha256": arm64_sha,
               "binaries": [
