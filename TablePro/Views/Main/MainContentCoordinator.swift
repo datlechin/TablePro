@@ -710,6 +710,9 @@ final class MainContentCoordinator {
 
         // Cassandra/ScyllaDB don't support EXPLAIN
         if connection.type == .cassandra || connection.type == .scylladb {
+            if let index = tabManager.selectedTabIndex {
+                tabManager.tabs[index].errorMessage = String(localized: "EXPLAIN is not supported for this database type.")
+            }
             return
         }
 

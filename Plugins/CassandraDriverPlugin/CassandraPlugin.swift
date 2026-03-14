@@ -15,7 +15,7 @@ import TableProPluginKit
 
 // MARK: - Plugin Entry Point
 
-final class CassandraPlugin: NSObject, TableProPlugin, DriverPlugin {
+internal final class CassandraPlugin: NSObject, TableProPlugin, DriverPlugin {
     static let pluginName = "Cassandra Driver"
     static let pluginVersion = "1.0.0"
     static let pluginDescription = "Apache Cassandra and ScyllaDB support via DataStax C driver"
@@ -25,7 +25,14 @@ final class CassandraPlugin: NSObject, TableProPlugin, DriverPlugin {
     static let databaseDisplayName = "Cassandra / ScyllaDB"
     static let iconName = "cassandra-icon"
     static let defaultPort = 9042
-    static let additionalConnectionFields: [ConnectionField] = []
+    static let additionalConnectionFields: [ConnectionField] = [
+        ConnectionField(
+            id: "sslCaCertPath",
+            label: "CA Certificate",
+            placeholder: "/path/to/ca-cert.pem",
+            section: .advanced
+        ),
+    ]
     static let additionalDatabaseTypeIds: [String] = []
 
     func createDriver(config: DriverConnectionConfig) -> any PluginDatabaseDriver {
@@ -41,6 +48,13 @@ private actor CassandraConnectionActor {
     nonisolated(unsafe) private static let isoFormatter: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+
+    nonisolated(unsafe) private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.timeZone = TimeZone(identifier: "UTC")
         return f
     }()
 
@@ -82,7 +96,12 @@ private actor CassandraConnectionActor {
             }
 
             if sslMode == "Verify CA" || sslMode == "Verify Identity" {
-                cass_ssl_set_verify_flags(ssl, Int32(CASS_SSL_VERIFY_PEER_CERT.rawValue))
+                if sslMode == "Verify Identity" {
+                    let flags = Int32(CASS_SSL_VERIFY_PEER_CERT.rawValue | CASS_SSL_VERIFY_PEER_IDENTITY.rawValue)
+                    cass_ssl_set_verify_flags(ssl, flags)
+                } else {
+                    cass_ssl_set_verify_flags(ssl, Int32(CASS_SSL_VERIFY_PEER_CERT.rawValue))
+                }
 
                 if let caCertPath = sslCaCertPath, !caCertPath.isEmpty,
                    let certData = FileManager.default.contents(atPath: caCertPath),
@@ -482,6 +501,44 @@ private actor CassandraConnectionActor {
         case CASS_VALUE_TYPE_TUPLE:
             return extractCollectionString(value, open: "(", close: ")")
 
+        case CASS_VALUE_TYPE_DATE:
+            var dateVal: UInt32 = 0
+            if cass_value_get_uint32(value, &dateVal) == CASS_OK {
+                let daysSinceEpoch = Int64(dateVal) - Int64(1 << 31)
+                let epochSeconds = daysSinceEpoch * 86400
+                let date = Date(timeIntervalSince1970: Double(epochSeconds))
+                return dateFormatter.string(from: date)
+            }
+            return nil
+
+        case CASS_VALUE_TYPE_TIME:
+            var timeVal: Int64 = 0
+            if cass_value_get_int64(value, &timeVal) == CASS_OK {
+                // Cassandra time is nanoseconds since midnight
+                let totalSeconds = timeVal / 1_000_000_000
+                let hours = totalSeconds / 3600
+                let minutes = (totalSeconds % 3600) / 60
+                let seconds = totalSeconds % 60
+                let nanos = timeVal % 1_000_000_000
+                if nanos > 0 {
+                    let millis = nanos / 1_000_000
+                    return String(format: "%02lld:%02lld:%02lld.%03lld", hours, minutes, seconds, millis)
+                }
+                return String(format: "%02lld:%02lld:%02lld", hours, minutes, seconds)
+            }
+            return nil
+
+        case CASS_VALUE_TYPE_DECIMAL, CASS_VALUE_TYPE_VARINT:
+            // Read as bytes and display as hex since proper numeric decoding
+            // requires BigInteger support not available in the C driver API
+            var bytes: UnsafePointer<UInt8>?
+            var length: Int = 0
+            if cass_value_get_bytes(value, &bytes, &length) == CASS_OK, let bytes {
+                let data = Data(bytes: bytes, count: length)
+                return "0x" + data.map { String(format: "%02x", $0) }.joined()
+            }
+            return nil
+
         default:
             // Fallback: try reading as string
             var output: UnsafePointer<CChar>?
@@ -597,7 +654,7 @@ private struct CassandraRawResult: Sendable {
 
 // MARK: - Plugin Driver
 
-final class CassandraPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
+internal final class CassandraPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     private let config: DriverConnectionConfig
     private let connectionActor = CassandraConnectionActor()
     private let stateLock = NSLock()
@@ -770,27 +827,39 @@ final class CassandraPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         """
         let result = try await execute(query: query)
 
-        return result.rows.compactMap { row in
+        // Parse and sort by kind order then position before mapping to PluginColumnInfo
+        struct RawColumn {
+            let name: String
+            let dataType: String
+            let kind: String
+            let position: Int
+            let isPrimaryKey: Bool
+        }
+
+        let rawColumns = result.rows.compactMap { row -> RawColumn? in
             guard let name = row[safe: 0] ?? nil,
                   let dataType = row[safe: 1] ?? nil else {
                 return nil
             }
-            let kind = row[safe: 2] ?? nil // partition_key, clustering, regular, static
+            let kind = (row[safe: 2] ?? nil) ?? "regular"
+            let position = Int((row[safe: 4] ?? nil) ?? "0") ?? 0
             let isPrimaryKey = kind == "partition_key" || kind == "clustering"
+            return RawColumn(name: name, dataType: dataType, kind: kind, position: position, isPrimaryKey: isPrimaryKey)
+        }.sorted { lhs, rhs in
+            let lhsOrder = columnKindOrder(lhs.kind)
+            let rhsOrder = columnKindOrder(rhs.kind)
+            if lhsOrder != rhsOrder { return lhsOrder < rhsOrder }
+            return lhs.position < rhs.position
+        }
 
-            return PluginColumnInfo(
-                name: name,
-                dataType: dataType,
-                isNullable: !isPrimaryKey,
-                isPrimaryKey: isPrimaryKey,
+        return rawColumns.map { col in
+            PluginColumnInfo(
+                name: col.name,
+                dataType: col.dataType,
+                isNullable: !col.isPrimaryKey,
+                isPrimaryKey: col.isPrimaryKey,
                 defaultValue: nil
             )
-        }.sorted { lhs, rhs in
-            // Sort: partition keys first, then clustering, then regular
-            let lhsOrder = columnKindOrder(lhs.isPrimaryKey ? "key" : "regular")
-            let rhsOrder = columnKindOrder(rhs.isPrimaryKey ? "key" : "regular")
-            if lhsOrder != rhsOrder { return lhsOrder < rhsOrder }
-            return lhs.name < rhs.name
         }
     }
 
@@ -976,7 +1045,7 @@ final class CassandraPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         let safeKs = escapeIdentifier(name)
         let query = """
             CREATE KEYSPACE "\(safeKs)"
-            WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}
+            WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 3}
         """
         _ = try await execute(query: query)
     }
@@ -1036,7 +1105,7 @@ final class CassandraPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
 
 // MARK: - Errors
 
-enum CassandraPluginError: Error {
+internal enum CassandraPluginError: Error {
     case connectionFailed(String)
     case notConnected
     case queryFailed(String)
