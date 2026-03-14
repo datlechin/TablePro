@@ -215,6 +215,18 @@ internal struct ThemeStorage {
         }
     }
 
+    private static let builtInThemeOrder = [
+        "tablepro.default-light",
+        "tablepro.default-dark",
+        "tablepro.dracula",
+        "tablepro.solarized-light",
+        "tablepro.solarized-dark",
+        "tablepro.one-dark",
+        "tablepro.github-light",
+        "tablepro.github-dark",
+        "tablepro.nord",
+    ]
+
     private static func loadBuiltInThemes(from directory: URL) -> [ThemeDefinition] {
         let fm = FileManager.default
         guard fm.fileExists(atPath: directory.path) else { return [] }
@@ -223,7 +235,12 @@ internal struct ThemeStorage {
             let files = try fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
                 .filter { $0.pathExtension == "json" && $0.lastPathComponent.hasPrefix("tablepro.") }
 
-            return files.compactMap { loadTheme(from: $0) }
+            let themes = files.compactMap { loadTheme(from: $0) }
+            return themes.sorted { lhs, rhs in
+                let li = builtInThemeOrder.firstIndex(of: lhs.id) ?? Int.max
+                let ri = builtInThemeOrder.firstIndex(of: rhs.id) ?? Int.max
+                return li < ri
+            }
         } catch {
             logger.error("Failed to list built-in themes: \(error)")
             return []
