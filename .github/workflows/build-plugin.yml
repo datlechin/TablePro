@@ -98,8 +98,7 @@ jobs:
 
             # Build Cassandra dependencies if needed
             if [ "$PLUGIN_NAME" = "cassandra" ]; then
-              ./scripts/build-cassandra.sh arm64
-              ./scripts/build-cassandra.sh x86_64
+              ./scripts/build-cassandra.sh both
             fi
 
             # Build both architectures

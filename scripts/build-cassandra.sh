@@ -108,6 +108,12 @@ build_cassandra() {
 # --- Copy headers ---
 copy_headers() {
     echo "📋 Copying cassandra.h header..."
+
+    if [ -f "$HEADERS_DIR/cassandra.h" ]; then
+        echo "✅ cassandra.h already exists, skipping"
+        return 0
+    fi
+
     cd "$BUILD_DIR"
 
     if [ -f "cassandra-cpp-driver-${CASSANDRA_VERSION}/include/cassandra.h" ]; then

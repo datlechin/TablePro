@@ -52,7 +52,7 @@ private actor CassandraConnectionActor {
         username: String?,
         password: String?,
         keyspace: String?,
-        sslEnabled: Bool,
+        sslMode: String,
         sslCaCertPath: String?
     ) throws {
         cluster = cass_cluster_new()
@@ -68,16 +68,19 @@ private actor CassandraConnectionActor {
         }
 
         // SSL/TLS
-        if sslEnabled {
+        if sslMode != "Disabled" {
             let ssl = cass_ssl_new()
-            cass_ssl_set_verify_flags(ssl, Int32(CASS_SSL_VERIFY_PEER_CERT.rawValue))
 
-            if let caCertPath = sslCaCertPath, !caCertPath.isEmpty,
-               let certData = FileManager.default.contents(atPath: caCertPath),
-               let certString = String(data: certData, encoding: .utf8) {
-                cass_ssl_add_trusted_cert(ssl, certString)
+            if sslMode == "Verify CA" || sslMode == "Verify Identity" {
+                cass_ssl_set_verify_flags(ssl, Int32(CASS_SSL_VERIFY_PEER_CERT.rawValue))
+
+                if let caCertPath = sslCaCertPath, !caCertPath.isEmpty,
+                   let certData = FileManager.default.contents(atPath: caCertPath),
+                   let certString = String(data: certData, encoding: .utf8) {
+                    cass_ssl_add_trusted_cert(ssl, certString)
+                }
             } else {
-                // No verification if no CA cert provided
+                // "Preferred" / "Required" — encrypt but skip cert verification
                 cass_ssl_set_verify_flags(ssl, Int32(CASS_SSL_VERIFY_NONE.rawValue))
             }
 
@@ -617,7 +620,6 @@ final class CassandraPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
 
     func connect() async throws {
         let sslMode = config.additionalFields["sslMode"] ?? "Disabled"
-        let sslEnabled = sslMode != "Disabled"
         let sslCaCertPath = config.additionalFields["sslCaCertPath"]
 
         let keyspace = config.database.isEmpty ? nil : config.database
@@ -628,7 +630,7 @@ final class CassandraPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
             username: config.username.isEmpty ? nil : config.username,
             password: config.password.isEmpty ? nil : config.password,
             keyspace: keyspace,
-            sslEnabled: sslEnabled,
+            sslMode: sslMode,
             sslCaCertPath: sslCaCertPath
         )
 
