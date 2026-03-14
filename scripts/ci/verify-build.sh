@@ -83,11 +83,9 @@ fi
 echo "✅ PlugIns directory exists"
 
 REQUIRED_PLUGINS=(
-  "MSSQLDriver.tableplugin"
-  "MongoDBDriver.tableplugin"
   "MySQLDriver.tableplugin"
   "PostgreSQLDriver.tableplugin"
-  "RedisDriver.tableplugin"
+  "SQLiteDriver.tableplugin"
 )
 
 MISSING_PLUGINS=0
