@@ -17,15 +17,40 @@ env:
   XCODE_PROJECT: TablePro.xcodeproj
 
 jobs:
+  resolve-tags:
+    name: Resolve Plugin Tags
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.tags.outputs.matrix }}
+    steps:
+      - id: tags
+        run: |
+          if [ -n "${{ inputs.tags }}" ]; then
+            IFS=',' read -ra TAGS <<< "${{ inputs.tags }}"
+          else
+            TAGS=("${{ github.ref_name }}")
+          fi
+          JSON='{"include":['
+          FIRST=true
+          for TAG in "${TAGS[@]}"; do
+            TAG=$(echo "$TAG" | xargs)
+            if [ "$FIRST" = true ]; then FIRST=false; else JSON+=','; fi
+            JSON+="{\"tag\":\"$TAG\"}"
+          done
+          JSON+=']}'
+          echo "matrix=$JSON" >> "$GITHUB_OUTPUT"
+          echo "Matrix: $JSON"
+
   build-plugin:
-    name: Build Plugin
-    runs-on: self-hosted
-    timeout-minutes: 60
+    name: "Build ${{ matrix.tag }}"
+    needs: resolve-tags
+    runs-on: macos-latest
+    timeout-minutes: 30
+    strategy:
+      matrix: ${{ fromJson(needs.resolve-tags.outputs.matrix) }}
+      fail-fast: false
 
     steps:
-      - name: Install Git LFS
-        run: brew list git-lfs &>/dev/null || brew install git-lfs; git lfs install
-
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -34,17 +59,44 @@ jobs:
       - name: Pull LFS files
         run: git lfs pull
 
-      - name: Build and release plugins
+      - name: Select Xcode 16.2
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: "16.2"
+
+      - name: Import signing certificate
+        env:
+          CERTIFICATES_P12: ${{ secrets.CERTIFICATES_P12 }}
+          CERTIFICATES_PASSWORD: ${{ secrets.CERTIFICATES_PASSWORD }}
+        run: |
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          security create-keychain -p "" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "" "$KEYCHAIN_PATH"
+          echo "$CERTIFICATES_P12" | base64 --decode > $RUNNER_TEMP/certificate.p12
+          security import $RUNNER_TEMP/certificate.p12 -P "$CERTIFICATES_PASSWORD" \
+            -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -k "" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH" login.keychain
+
+      - name: Configure notarization
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          NOTARY_PASSWORD: ${{ secrets.NOTARY_PASSWORD }}
+        run: |
+          xcrun notarytool store-credentials "TablePro" \
+            --apple-id "$APPLE_ID" \
+            --team-id "$APPLE_TEAM_ID" \
+            --password "$NOTARY_PASSWORD"
+
+      - name: Build and release plugin
         env:
           REGISTRY_DEPLOY_KEY: ${{ secrets.REGISTRY_DEPLOY_KEY }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Build tag list: from input (comma-separated) or from push event (single tag)
-          if [ -n "${{ inputs.tags }}" ]; then
-            IFS=',' read -ra TAGS <<< "${{ inputs.tags }}"
-          else
-            TAGS=("${{ github.ref_name }}")
-          fi
+          TAG="${{ matrix.tag }}"
+          echo "Processing: $TAG"
 
           # Get current app version for minAppVersion
           MIN_APP_VERSION=$(sed -n 's/.*MARKETING_VERSION = \(.*\);/\1/p' \
@@ -112,46 +164,37 @@ jobs:
             esac
           }
 
-          for TAG in "${TAGS[@]}"; do
-            TAG=$(echo "$TAG" | xargs)  # trim whitespace
-            echo ""
-            echo "========================================"
-            echo "Processing: $TAG"
-            echo "========================================"
+          PLUGIN_NAME=$(echo "$TAG" | sed -E 's/^plugin-([a-z]+)-v.*$/\1/')
+          VERSION=$(echo "$TAG" | sed -E 's/^plugin-[a-z]+-v(.*)$/\1/')
 
-            PLUGIN_NAME=$(echo "$TAG" | sed -E 's/^plugin-([a-z]+)-v.*$/\1/')
-            VERSION=$(echo "$TAG" | sed -E 's/^plugin-[a-z]+-v(.*)$/\1/')
+          resolve_plugin_info "$PLUGIN_NAME"
 
-            resolve_plugin_info "$PLUGIN_NAME" || continue
+          echo "Building $TARGET v$VERSION"
 
-            echo "Building $TARGET v$VERSION"
+          # Build Cassandra dependencies if needed
+          if [ "$PLUGIN_NAME" = "cassandra" ]; then
+            ./scripts/build-cassandra.sh both
+          fi
 
-            # Build Cassandra dependencies if needed
-            if [ "$PLUGIN_NAME" = "cassandra" ]; then
-              ./scripts/build-cassandra.sh both
-            fi
+          # Build both architectures
+          ./scripts/build-plugin.sh "$TARGET" arm64
+          ./scripts/build-plugin.sh "$TARGET" x86_64
 
-            # Build both architectures
-            ./scripts/build-plugin.sh "$TARGET" arm64
-            ./scripts/build-plugin.sh "$TARGET" x86_64
+          # Capture SHA-256
+          ARM64_SHA=$(cat "build/Plugins/${BUNDLE_NAME}-arm64.zip.sha256")
+          X86_SHA=$(cat "build/Plugins/${BUNDLE_NAME}-x86_64.zip.sha256")
 
-            # Capture SHA-256
-            ARM64_SHA=$(cat "build/Plugins/${BUNDLE_NAME}-arm64.zip.sha256")
-            X86_SHA=$(cat "build/Plugins/${BUNDLE_NAME}-x86_64.zip.sha256")
+          # Notarize if enabled
+          if [ "${NOTARIZE_PLUGINS:-}" = "true" ]; then
+            for zip in build/Plugins/${BUNDLE_NAME}-*.zip; do
+              xcrun notarytool submit "$zip" \
+                --keychain-profile "TablePro" \
+                --wait
+            done
+          fi
 
-            # Notarize if enabled
-            if [ "${NOTARIZE_PLUGINS:-}" = "true" ]; then
-              for zip in build/Plugins/${BUNDLE_NAME}-*.zip; do
-                xcrun notarytool submit "$zip" \
-                  --apple-id "$APPLE_ID" \
-                  --team-id "D7HJ5TFYCU" \
-                  --keychain-profile "notarytool-profile" \
-                  --wait
-              done
-            fi
-
-            # Create GitHub Release
-            RELEASE_BODY="## $DISPLAY_NAME v$VERSION
+          # Create GitHub Release
+          RELEASE_BODY="## $DISPLAY_NAME v$VERSION
 
           Plugin release for TablePro.
 
@@ -162,33 +205,33 @@ jobs:
           - ARM64: \`$ARM64_SHA\`
           - x86_64: \`$X86_SHA\`"
 
-            # Delete existing release if any, then create
-            gh release delete "$TAG" --yes 2>/dev/null || true
-            gh release create "$TAG" \
-              --title "$DISPLAY_NAME v$VERSION" \
-              --notes "$RELEASE_BODY" \
-              build/Plugins/${BUNDLE_NAME}-arm64.zip \
-              build/Plugins/${BUNDLE_NAME}-x86_64.zip
+          # Delete existing release if any, then create
+          gh release delete "$TAG" --yes 2>/dev/null || true
+          gh release create "$TAG" \
+            --title "$DISPLAY_NAME v$VERSION" \
+            --notes "$RELEASE_BODY" \
+            build/Plugins/${BUNDLE_NAME}-arm64.zip \
+            build/Plugins/${BUNDLE_NAME}-x86_64.zip
 
-            # Update plugin registry
-            if [ -n "${REGISTRY_DEPLOY_KEY:-}" ]; then
-              ARM64_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${BUNDLE_NAME}-arm64.zip"
-              X86_64_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${BUNDLE_NAME}-x86_64.zip"
+          # Update plugin registry
+          if [ -n "${REGISTRY_DEPLOY_KEY:-}" ]; then
+            ARM64_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${BUNDLE_NAME}-arm64.zip"
+            X86_64_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${BUNDLE_NAME}-x86_64.zip"
 
-              WORK=$(mktemp -d)
-              eval "$(ssh-agent -s)"
-              echo "$REGISTRY_DEPLOY_KEY" | ssh-add -
+            WORK=$(mktemp -d)
+            eval "$(ssh-agent -s)"
+            echo "$REGISTRY_DEPLOY_KEY" | ssh-add -
 
-              git clone git@github.com:datlechin/tablepro-plugins.git "$WORK/registry"
-              cd "$WORK/registry"
-              git pull --rebase origin main
+            git clone git@github.com:datlechin/tablepro-plugins.git "$WORK/registry"
+            cd "$WORK/registry"
+            git pull --rebase origin main
 
-              python3 - \
-                "$BUNDLE_ID" "$DISPLAY_NAME" "$VERSION" "$SUMMARY" \
-                "$DB_TYPE_IDS" "$ARM64_URL" "$ARM64_SHA" \
-                "$X86_64_URL" "$X86_SHA" "$MIN_APP_VERSION" \
-                "$ICON" "$HOMEPAGE" "$CATEGORY" \
-                <<'PYTHON_SCRIPT'
+            python3 - \
+              "$BUNDLE_ID" "$DISPLAY_NAME" "$VERSION" "$SUMMARY" \
+              "$DB_TYPE_IDS" "$ARM64_URL" "$ARM64_SHA" \
+              "$X86_64_URL" "$X86_SHA" "$MIN_APP_VERSION" \
+              "$ICON" "$HOMEPAGE" "$CATEGORY" \
+              <<'PYTHON_SCRIPT'
           import json, sys
 
           bundle_id, name, version, summary = sys.argv[1:5]
@@ -225,25 +268,16 @@ jobs:
               f.write("\n")
           PYTHON_SCRIPT
 
-              git config user.name "github-actions[bot]"
-              git config user.email "github-actions[bot]@users.noreply.github.com"
-              git add plugins.json
-              git commit -m "Update $DISPLAY_NAME to v$VERSION"
-              git push
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add plugins.json
+            git commit -m "Update $DISPLAY_NAME to v$VERSION"
+            git push
 
-              ssh-add -D
-              eval "$(ssh-agent -k)"
-              cd -
-              rm -rf "$WORK"
-            fi
+            ssh-add -D
+            eval "$(ssh-agent -k)"
+            cd -
+            rm -rf "$WORK"
+          fi
 
-            # Clean plugin build artifacts for next iteration
-            rm -f build/Plugins/${BUNDLE_NAME}-*.zip build/Plugins/${BUNDLE_NAME}-*.sha256
-
-            echo "✅ $DISPLAY_NAME v$VERSION released"
-          done
-
-          echo ""
-          echo "========================================"
-          echo "All plugins processed!"
-          echo "========================================"
+          echo "$DISPLAY_NAME v$VERSION released"
