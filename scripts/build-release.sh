@@ -180,7 +180,6 @@ prepare_hiredis() {
     echo "✅ hiredis libraries ready for $target_arch"
 }
 
-
 # Bundle non-system dynamic libraries into the app bundle
 # so the app runs without Homebrew on end-user machines.
 bundle_dylibs() {
