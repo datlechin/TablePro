@@ -1042,10 +1042,13 @@ struct ConnectionFormView: View { // swiftlint:disable:this type_body_length
 
     private func deleteConnection() {
         guard let id = connectionId else { return }
-        SyncChangeTracker.shared.markDeleted(.connection, id: id.uuidString)
         var savedConnections = storage.loadConnections()
+        let hadConnection = savedConnections.contains { $0.id == id }
         savedConnections.removeAll { $0.id == id }
         storage.saveConnections(savedConnections)
+        if hadConnection {
+            SyncChangeTracker.shared.markDeleted(.connection, id: id.uuidString)
+        }
         NSApplication.shared.closeWindows(withId: "connection-form")
         NotificationCenter.default.post(name: .connectionUpdated, object: nil)
     }

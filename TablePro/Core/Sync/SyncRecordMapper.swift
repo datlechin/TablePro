@@ -79,15 +79,25 @@ struct SyncRecordMapper {
         }
 
         // Encode complex structs as JSON Data
-        if let sshData = try? encoder.encode(connection.sshConfig) {
+        do {
+            let sshData = try encoder.encode(connection.sshConfig)
             record["sshConfigJson"] = sshData as CKRecordValue
+        } catch {
+            logger.warning("Failed to encode SSH config for sync: \(error.localizedDescription)")
         }
-        if let sslData = try? encoder.encode(connection.sslConfig) {
+        do {
+            let sslData = try encoder.encode(connection.sslConfig)
             record["sslConfigJson"] = sslData as CKRecordValue
+        } catch {
+            logger.warning("Failed to encode SSL config for sync: \(error.localizedDescription)")
         }
-        if !connection.additionalFields.isEmpty,
-           let fieldsData = try? encoder.encode(connection.additionalFields) {
-            record["additionalFieldsJson"] = fieldsData as CKRecordValue
+        if !connection.additionalFields.isEmpty {
+            do {
+                let fieldsData = try encoder.encode(connection.additionalFields)
+                record["additionalFieldsJson"] = fieldsData as CKRecordValue
+            } catch {
+                logger.warning("Failed to encode additional fields for sync: \(error.localizedDescription)")
+            }
         }
 
         return record
