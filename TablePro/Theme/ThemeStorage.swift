@@ -20,7 +20,7 @@ internal struct ThemeStorage {
     }()
 
     private static let bundledThemesDirectory: URL? = {
-        Bundle.main.resourceURL?.appendingPathComponent("Themes", isDirectory: true)
+        Bundle.main.resourceURL
     }()
 
     private static let registryThemesDirectory: URL = {
@@ -40,9 +40,9 @@ internal struct ThemeStorage {
     static func loadAllThemes() -> [ThemeDefinition] {
         var themes: [ThemeDefinition] = []
 
-        // Load built-in themes from app bundle
+        // Load built-in themes from app bundle (files copied flat to Resources/)
         if let bundleDir = bundledThemesDirectory {
-            themes.append(contentsOf: loadThemes(from: bundleDir, isBuiltIn: true))
+            themes.append(contentsOf: loadBuiltInThemes(from: bundleDir))
         }
 
         // If no bundled themes loaded, use compiled presets as fallback
@@ -212,6 +212,21 @@ internal struct ThemeStorage {
             } catch {
                 logger.error("Failed to create registry themes directory: \(error)")
             }
+        }
+    }
+
+    private static func loadBuiltInThemes(from directory: URL) -> [ThemeDefinition] {
+        let fm = FileManager.default
+        guard fm.fileExists(atPath: directory.path) else { return [] }
+
+        do {
+            let files = try fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+                .filter { $0.pathExtension == "json" && $0.lastPathComponent.hasPrefix("tablepro.") }
+
+            return files.compactMap { loadTheme(from: $0) }
+        } catch {
+            logger.error("Failed to list built-in themes: \(error)")
+            return []
         }
     }
 
