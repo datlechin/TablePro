@@ -72,9 +72,9 @@
         "tertiaryText": "#6272A4"
     },
     "fonts": {
-        "editorFontFamily": "SF Mono",
+        "editorFontFamily": "System Mono",
         "editorFontSize": 13,
-        "dataGridFontFamily": "SF Mono",
+        "dataGridFontFamily": "System Mono",
         "dataGridFontSize": 13
     },
     "spacing": {
