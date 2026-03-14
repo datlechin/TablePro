@@ -60,9 +60,6 @@ final class ConnectionStorage {
         } catch {
             Self.logger.error("Failed to save connections: \(error)")
         }
-
-        // Mark all saved connections as dirty for sync
-        SyncChangeTracker.shared.markDirty(.connection, ids: connections.map { $0.id.uuidString })
     }
 
     /// Add a new connection
@@ -70,6 +67,7 @@ final class ConnectionStorage {
         var connections = loadConnections()
         connections.append(connection)
         saveConnections(connections)
+        SyncChangeTracker.shared.markDirty(.connection, id: connection.id.uuidString)
 
         if let password = password, !password.isEmpty {
             savePassword(password, for: connection.id)
@@ -82,6 +80,7 @@ final class ConnectionStorage {
         if let index = connections.firstIndex(where: { $0.id == connection.id }) {
             connections[index] = connection
             saveConnections(connections)
+            SyncChangeTracker.shared.markDirty(.connection, id: connection.id.uuidString)
 
             if let password = password {
                 if password.isEmpty {
@@ -135,6 +134,7 @@ final class ConnectionStorage {
         var connections = loadConnections()
         connections.append(duplicate)
         saveConnections(connections)
+        SyncChangeTracker.shared.markDirty(.connection, id: duplicate.id.uuidString)
 
         // Copy all passwords from source to duplicate
         if let password = loadPassword(for: connection.id) {

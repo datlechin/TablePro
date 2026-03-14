@@ -74,7 +74,7 @@ final class SyncCoordinator {
     /// Manual full sync (push then pull)
     func syncNow() async {
         guard canSync() else {
-            print("[Sync] syncNow: canSync() returned false, skipping")
+            Self.logger.info("syncNow: canSync() returned false, skipping")
             return
         }
 
@@ -108,14 +108,15 @@ final class SyncCoordinator {
 
     /// Called when user enables sync in settings
     func enableSync() {
-        print("[Sync] enableSync() called")
+        Self.logger.info("enableSync() called")
 
         // Clear token to force a full fetch on first sync after enabling
         metadataStorage.clearSyncToken()
 
         // Mark ALL existing local data as dirty so it gets pushed on first sync
         markAllLocalDataDirty()
-        print("[Sync] enableSync() dirty marking done, dirty connections: \(changeTracker.dirtyRecords(for: .connection))")
+        let dirtyCount = changeTracker.dirtyRecords(for: .connection).count
+        Self.logger.info("enableSync() dirty marking done, dirty connections: \(dirtyCount)")
 
         Task {
             await checkAccountStatus()
@@ -150,7 +151,7 @@ final class SyncCoordinator {
             changeTracker.markDirty(.settings, id: category)
         }
 
-        print("[Sync] Marked all local data dirty: \(connections.count) connections, \(groups.count) groups, \(tags.count) tags, 8 settings categories")
+        Self.logger.info("Marked all local data dirty: \(connections.count) connections, \(groups.count) groups, \(tags.count) tags, 8 settings categories")
     }
 
     /// Called when user disables sync in settings
@@ -222,7 +223,8 @@ final class SyncCoordinator {
         var recordsToSave: [CKRecord] = []
         var recordIDsToDelete: [CKRecord.ID] = []
         let zoneID = await engine.zoneID
-        print("[Sync] performPush: syncConnections=\(settings.syncConnections), dirty connections=\(changeTracker.dirtyRecords(for: .connection))")
+        let dirtyConnectionCount = changeTracker.dirtyRecords(for: .connection).count
+        Self.logger.info("performPush: syncConnections=\(settings.syncConnections), dirty connections=\(dirtyConnectionCount)")
 
         // Collect dirty connections
         if settings.syncConnections {
@@ -281,7 +283,7 @@ final class SyncCoordinator {
                 }
             }
 
-            print("[Sync] Push completed: \(recordsToSave.count) saved, \(recordIDsToDelete.count) deleted")
+            Self.logger.info("Push completed: \(recordsToSave.count) saved, \(recordIDsToDelete.count) deleted")
         } catch let error as CKError where error.code == .serverRecordChanged {
             Self.logger.warning("Server record changed during push — conflicts detected")
             handlePushConflicts(error)
@@ -294,15 +296,16 @@ final class SyncCoordinator {
 
     private func performPull() async {
         let token = metadataStorage.loadSyncToken()
-        print("[Sync] Pull starting, token: \(token == nil ? "nil (full fetch)" : "present (delta)")")
+        let tokenStatus = token == nil ? "nil (full fetch)" : "present (delta)"
+        Self.logger.info("Pull starting, token: \(tokenStatus)")
 
         do {
             let result = try await engine.pull(since: token)
 
-            print("[Sync] Pull fetched: \(result.changedRecords.count) changed, \(result.deletedRecordIDs.count) deleted")
+            Self.logger.info("Pull fetched: \(result.changedRecords.count) changed, \(result.deletedRecordIDs.count) deleted")
 
             for record in result.changedRecords {
-                print("[Sync]   Pulled record: \(record.recordType)/\(record.recordID.recordName)")
+                Self.logger.info("Pulled record: \(record.recordType)/\(record.recordID.recordName)")
             }
 
             if let newToken = result.newToken {
@@ -581,7 +584,6 @@ final class SyncCoordinator {
     }
 
     private func applySettingsData(_ data: Data, for category: String) {
-        let storage = AppSettingsStorage.shared
         let manager = AppSettingsManager.shared
         let decoder = JSONDecoder()
 

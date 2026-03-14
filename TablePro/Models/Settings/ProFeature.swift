@@ -8,7 +8,7 @@
 import Foundation
 
 /// Features that require a Pro (active) license
-enum ProFeature: String, CaseIterable {
+internal enum ProFeature: String, CaseIterable {
     case iCloudSync
 
     var displayName: String {
@@ -34,7 +34,7 @@ enum ProFeature: String, CaseIterable {
 }
 
 /// Result of checking Pro feature availability
-enum ProFeatureAccess {
+internal enum ProFeatureAccess {
     case available
     case unlicensed
     case expired

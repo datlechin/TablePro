@@ -184,6 +184,7 @@ final class AppSettingsStorage {
         saveTabs(.default)
         saveKeyboard(.default)
         saveAI(.default)
+        saveSync(.default)
     }
 
     // MARK: - Helpers

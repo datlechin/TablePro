@@ -104,7 +104,7 @@ struct SyncRecordMapper {
         }
 
         let host = record["host"] as? String ?? "localhost"
-        let port = (record["port"] as? Int64).map { Int($0) } ?? 3_306
+        let port = (record["port"] as? Int64).map { Int($0) } ?? 0
         let database = record["database"] as? String ?? ""
         let username = record["username"] as? String ?? ""
         let colorRaw = record["color"] as? String ?? ConnectionColor.none.rawValue

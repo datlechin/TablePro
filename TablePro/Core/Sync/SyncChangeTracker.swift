@@ -29,7 +29,7 @@ final class SyncChangeTracker {
     func markDirty(_ type: SyncRecordType, id: String) {
         guard !isSuppressed else { return }
         metadataStorage.addDirty(type: type, id: id)
-        print("[Sync] Marked dirty: \(type.rawValue)/\(id)")
+        Self.logger.info("Marked dirty: \(type.rawValue)/\(id)")
         postChangeNotification()
     }
 
