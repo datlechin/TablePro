@@ -5,7 +5,7 @@
 
 import Foundation
 
-enum Base32 {
+internal enum Base32 {
     private static let alphabet = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ234567")
 
     private static let decodeTable: [UInt8] = {

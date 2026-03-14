@@ -6,7 +6,7 @@
 import CryptoKit
 import Foundation
 
-struct TOTPGenerator {
+internal struct TOTPGenerator {
     enum Algorithm {
         case sha1, sha256, sha512
     }

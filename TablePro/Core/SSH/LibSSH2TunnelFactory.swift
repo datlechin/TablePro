@@ -3,12 +3,13 @@
 //  TablePro
 //
 
-import CLibSSH2
 import Foundation
 import os
 
+import CLibSSH2
+
 /// Credentials needed for SSH tunnel creation
-struct SSHTunnelCredentials: Sendable {
+internal struct SSHTunnelCredentials: Sendable {
     let sshPassword: String?
     let keyPassphrase: String?
     let totpSecret: String?
@@ -16,7 +17,7 @@ struct SSHTunnelCredentials: Sendable {
 }
 
 /// Creates fully-connected and authenticated SSH tunnels using libssh2.
-enum LibSSH2TunnelFactory {
+internal enum LibSSH2TunnelFactory {
     private static let logger = Logger(subsystem: "com.TablePro", category: "LibSSH2TunnelFactory")
 
     private static let connectionTimeout: Int32 = 10 // seconds
@@ -172,9 +173,6 @@ enum LibSSH2TunnelFactory {
                     jumpChain: jumpHops
                 )
 
-                tunnel.startForwarding(remoteHost: remoteHost, remotePort: remotePort)
-                tunnel.startKeepAlive()
-
                 logger.info(
                     "Tunnel created: \(config.host):\(config.port) -> 127.0.0.1:\(localPort) -> \(remoteHost):\(remotePort)"
                 )
@@ -222,56 +220,69 @@ enum LibSSH2TunnelFactory {
         let portString = String(port)
         let rc = getaddrinfo(host, portString, &hints, &result)
 
-        guard rc == 0, let addrInfo = result else {
+        guard rc == 0, let firstAddr = result else {
             let errorMsg = rc != 0 ? String(cString: gai_strerror(rc)) : "No address found"
             throw SSHTunnelError.tunnelCreationFailed("DNS resolution failed for \(host): \(errorMsg)")
         }
         defer { freeaddrinfo(result) }
 
-        let fd = socket(addrInfo.pointee.ai_family, addrInfo.pointee.ai_socktype, addrInfo.pointee.ai_protocol)
-        guard fd >= 0 else {
-            throw SSHTunnelError.tunnelCreationFailed("Failed to create socket")
-        }
+        // Iterate through all addresses returned by getaddrinfo
+        var currentAddr: UnsafeMutablePointer<addrinfo>? = firstAddr
+        var lastError: String = "No address found"
 
-        // Set non-blocking for connection timeout
-        let flags = fcntl(fd, F_GETFL, 0)
-        fcntl(fd, F_SETFL, flags | O_NONBLOCK)
-
-        let connectResult = connect(fd, addrInfo.pointee.ai_addr, addrInfo.pointee.ai_addrlen)
-
-        if connectResult != 0 && errno != EINPROGRESS {
-            Darwin.close(fd)
-            throw SSHTunnelError.tunnelCreationFailed("Connection to \(host):\(port) failed")
-        }
-
-        if connectResult != 0 {
-            // Wait for connection with timeout using poll()
-            var writePollFD = pollfd(fd: fd, events: Int16(POLLOUT), revents: 0)
-            let pollResult = poll(&writePollFD, 1, connectionTimeout * 1_000)
-
-            if pollResult <= 0 {
-                Darwin.close(fd)
-                throw SSHTunnelError.connectionTimeout
+        while let addrInfo = currentAddr {
+            let fd = socket(addrInfo.pointee.ai_family, addrInfo.pointee.ai_socktype, addrInfo.pointee.ai_protocol)
+            guard fd >= 0 else {
+                currentAddr = addrInfo.pointee.ai_next
+                continue
             }
 
-            // Check for connection error
-            var socketError: Int32 = 0
-            var errorLen = socklen_t(MemoryLayout<Int32>.size)
-            getsockopt(fd, SOL_SOCKET, SO_ERROR, &socketError, &errorLen)
+            // Set non-blocking for connection timeout
+            let flags = fcntl(fd, F_GETFL, 0)
+            fcntl(fd, F_SETFL, flags | O_NONBLOCK)
 
-            if socketError != 0 {
+            let connectResult = connect(fd, addrInfo.pointee.ai_addr, addrInfo.pointee.ai_addrlen)
+
+            if connectResult != 0 && errno != EINPROGRESS {
                 Darwin.close(fd)
-                throw SSHTunnelError.tunnelCreationFailed(
-                    "Connection to \(host):\(port) failed: \(String(cString: strerror(socketError)))"
-                )
+                lastError = "Connection to \(host):\(port) failed"
+                currentAddr = addrInfo.pointee.ai_next
+                continue
             }
+
+            if connectResult != 0 {
+                // Wait for connection with timeout using poll()
+                var writePollFD = pollfd(fd: fd, events: Int16(POLLOUT), revents: 0)
+                let pollResult = poll(&writePollFD, 1, connectionTimeout * 1_000)
+
+                if pollResult <= 0 {
+                    Darwin.close(fd)
+                    lastError = "Connection timed out"
+                    currentAddr = addrInfo.pointee.ai_next
+                    continue
+                }
+
+                // Check for connection error
+                var socketError: Int32 = 0
+                var errorLen = socklen_t(MemoryLayout<Int32>.size)
+                getsockopt(fd, SOL_SOCKET, SO_ERROR, &socketError, &errorLen)
+
+                if socketError != 0 {
+                    Darwin.close(fd)
+                    lastError = "Connection to \(host):\(port) failed: \(String(cString: strerror(socketError)))"
+                    currentAddr = addrInfo.pointee.ai_next
+                    continue
+                }
+            }
+
+            // Restore blocking mode for handshake/auth
+            fcntl(fd, F_SETFL, flags)
+
+            logger.debug("TCP connected to \(host):\(port)")
+            return fd
         }
 
-        // Restore blocking mode for handshake/auth
-        fcntl(fd, F_SETFL, flags)
-
-        logger.debug("TCP connected to \(host):\(port)")
-        return fd
+        throw SSHTunnelError.tunnelCreationFailed(lastError)
     }
 
     // MARK: - Session
@@ -335,14 +346,30 @@ enum LibSSH2TunnelFactory {
             return PasswordAuthenticator(password: credentials.sshPassword ?? "")
 
         case .privateKey:
-            return PublicKeyAuthenticator(
+            let primary = PublicKeyAuthenticator(
                 privateKeyPath: config.privateKeyPath,
                 passphrase: credentials.keyPassphrase
             )
+            if config.totpMode != .none {
+                let totpAuth = KeyboardInteractiveAuthenticator(
+                    password: nil,
+                    totpProvider: buildTOTPProvider(config: config, credentials: credentials)
+                )
+                return CompositeAuthenticator(authenticators: [primary, totpAuth])
+            }
+            return primary
 
         case .sshAgent:
             let socketPath = config.agentSocketPath.isEmpty ? nil : config.agentSocketPath
-            return AgentAuthenticator(socketPath: socketPath)
+            let primary = AgentAuthenticator(socketPath: socketPath)
+            if config.totpMode != .none {
+                let totpAuth = KeyboardInteractiveAuthenticator(
+                    password: nil,
+                    totpProvider: buildTOTPProvider(config: config, credentials: credentials)
+                )
+                return CompositeAuthenticator(authenticators: [primary, totpAuth])
+            }
+            return primary
 
         case .keyboardInteractive:
             let totpProvider = buildTOTPProvider(config: config, credentials: credentials)

@@ -6,7 +6,7 @@
 import Foundation
 
 /// Protocol for providing TOTP verification codes
-protocol TOTPProvider: Sendable {
+internal protocol TOTPProvider: Sendable {
     /// Generate or obtain a TOTP code
     /// - Returns: The TOTP code string
     /// - Throws: SSHTunnelError if the code cannot be obtained
@@ -18,7 +18,7 @@ protocol TOTPProvider: Sendable {
 /// If the current code expires in less than 5 seconds, waits for the next
 /// period to avoid submitting a code that expires during the authentication handshake.
 /// The maximum wait is ~6 seconds (bounded).
-struct AutoTOTPProvider: TOTPProvider {
+internal struct AutoTOTPProvider: TOTPProvider {
     let generator: TOTPGenerator
 
     func provideCode() throws -> String {

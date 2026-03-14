@@ -6,8 +6,9 @@
 //
 
 import Foundation
-@testable import TablePro
 import Testing
+
+@testable import TablePro
 
 @Suite("HostKeyStore")
 struct HostKeyStoreTests {
@@ -170,7 +171,7 @@ struct HostKeyStoreTests {
         #expect(HostKeyStore.keyTypeName(99) == "unknown")
     }
 
-    @Test("Trusting the same host again updates the stored key")
+    @Test("Trusting the same host and key type again updates the stored key")
     func testTrustUpdatesExistingEntry() {
         let path = makeTempFilePath()
         defer { try? FileManager.default.removeItem(atPath: path) }
@@ -182,9 +183,9 @@ struct HostKeyStoreTests {
         store.trust(hostname: "example.com", port: 22, key: oldKey, keyType: "ssh-rsa")
         #expect(store.verify(keyData: oldKey, keyType: "ssh-rsa", hostname: "example.com", port: 22) == .trusted)
 
-        // Trust with new key
-        store.trust(hostname: "example.com", port: 22, key: newKey, keyType: "ssh-ed25519")
-        #expect(store.verify(keyData: newKey, keyType: "ssh-ed25519", hostname: "example.com", port: 22) == .trusted)
+        // Trust with new key (same key type)
+        store.trust(hostname: "example.com", port: 22, key: newKey, keyType: "ssh-rsa")
+        #expect(store.verify(keyData: newKey, keyType: "ssh-rsa", hostname: "example.com", port: 22) == .trusted)
 
         // Old key should no longer match
         let result = store.verify(keyData: oldKey, keyType: "ssh-rsa", hostname: "example.com", port: 22)

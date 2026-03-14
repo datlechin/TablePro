@@ -3,11 +3,12 @@
 //  TablePro
 //
 
-import CLibSSH2
 import Foundation
 
+import CLibSSH2
+
 /// Protocol for SSH authentication methods
-protocol SSHAuthenticator: Sendable {
+internal protocol SSHAuthenticator: Sendable {
     /// Authenticate the SSH session
     /// - Parameters:
     ///   - session: libssh2 session pointer

@@ -3,10 +3,11 @@
 //  TablePro
 //
 
-import CLibSSH2
 import Foundation
 
-struct PublicKeyAuthenticator: SSHAuthenticator {
+import CLibSSH2
+
+internal struct PublicKeyAuthenticator: SSHAuthenticator {
     let privateKeyPath: String
     let passphrase: String?
 

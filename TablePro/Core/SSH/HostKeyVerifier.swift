@@ -11,7 +11,7 @@ import Foundation
 import os
 
 /// Handles host key verification with UI prompts
-enum HostKeyVerifier {
+internal enum HostKeyVerifier {
     private static let logger = Logger(subsystem: "com.TablePro", category: "HostKeyVerifier")
 
     /// Verify the host key, prompting the user if needed.

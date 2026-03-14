@@ -6,10 +6,10 @@
 import Foundation
 
 /// TOTP (Time-based One-Time Password) mode for SSH connections
-enum TOTPMode: String, CaseIterable, Identifiable, Codable {
-    case none = "None"
-    case autoGenerate = "Auto Generate"
-    case promptAtConnect = "Prompt at Connect"
+internal enum TOTPMode: String, CaseIterable, Identifiable, Codable {
+    case none = "none"
+    case autoGenerate = "auto_generate"
+    case promptAtConnect = "prompt_at_connect"
 
     var id: String { rawValue }
 
@@ -23,7 +23,7 @@ enum TOTPMode: String, CaseIterable, Identifiable, Codable {
 }
 
 /// TOTP hash algorithm
-enum TOTPAlgorithm: String, CaseIterable, Identifiable, Codable {
+internal enum TOTPAlgorithm: String, CaseIterable, Identifiable, Codable {
     case sha1 = "SHA1"
     case sha256 = "SHA256"
     case sha512 = "SHA512"

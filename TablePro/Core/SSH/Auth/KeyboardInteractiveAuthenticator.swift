@@ -3,19 +3,20 @@
 //  TablePro
 //
 
-import CLibSSH2
 import Foundation
 import os
 
+import CLibSSH2
+
 /// Prompt type classification for keyboard-interactive authentication
-enum KBDINTPromptType {
+internal enum KBDINTPromptType {
     case password
     case totp
     case unknown
 }
 
 /// Context passed through the libssh2 session abstract pointer to the C callback
-final class KeyboardInteractiveContext {
+internal final class KeyboardInteractiveContext {
     var password: String?
     var totpCode: String?
 
@@ -82,7 +83,7 @@ private let kbdintCallback: @convention(c) (
     }
 }
 
-struct KeyboardInteractiveAuthenticator: SSHAuthenticator {
+internal struct KeyboardInteractiveAuthenticator: SSHAuthenticator {
     private static let logger = Logger(
         subsystem: "com.TablePro",
         category: "KeyboardInteractiveAuthenticator"

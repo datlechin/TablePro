@@ -3,8 +3,9 @@
 //  TableProTests
 //
 
-@testable import TablePro
 import XCTest
+
+@testable import TablePro
 
 final class TOTPGeneratorTests: XCTestCase {
     // MARK: - RFC 6238 SHA1 Test Vectors (8 digits)

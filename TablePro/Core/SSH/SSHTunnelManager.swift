@@ -124,6 +124,9 @@ actor SSHTunnelManager {
                 tunnels[connectionId] = tunnel
                 Self.tunnelRegistry.withLock { $0[connectionId] = tunnel }
 
+                tunnel.startForwarding(remoteHost: remoteHost, remotePort: remotePort)
+                tunnel.startKeepAlive()
+
                 Self.logger.info("Tunnel created for \(connectionId) on local port \(localPort)")
                 return localPort
 

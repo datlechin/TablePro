@@ -206,10 +206,7 @@ build_for_arch() {
     build_openssl "$arch"
     build_libssh2 "$arch"
     install_libs "$arch"
-    # Install headers once (they're arch-independent)
-    if [ ! -f "$PROJECT_DIR/TablePro/Core/SSH/CLibSSH2/include/libssh2.h" ]; then
-        install_headers "$arch"
-    fi
+    install_headers "$arch"
 }
 
 verify_deployment_target() {
@@ -225,7 +222,7 @@ verify_deployment_target() {
             min_ver=$(otool -l "$lib" 2>/dev/null | awk '/LC_VERSION_MIN_MACOSX/{found=1} found && /version/{print $2; found=0}' | sort -V | tail -1)
         fi
         if [ -n "$min_ver" ]; then
-            if [ "$(printf '%s\n' "$DEPLOY_TARGET" "$min_ver" | sort -V | head -1)" != "$DEPLOY_TARGET" ]; then
+            if [ "$(printf '%s\n' "$DEPLOY_TARGET" "$min_ver" | sort -V | tail -1)" != "$DEPLOY_TARGET" ]; then
                 echo "   ❌ $name targets macOS $min_ver (expected $DEPLOY_TARGET)"
                 failed=1
             else

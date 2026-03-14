@@ -3,10 +3,11 @@
 //  TablePro
 //
 
-import CLibSSH2
 import Foundation
 
-struct PasswordAuthenticator: SSHAuthenticator {
+import CLibSSH2
+
+internal struct PasswordAuthenticator: SSHAuthenticator {
     let password: String
 
     func authenticate(session: OpaquePointer, username: String) throws {

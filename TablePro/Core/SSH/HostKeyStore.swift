@@ -12,7 +12,7 @@ import Foundation
 import os
 
 /// Manages SSH host key verification for known hosts
-final class HostKeyStore: @unchecked Sendable {
+internal final class HostKeyStore: @unchecked Sendable {
     static let shared = HostKeyStore()
 
     private static let logger = Logger(subsystem: "com.TablePro", category: "HostKeyStore")
@@ -27,11 +27,14 @@ final class HostKeyStore: @unchecked Sendable {
     private let lock = NSLock()
 
     private init() {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        guard let appSupport = FileManager.default.urls(
+            for: .applicationSupportDirectory, in: .userDomainMask
+        ).first else {
+            self.filePath = NSTemporaryDirectory() + "TablePro_known_hosts"
+            return
+        }
         let tableProDir = appSupport.appendingPathComponent("TablePro")
-
         try? FileManager.default.createDirectory(at: tableProDir, withIntermediateDirectories: true)
-
         self.filePath = tableProDir.appendingPathComponent("known_hosts").path
     }
 
@@ -57,7 +60,7 @@ final class HostKeyStore: @unchecked Sendable {
         let currentFingerprint = Self.fingerprint(of: keyData)
         let entries = loadEntries()
 
-        guard let existing = entries.first(where: { $0.host == hostKey }) else {
+        guard let existing = entries.first(where: { $0.host == hostKey && $0.keyType == keyType }) else {
             Self.logger.info("Unknown host key for \(hostKey)")
             return .unknown(fingerprint: currentFingerprint, keyType: keyType)
         }
@@ -85,8 +88,8 @@ final class HostKeyStore: @unchecked Sendable {
         let hostKey = hostIdentifier(hostname, port)
         var entries = loadEntries()
 
-        // Remove existing entry for this host if present
-        entries.removeAll { $0.host == hostKey }
+        // Remove existing entry for this host and key type if present
+        entries.removeAll { $0.host == hostKey && $0.keyType == keyType }
 
         entries.append((host: hostKey, keyType: keyType, keyData: key))
         saveEntries(entries)

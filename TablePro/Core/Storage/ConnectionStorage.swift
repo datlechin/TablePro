@@ -581,8 +581,10 @@ private struct StoredConnection: Codable {
         totpAlgorithm = try container.decodeIfPresent(
             String.self, forKey: .totpAlgorithm
         ) ?? TOTPAlgorithm.sha1.rawValue
-        totpDigits = try container.decodeIfPresent(Int.self, forKey: .totpDigits) ?? 6
-        totpPeriod = try container.decodeIfPresent(Int.self, forKey: .totpPeriod) ?? 30
+        let decodedDigits = try container.decodeIfPresent(Int.self, forKey: .totpDigits) ?? 6
+        totpDigits = max(6, min(8, decodedDigits))
+        let decodedPeriod = try container.decodeIfPresent(Int.self, forKey: .totpPeriod) ?? 30
+        totpPeriod = max(15, min(120, decodedPeriod))
 
         // SSL Configuration (migration: use defaults if missing)
         sslMode = try container.decodeIfPresent(String.self, forKey: .sslMode) ?? SSLMode.disabled.rawValue

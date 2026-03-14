@@ -1181,6 +1181,7 @@ struct ConnectionFormView: View {
 
                 let success = try await DatabaseManager.shared.testConnection(
                     testConn, sshPassword: sshPassword)
+                ConnectionStorage.shared.deleteTOTPSecret(for: testConn.id)
                 await MainActor.run {
                     isTesting = false
                     if success {
@@ -1194,6 +1195,7 @@ struct ConnectionFormView: View {
                     }
                 }
             } catch {
+                ConnectionStorage.shared.deleteTOTPSecret(for: testConn.id)
                 await MainActor.run {
                     isTesting = false
                     if case PluginError.pluginNotInstalled = error {

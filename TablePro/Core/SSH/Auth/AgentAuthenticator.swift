@@ -3,11 +3,12 @@
 //  TablePro
 //
 
-import CLibSSH2
 import Foundation
 import os
 
-struct AgentAuthenticator: SSHAuthenticator {
+import CLibSSH2
+
+internal struct AgentAuthenticator: SSHAuthenticator {
     private static let logger = Logger(subsystem: "com.TablePro", category: "AgentAuthenticator")
 
     /// Protects setenv/unsetenv of SSH_AUTH_SOCK across concurrent tunnel setups

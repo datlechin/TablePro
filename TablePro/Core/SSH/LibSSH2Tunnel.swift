@@ -3,14 +3,15 @@
 //  TablePro
 //
 
-import CLibSSH2
 import Foundation
 import os
+
+import CLibSSH2
 
 /// Represents an active SSH tunnel backed by libssh2.
 /// Each instance owns a TCP socket, libssh2 session, a local listening socket,
 /// and the forwarding/keep-alive tasks.
-final class LibSSH2Tunnel: @unchecked Sendable {
+internal final class LibSSH2Tunnel: @unchecked Sendable {
     let connectionId: UUID
     let localPort: Int
     let createdAt: Date
