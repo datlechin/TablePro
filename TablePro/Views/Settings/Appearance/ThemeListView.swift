@@ -8,8 +8,8 @@ struct ThemeListView: View {
     private var engine: ThemeEngine { ThemeEngine.shared }
 
     @State private var showDeleteConfirmation = false
-    @State private var importError: String?
-    @State private var showImportError = false
+    @State private var errorMessage: String?
+    @State private var showError = false
 
     private var builtInThemes: [ThemeDefinition] {
         engine.availableThemes.filter(\.isBuiltIn)
@@ -129,11 +129,11 @@ struct ThemeListView: View {
             let name = engine.availableThemes.first(where: { $0.id == selectedThemeId })?.name ?? ""
             Text("Are you sure you want to delete \"\(name)\"?")
         }
-        .alert(String(localized: "Import Error"), isPresented: $showImportError) {
+        .alert(String(localized: "Error"), isPresented: $showError) {
             Button(String(localized: "OK")) {}
         } message: {
-            if let importError {
-                Text(importError)
+            if let errorMessage {
+                Text(errorMessage)
             }
         }
     }
@@ -157,8 +157,13 @@ struct ThemeListView: View {
         guard let theme = selectedTheme, theme.isRegistry else { return }
         let meta = ThemeStorage.loadRegistryMeta()
         guard let entry = meta.installed.first(where: { $0.id == theme.id }) else { return }
-        try? engine.uninstallRegistryTheme(registryPluginId: entry.registryPluginId)
-        selectedThemeId = engine.activeTheme.id
+        do {
+            try engine.uninstallRegistryTheme(registryPluginId: entry.registryPluginId)
+            selectedThemeId = engine.activeTheme.id
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
     }
 
     private func exportActiveTheme() {
@@ -181,8 +186,8 @@ struct ThemeListView: View {
             engine.activateTheme(imported)
             selectedThemeId = imported.id
         } catch {
-            importError = error.localizedDescription
-            showImportError = true
+            errorMessage = error.localizedDescription
+            showError = true
         }
     }
 }

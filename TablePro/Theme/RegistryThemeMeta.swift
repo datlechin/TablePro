@@ -1,6 +1,6 @@
 import Foundation
 
-struct RegistryThemeMeta: Codable {
+internal struct RegistryThemeMeta: Codable {
     var installed: [InstalledRegistryTheme]
 
     init(installed: [InstalledRegistryTheme] = []) {
@@ -8,7 +8,7 @@ struct RegistryThemeMeta: Codable {
     }
 }
 
-struct InstalledRegistryTheme: Codable, Identifiable {
+internal struct InstalledRegistryTheme: Codable, Identifiable {
     let id: String
     let registryPluginId: String
     let version: String

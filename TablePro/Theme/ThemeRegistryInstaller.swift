@@ -72,22 +72,23 @@ final class ThemeRegistryInstaller {
 
         progress(0.7)
 
-        // Extract ZIP
+        // Extract ZIP off main thread
         let extractDir = tempDir.appendingPathComponent("extracted", isDirectory: true)
         try FileManager.default.createDirectory(at: extractDir, withIntermediateDirectories: true)
 
         let zipPath = tempDir.appendingPathComponent("theme.zip")
         try FileManager.default.moveItem(at: tempDownloadURL, to: zipPath)
 
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
-        process.arguments = ["-xk", zipPath.path, extractDir.path]
-        try process.run()
-        process.waitUntilExit()
-
-        guard process.terminationStatus == 0 else {
-            throw PluginError.installFailed("Failed to extract theme archive")
-        }
+        try await Task.detached(priority: .userInitiated) {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
+            process.arguments = ["-xk", zipPath.path, extractDir.path]
+            try process.run()
+            process.waitUntilExit()
+            guard process.terminationStatus == 0 else {
+                throw PluginError.installFailed("Failed to extract theme archive")
+            }
+        }.value
 
         // Find all JSON files in extracted directory
         let jsonFiles = try findJsonFiles(in: extractDir)
@@ -97,20 +98,25 @@ final class ThemeRegistryInstaller {
 
         progress(0.9)
 
-        // Validate and install each theme
-        var installedThemes: [InstalledRegistryTheme] = []
+        // Decode all themes first to validate before writing any files
         let decoder = JSONDecoder()
+        var decodedThemes: [ThemeDefinition] = []
 
         for jsonURL in jsonFiles {
             let data = try Data(contentsOf: jsonURL)
             var theme = try decoder.decode(ThemeDefinition.self, from: data)
 
-            // Rewrite ID to registry namespace
-            let originalSuffix = theme.id.contains(".") ?
-                String(theme.id.split(separator: ".").last ?? Substring(theme.id)) :
-                theme.id
-            theme.id = "registry.\(plugin.id).\(originalSuffix)"
+            // Rewrite ID to registry namespace using full original ID (dots replaced with hyphens)
+            let sanitizedId = theme.id.replacingOccurrences(of: ".", with: "-")
+            theme.id = "registry.\(plugin.id).\(sanitizedId)"
 
+            decodedThemes.append(theme)
+        }
+
+        // All decoded successfully — now write atomically
+        var installedThemes: [InstalledRegistryTheme] = []
+
+        for theme in decodedThemes {
             try ThemeStorage.saveRegistryTheme(theme)
 
             installedThemes.append(InstalledRegistryTheme(
@@ -138,12 +144,18 @@ final class ThemeRegistryInstaller {
         var meta = ThemeStorage.loadRegistryMeta()
         let themesToRemove = meta.installed.filter { $0.registryPluginId == registryPluginId }
 
-        for entry in themesToRemove {
-            try ThemeStorage.deleteRegistryTheme(id: entry.id)
-        }
-
+        // Update meta first so state is always consistent even if file cleanup fails
         meta.installed.removeAll { $0.registryPluginId == registryPluginId }
         try ThemeStorage.saveRegistryMeta(meta)
+
+        // Best-effort file cleanup
+        for entry in themesToRemove {
+            do {
+                try ThemeStorage.deleteRegistryTheme(id: entry.id)
+            } catch {
+                Self.logger.warning("Failed to delete registry theme file \(entry.id): \(error)")
+            }
+        }
 
         ThemeEngine.shared.reloadAvailableThemes()
 
