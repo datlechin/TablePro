@@ -93,6 +93,7 @@ internal struct ThemeEditorLayoutSection: View {
         Binding<CGFloat>(
             get: { theme[keyPath: keyPath] },
             set: { newValue in
+                guard theme.isEditable else { return }
                 var updated = theme
                 updated[keyPath: keyPath] = newValue
                 try? engine.saveUserTheme(updated)
@@ -104,6 +105,7 @@ internal struct ThemeEditorLayoutSection: View {
         Binding<Double>(
             get: { theme[keyPath: keyPath] },
             set: { newValue in
+                guard theme.isEditable else { return }
                 var updated = theme
                 updated[keyPath: keyPath] = newValue
                 try? engine.saveUserTheme(updated)

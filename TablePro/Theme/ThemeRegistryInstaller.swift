@@ -57,27 +57,12 @@ internal final class ThemeRegistryInstaller {
     // MARK: - Uninstall
 
     func uninstall(registryPluginId: String) throws {
-        var meta = ThemeStorage.loadRegistryMeta()
-        let themesToRemove = meta.installed.filter { $0.registryPluginId == registryPluginId }
-
-        // Update meta first so state is always consistent even if file cleanup fails
-        meta.installed.removeAll { $0.registryPluginId == registryPluginId }
-        try ThemeStorage.saveRegistryMeta(meta)
-
-        // Best-effort file cleanup
-        for entry in themesToRemove {
-            do {
-                try ThemeStorage.deleteRegistryTheme(id: entry.id)
-            } catch {
-                Self.logger.warning("Failed to delete registry theme file \(entry.id): \(error)")
-            }
-        }
+        let removedThemeIds = try removeRegistryFiles(for: registryPluginId)
 
         ThemeEngine.shared.reloadAvailableThemes()
 
         // Fall back if the active theme was uninstalled
-        let activeId = ThemeEngine.shared.activeTheme.id
-        if themesToRemove.contains(where: { $0.id == activeId }) {
+        if removedThemeIds.contains(ThemeEngine.shared.activeTheme.id) {
             ThemeEngine.shared.activateTheme(id: "tablepro.default-light")
         }
 
@@ -95,9 +80,10 @@ internal final class ThemeRegistryInstaller {
         // Download, verify, and decode new themes first (no side effects yet)
         let stagedThemes = try await downloadAndDecode(plugin, progress: progress)
 
-        // New version is fully staged — now safe to remove old and write new
-        try uninstall(registryPluginId: plugin.id)
+        // Remove old files without triggering theme reload or fallback
+        _ = try removeRegistryFiles(for: plugin.id)
 
+        // Write new themes
         var installedThemes: [InstalledRegistryTheme] = []
         for theme in stagedThemes {
             try ThemeStorage.saveRegistryTheme(theme)
@@ -113,14 +99,36 @@ internal final class ThemeRegistryInstaller {
         meta.installed.append(contentsOf: installedThemes)
         try ThemeStorage.saveRegistryMeta(meta)
 
+        // Single reload after swap is complete — no intermediate flicker
         ThemeEngine.shared.reloadAvailableThemes()
 
-        // Re-activate if the user had a theme from this plugin active
         if ThemeEngine.shared.availableThemes.contains(where: { $0.id == activeId }) {
             ThemeEngine.shared.activateTheme(id: activeId)
         }
 
         Self.logger.info("Updated \(installedThemes.count) theme(s) for registry plugin: \(plugin.id)")
+    }
+
+    /// Removes meta entries and files for a registry plugin. Returns removed theme IDs.
+    /// Does NOT reload ThemeEngine or trigger fallback — callers manage that.
+    @discardableResult
+    private func removeRegistryFiles(for registryPluginId: String) throws -> Set<String> {
+        var meta = ThemeStorage.loadRegistryMeta()
+        let themesToRemove = meta.installed.filter { $0.registryPluginId == registryPluginId }
+        let removedIds = Set(themesToRemove.map(\.id))
+
+        meta.installed.removeAll { $0.registryPluginId == registryPluginId }
+        try ThemeStorage.saveRegistryMeta(meta)
+
+        for entry in themesToRemove {
+            do {
+                try ThemeStorage.deleteRegistryTheme(id: entry.id)
+            } catch {
+                Self.logger.warning("Failed to delete registry theme file \(entry.id): \(error)")
+            }
+        }
+
+        return removedIds
     }
 
     // MARK: - Query

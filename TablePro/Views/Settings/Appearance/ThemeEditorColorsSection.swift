@@ -252,6 +252,7 @@ internal struct ThemeEditorColorsSection: View {
         Binding(
             get: { theme[keyPath: keyPath] },
             set: { newValue in
+                guard theme.isEditable else { return }
                 var updated = theme
                 updated[keyPath: keyPath] = newValue
                 try? engine.saveUserTheme(updated)

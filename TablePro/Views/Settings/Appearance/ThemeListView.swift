@@ -127,7 +127,7 @@ internal struct ThemeListView: View {
             Button(String(localized: "Cancel"), role: .cancel) {}
         } message: {
             let name = engine.availableThemes.first(where: { $0.id == selectedThemeId })?.name ?? ""
-            Text("Are you sure you want to delete \"\(name)\"?")
+            Text(String(localized: "Are you sure you want to delete \"\(name)\"?"))
         }
         .alert(String(localized: "Error"), isPresented: $showError) {
             Button(String(localized: "OK")) {}
