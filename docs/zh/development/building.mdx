@@ -98,33 +98,19 @@ xcodebuild \
 
 ## 原生库
 
-TablePro 使用原生 C 库进行数据库连接。
-
-### 库文件
-
-位于 `Libs/` 目录下：
-
-| 文件 | 用途 |
-|------|---------|
-| `libmariadb_universal.a` | Universal（arm64 + x86_64）MariaDB 库 |
-| `libmariadb.a` | 特定架构的库（构建时创建） |
+TablePro 使用原生 C 库进行数据库连接。这些库托管在专用的 [GitHub Release](https://github.com/datlechin/TablePro/releases/tag/libs-v1) 上，通过 `scripts/download-libs.sh` 下载。
 
 ### 库设置
 
-构建前必须存在 universal 库：
-
 ```bash
-# 检查 universal 库是否存在
-ls -la Libs/libmariadb_universal.a
+# 下载库（如果已存在则跳过）
+scripts/download-libs.sh
 
-# 如果缺失，从特定架构的库创建
-lipo -create \
-    Libs/libmariadb_arm64.a \
-    Libs/libmariadb_x86_64.a \
-    -output Libs/libmariadb_universal.a
+# 强制重新下载
+scripts/download-libs.sh --force
 ```
 
-构建脚本会自动提取正确架构的切片。
+构建脚本（`build-release.sh`）会自动从 universal 库中提取正确架构的切片。
 
 ## 创建 DMG
 

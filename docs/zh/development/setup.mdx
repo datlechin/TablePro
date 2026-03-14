@@ -22,7 +22,7 @@ description: 克隆、构建和本地运行 TablePro，使用 Xcode 15+、SwiftL
 | **SwiftLint** | 代码检查 |
 | **SwiftFormat** | 代码格式化 |
 | **Homebrew** | 包管理器 |
-| **Git LFS** | 从 `Libs/` 拉取预编译的原生库 |
+| **GitHub CLI (`gh`)** | 从 GitHub Releases 下载预编译的原生库 |
 
 ## 开始
 
@@ -32,10 +32,8 @@ description: 克隆、构建和本地运行 TablePro，使用 Xcode 15+、SwiftL
 git clone https://github.com/datlechin/tablepro.git
 cd tablepro
 
-# 拉取原生库（存储在 Git LFS 中）
-brew install git-lfs
-git lfs install
-git lfs pull
+# 从 GitHub Releases 下载预编译的原生库
+scripts/download-libs.sh
 
 # 创建必需的构建配置文件（开发时留空即可）
 touch Secrets.xcconfig
@@ -45,7 +43,7 @@ brew install swiftlint swiftformat
 ```
 
 <Warning>
-跳过 `git lfs pull` 会导致 `Libs/` 目录下只有指针文件而非实际的二进制文件，从而引发链接器错误。
+跳过 `scripts/download-libs.sh` 会导致 `Libs/` 目录下没有二进制文件，从而引发链接器错误。
 </Warning>
 
 ### 步骤 2：在 Xcode 中打开
@@ -313,7 +311,7 @@ logger.error("Failed to connect: \(error.localizedDescription)")
 
 ### 缺少库文件或 Secrets.xcconfig
 
-在仓库根目录运行 `git lfs pull` 和 `touch Secrets.xcconfig`。参见[步骤 1](#步骤-1克隆和初始化)。
+在仓库根目录运行 `scripts/download-libs.sh` 和 `touch Secrets.xcconfig`。参见[步骤 1](#步骤-1克隆和初始化)。
 
 ## 下一步
 

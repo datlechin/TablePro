@@ -98,33 +98,19 @@ xcodebuild \
 
 ## Thư Viện Native
 
-TablePro dùng thư viện C native cho kết nối database.
-
-### Tệp thư viện
-
-Trong `Libs/`:
-
-| File | Mục đích |
-|------|---------|
-| `libmariadb_universal.a` | MariaDB universal (arm64 + x86_64) |
-| `libmariadb.a` | Đặc thù kiến trúc (tạo khi build) |
+TablePro dùng thư viện C native cho kết nối database. Các thư viện được lưu trữ trên [GitHub Release](https://github.com/datlechin/TablePro/releases/tag/libs-v1) riêng và tải về qua `scripts/download-libs.sh`.
 
 ### Thiết lập thư viện
 
-Thư viện universal phải tồn tại trước khi build:
-
 ```bash
-# Kiểm tra
-ls -la Libs/libmariadb_universal.a
+# Tải thư viện (bỏ qua nếu đã có)
+scripts/download-libs.sh
 
-# Nếu thiếu, tạo từ thư viện từng kiến trúc
-lipo -create \
-    Libs/libmariadb_arm64.a \
-    Libs/libmariadb_x86_64.a \
-    -output Libs/libmariadb_universal.a
+# Tải lại
+scripts/download-libs.sh --force
 ```
 
-Build script tự động trích slice kiến trúc đúng.
+Build script (`build-release.sh`) tự động trích slice kiến trúc đúng từ thư viện universal.
 
 ## Tạo DMG
 

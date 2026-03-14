@@ -22,7 +22,7 @@ description: Clone, build và chạy TablePro cục bộ với Xcode 15+, SwiftL
 | **SwiftLint** | Code linting |
 | **SwiftFormat** | Code formatting |
 | **Homebrew** | Quản lý package |
-| **Git LFS** | Pull thư viện native từ `Libs/` |
+| **GitHub CLI (`gh`)** | Tải thư viện native từ GitHub Releases |
 
 ## Bắt đầu
 
@@ -32,10 +32,8 @@ description: Clone, build và chạy TablePro cục bộ với Xcode 15+, SwiftL
 git clone https://github.com/datlechin/tablepro.git
 cd tablepro
 
-# Pull thư viện native (lưu trong Git LFS)
-brew install git-lfs
-git lfs install
-git lfs pull
+# Tải thư viện native từ GitHub Releases
+scripts/download-libs.sh
 
 # Tạo file config bắt buộc (file trống đủ cho phát triển)
 touch Secrets.xcconfig
@@ -45,7 +43,7 @@ brew install swiftlint swiftformat
 ```
 
 <Warning>
-Bỏ qua `git lfs pull` sẽ khiến `Libs/` chứa file con trỏ thay vì binary, gây lỗi linker.
+Bỏ qua `scripts/download-libs.sh` sẽ khiến `Libs/` không có binary, gây lỗi linker.
 </Warning>
 
 ### Bước 2: Mở trong Xcode
@@ -313,7 +311,7 @@ logger.error("Failed to connect: \(error.localizedDescription)")
 
 ### Thiếu thư viện hoặc Secrets.xcconfig
 
-Chạy `git lfs pull` và `touch Secrets.xcconfig` tại thư mục gốc. Xem [Bước 1](#bước-1-clone-và-bootstrap).
+Chạy `scripts/download-libs.sh` và `touch Secrets.xcconfig` tại thư mục gốc. Xem [Bước 1](#bước-1-clone-và-bootstrap).
 
 ## Bước tiếp theo
 

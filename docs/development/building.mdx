@@ -98,33 +98,19 @@ xcodebuild \
 
 ## Native Libraries
 
-TablePro uses native C libraries for database connectivity.
-
-### Library Files
-
-Located in `Libs/`:
-
-| File | Purpose |
-|------|---------|
-| `libmariadb_universal.a` | Universal (arm64 + x86_64) MariaDB library |
-| `libmariadb.a` | Architecture-specific (created during build) |
+TablePro uses native C libraries for database connectivity. These are hosted on a dedicated [GitHub Release](https://github.com/datlechin/TablePro/releases/tag/libs-v1) and downloaded via `scripts/download-libs.sh`.
 
 ### Library Setup
 
-The universal library must exist before building:
-
 ```bash
-# Check if universal library exists
-ls -la Libs/libmariadb_universal.a
+# Download libraries (skips if already present)
+scripts/download-libs.sh
 
-# If missing, create from architecture-specific libraries
-lipo -create \
-    Libs/libmariadb_arm64.a \
-    Libs/libmariadb_x86_64.a \
-    -output Libs/libmariadb_universal.a
+# Force re-download
+scripts/download-libs.sh --force
 ```
 
-The build script extracts the correct architecture slice automatically.
+The build script (`build-release.sh`) extracts the correct architecture slice automatically from the universal libraries.
 
 ## Creating DMG
 

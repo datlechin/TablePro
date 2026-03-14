@@ -9,7 +9,7 @@ TablePro is a native macOS database client (SwiftUI + AppKit) — a fast, lightw
 - **Source**: `TablePro/` — `Core/` (business logic, services), `Views/` (UI), `Models/` (data structures), `ViewModels/`, `Extensions/`, `Theme/`
 - **Plugins**: `Plugins/` — `.tableplugin` bundles + `TableProPluginKit` shared framework. Built-in (bundled in app): MySQL, PostgreSQL, SQLite, CSV, JSON, SQL export. Separately distributed via plugin registry: ClickHouse, MSSQL, MongoDB, Redis, Oracle, DuckDB, XLSX, MQL, SQLImport
 - **C bridges**: Each plugin contains its own C bridge module (e.g., `Plugins/MySQLDriverPlugin/CMariaDB/`, `Plugins/PostgreSQLDriverPlugin/CLibPQ/`)
-- **Static libs**: `Libs/` — pre-built `libmariadb*.a`, `libpq*.a`, etc. (Git LFS tracked)
+- **Static libs**: `Libs/` — pre-built `libmariadb*.a`, `libpq*.a`, etc. Downloaded from GitHub Releases via `scripts/download-libs.sh` (not in git)
 - **SPM deps**: CodeEditSourceEditor (`main` branch, tree-sitter editor), Sparkle (2.8.1, auto-update), OracleNIO. Managed via Xcode, no `Package.swift`.
 
 ## Build & Development Commands
@@ -39,6 +39,25 @@ xcodebuild -project TablePro.xcodeproj -scheme TablePro test -skipPackagePluginV
 
 # DMG
 scripts/create-dmg.sh
+
+# Static libraries (first-time setup or after lib updates)
+scripts/download-libs.sh          # Download from GitHub Releases (skips if already present)
+scripts/download-libs.sh --force  # Re-download and overwrite
+```
+
+### Updating Static Libraries
+
+Static libs (`Libs/*.a`) are hosted on the `libs-v1` GitHub Release (not in git). When adding or updating a library:
+
+```bash
+# 1. Update the .a files in Libs/
+# 2. Regenerate checksums
+shasum -a 256 Libs/*.a > Libs/checksums.sha256
+# 3. Recreate and upload the archive
+tar czf /tmp/tablepro-libs-v1.tar.gz -C Libs .
+gh release upload libs-v1 /tmp/tablepro-libs-v1.tar.gz --clobber --repo datlechin/TablePro
+# 4. Commit the updated checksums
+git add Libs/checksums.sha256 && git commit -m "build: update static library checksums"
 ```
 
 ## Architecture
