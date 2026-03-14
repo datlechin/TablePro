@@ -205,18 +205,18 @@ class DatabaseManager: ObservableObject {
 
 ### Database Driver Plugins
 
-Each driver is a `.tableplugin` bundle under `Plugins/`:
+Each driver is a `.tableplugin` bundle under `Plugins/`. MySQL and PostgreSQL are built into the app bundle; the rest are distributed via the plugin registry and downloaded on demand.
 
-| Plugin | Database Types | C Bridge |
-|--------|---------------|----------|
-| MySQLDriverPlugin | MySQL, MariaDB | CMariaDB (libmariadb) |
-| PostgreSQLDriverPlugin | PostgreSQL, Redshift | CLibPQ (libpq) |
-| SQLiteDriverPlugin | SQLite | Foundation sqlite3 |
-| ClickHouseDriverPlugin | ClickHouse | URLSession HTTP |
-| MSSQLDriverPlugin | SQL Server | CFreeTDS |
-| MongoDBDriverPlugin | MongoDB | CLibMongoc |
-| RedisDriverPlugin | Redis | CRedis |
-| OracleDriverPlugin | Oracle | OracleNIO (SPM) |
+| Plugin | Database Types | C Bridge | Distribution |
+|--------|---------------|----------|--------------|
+| MySQLDriverPlugin | MySQL, MariaDB | CMariaDB (libmariadb) | Built-in |
+| PostgreSQLDriverPlugin | PostgreSQL, Redshift | CLibPQ (libpq) | Built-in |
+| SQLiteDriverPlugin | SQLite | Foundation sqlite3 | Registry |
+| ClickHouseDriverPlugin | ClickHouse | URLSession HTTP | Registry |
+| MSSQLDriverPlugin | SQL Server | CFreeTDS | Registry |
+| MongoDBDriverPlugin | MongoDB | CLibMongoc | Registry |
+| RedisDriverPlugin | Redis | CRedis | Registry |
+| OracleDriverPlugin | Oracle | OracleNIO (SPM) | Registry |
 
 ### Autocomplete Engine
 

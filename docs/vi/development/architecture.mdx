@@ -205,18 +205,18 @@ class DatabaseManager: ObservableObject {
 
 ### Database Driver Plugins
 
-Mỗi driver là một bundle `.tableplugin` trong `Plugins/`:
+Mỗi driver là một bundle `.tableplugin` trong `Plugins/`. MySQL và PostgreSQL được tích hợp sẵn trong app bundle; các driver còn lại được phân phối qua plugin registry và tải xuống khi cần.
 
-| Plugin | Database Types | C Bridge |
-|--------|---------------|----------|
-| MySQLDriverPlugin | MySQL, MariaDB | CMariaDB (libmariadb) |
-| PostgreSQLDriverPlugin | PostgreSQL, Redshift | CLibPQ (libpq) |
-| SQLiteDriverPlugin | SQLite | Foundation sqlite3 |
-| ClickHouseDriverPlugin | ClickHouse | URLSession HTTP |
-| MSSQLDriverPlugin | SQL Server | CFreeTDS |
-| MongoDBDriverPlugin | MongoDB | CLibMongoc |
-| RedisDriverPlugin | Redis | CRedis |
-| OracleDriverPlugin | Oracle | OracleNIO (SPM) |
+| Plugin | Database Types | C Bridge | Phân phối |
+|--------|---------------|----------|-----------|
+| MySQLDriverPlugin | MySQL, MariaDB | CMariaDB (libmariadb) | Tích hợp sẵn |
+| PostgreSQLDriverPlugin | PostgreSQL, Redshift | CLibPQ (libpq) | Tích hợp sẵn |
+| SQLiteDriverPlugin | SQLite | Foundation sqlite3 | Registry |
+| ClickHouseDriverPlugin | ClickHouse | URLSession HTTP | Registry |
+| MSSQLDriverPlugin | SQL Server | CFreeTDS | Registry |
+| MongoDBDriverPlugin | MongoDB | CLibMongoc | Registry |
+| RedisDriverPlugin | Redis | CRedis | Registry |
+| OracleDriverPlugin | Oracle | OracleNIO (SPM) | Registry |
 
 ### Autocomplete Engine
 

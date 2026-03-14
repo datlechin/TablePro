@@ -78,6 +78,36 @@ jobs:
                 DISPLAY_NAME="Cassandra Driver"; SUMMARY="Apache Cassandra and ScyllaDB driver via DataStax C driver"
                 DB_TYPE_IDS='["Cassandra", "ScyllaDB"]'; ICON="cassandra-icon"; BUNDLE_NAME="CassandraDriver"
                 HOMEPAGE="https://docs.tablepro.app/databases/cassandra" ;;
+              mssql)
+                TARGET="MSSQLDriver"; BUNDLE_ID="com.TablePro.MSSQLDriver"
+                DISPLAY_NAME="MSSQL Driver"; SUMMARY="Microsoft SQL Server driver via FreeTDS"
+                DB_TYPE_IDS='["SQL Server"]'; ICON="mssql-icon"; BUNDLE_NAME="MSSQLDriver"
+                HOMEPAGE="https://docs.tablepro.app/databases/mssql" ;;
+              mongodb)
+                TARGET="MongoDBDriver"; BUNDLE_ID="com.TablePro.MongoDBDriver"
+                DISPLAY_NAME="MongoDB Driver"; SUMMARY="MongoDB document database driver via libmongoc"
+                DB_TYPE_IDS='["MongoDB"]'; ICON="mongodb-icon"; BUNDLE_NAME="MongoDBDriver"
+                HOMEPAGE="https://docs.tablepro.app/databases/mongodb" ;;
+              redis)
+                TARGET="RedisDriver"; BUNDLE_ID="com.TablePro.RedisDriver"
+                DISPLAY_NAME="Redis Driver"; SUMMARY="Redis in-memory data store driver via hiredis"
+                DB_TYPE_IDS='["Redis"]'; ICON="redis-icon"; BUNDLE_NAME="RedisDriver"
+                HOMEPAGE="https://docs.tablepro.app/databases/redis" ;;
+              xlsx)
+                TARGET="XLSXExport"; BUNDLE_ID="com.TablePro.XLSXExportPlugin"
+                DISPLAY_NAME="XLSX Export"; SUMMARY="Export data to Microsoft Excel XLSX format"
+                DB_TYPE_IDS='null'; ICON="doc.richtext"; BUNDLE_NAME="XLSXExport"
+                HOMEPAGE="https://docs.tablepro.app/features/export" ;;
+              mql)
+                TARGET="MQLExport"; BUNDLE_ID="com.TablePro.MQLExportPlugin"
+                DISPLAY_NAME="MQL Export"; SUMMARY="Export MongoDB data as MQL statements"
+                DB_TYPE_IDS='null'; ICON="doc.text"; BUNDLE_NAME="MQLExport"
+                HOMEPAGE="https://docs.tablepro.app/features/export" ;;
+              sqlimport)
+                TARGET="SQLImport"; BUNDLE_ID="com.TablePro.SQLImportPlugin"
+                DISPLAY_NAME="SQL Import"; SUMMARY="Import data from SQL dump files"
+                DB_TYPE_IDS='null'; ICON="square.and.arrow.down"; BUNDLE_NAME="SQLImport"
+                HOMEPAGE="https://docs.tablepro.app/features/import" ;;
               *) echo "Unknown plugin: $plugin_name"; return 1 ;;
             esac
           }

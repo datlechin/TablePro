@@ -28,7 +28,7 @@ Open settings via **TablePro** > **Settings** or `Cmd+,`.
     Language, startup behavior, software updates, and basic preferences
   </Card>
   <Card title="Appearance" icon="palette" href="/customization/appearance">
-    Theme, colors, and visual options
+    Theme engine with 9 presets, custom themes, colors, and fonts
   </Card>
   <Card title="Editor" icon="code" href="/customization/editor-settings">
     SQL editor font, size, and behavior
@@ -374,18 +374,18 @@ Manage database driver plugins from the **Plugins** tab in Settings.
 
 The **Installed** tab shows plugins in a split-view: list on the left, details on the right. Each row shows the plugin's version, capability, and whether it's built-in or user-installed. Filter by name using the search field above the list.
 
-TablePro ships with 8 built-in database driver plugins:
+TablePro ships with 2 built-in database driver plugins (MySQL, PostgreSQL) and 3 built-in export plugins (CSV, JSON, SQL). Additional plugins are available from the plugin registry and can be installed from the Browse tab or downloaded automatically when you select a database type:
 
-| Plugin | Database Types | Default Port |
-|--------|---------------|--------------|
-| MySQL | MySQL, MariaDB | 3306 |
-| PostgreSQL | PostgreSQL, Redshift | 5432 |
-| SQLite | SQLite | -- |
-| ClickHouse | ClickHouse | 8123 |
-| SQL Server | SQL Server | 1433 |
-| MongoDB | MongoDB | 27017 |
-| Redis | Redis | 6379 |
-| Oracle | Oracle | 1521 |
+| Plugin | Database Types | Default Port | Distribution |
+|--------|---------------|--------------|--------------|
+| MySQL | MySQL, MariaDB | 3306 | Built-in |
+| PostgreSQL | PostgreSQL, Redshift | 5432 | Built-in |
+| SQLite | SQLite | -- | Registry |
+| ClickHouse | ClickHouse | 8123 | Registry |
+| SQL Server | SQL Server | 1433 | Registry |
+| MongoDB | MongoDB | 27017 | Registry |
+| Redis | Redis | 6379 | Registry |
+| Oracle | Oracle | 1521 | Registry |
 
 Select a plugin to enable or disable it using the toggle in the detail pane. Disabled plugins hide their database type from the connection dialog and prevent connections to that database type.
 
@@ -519,7 +519,9 @@ See [Editor Settings](/customization/editor-settings) for details.
 
 | Setting | Location | Description |
 |---------|----------|-------------|
-| Theme | Appearance | Light/Dark/System |
+| Theme | Appearance | 9 built-in presets + custom themes |
+| Theme colors | Appearance | Editor syntax, data grid, UI, sidebar, toolbar colors |
+| Theme fonts | Appearance | Editor and data grid font family/size (moved from Editor/Data Grid tabs) |
 | Accent color | Appearance | UI accent color |
 | Row height | Data Grid | Grid row height |
 | Date format | Data Grid | Date display format |

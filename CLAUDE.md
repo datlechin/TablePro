@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 TablePro is a native macOS database client (SwiftUI + AppKit) — a fast, lightweight alternative to TablePlus. macOS 14.0+, Swift 5.9, Universal Binary (arm64 + x86_64).
 
 - **Source**: `TablePro/` — `Core/` (business logic, services), `Views/` (UI), `Models/` (data structures), `ViewModels/`, `Extensions/`, `Theme/`
-- **Plugins**: `Plugins/` — 8 `.tableplugin` bundles (MySQL, PostgreSQL, SQLite, ClickHouse, MSSQL, MongoDB, Redis, Oracle) + `TableProPluginKit` shared framework
+- **Plugins**: `Plugins/` — `.tableplugin` bundles + `TableProPluginKit` shared framework. Built-in (bundled in app): MySQL, PostgreSQL, CSV, JSON, SQL export. Separately distributed via plugin registry: SQLite, ClickHouse, MSSQL, MongoDB, Redis, Oracle, DuckDB, XLSX, MQL, SQLImport
 - **C bridges**: Each plugin contains its own C bridge module (e.g., `Plugins/MySQLDriverPlugin/CMariaDB/`, `Plugins/PostgreSQLDriverPlugin/CLibPQ/`)
 - **Static libs**: `Libs/` — pre-built `libmariadb*.a`, `libpq*.a`, etc. (Git LFS tracked)
 - **SPM deps**: CodeEditSourceEditor (`main` branch, tree-sitter editor), Sparkle (2.8.1, auto-update), OracleNIO. Managed via Xcode, no `Package.swift`.
@@ -55,16 +55,16 @@ All database drivers are `.tableplugin` bundles loaded at runtime by `PluginMana
 
 Plugin bundles under `Plugins/`:
 
-| Plugin                 | Database Types       | C Bridge             |
-| ---------------------- | -------------------- | -------------------- |
-| MySQLDriverPlugin      | MySQL, MariaDB       | CMariaDB             |
-| PostgreSQLDriverPlugin | PostgreSQL, Redshift | CLibPQ               |
-| SQLiteDriverPlugin     | SQLite               | (Foundation sqlite3) |
-| ClickHouseDriverPlugin | ClickHouse           | (URLSession HTTP)    |
-| MSSQLDriverPlugin      | SQL Server           | CFreeTDS             |
-| MongoDBDriverPlugin    | MongoDB              | CLibMongoc           |
-| RedisDriverPlugin      | Redis                | CRedis               |
-| OracleDriverPlugin     | Oracle               | OracleNIO (SPM)      |
+| Plugin                 | Database Types       | C Bridge             | Distribution |
+| ---------------------- | -------------------- | -------------------- | ------------ |
+| MySQLDriverPlugin      | MySQL, MariaDB       | CMariaDB             | Built-in     |
+| PostgreSQLDriverPlugin | PostgreSQL, Redshift | CLibPQ               | Built-in     |
+| SQLiteDriverPlugin     | SQLite               | (Foundation sqlite3) | Registry     |
+| ClickHouseDriverPlugin | ClickHouse           | (URLSession HTTP)    | Registry     |
+| MSSQLDriverPlugin      | SQL Server           | CFreeTDS             | Registry     |
+| MongoDBDriverPlugin    | MongoDB              | CLibMongoc           | Registry     |
+| RedisDriverPlugin      | Redis                | CRedis               | Registry     |
+| OracleDriverPlugin     | Oracle               | OracleNIO (SPM)      | Registry     |
 
 When adding a new driver: create a new plugin bundle under `Plugins/`, implement `DriverPlugin` + `PluginDatabaseDriver`, add target to pbxproj. See `docs/development/plugin-system/` for details.
 
