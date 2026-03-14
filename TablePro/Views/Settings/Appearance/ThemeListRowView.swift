@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct ThemeListRowView: View {
+internal struct ThemeListRowView: View {
     let theme: ThemeDefinition
 
     var body: some View {

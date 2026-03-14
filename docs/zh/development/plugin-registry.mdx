@@ -106,6 +106,23 @@ description: 如何将可下载插件发布到 TablePro 插件注册表
 
 ZIP 包含一个或多个 `.json` 文件，每个文件是一个有效的 `ThemeDefinition`。安装时，TablePro 解压 JSON 文件，将 ID 重写为 `registry.{pluginId}.{originalSuffix}`，并存储到 `~/Library/Application Support/TablePro/Themes/Registry/`。
 
+示例主题注册表条目：
+
+```json
+{
+  "id": "com.example.monokai-theme",
+  "name": "Monokai Theme",
+  "version": "1.0.0",
+  "summary": "Classic Monokai color scheme for TablePro",
+  "author": { "name": "Theme Author" },
+  "category": "theme",
+  "downloadURL": "https://example.com/monokai-theme.zip",
+  "sha256": "<sha256-of-zip>",
+  "iconName": "paintpalette",
+  "isVerified": false
+}
+```
+
 支持主题包（一个 ZIP 中包含多个主题）。同一包中的所有主题关联相同的 registry plugin ID，卸载时会一并移除。
 
 ## 自定义 Registry URL

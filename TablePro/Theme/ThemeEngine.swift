@@ -16,14 +16,14 @@ import SwiftUI
 // MARK: - Font Caches
 
 /// Tags stored on NSTextField.tag to identify which font variant a cell uses.
-enum DataGridFontVariant {
+internal enum DataGridFontVariant {
     static let regular = 0
     static let italic = 1
     static let medium = 2
     static let rowNumber = 3
 }
 
-struct EditorFontCache {
+internal struct EditorFontCache {
     let font: NSFont
     let lineNumberFont: NSFont
     let scaleFactor: CGFloat
@@ -45,7 +45,7 @@ struct EditorFontCache {
     }
 }
 
-struct DataGridFontCacheResolved {
+internal struct DataGridFontCacheResolved {
     let regular: NSFont
     let italic: NSFont
     let medium: NSFont
@@ -70,7 +70,7 @@ struct DataGridFontCacheResolved {
 
 @Observable
 @MainActor
-final class ThemeEngine {
+internal final class ThemeEngine {
     static let shared = ThemeEngine()
 
     // MARK: - Active Theme

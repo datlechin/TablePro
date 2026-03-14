@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ThemeEditorView: View {
+internal struct ThemeEditorView: View {
     @Binding var selectedThemeId: String
 
     private var engine: ThemeEngine { ThemeEngine.shared }
@@ -16,10 +16,21 @@ struct ThemeEditorView: View {
 
     @State private var activeTab: EditorTab = .fonts
 
+    @State private var errorMessage: String?
+    @State private var showError = false
+
     private enum EditorTab: String, CaseIterable {
         case fonts = "Fonts"
         case colors = "Colors"
         case layout = "Layout"
+
+        var localizedName: String {
+            switch self {
+            case .fonts: return String(localized: "Fonts")
+            case .colors: return String(localized: "Colors")
+            case .layout: return String(localized: "Layout")
+            }
+        }
     }
 
     var body: some View {
@@ -33,7 +44,7 @@ struct ThemeEditorView: View {
 
             Picker("", selection: $activeTab) {
                 ForEach(EditorTab.allCases, id: \.self) { tab in
-                    Text(tab.rawValue).tag(tab)
+                    Text(tab.localizedName).tag(tab)
                 }
             }
             .pickerStyle(.segmented)
@@ -43,6 +54,13 @@ struct ThemeEditorView: View {
             Divider()
 
             tabContent
+        }
+        .alert(String(localized: "Error"), isPresented: $showError) {
+            Button(String(localized: "OK")) {}
+        } message: {
+            if let errorMessage {
+                Text(errorMessage)
+            }
         }
     }
 
@@ -98,8 +116,13 @@ struct ThemeEditorView: View {
 
     private func duplicateAndSelect() {
         let copy = engine.duplicateTheme(theme, newName: theme.name + " (Copy)")
-        try? engine.saveUserTheme(copy)
-        engine.activateTheme(copy)
-        selectedThemeId = copy.id
+        do {
+            try engine.saveUserTheme(copy)
+            engine.activateTheme(copy)
+            selectedThemeId = copy.id
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
     }
 }

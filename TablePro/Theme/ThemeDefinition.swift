@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct ThemeDefinition: Codable, Identifiable, Equatable, Sendable {
+internal struct ThemeDefinition: Codable, Identifiable, Equatable, Sendable {
     var id: String
     var name: String
     var version: Int
@@ -105,13 +105,13 @@ struct ThemeDefinition: Codable, Identifiable, Equatable, Sendable {
     }
 }
 
-enum ThemeAppearance: String, Codable, Sendable {
+internal enum ThemeAppearance: String, Codable, Sendable {
     case light, dark, auto
 }
 
 // MARK: - Syntax Colors
 
-struct SyntaxColors: Codable, Equatable, Sendable {
+internal struct SyntaxColors: Codable, Equatable, Sendable {
     var keyword: String
     var string: String
     var number: String
@@ -169,7 +169,7 @@ struct SyntaxColors: Codable, Equatable, Sendable {
 
 // MARK: - Editor Theme Colors
 
-struct EditorThemeColors: Codable, Equatable, Sendable {
+internal struct EditorThemeColors: Codable, Equatable, Sendable {
     var background: String
     var text: String
     var cursor: String
@@ -228,7 +228,7 @@ struct EditorThemeColors: Codable, Equatable, Sendable {
 
 // MARK: - Data Grid Theme Colors
 
-struct DataGridThemeColors: Codable, Equatable, Sendable {
+internal struct DataGridThemeColors: Codable, Equatable, Sendable {
     var background: String
     var text: String
     var alternateRow: String
@@ -306,7 +306,7 @@ struct DataGridThemeColors: Codable, Equatable, Sendable {
 
 // MARK: - Status Colors
 
-struct StatusColors: Codable, Equatable, Sendable {
+internal struct StatusColors: Codable, Equatable, Sendable {
     var success: String
     var warning: String
     var error: String
@@ -339,7 +339,7 @@ struct StatusColors: Codable, Equatable, Sendable {
 
 // MARK: - Badge Colors
 
-struct BadgeColors: Codable, Equatable, Sendable {
+internal struct BadgeColors: Codable, Equatable, Sendable {
     var background: String
     var primaryKey: String
     var autoIncrement: String
@@ -368,7 +368,7 @@ struct BadgeColors: Codable, Equatable, Sendable {
 
 // MARK: - UI Theme Colors
 
-struct UIThemeColors: Codable, Equatable, Sendable {
+internal struct UIThemeColors: Codable, Equatable, Sendable {
     var windowBackground: String
     var controlBackground: String
     var cardBackground: String
@@ -450,7 +450,7 @@ struct UIThemeColors: Codable, Equatable, Sendable {
 
 // MARK: - Sidebar Theme Colors
 
-struct SidebarThemeColors: Codable, Equatable, Sendable {
+internal struct SidebarThemeColors: Codable, Equatable, Sendable {
     var background: String
     var text: String
     var selectedItem: String
@@ -487,7 +487,7 @@ struct SidebarThemeColors: Codable, Equatable, Sendable {
 
 // MARK: - Toolbar Theme Colors
 
-struct ToolbarThemeColors: Codable, Equatable, Sendable {
+internal struct ToolbarThemeColors: Codable, Equatable, Sendable {
     var secondaryText: String
     var tertiaryText: String
 
@@ -512,7 +512,7 @@ struct ToolbarThemeColors: Codable, Equatable, Sendable {
 
 // MARK: - Theme Fonts
 
-struct ThemeFonts: Codable, Equatable, Sendable {
+internal struct ThemeFonts: Codable, Equatable, Sendable {
     var editorFontFamily: String
     var editorFontSize: Int
     var dataGridFontFamily: String
@@ -548,7 +548,7 @@ struct ThemeFonts: Codable, Equatable, Sendable {
 
 // MARK: - Theme Spacing
 
-struct ThemeSpacing: Codable, Equatable, Sendable {
+internal struct ThemeSpacing: Codable, Equatable, Sendable {
     var xxxs: CGFloat
     var xxs: CGFloat
     var xs: CGFloat
@@ -585,7 +585,7 @@ struct ThemeSpacing: Codable, Equatable, Sendable {
     }
 }
 
-struct ThemeEdgeInsets: Codable, Equatable, Sendable {
+internal struct ThemeEdgeInsets: Codable, Equatable, Sendable {
     var top: CGFloat
     var leading: CGFloat
     var bottom: CGFloat
@@ -599,7 +599,7 @@ struct ThemeEdgeInsets: Codable, Equatable, Sendable {
 
 // MARK: - Theme Typography
 
-struct ThemeTypography: Codable, Equatable, Sendable {
+internal struct ThemeTypography: Codable, Equatable, Sendable {
     var tiny: CGFloat
     var caption: CGFloat
     var small: CGFloat
@@ -635,7 +635,7 @@ struct ThemeTypography: Codable, Equatable, Sendable {
 
 // MARK: - Theme Icon Sizes
 
-struct ThemeIconSizes: Codable, Equatable, Sendable {
+internal struct ThemeIconSizes: Codable, Equatable, Sendable {
     var tinyDot: CGFloat
     var statusDot: CGFloat
     var small: CGFloat
@@ -677,7 +677,7 @@ struct ThemeIconSizes: Codable, Equatable, Sendable {
 
 // MARK: - Theme Corner Radius
 
-struct ThemeCornerRadius: Codable, Equatable, Sendable {
+internal struct ThemeCornerRadius: Codable, Equatable, Sendable {
     var small: CGFloat
     var medium: CGFloat
     var large: CGFloat
@@ -699,7 +699,7 @@ struct ThemeCornerRadius: Codable, Equatable, Sendable {
 
 // MARK: - Theme Row Heights
 
-struct ThemeRowHeights: Codable, Equatable, Sendable {
+internal struct ThemeRowHeights: Codable, Equatable, Sendable {
     var compact: CGFloat
     var table: CGFloat
     var comfortable: CGFloat
@@ -721,7 +721,7 @@ struct ThemeRowHeights: Codable, Equatable, Sendable {
 
 // MARK: - Theme Animations
 
-struct ThemeAnimations: Codable, Equatable, Sendable {
+internal struct ThemeAnimations: Codable, Equatable, Sendable {
     var fast: Double
     var normal: Double
     var smooth: Double

@@ -9,7 +9,7 @@
 import Foundation
 import os
 
-struct ThemeStorage {
+internal struct ThemeStorage {
     private static let logger = Logger(subsystem: "com.TablePro", category: "ThemeStorage")
 
     private static let userThemesDirectory: URL = {
@@ -26,6 +26,14 @@ struct ThemeStorage {
     private static let registryThemesDirectory: URL = {
         userThemesDirectory.appendingPathComponent("Registry", isDirectory: true)
     }()
+
+    private static func themeFileURL(in directory: URL, id: String) throws -> URL {
+        let allowed = #"^[A-Za-z0-9._-]+$"#
+        guard id.range(of: allowed, options: .regularExpression) != nil else {
+            throw CocoaError(.fileWriteInvalidFileName)
+        }
+        return directory.appendingPathComponent("\(id).json", isDirectory: false)
+    }
 
     // MARK: - Load All Themes
 
@@ -56,24 +64,20 @@ struct ThemeStorage {
     // MARK: - Load Single Theme
 
     static func loadTheme(id: String) -> ThemeDefinition? {
-        // Try user directory first (user overrides)
-        let userFile = userThemesDirectory.appendingPathComponent("\(id).json")
+        guard let userFile = try? themeFileURL(in: userThemesDirectory, id: id) else { return nil }
         if let theme = loadTheme(from: userFile) {
             return theme
         }
 
-        // Try registry directory
-        let registryFile = registryThemesDirectory.appendingPathComponent("\(id).json")
-        if let theme = loadTheme(from: registryFile) {
+        if let registryFile = try? themeFileURL(in: registryThemesDirectory, id: id),
+           let theme = loadTheme(from: registryFile) {
             return theme
         }
 
-        // Try bundle
-        if let bundleDir = bundledThemesDirectory {
-            let bundleFile = bundleDir.appendingPathComponent("\(id).json")
-            if let theme = loadTheme(from: bundleFile) {
-                return theme
-            }
+        if let bundleDir = bundledThemesDirectory,
+           let bundleFile = try? themeFileURL(in: bundleDir, id: id),
+           let theme = loadTheme(from: bundleFile) {
+            return theme
         }
 
         // Fallback to compiled presets
@@ -84,7 +88,7 @@ struct ThemeStorage {
 
     static func saveUserTheme(_ theme: ThemeDefinition) throws {
         ensureUserDirectory()
-        let url = userThemesDirectory.appendingPathComponent("\(theme.id).json")
+        let url = try themeFileURL(in: userThemesDirectory, id: theme.id)
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         let data = try encoder.encode(theme)
@@ -95,7 +99,7 @@ struct ThemeStorage {
     // MARK: - Delete User Theme
 
     static func deleteUserTheme(id: String) throws {
-        let url = userThemesDirectory.appendingPathComponent("\(id).json")
+        let url = try themeFileURL(in: userThemesDirectory, id: id)
         guard FileManager.default.fileExists(atPath: url.path) else { return }
         try FileManager.default.removeItem(at: url)
         logger.info("Deleted user theme: \(id)")
@@ -105,7 +109,7 @@ struct ThemeStorage {
 
     static func saveRegistryTheme(_ theme: ThemeDefinition) throws {
         ensureRegistryDirectory()
-        let url = registryThemesDirectory.appendingPathComponent("\(theme.id).json")
+        let url = try themeFileURL(in: registryThemesDirectory, id: theme.id)
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         let data = try encoder.encode(theme)
@@ -116,7 +120,7 @@ struct ThemeStorage {
     // MARK: - Delete Registry Theme
 
     static func deleteRegistryTheme(id: String) throws {
-        let url = registryThemesDirectory.appendingPathComponent("\(id).json")
+        let url = try themeFileURL(in: registryThemesDirectory, id: id)
         guard FileManager.default.fileExists(atPath: url.path) else { return }
         try FileManager.default.removeItem(at: url)
         logger.info("Deleted registry theme: \(id)")
@@ -217,7 +221,7 @@ struct ThemeStorage {
 
         do {
             let files = try fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
-                .filter { $0.pathExtension == "json" }
+                .filter { $0.pathExtension == "json" && $0.lastPathComponent != "registry-meta.json" }
 
             return files.compactMap { loadTheme(from: $0) }
         } catch {

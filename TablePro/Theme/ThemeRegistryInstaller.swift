@@ -12,7 +12,7 @@ import os
 
 @MainActor
 @Observable
-final class ThemeRegistryInstaller {
+internal final class ThemeRegistryInstaller {
     static let shared = ThemeRegistryInstaller()
 
     @ObservationIgnored private static let logger = Logger(subsystem: "com.TablePro", category: "ThemeRegistryInstaller")
@@ -206,7 +206,7 @@ final class ThemeRegistryInstaller {
         return manifest.plugins.filter { plugin in
             guard plugin.category == .theme,
                   let installed = installedVersions[plugin.id] else { return false }
-            return plugin.version != installed
+            return plugin.version.compare(installed, options: .numeric) == .orderedDescending
         }
     }
 

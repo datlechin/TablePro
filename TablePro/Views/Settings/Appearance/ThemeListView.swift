@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
-struct ThemeListView: View {
+internal struct ThemeListView: View {
     @Binding var selectedThemeId: String
 
     private var engine: ThemeEngine { ThemeEngine.shared }
@@ -143,14 +143,24 @@ struct ThemeListView: View {
     private func duplicateActiveTheme() {
         let theme = engine.activeTheme
         let copy = engine.duplicateTheme(theme, newName: theme.name + " (Copy)")
-        try? engine.saveUserTheme(copy)
-        engine.activateTheme(copy)
-        selectedThemeId = copy.id
+        do {
+            try engine.saveUserTheme(copy)
+            engine.activateTheme(copy)
+            selectedThemeId = copy.id
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
     }
 
     private func deleteSelectedTheme() {
-        try? engine.deleteUserTheme(id: selectedThemeId)
-        selectedThemeId = engine.activeTheme.id
+        do {
+            try engine.deleteUserTheme(id: selectedThemeId)
+            selectedThemeId = engine.activeTheme.id
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
     }
 
     private func uninstallRegistryTheme() {

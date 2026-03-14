@@ -7,10 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- Theme registry distribution: browse, install, uninstall, and update community themes from the plugin registry (Settings > Plugins > Browse, filtered by Themes category)
-
 ### Changed
 
 - Replaced fragmented Theme/DesignConstants/SQLEditorTheme/ToolbarDesignTokens with unified ThemeEngine
@@ -35,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Theme registry distribution: browse, install, uninstall, and update community themes from the plugin registry (Settings > Plugins > Browse, filtered by Themes category)
 - Full theme engine with 9 built-in presets (Default Light/Dark, Dracula, Solarized Light/Dark, One Dark, GitHub Light/Dark, Nord) and custom theme support
 - Theme browser with visual preview cards in Settings > Appearance
 - Per-theme customization of all colors (editor syntax, data grid, UI, sidebar, toolbar) and fonts

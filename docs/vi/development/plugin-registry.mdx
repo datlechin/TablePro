@@ -106,6 +106,23 @@ Theme sử dụng cùng manifest registry nhưng với `category: "theme"`. Khá
 
 ZIP chứa một hoặc nhiều file `.json`, mỗi file là một `ThemeDefinition` hợp lệ. Khi cài đặt, TablePro giải nén các JSON, gán lại ID thành `registry.{pluginId}.{originalSuffix}`, và lưu vào `~/Library/Application Support/TablePro/Themes/Registry/`.
 
+Ví dụ registry entry cho theme:
+
+```json
+{
+  "id": "com.example.monokai-theme",
+  "name": "Monokai Theme",
+  "version": "1.0.0",
+  "summary": "Classic Monokai color scheme for TablePro",
+  "author": { "name": "Theme Author" },
+  "category": "theme",
+  "downloadURL": "https://example.com/monokai-theme.zip",
+  "sha256": "<sha256-of-zip>",
+  "iconName": "paintpalette",
+  "isVerified": false
+}
+```
+
 Theme pack (nhiều theme trong một ZIP) được hỗ trợ. Tất cả theme trong pack liên kết cùng một registry plugin ID, nên gỡ cài đặt sẽ xóa tất cả.
 
 ## URL Registry Tùy Chỉnh
