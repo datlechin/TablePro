@@ -310,7 +310,12 @@ build_for_arch() {
     echo "🔨 Building for $arch..."
 
     # Fetch build settings once for this arch (used by build_for_arch and bundle_dylibs)
-    build_settings=$(xcodebuild -project "$PROJECT" -scheme "$SCHEME" -configuration "$CONFIG" -arch "$arch" -skipPackagePluginValidation -showBuildSettings 2>&1)
+    echo "Fetching build settings..."
+    if ! build_settings=$(xcodebuild -project "$PROJECT" -scheme "$SCHEME" -configuration "$CONFIG" -arch "$arch" -skipPackagePluginValidation -showBuildSettings 2>&1); then
+        echo "❌ FATAL: xcodebuild -showBuildSettings failed"
+        echo "$build_settings"
+        exit 1
+    fi
 
     # Prepare architecture-specific libraries
     prepare_mariadb "$arch"
