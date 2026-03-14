@@ -47,7 +47,7 @@ internal struct ThemeStorage {
 
         // If no bundled themes loaded, use compiled presets as fallback
         if themes.isEmpty {
-            themes = ThemePresets.allBuiltIn
+            themes = [ThemeDefinition.default]
         }
 
         // Load registry themes
@@ -81,7 +81,7 @@ internal struct ThemeStorage {
         }
 
         // Fallback to compiled presets
-        return ThemePresets.allBuiltIn.first { $0.id == id }
+        return id == ThemeDefinition.default.id ? .default : nil
     }
 
     // MARK: - Save User Theme

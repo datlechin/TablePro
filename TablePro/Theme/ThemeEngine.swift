@@ -110,7 +110,7 @@ internal final class ThemeEngine {
     private init() {
         let allThemes = ThemeStorage.loadAllThemes()
         let activeId = ThemeStorage.loadActiveThemeId()
-        let theme = allThemes.first { $0.id == activeId } ?? ThemePresets.defaultLight
+        let theme = allThemes.first { $0.id == activeId } ?? .default
 
         self.activeTheme = theme
         self.colors = ResolvedThemeColors(from: theme)
