@@ -718,13 +718,9 @@ internal final class CassandraPluginDriver: PluginDatabaseDriver, @unchecked Sen
     }
 
     func disconnect() {
-        let actor = connectionActor
-        let semaphore = DispatchSemaphore(value: 0)
-        Task {
-            await actor.close()
-            semaphore.signal()
+        Task.detached(priority: .utility) { [connectionActor] in
+            await connectionActor.close()
         }
-        semaphore.wait()
         stateLock.lock()
         _currentKeyspace = nil
         _cachedVersion = nil
@@ -1004,9 +1000,6 @@ internal final class CassandraPluginDriver: PluginDatabaseDriver, @unchecked Sen
 
     func fetchTableMetadata(table: String, schema: String?) async throws -> PluginTableMetadata {
         let ks = resolveKeyspace(schema)
-        let safeTable = escapeSingleQuote(table)
-        let safeKs = escapeSingleQuote(ks)
-
         // Cassandra doesn't have a cheap row count — use a bounded count
         let countQuery = "SELECT COUNT(*) FROM \"\(escapeIdentifier(ks))\".\"\(escapeIdentifier(table))\" LIMIT 100001"
         let countResult = try? await execute(query: countQuery)
@@ -1027,8 +1020,12 @@ internal final class CassandraPluginDriver: PluginDatabaseDriver, @unchecked Sen
     func fetchDatabases() async throws -> [String] {
         let query = "SELECT keyspace_name FROM system_schema.keyspaces"
         let result = try await execute(query: query)
+        let systemKeyspaces: Set<String> = [
+            "system", "system_schema", "system_auth",
+            "system_distributed", "system_traces", "system_virtual_schema",
+        ]
         return result.rows.compactMap { $0[safe: 0] ?? nil }
-            .filter { !$0.hasPrefix("system") }
+            .filter { !systemKeyspaces.contains($0) }
             .sorted()
     }
 

@@ -708,16 +708,11 @@ final class MainContentCoordinator {
             return
         }
 
-        // Cassandra/ScyllaDB don't support EXPLAIN
-        if connection.type == .cassandra || connection.type == .scylladb {
+        guard let adapter = DatabaseManager.shared.driver(for: connectionId) as? PluginDriverAdapter,
+              let explainSQL = adapter.buildExplainQuery(stmt) else {
             if let index = tabManager.selectedTabIndex {
                 tabManager.tabs[index].errorMessage = String(localized: "EXPLAIN is not supported for this database type.")
             }
-            return
-        }
-
-        guard let adapter = DatabaseManager.shared.driver(for: connectionId) as? PluginDriverAdapter,
-              let explainSQL = adapter.buildExplainQuery(stmt) else {
             return
         }
 
