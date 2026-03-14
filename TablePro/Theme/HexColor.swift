@@ -7,7 +7,8 @@ extension String {
         let hex = trimmingCharacters(in: .whitespacesAndNewlines)
             .trimmingCharacters(in: CharacterSet(charactersIn: "#"))
 
-        guard hex.count == 6 || hex.count == 8 else {
+        let hexLength = (hex as NSString).length
+        guard hexLength == 6 || hexLength == 8 else {
             return .gray
         }
 
@@ -18,7 +19,7 @@ extension String {
 
         let r, g, b, a: CGFloat
 
-        if hex.count == 8 {
+        if hexLength == 8 {
             r = CGFloat((value >> 24) & 0xFF) / 255.0
             g = CGFloat((value >> 16) & 0xFF) / 255.0
             b = CGFloat((value >> 8) & 0xFF) / 255.0

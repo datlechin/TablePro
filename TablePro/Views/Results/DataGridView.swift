@@ -776,11 +776,8 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            guard let self else { return }
-            DispatchQueue.main.async { [weak self] in
-                guard let self, let tableView = self.tableView else { return }
-                Self.updateVisibleCellFonts(tableView: tableView)
-            }
+            guard let self, let tableView = self.tableView else { return }
+            Self.updateVisibleCellFonts(tableView: tableView)
         }
     }
 

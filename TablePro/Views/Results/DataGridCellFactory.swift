@@ -361,11 +361,13 @@ final class DataGridCellFactory {
     /// Maximum characters to consider per cell for width estimation
     private static let maxMeasureChars = 50
     /// Font for measuring header
-    private static let headerFont = NSFont.systemFont(ofSize: ThemeEngine.shared.activeTheme.typography.body, weight: .semibold)
+    private var headerFont: NSFont {
+        NSFont.systemFont(ofSize: ThemeEngine.shared.activeTheme.typography.body, weight: .semibold)
+    }
 
     /// Calculate column width based on header name only (used for initial display)
     func calculateColumnWidth(for columnName: String) -> CGFloat {
-        let attributes: [NSAttributedString.Key: Any] = [.font: Self.headerFont]
+        let attributes: [NSAttributedString.Key: Any] = [.font: headerFont]
         let size = (columnName as NSString).size(withAttributes: attributes)
         let width = size.width + 48 // padding for sort indicator + margins
         return min(max(width, Self.minColumnWidth), Self.maxColumnWidth)

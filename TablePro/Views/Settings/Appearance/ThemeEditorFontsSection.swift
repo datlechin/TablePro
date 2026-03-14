@@ -116,17 +116,18 @@ struct ThemeEditorFontsSection: View {
     }
 
     private func updateFont(_ mutate: (inout ThemeFonts) -> Void) {
-        var updated = editingTheme ?? theme
-        mutate(&updated.fonts)
+        let base = editingTheme ?? theme
 
-        if updated.isBuiltIn {
-            var copy = engine.duplicateTheme(updated, newName: updated.name + " (Custom)")
+        if base.isBuiltIn {
+            var copy = engine.duplicateTheme(base, newName: base.name + " (Custom)")
             mutate(&copy.fonts)
             try? engine.saveUserTheme(copy)
             engine.activateTheme(copy)
             editingTheme = copy
             onThemeDuplicated?(copy)
         } else {
+            var updated = base
+            mutate(&updated.fonts)
             try? engine.saveUserTheme(updated)
             editingTheme = updated
         }

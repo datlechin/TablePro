@@ -106,15 +106,16 @@ struct ThemePreviewCard: View {
                 .fill(theme.sidebar.background.swiftUIColor)
 
             VStack(alignment: .leading, spacing: size == .compact ? 3 : 4) {
+                let widths: [CGFloat] = size == .compact
+                    ? [10, 14, 13, 9]
+                    : [14, 18, 17, 12]
                 ForEach(0..<4, id: \.self) { i in
                     RoundedRectangle(cornerRadius: 1)
                         .fill(i == 1
                             ? theme.sidebar.selectedItem.swiftUIColor.opacity(0.6)
                             : theme.sidebar.text.swiftUIColor.opacity(0.25))
                         .frame(
-                            width: i == 1
-                                ? (size == .compact ? 14 : 18)
-                                : CGFloat.random(in: size == .compact ? 8...16 : 12...20),
+                            width: widths[i],
                             height: codeLineHeight
                         )
                 }
