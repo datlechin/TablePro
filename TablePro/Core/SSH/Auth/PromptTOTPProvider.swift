@@ -37,7 +37,11 @@ final class PromptTOTPProvider: TOTPProvider, @unchecked Sendable {
             semaphore.signal()
         }
 
-        semaphore.wait()
+        let result = semaphore.wait(timeout: .now() + 120)
+
+        guard result == .success else {
+            throw SSHTunnelError.connectionTimeout
+        }
 
         guard let totpCode = code, !totpCode.isEmpty else {
             throw SSHTunnelError.authenticationFailed

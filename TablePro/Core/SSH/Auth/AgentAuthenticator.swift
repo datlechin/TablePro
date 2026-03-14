@@ -10,23 +10,31 @@ import os
 struct AgentAuthenticator: SSHAuthenticator {
     private static let logger = Logger(subsystem: "com.TablePro", category: "AgentAuthenticator")
 
+    /// Protects setenv/unsetenv of SSH_AUTH_SOCK across concurrent tunnel setups
+    private static let agentSocketLock = NSLock()
+
     let socketPath: String?
 
     func authenticate(session: OpaquePointer, username: String) throws {
         // Save original SSH_AUTH_SOCK so we can restore it
         let originalSocketPath = ProcessInfo.processInfo.environment["SSH_AUTH_SOCK"]
+        let needsSocketOverride = socketPath != nil
 
-        if let socketPath {
-            Self.logger.debug("Using custom SSH agent socket: \(socketPath, privacy: .private)")
-            setenv("SSH_AUTH_SOCK", socketPath, 1)
+        if needsSocketOverride {
+            Self.agentSocketLock.lock()
+            Self.logger.debug("Using custom SSH agent socket: \(socketPath!, privacy: .private)")
+            setenv("SSH_AUTH_SOCK", socketPath!, 1)
         }
 
         defer {
-            // Restore original SSH_AUTH_SOCK
-            if let originalSocketPath {
-                setenv("SSH_AUTH_SOCK", originalSocketPath, 1)
-            } else if socketPath != nil {
-                unsetenv("SSH_AUTH_SOCK")
+            if needsSocketOverride {
+                // Restore original SSH_AUTH_SOCK
+                if let originalSocketPath {
+                    setenv("SSH_AUTH_SOCK", originalSocketPath, 1)
+                } else {
+                    unsetenv("SSH_AUTH_SOCK")
+                }
+                Self.agentSocketLock.unlock()
             }
         }
 

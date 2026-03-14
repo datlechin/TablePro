@@ -146,10 +146,12 @@ enum LibSSH2TunnelFactory {
                                 )
                             }
                         } catch {
-                            // Clean up nextSession before re-throwing
+                            // Clean up nextSession and both socketpair fds
                             tablepro_libssh2_session_disconnect(nextSession, "Error")
                             libssh2_session_free(nextSession)
                             Darwin.close(fds[1])
+                            relayTask.cancel()
+                            Darwin.close(fds[0])
                             throw error
                         }
 
@@ -421,7 +423,10 @@ enum LibSSH2TunnelFactory {
         Task.detached {
             let bufferSize = 32_768
             let buffer = UnsafeMutablePointer<CChar>.allocate(capacity: bufferSize)
-            defer { buffer.deallocate() }
+            defer {
+                buffer.deallocate()
+                Darwin.close(socketFD)
+            }
 
             while !Task.isCancelled {
                 var pollFDs = [
