@@ -219,11 +219,6 @@ internal struct ThemeStorage {
         "tablepro.default-light",
         "tablepro.default-dark",
         "tablepro.dracula",
-        "tablepro.solarized-light",
-        "tablepro.solarized-dark",
-        "tablepro.one-dark",
-        "tablepro.github-light",
-        "tablepro.github-dark",
         "tablepro.nord",
     ]
 
