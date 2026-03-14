@@ -389,8 +389,6 @@ enum DatabaseDriverFactory {
             fields["mssqlSchema"] = connection.mssqlSchema ?? "dbo"
         case .oracle:
             fields["oracleServiceName"] = connection.oracleServiceName ?? ""
-        case .mysql, .mariadb, .sqlite, .clickhouse, .postgresql, .redshift, .cassandra, .scylladb, .duckdb:
-            break
         default:
             break
         }
