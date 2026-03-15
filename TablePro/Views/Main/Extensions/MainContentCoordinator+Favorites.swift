@@ -7,8 +7,13 @@ import Foundation
 
 extension MainContentCoordinator {
     /// Insert a favorite's query into the current editor tab.
-    /// If the current tab is not a query tab, opens a new query tab instead.
+    /// Creates a new tab if none exists, or opens a new tab if current is not a query tab.
     func insertFavorite(_ favorite: SQLFavorite) {
+        if tabManager.tabs.isEmpty {
+            tabManager.addTab(initialQuery: favorite.query)
+            return
+        }
+
         if let tabIndex = tabManager.selectedTabIndex,
            tabManager.tabs[tabIndex].tabType == .query {
             tabManager.tabs[tabIndex].query = favorite.query
@@ -17,9 +22,13 @@ extension MainContentCoordinator {
         }
     }
 
-    /// Run a favorite's query: reuses the current tab if it's an empty query tab,
-    /// otherwise opens a new tab.
+    /// Run a favorite's query: uses current tab if empty, otherwise opens a new tab.
     func runFavoriteInNewTab(_ favorite: SQLFavorite) {
+        if tabManager.tabs.isEmpty {
+            tabManager.addTab(initialQuery: favorite.query)
+            return
+        }
+
         if let tabIndex = tabManager.selectedTabIndex,
            tabManager.tabs[tabIndex].tabType == .query,
            tabManager.tabs[tabIndex].query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
