@@ -234,6 +234,7 @@ struct FavoriteTreeItemRow: View {
                         coordinator: coordinator,
                         onDeleteFolder: onDeleteFolder
                     )
+                    .tag(child.id)
                 }
             } label: {
                 if viewModel.renamingFolderId == folder.id {
