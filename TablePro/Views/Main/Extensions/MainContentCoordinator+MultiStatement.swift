@@ -70,10 +70,11 @@ extension MainContentCoordinator {
                         lastSelectSQL = sql
                     }
 
-                    // Record each statement individually in query history
+                    // Record with semicolon preserved for history/favorites
+                    let historySQL = sql.hasSuffix(";") ? sql : sql + ";"
                     await MainActor.run {
                         QueryHistoryManager.shared.recordQuery(
-                            query: sql,
+                            query: historySQL,
                             connectionId: conn.id,
                             databaseName: conn.database,
                             executionTime: result.executionTime,
@@ -160,8 +161,8 @@ extension MainContentCoordinator {
                         tabManager.tabs[idx] = errTab
                     }
 
-                    // Record only the failing statement in history
-                    let recordSQL = failedSQL ?? statements[min(executedCount, totalCount - 1)]
+                    let rawSQL = failedSQL ?? statements[min(executedCount, totalCount - 1)]
+                    let recordSQL = rawSQL.hasSuffix(";") ? rawSQL : rawSQL + ";"
                     QueryHistoryManager.shared.recordQuery(
                         query: recordSQL,
                         connectionId: conn.id,

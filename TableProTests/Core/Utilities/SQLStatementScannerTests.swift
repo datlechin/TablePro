@@ -23,7 +23,7 @@ final class SQLStatementScannerTests: XCTestCase {
     func testSingleStatementWithTrailingSemicolon() {
         XCTAssertEqual(
             SQLStatementScanner.allStatements(in: "SELECT 1;"),
-            ["SELECT 1;"]
+            ["SELECT 1"]
         )
     }
 
@@ -31,7 +31,7 @@ final class SQLStatementScannerTests: XCTestCase {
         let sql = "SELECT 1; SELECT 2; SELECT 3"
         XCTAssertEqual(
             SQLStatementScanner.allStatements(in: sql),
-            ["SELECT 1;", "SELECT 2;", "SELECT 3"]
+            ["SELECT 1", "SELECT 2", "SELECT 3"]
         )
     }
 
@@ -39,7 +39,7 @@ final class SQLStatementScannerTests: XCTestCase {
         let sql = "SELECT 'a;b'; SELECT 2"
         XCTAssertEqual(
             SQLStatementScanner.allStatements(in: sql),
-            ["SELECT 'a;b';", "SELECT 2"]
+            ["SELECT 'a;b'", "SELECT 2"]
         )
     }
 
@@ -47,7 +47,7 @@ final class SQLStatementScannerTests: XCTestCase {
         let sql = "SELECT \"a;b\"; SELECT 2"
         XCTAssertEqual(
             SQLStatementScanner.allStatements(in: sql),
-            ["SELECT \"a;b\";", "SELECT 2"]
+            ["SELECT \"a;b\"", "SELECT 2"]
         )
     }
 
@@ -55,7 +55,7 @@ final class SQLStatementScannerTests: XCTestCase {
         let sql = "SELECT `a;b`; SELECT 2"
         XCTAssertEqual(
             SQLStatementScanner.allStatements(in: sql),
-            ["SELECT `a;b`;", "SELECT 2"]
+            ["SELECT `a;b`", "SELECT 2"]
         )
     }
 
@@ -63,7 +63,7 @@ final class SQLStatementScannerTests: XCTestCase {
         let sql = "SELECT 1 -- comment; still comment\n; SELECT 2"
         XCTAssertEqual(
             SQLStatementScanner.allStatements(in: sql),
-            ["SELECT 1 -- comment; still comment\n;", "SELECT 2"]
+            ["SELECT 1 -- comment; still comment", "SELECT 2"]
         )
     }
 
@@ -71,7 +71,7 @@ final class SQLStatementScannerTests: XCTestCase {
         let sql = "SELECT 1 /* comment; */ ; SELECT 2"
         XCTAssertEqual(
             SQLStatementScanner.allStatements(in: sql),
-            ["SELECT 1 /* comment; */ ;", "SELECT 2"]
+            ["SELECT 1 /* comment; */", "SELECT 2"]
         )
     }
 
@@ -79,7 +79,7 @@ final class SQLStatementScannerTests: XCTestCase {
         let sql = "SELECT 'it\\'s'; SELECT 2"
         XCTAssertEqual(
             SQLStatementScanner.allStatements(in: sql),
-            ["SELECT 'it\\'s';", "SELECT 2"]
+            ["SELECT 'it\\'s'", "SELECT 2"]
         )
     }
 
@@ -87,7 +87,7 @@ final class SQLStatementScannerTests: XCTestCase {
         let sql = "SELECT 'it''s'; SELECT 2"
         XCTAssertEqual(
             SQLStatementScanner.allStatements(in: sql),
-            ["SELECT 'it''s';", "SELECT 2"]
+            ["SELECT 'it''s'", "SELECT 2"]
         )
     }
 
@@ -95,7 +95,7 @@ final class SQLStatementScannerTests: XCTestCase {
         let sql = "SELECT 1;   ;  \n ; SELECT 2"
         XCTAssertEqual(
             SQLStatementScanner.allStatements(in: sql),
-            ["SELECT 1;", "SELECT 2"]
+            ["SELECT 1", "SELECT 2"]
         )
     }
 
@@ -104,7 +104,25 @@ final class SQLStatementScannerTests: XCTestCase {
         let sql = "SELECT 1 /* outer /* inner */ ; SELECT 2"
         XCTAssertEqual(
             SQLStatementScanner.allStatements(in: sql),
-            ["SELECT 1 /* outer /* inner */ ;", "SELECT 2"]
+            ["SELECT 1 /* outer /* inner */", "SELECT 2"]
+        )
+    }
+
+    // MARK: - allStatementsPreservingSemicolons
+
+    func testPreservingSemicolons() {
+        let sql = "SELECT 1; SELECT 2; SELECT 3"
+        XCTAssertEqual(
+            SQLStatementScanner.allStatementsPreservingSemicolons(in: sql),
+            ["SELECT 1;", "SELECT 2;", "SELECT 3"]
+        )
+    }
+
+    func testPreservingSemicolonsFiltersEmpty() {
+        let sql = "SELECT 1;   ;  \n ; SELECT 2"
+        XCTAssertEqual(
+            SQLStatementScanner.allStatementsPreservingSemicolons(in: sql),
+            ["SELECT 1;", "SELECT 2"]
         )
     }
 
@@ -114,13 +132,12 @@ final class SQLStatementScannerTests: XCTestCase {
         let sql = "SELECT 1; SELECT 2"
         XCTAssertEqual(
             SQLStatementScanner.statementAtCursor(in: sql, cursorPosition: 3),
-            "SELECT 1;"
+            "SELECT 1"
         )
     }
 
     func testCursorInSecondStatement() {
         let sql = "SELECT 1; SELECT 2"
-        // cursor at position 10 = 'S' of "SELECT 2"
         XCTAssertEqual(
             SQLStatementScanner.statementAtCursor(in: sql, cursorPosition: 10),
             "SELECT 2"
@@ -137,10 +154,9 @@ final class SQLStatementScannerTests: XCTestCase {
 
     func testCursorAtSemicolon() {
         let sql = "SELECT 1; SELECT 2"
-        // cursor at position 8 (the ';') should belong to first statement
         XCTAssertEqual(
             SQLStatementScanner.statementAtCursor(in: sql, cursorPosition: 8),
-            "SELECT 1;"
+            "SELECT 1"
         )
     }
 
@@ -148,7 +164,7 @@ final class SQLStatementScannerTests: XCTestCase {
         let sql = "SELECT 1; SELECT 2"
         XCTAssertEqual(
             SQLStatementScanner.statementAtCursor(in: sql, cursorPosition: 0),
-            "SELECT 1;"
+            "SELECT 1"
         )
     }
 

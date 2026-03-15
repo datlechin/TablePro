@@ -200,8 +200,9 @@ extension MainContentCoordinator {
 
                         let executionTime = Date().timeIntervalSince(statementStartTime)
 
+                        let historySQL = statement.sql.trimmingCharacters(in: .whitespacesAndNewlines)
                         QueryHistoryManager.shared.recordQuery(
-                            query: statement.sql.trimmingCharacters(in: .whitespacesAndNewlines),
+                            query: historySQL.hasSuffix(";") ? historySQL : historySQL + ";",
                             connectionId: conn.id,
                             databaseName: conn.database,
                             executionTime: executionTime,

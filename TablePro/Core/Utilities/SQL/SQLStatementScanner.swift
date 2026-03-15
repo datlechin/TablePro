@@ -11,11 +11,28 @@ enum SQLStatementScanner {
         let offset: Int
     }
 
+    /// Returns statements with trailing semicolons stripped — for driver execution.
     static func allStatements(in sql: String) -> [String] {
         var results: [String] = []
         scan(sql: sql, cursorPosition: nil) { rawSQL, _ in
+            var trimmed = rawSQL.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.hasSuffix(";") {
+                trimmed = String(trimmed.dropLast())
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+            if !trimmed.isEmpty {
+                results.append(trimmed)
+            }
+            return true
+        }
+        return results
+    }
+
+    /// Returns statements preserving trailing semicolons — for display/history/favorites.
+    static func allStatementsPreservingSemicolons(in sql: String) -> [String] {
+        var results: [String] = []
+        scan(sql: sql, cursorPosition: nil) { rawSQL, _ in
             let trimmed = rawSQL.trimmingCharacters(in: .whitespacesAndNewlines)
-            // Skip empty statements (bare semicolons, whitespace-only)
             let withoutSemicolon = trimmed.hasSuffix(";")
                 ? String(trimmed.dropLast()).trimmingCharacters(in: .whitespacesAndNewlines)
                 : trimmed
@@ -28,9 +45,14 @@ enum SQLStatementScanner {
     }
 
     static func statementAtCursor(in sql: String, cursorPosition: Int) -> String {
-        locatedStatementAtCursor(in: sql, cursorPosition: cursorPosition)
+        var result = locatedStatementAtCursor(in: sql, cursorPosition: cursorPosition)
             .sql
             .trimmingCharacters(in: .whitespacesAndNewlines)
+        if result.hasSuffix(";") {
+            result = String(result.dropLast())
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return result
     }
 
     static func locatedStatementAtCursor(in sql: String, cursorPosition: Int) -> LocatedStatement {

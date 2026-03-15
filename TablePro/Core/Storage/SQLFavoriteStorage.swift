@@ -534,7 +534,9 @@ internal final class SQLFavoriteStorage {
         return await performDatabaseWork { [weak self] in
             guard let self = self else { return false }
 
-            let inTransaction = sqlite3_exec(self.db, "BEGIN IMMEDIATE;", nil, nil, nil) == SQLITE_OK
+            guard sqlite3_exec(self.db, "BEGIN IMMEDIATE;", nil, nil, nil) == SQLITE_OK else {
+                return false
+            }
 
             let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
@@ -542,7 +544,7 @@ internal final class SQLFavoriteStorage {
             let findParentSQL = "SELECT parent_id FROM folders WHERE id = ?;"
             var findStatement: OpaquePointer?
             guard sqlite3_prepare_v2(self.db, findParentSQL, -1, &findStatement, nil) == SQLITE_OK else {
-                if inTransaction { sqlite3_exec(self.db, "ROLLBACK;", nil, nil, nil) }
+                sqlite3_exec(self.db, "ROLLBACK;", nil, nil, nil)
                 return false
             }
 
@@ -567,12 +569,12 @@ internal final class SQLFavoriteStorage {
                 let moveFavResult = sqlite3_step(moveFavStatement)
                 sqlite3_finalize(moveFavStatement)
                 if moveFavResult != SQLITE_DONE {
-                    if inTransaction { sqlite3_exec(self.db, "ROLLBACK;", nil, nil, nil) }
+                    sqlite3_exec(self.db, "ROLLBACK;", nil, nil, nil)
                     return false
                 }
             } else {
                 sqlite3_finalize(moveFavStatement)
-                if inTransaction { sqlite3_exec(self.db, "ROLLBACK;", nil, nil, nil) }
+                sqlite3_exec(self.db, "ROLLBACK;", nil, nil, nil)
                 return false
             }
 
@@ -589,12 +591,12 @@ internal final class SQLFavoriteStorage {
                 let moveSubResult = sqlite3_step(moveSubStatement)
                 sqlite3_finalize(moveSubStatement)
                 if moveSubResult != SQLITE_DONE {
-                    if inTransaction { sqlite3_exec(self.db, "ROLLBACK;", nil, nil, nil) }
+                    sqlite3_exec(self.db, "ROLLBACK;", nil, nil, nil)
                     return false
                 }
             } else {
                 sqlite3_finalize(moveSubStatement)
-                if inTransaction { sqlite3_exec(self.db, "ROLLBACK;", nil, nil, nil) }
+                sqlite3_exec(self.db, "ROLLBACK;", nil, nil, nil)
                 return false
             }
 
@@ -602,7 +604,7 @@ internal final class SQLFavoriteStorage {
             let deleteSQL = "DELETE FROM folders WHERE id = ?;"
             var deleteStatement: OpaquePointer?
             guard sqlite3_prepare_v2(self.db, deleteSQL, -1, &deleteStatement, nil) == SQLITE_OK else {
-                if inTransaction { sqlite3_exec(self.db, "ROLLBACK;", nil, nil, nil) }
+                sqlite3_exec(self.db, "ROLLBACK;", nil, nil, nil)
                 return false
             }
 
@@ -610,12 +612,10 @@ internal final class SQLFavoriteStorage {
             let result = sqlite3_step(deleteStatement)
             sqlite3_finalize(deleteStatement)
 
-            if inTransaction {
-                if result == SQLITE_DONE {
-                    sqlite3_exec(self.db, "COMMIT;", nil, nil, nil)
-                } else {
-                    sqlite3_exec(self.db, "ROLLBACK;", nil, nil, nil)
-                }
+            if result == SQLITE_DONE {
+                sqlite3_exec(self.db, "COMMIT;", nil, nil, nil)
+            } else {
+                sqlite3_exec(self.db, "ROLLBACK;", nil, nil, nil)
             }
 
             return result == SQLITE_DONE
@@ -719,11 +719,22 @@ internal final class SQLFavoriteStorage {
         return await performDatabaseWork { [weak self] in
             guard let self = self else { return false }
 
-            var sql = """
-                SELECT COUNT(*) FROM favorites
-                WHERE keyword = ?
-                AND (connection_id IS NULL OR connection_id = ? OR ? IS NULL)
-                """
+            var sql: String
+            var bindIndex: Int32 = 1
+
+            if connectionIdString != nil {
+                sql = """
+                    SELECT COUNT(*) FROM favorites
+                    WHERE keyword = ?
+                    AND (connection_id IS NULL OR connection_id = ?)
+                    """
+            } else {
+                sql = """
+                    SELECT COUNT(*) FROM favorites
+                    WHERE keyword = ?
+                    AND connection_id IS NULL
+                    """
+            }
 
             if excludeIdString != nil {
                 sql += " AND id != ?"
@@ -740,18 +751,16 @@ internal final class SQLFavoriteStorage {
 
             let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
-            sqlite3_bind_text(statement, 1, keyword, -1, SQLITE_TRANSIENT)
+            sqlite3_bind_text(statement, bindIndex, keyword, -1, SQLITE_TRANSIENT)
+            bindIndex += 1
 
             if let connId = connectionIdString {
-                sqlite3_bind_text(statement, 2, connId, -1, SQLITE_TRANSIENT)
-                sqlite3_bind_text(statement, 3, connId, -1, SQLITE_TRANSIENT)
-            } else {
-                sqlite3_bind_null(statement, 2)
-                sqlite3_bind_null(statement, 3)
+                sqlite3_bind_text(statement, bindIndex, connId, -1, SQLITE_TRANSIENT)
+                bindIndex += 1
             }
 
             if let excludeId = excludeIdString {
-                sqlite3_bind_text(statement, 4, excludeId, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(statement, bindIndex, excludeId, -1, SQLITE_TRANSIENT)
             }
 
             if sqlite3_step(statement) == SQLITE_ROW {

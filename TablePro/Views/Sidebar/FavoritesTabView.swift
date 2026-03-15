@@ -16,7 +16,7 @@ internal struct FavoritesTabView: View {
     @FocusState private var isRenameFocused: Bool
     let connectionId: UUID
     let searchText: String
-    private weak var coordinator: MainContentCoordinator?
+    private var coordinator: MainContentCoordinator?
 
     init(connectionId: UUID, searchText: String, coordinator: MainContentCoordinator?) {
         self.connectionId = connectionId
@@ -46,12 +46,12 @@ internal struct FavoritesTabView: View {
         .onAppear {
             Task { await viewModel.loadFavorites() }
         }
-        .sheet(isPresented: $viewModel.showEditDialog) {
+        .sheet(item: $viewModel.editDialogItem) { item in
             FavoriteEditDialog(
                 connectionId: connectionId,
-                favorite: viewModel.editingFavorite,
-                initialQuery: viewModel.editingQuery,
-                folderId: viewModel.editingFolderId
+                favorite: item.favorite,
+                initialQuery: item.query,
+                folderId: item.folderId
             )
         }
         .alert(
@@ -260,7 +260,7 @@ internal struct FavoritesTabView: View {
 private struct FavoriteItemContextMenu: View {
     let favorite: SQLFavorite
     let viewModel: FavoritesSidebarViewModel
-    weak var coordinator: MainContentCoordinator?
+    var coordinator: MainContentCoordinator?
 
     private var folders: [SQLFavoriteFolder] {
         collectFolders(from: viewModel.treeItems)

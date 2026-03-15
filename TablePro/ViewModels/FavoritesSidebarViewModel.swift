@@ -6,6 +6,14 @@
 import Foundation
 import Observation
 
+/// Identity wrapper for presenting the favorite edit dialog via `.sheet(item:)`
+internal struct FavoriteEditItem: Identifiable {
+    let id = UUID()
+    let favorite: SQLFavorite?
+    let query: String?
+    let folderId: UUID?
+}
+
 /// Tree node for displaying favorites and folders in a hierarchy
 internal enum FavoriteTreeItem: Identifiable, Hashable {
     case folder(SQLFavoriteFolder, children: [FavoriteTreeItem])
@@ -26,7 +34,7 @@ internal final class FavoritesSidebarViewModel {
 
     var treeItems: [FavoriteTreeItem] = []
     var isLoading = false
-    var showEditDialog = false
+    var editDialogItem: FavoriteEditItem?
     var editingFavorite: SQLFavorite?
     var editingQuery: String?
     var editingFolderId: UUID?
@@ -110,16 +118,11 @@ internal final class FavoritesSidebarViewModel {
         if let folderId {
             expandedFolderIds.insert(folderId)
         }
-        editingFavorite = nil
-        editingQuery = query
-        editingFolderId = folderId
-        showEditDialog = true
+        editDialogItem = FavoriteEditItem(favorite: nil, query: query, folderId: folderId)
     }
 
     func editFavorite(_ favorite: SQLFavorite) {
-        editingFavorite = favorite
-        editingQuery = nil
-        showEditDialog = true
+        editDialogItem = FavoriteEditItem(favorite: favorite, query: nil, folderId: favorite.folderId)
     }
 
     func deleteFavorite(_ favorite: SQLFavorite) {
