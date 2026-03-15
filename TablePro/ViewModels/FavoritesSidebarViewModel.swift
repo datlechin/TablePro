@@ -128,6 +128,16 @@ final class FavoritesSidebarViewModel {
         }
     }
 
+    func moveFavorite(id: UUID, toFolder folderId: UUID?) {
+        Task {
+            let allFavorites = await manager.fetchFavorites(connectionId: connectionId)
+            guard var favorite = allFavorites.first(where: { $0.id == id }) else { return }
+            favorite.folderId = folderId
+            favorite.updatedAt = Date()
+            _ = await manager.updateFavorite(favorite)
+        }
+    }
+
     func deleteFavorites(_ favorites: [SQLFavorite]) {
         Task {
             await manager.deleteFavorites(ids: favorites.map(\.id))

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Full-tab favorites view with folder hierarchy and bottom toolbar
 struct FavoritesTabView: View {
@@ -77,6 +78,9 @@ struct FavoritesTabView: View {
         .onDeleteCommand {
             deleteSelectedFavorites()
         }
+        .onDrop(of: [.plainText], isTargeted: nil) { providers in
+            handleDrop(providers: providers, targetFolderId: nil)
+        }
     }
 
     /// Renders tree items with DisclosureGroup for folders.
@@ -99,6 +103,9 @@ struct FavoritesTabView: View {
                                 viewModel: viewModel,
                                 coordinator: coordinator
                             )
+                        }
+                        .onDrag {
+                            NSItemProvider(object: favorite.id.uuidString as NSString)
                         }
                 case .folder(let folder, let children):
                     DisclosureGroup(isExpanded: Binding(
@@ -156,7 +163,24 @@ struct FavoritesTabView: View {
                         }
                     )
                 }
+                .onDrop(of: [.plainText], isTargeted: nil) { providers in
+                    handleDrop(providers: providers, targetFolderId: folder.id)
+                }
         }
+    }
+
+    private func handleDrop(providers: [NSItemProvider], targetFolderId: UUID?) -> Bool {
+        guard let provider = providers.first else { return false }
+        provider.loadObject(ofClass: NSString.self) { object, _ in
+            guard let idString = object as? String, let favoriteId = UUID(uuidString: idString) else { return }
+            Task { @MainActor in
+                viewModel.moveFavorite(id: favoriteId, toFolder: targetFolderId)
+                if let targetFolderId {
+                    viewModel.expandedFolderIds.insert(targetFolderId)
+                }
+            }
+        }
+        return true
     }
 
     private func deleteSelectedFavorites() {
