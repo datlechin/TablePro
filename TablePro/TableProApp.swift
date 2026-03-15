@@ -74,6 +74,11 @@ struct PasteboardCommands: Commands {
             .optionalKeyboardShortcut(shortcut(for: .copyWithHeaders))
             .disabled(!appState.hasRowSelection)
 
+            Button("Copy as JSON") {
+                actions?.copySelectedRowsAsJson()
+            }
+            .disabled(!appState.hasRowSelection)
+
             Button("Paste") {
                 let action = PasteboardActionRouter.resolvePasteAction(
                     firstResponder: NSApp.keyWindow?.firstResponder,

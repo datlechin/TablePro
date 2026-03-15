@@ -135,6 +135,15 @@ extension TableViewCoordinator {
         ClipboardService.shared.writeText(converter.generateUpdates(rows: rows))
     }
 
+    func copyRowsAsJson(at indices: Set<Int>) {
+        let rows = indices.sorted().compactMap { rowProvider.rowValues(at: $0) }
+        guard !rows.isEmpty else { return }
+        let columnTypes = (rowProvider as? InMemoryRowProvider)?.columnTypes
+            ?? Array(repeating: ColumnType.text(rawType: nil), count: rowProvider.columns.count)
+        let converter = JsonRowConverter(columns: rowProvider.columns, columnTypes: columnTypes)
+        ClipboardService.shared.writeText(converter.generateJson(rows: rows))
+    }
+
     private func resolveDriver() -> (any DatabaseDriver)? {
         guard let connectionId else { return nil }
         return DatabaseManager.shared.driver(for: connectionId)

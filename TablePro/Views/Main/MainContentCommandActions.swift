@@ -244,6 +244,11 @@ final class MainContentCommandActions {
         coordinator?.copySelectedRowsWithHeaders(indices: indices)
     }
 
+    func copySelectedRowsAsJson() {
+        let indices = selectedRowIndices.wrappedValue
+        coordinator?.copySelectedRowsAsJson(indices: indices)
+    }
+
     func pasteRows() {
         if coordinator?.tabManager.selectedTab?.showStructure == true {
             coordinator?.structureActions?.pasteRows?()

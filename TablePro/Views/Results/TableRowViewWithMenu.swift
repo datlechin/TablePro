@@ -61,6 +61,13 @@ final class TableRowViewWithMenu: NSTableRowView {
             copyWithHeadersItem.target = self
             copyAsMenu.addItem(copyWithHeadersItem)
 
+            let jsonItem = NSMenuItem(
+                title: String(localized: "JSON"),
+                action: #selector(copyAsJson),
+                keyEquivalent: "")
+            jsonItem.target = self
+            copyAsMenu.addItem(jsonItem)
+
             if let dbType = coordinator.databaseType,
                dbType != .mongodb && dbType != .redis,
                coordinator.tableName != nil {
@@ -239,5 +246,13 @@ final class TableRowViewWithMenu: NSTableRowView {
             ? coordinator.selectedRowIndices
             : [rowIndex]
         coordinator.copyRowsAsUpdate(at: indices)
+    }
+
+    @objc private func copyAsJson() {
+        guard let coordinator else { return }
+        let indices: Set<Int> = !coordinator.selectedRowIndices.isEmpty
+            ? coordinator.selectedRowIndices
+            : [rowIndex]
+        coordinator.copyRowsAsJson(at: indices)
     }
 }

@@ -137,6 +137,22 @@ extension MainContentCoordinator {
         )
     }
 
+    func copySelectedRowsAsJson(indices: Set<Int>) {
+        guard let index = tabManager.selectedTabIndex,
+              !indices.isEmpty else { return }
+        let tab = tabManager.tabs[index]
+        let rows = indices.sorted().compactMap { idx -> [String?]? in
+            guard idx < tab.resultRows.count else { return nil }
+            return tab.resultRows[idx].values
+        }
+        guard !rows.isEmpty else { return }
+        let converter = JsonRowConverter(
+            columns: tab.resultColumns,
+            columnTypes: tab.columnTypes
+        )
+        ClipboardService.shared.writeText(converter.generateJson(rows: rows))
+    }
+
     func pasteRows(selectedRowIndices: inout Set<Int>, editingCell: inout CellPosition?) {
         guard !connection.safeModeLevel.blocksAllWrites,
               let index = tabManager.selectedTabIndex else { return }
