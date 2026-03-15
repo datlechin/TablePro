@@ -17,8 +17,16 @@ extension MainContentCoordinator {
         }
     }
 
-    /// Open a favorite's query in a new tab
+    /// Run a favorite's query: reuses the current tab if it's an empty query tab,
+    /// otherwise opens a new tab.
     func runFavoriteInNewTab(_ favorite: SQLFavorite) {
+        if let tabIndex = tabManager.selectedTabIndex,
+           tabManager.tabs[tabIndex].tabType == .query,
+           tabManager.tabs[tabIndex].query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            tabManager.tabs[tabIndex].query = favorite.query
+            return
+        }
+
         let payload = EditorTabPayload(
             connectionId: connection.id,
             tabType: .query,
