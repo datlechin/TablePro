@@ -5,6 +5,12 @@
 
 import SwiftUI
 
+/// Wrapper for `.sheet(item:)` to ensure the query is passed reliably
+struct FavoriteDialogQuery: Identifiable {
+    let id = UUID()
+    let query: String
+}
+
 /// Dialog for creating or editing a SQL favorite
 struct FavoriteEditDialog: View {
     @Environment(\.dismiss) private var dismiss

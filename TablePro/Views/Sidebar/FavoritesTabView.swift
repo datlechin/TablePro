@@ -10,6 +10,7 @@ import SwiftUI
 /// Full-tab favorites view with folder hierarchy and bottom toolbar
 struct FavoritesTabView: View {
     @State private var viewModel: FavoritesSidebarViewModel
+    @State private var selectedFavoriteIds: Set<String> = []
     @State private var folderToDelete: SQLFavoriteFolder?
     @State private var showDeleteFolderAlert = false
     let searchText: String
@@ -67,7 +68,7 @@ struct FavoritesTabView: View {
     // MARK: - List
 
     private func favoritesList(_ items: [FavoriteTreeItem]) -> some View {
-        List {
+        List(selection: $selectedFavoriteIds) {
             ForEach(items) { item in
                 FavoriteTreeItemRow(
                     item: item,
@@ -78,10 +79,45 @@ struct FavoritesTabView: View {
                         showDeleteFolderAlert = true
                     }
                 )
+                .tag(item.id)
             }
         }
         .listStyle(.sidebar)
         .scrollContentBackground(.hidden)
+        .onDeleteCommand {
+            deleteSelectedFavorites()
+        }
+        .contextMenu {
+            if !selectedFavoriteIds.isEmpty {
+                Button(role: .destructive) {
+                    deleteSelectedFavorites()
+                } label: {
+                    Label(String(localized: "Delete Selected"), systemImage: "trash")
+                }
+            }
+        }
+    }
+
+    private func deleteSelectedFavorites() {
+        let allFavorites = collectFavorites(from: viewModel.treeItems)
+        let toDelete = allFavorites.filter { selectedFavoriteIds.contains("fav-\($0.id)") }
+        for fav in toDelete {
+            viewModel.deleteFavorite(fav)
+        }
+        selectedFavoriteIds.removeAll()
+    }
+
+    private func collectFavorites(from items: [FavoriteTreeItem]) -> [SQLFavorite] {
+        var result: [SQLFavorite] = []
+        for item in items {
+            switch item {
+            case .favorite(let fav):
+                result.append(fav)
+            case .folder(_, let children):
+                result.append(contentsOf: collectFavorites(from: children))
+            }
+        }
+        return result
     }
 
     // MARK: - Empty States

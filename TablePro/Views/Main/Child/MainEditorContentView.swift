@@ -66,8 +66,7 @@ struct MainEditorContentView: View {
     @State private var tabProviderVersions: [UUID: Int] = [:]
     @State private var tabProviderMetaVersions: [UUID: Int] = [:]
     @State private var cachedChangeManager: AnyChangeManager?
-    @State private var showFavoriteDialog = false
-    @State private var favoriteQuery: String?
+    @State private var favoriteDialogQuery: FavoriteDialogQuery?
 
     // Native macOS window tabs — no LRU tracking needed (single tab per window)
 
@@ -109,11 +108,11 @@ struct MainEditorContentView: View {
         }
         .background(.background)
         .animation(.easeInOut(duration: 0.2), value: isHistoryVisible)
-        .sheet(isPresented: $showFavoriteDialog) {
+        .sheet(item: $favoriteDialogQuery) { item in
             FavoriteEditDialog(
                 connectionId: connectionId,
                 favorite: nil,
-                initialQuery: favoriteQuery
+                initialQuery: item.query
             )
         }
         .onChange(of: tabManager.tabs.count) {
@@ -220,8 +219,8 @@ struct MainEditorContentView: View {
                         coordinator.aiViewModel?.handleOptimizeSelection(text)
                     },
                     onSaveAsFavorite: { text in
-                        favoriteQuery = text.isEmpty ? nil : text
-                        showFavoriteDialog = true
+                        guard !text.isEmpty else { return }
+                        favoriteDialogQuery = FavoriteDialogQuery(query: text)
                     }
                 )
             }
