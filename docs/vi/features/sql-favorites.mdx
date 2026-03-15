@@ -1,52 +1,60 @@
 ---
 title: SQL Favorites
-description: Luu va to chuc cac truy van thuong dung voi phim tat keyword de truy xuat nhanh
+description: Lưu các truy vấn thường dùng với phím tắt keyword để mở rộng qua autocomplete
 ---
 
 # SQL Favorites
 
-Luu cac truy van SQL ban thuong su dung thanh favorite. To chuc chung trong thu muc, gan phim tat keyword, va truy xuat tu sidebar hoac qua autocomplete.
+Lưu những query bạn hay chạy thành favorite. Sắp xếp vào thư mục, gán keyword shortcut, và chèn từ sidebar hoặc gõ keyword để mở rộng qua autocomplete.
 
-## Luu Favorite
+## Lưu favorite
 
-Co nhieu cach de luu mot truy van thanh favorite:
+Ba cách để lưu query:
 
-- **Click chuot phai trong editor** va chon **Save as Favorite...**
-- **Click chuot phai mot muc lich su** trong panel Query History va chon **Save as Favorite**
-- Nhan nut **+** o header section **Favorites** trong sidebar
+- **Click chuột phải trong editor** và chọn **Save as Favorite...**
+- **Click chuột phải một mục lịch sử** trong panel Query History và chọn **Save as Favorite**
+- Nhấn **+ New Favorite** trong tab Favorites ở sidebar
 
-Hop thoai luu cho phep ban thiet lap:
+Hộp thoại có bốn trường:
 
-| Truong | Mo ta |
+| Trường | Mô tả |
 |--------|-------|
-| Name | Ten mo ta cho truy van |
-| Keyword | Phim tat tuy chon de mo rong qua autocomplete |
-| Query | Noi dung truy van SQL |
-| Global | Khi bat, favorite hien thi trong tat ca cac ket noi |
+| Name | Tên ngắn cho query |
+| Keyword | Alias tùy chọn, gõ vào sẽ mở rộng thành query đầy đủ qua autocomplete |
+| Query | Nội dung SQL |
+| Global | Khi bật, favorite hiện trong mọi kết nối |
 
-## Sidebar
+## Tab sidebar
 
-Favorites hien thi trong section **Favorites** co the thu gon o dau sidebar, phia tren danh sach bang. Section ho tro:
+Sidebar có segmented control **Tables / Favorites** ở trên cùng. Chuyển sang tab **Favorites** để xem các query đã lưu.
 
-- **Thu muc** de to chuc favorites thanh nhom (ho tro long nhau)
-- **Tim kiem** loc cung voi bang khi ban go trong o tim kiem sidebar
-- **Double-click** mot favorite de chen truy van vao editor hien tai
-- **Menu ngu canh** voi cac tuy chon chinh sua, sao chep, chen, chay trong tab moi, hoac xoa
+Tab Favorites hỗ trợ:
 
-### Thu muc
+- **Thư mục** với nhiều cấp lồng nhau (click chuột phải để đổi tên, thêm thư mục con, hoặc xóa)
+- **Tìm kiếm** lọc theo tên, keyword, và nội dung query
+- **Double-click** để chèn query vào editor hiện tại
+- **Menu ngữ cảnh** để sửa, sao chép, chèn, chạy trong tab mới, di chuyển vào thư mục, hoặc xóa
+- **Chọn nhiều** bằng Cmd+click, rồi nhấn Delete để xóa
 
-Tao thu muc tu menu ngu canh header section sidebar hoac tu menu ngu canh cua thu muc. Xoa thu muc se chuyen cac muc con sang thu muc cha (hoac goc) thay vi xoa chung.
+### Thư mục
 
-## Mo rong Keyword
+Tạo thư mục bằng nút **+ folder** ở cuối sidebar, hoặc từ menu ngữ cảnh của thư mục. Xóa thư mục sẽ chuyển các mục con lên cấp cha thay vì xóa chúng.
 
-Gan keyword cho favorite, va no se xuat hien nhu goi y autocomplete. Go keyword trong editor va popup autocomplete se hien thi favorite voi bieu tuong ngoi sao. Chon no se thay the keyword bang toan bo noi dung truy van.
+Để di chuyển favorite giữa các thư mục, click chuột phải và dùng submenu **Move to**.
 
-Keywords phai duy nhat trong pham vi cua chung (global hoac theo ket noi). Hop thoai luu se canh bao neu keyword trung voi tu khoa SQL nhu `SELECT` hoac `WHERE`.
+## Mở rộng keyword
 
-### Pham vi
+Gán keyword cho favorite và nó sẽ xuất hiện như gợi ý autocomplete với biểu tượng ngôi sao. Chọn nó sẽ thay thế keyword đã gõ bằng toàn bộ query.
 
-Favorites co the la **global** (hien thi trong tat ca cac ket noi) hoac **theo ket noi** (chi hien thi khi ket noi voi co so du lieu cu the). Favorites theo ket noi va keywords cua chung co uu tien trong ket noi do.
+Keyword phải duy nhất trong phạm vi (global hoặc theo kết nối). Hộp thoại cảnh báo nếu keyword trùng với từ khóa SQL như `SELECT` hay `WHERE`, nhưng không chặn lưu.
 
-## Luu tru
+### Phạm vi
 
-Favorites duoc luu trong co so du lieu SQLite cuc bo (`sql_favorites.db`) tai `~/Library/Application Support/TablePro/`, tach biet voi lich su truy van. Tim kiem toan van duoc ho tro boi FTS5.
+- Favorite **Global** hiện trong mọi kết nối.
+- Favorite **theo kết nối** chỉ hiện trong kết nối đã tạo.
+
+Favorite tạo từ sidebar mặc định theo kết nối. Favorite lưu từ panel lịch sử luôn là global.
+
+## Lưu trữ
+
+Favorites lưu trong database SQLite (`sql_favorites.db`) tại `~/Library/Application Support/TablePro/`, tách biệt với lịch sử query. Tìm kiếm dùng FTS5 full-text indexing trên tên, keyword, và nội dung query.
