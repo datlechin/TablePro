@@ -14,12 +14,12 @@ enum SQLStatementScanner {
     static func allStatements(in sql: String) -> [String] {
         var results: [String] = []
         scan(sql: sql, cursorPosition: nil) { rawSQL, _ in
-            var trimmed = rawSQL.trimmingCharacters(in: .whitespacesAndNewlines)
-            if trimmed.hasSuffix(";") {
-                trimmed = String(trimmed.dropLast())
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-            }
-            if !trimmed.isEmpty {
+            let trimmed = rawSQL.trimmingCharacters(in: .whitespacesAndNewlines)
+            // Skip empty statements (bare semicolons, whitespace-only)
+            let withoutSemicolon = trimmed.hasSuffix(";")
+                ? String(trimmed.dropLast()).trimmingCharacters(in: .whitespacesAndNewlines)
+                : trimmed
+            if !withoutSemicolon.isEmpty {
                 results.append(trimmed)
             }
             return true
@@ -28,14 +28,9 @@ enum SQLStatementScanner {
     }
 
     static func statementAtCursor(in sql: String, cursorPosition: Int) -> String {
-        var result = locatedStatementAtCursor(in: sql, cursorPosition: cursorPosition)
+        locatedStatementAtCursor(in: sql, cursorPosition: cursorPosition)
             .sql
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        if result.hasSuffix(";") {
-            result = String(result.dropLast())
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-        }
-        return result
     }
 
     static func locatedStatementAtCursor(in sql: String, cursorPosition: Int) -> LocatedStatement {
