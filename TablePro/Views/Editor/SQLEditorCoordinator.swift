@@ -165,6 +165,9 @@ final class SQLEditorCoordinator: TextViewCoordinator {
             guard range.length > 0 else { return nil }
             return (textView.string as NSString).substring(with: range)
         }
+        menu.fullText = { [weak controller] in
+            controller?.textView?.string
+        }
         menu.onExplainWithAI = { [weak self] text in self?.onAIExplain?(text) }
         menu.onOptimizeWithAI = { [weak self] text in self?.onAIOptimize?(text) }
         menu.onSaveAsFavorite = { [weak self] text in self?.onSaveAsFavorite?(text) }

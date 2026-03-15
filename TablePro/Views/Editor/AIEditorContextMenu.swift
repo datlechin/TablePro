@@ -12,6 +12,7 @@ final class AIEditorContextMenu: NSMenu, NSMenuDelegate {
     /// Closure provided by the coordinator to check if text is selected
     var hasSelection: (() -> Bool)?
     var selectedText: (() -> String?)?
+    var fullText: (() -> String?)?
     var onExplainWithAI: ((String) -> Void)?
     var onOptimizeWithAI: ((String) -> Void)?
     var onSaveAsFavorite: ((String) -> Void)?
@@ -55,6 +56,7 @@ final class AIEditorContextMenu: NSMenu, NSMenuDelegate {
         )
         saveAsFavItem.target = self
         saveAsFavItem.image = NSImage(systemSymbolName: "star", accessibilityDescription: nil)
+        saveAsFavItem.isEnabled = (fullText?()?.isEmpty == false)
         menu.addItem(saveAsFavItem)
 
         // AI items — only when text is selected
@@ -96,8 +98,8 @@ final class AIEditorContextMenu: NSMenu, NSMenuDelegate {
     @objc private func handleSaveAsFavorite() {
         if let text = selectedText?(), !text.isEmpty {
             onSaveAsFavorite?(text)
-        } else {
-            onSaveAsFavorite?("")
+        } else if let text = fullText?(), !text.isEmpty {
+            onSaveAsFavorite?(text)
         }
     }
 }

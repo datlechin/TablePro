@@ -107,7 +107,7 @@ struct FavoriteEditDialog: View {
                 keyword = fav.keyword ?? ""
                 isGlobal = forceGlobal || fav.connectionId == nil
             } else {
-                isGlobal = true
+                isGlobal = forceGlobal
                 if let q = initialQuery {
                     query = q
                 }

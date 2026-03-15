@@ -82,6 +82,7 @@ struct SidebarView: View {
                 .opacity(sidebarState.selectedSidebarTab == .tables ? 1 : 0)
                 .frame(maxHeight: sidebarState.selectedSidebarTab == .tables ? .infinity : 0)
                 .clipped()
+                .allowsHitTesting(sidebarState.selectedSidebarTab == .tables)
 
             FavoritesTabView(
                 connectionId: connectionId,
@@ -91,6 +92,7 @@ struct SidebarView: View {
             .opacity(sidebarState.selectedSidebarTab == .favorites ? 1 : 0)
             .frame(maxHeight: sidebarState.selectedSidebarTab == .favorites ? .infinity : 0)
             .clipped()
+            .allowsHitTesting(sidebarState.selectedSidebarTab == .favorites)
         }
         .animation(.easeInOut(duration: 0.18), value: sidebarState.selectedSidebarTab)
         .safeAreaInset(edge: .top, spacing: 0) {

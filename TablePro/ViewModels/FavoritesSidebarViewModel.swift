@@ -182,7 +182,8 @@ final class FavoritesSidebarViewModel {
             switch item {
             case .favorite(let fav):
                 if fav.name.localizedCaseInsensitiveContains(searchText) ||
-                    (fav.keyword?.localizedCaseInsensitiveContains(searchText) == true) {
+                    (fav.keyword?.localizedCaseInsensitiveContains(searchText) == true) ||
+                    fav.query.localizedCaseInsensitiveContains(searchText) {
                     return item
                 }
                 return nil
