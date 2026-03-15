@@ -11,18 +11,20 @@ import SwiftUI
 enum SettingsTab: String {
     case general, appearance, editor, dataGrid, keyboard, history, ai, plugins, sync, license
 
-    var preferredSize: CGSize {
+    static let fixedWidth: CGFloat = 650
+
+    var preferredHeight: CGFloat {
         switch self {
-        case .general:    CGSize(width: 450, height: 380)
-        case .appearance: CGSize(width: 720, height: 500)
-        case .editor:     CGSize(width: 450, height: 300)
-        case .dataGrid:   CGSize(width: 450, height: 380)
-        case .keyboard:   CGSize(width: 500, height: 500)
-        case .history:    CGSize(width: 450, height: 320)
-        case .ai:         CGSize(width: 500, height: 520)
-        case .plugins:    CGSize(width: 650, height: 500)
-        case .sync:       CGSize(width: 450, height: 420)
-        case .license:    CGSize(width: 450, height: 280)
+        case .general:    380
+        case .appearance: 500
+        case .editor:     300
+        case .dataGrid:   380
+        case .keyboard:   500
+        case .history:    320
+        case .ai:         520
+        case .plugins:    500
+        case .sync:       420
+        case .license:    280
         }
     }
 }
@@ -100,8 +102,8 @@ struct SettingsView: View {
                 }
                 .tag(SettingsTab.license.rawValue)
         }
-        .frame(width: currentTab.preferredSize.width, height: currentTab.preferredSize.height)
-        .background(SettingsWindowResizer(size: currentTab.preferredSize))
+        .frame(width: SettingsTab.fixedWidth, height: currentTab.preferredHeight)
+        .background(SettingsWindowResizer(size: CGSize(width: SettingsTab.fixedWidth, height: currentTab.preferredHeight)))
     }
 }
 
