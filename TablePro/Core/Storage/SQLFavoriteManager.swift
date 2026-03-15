@@ -51,6 +51,18 @@ final class SQLFavoriteManager {
         return result
     }
 
+    func deleteFavorites(ids: [UUID]) async {
+        for id in ids {
+            let result = await storage.deleteFavorite(id: id)
+            if result {
+                SyncChangeTracker.shared.markDeleted(.favorite, id: id.uuidString)
+            }
+        }
+        if !ids.isEmpty {
+            postUpdateNotification()
+        }
+    }
+
     func fetchFavorites(
         connectionId: UUID? = nil,
         folderId: UUID? = nil,

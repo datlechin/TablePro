@@ -101,9 +101,8 @@ struct FavoritesTabView: View {
     private func deleteSelectedFavorites() {
         let allFavorites = collectFavorites(from: viewModel.treeItems)
         let toDelete = allFavorites.filter { selectedFavoriteIds.contains("fav-\($0.id)") }
-        for fav in toDelete {
-            viewModel.deleteFavorite(fav)
-        }
+        guard !toDelete.isEmpty else { return }
+        viewModel.deleteFavorites(toDelete)
         selectedFavoriteIds.removeAll()
     }
 

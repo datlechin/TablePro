@@ -128,6 +128,12 @@ final class FavoritesSidebarViewModel {
         }
     }
 
+    func deleteFavorites(_ favorites: [SQLFavorite]) {
+        Task {
+            await manager.deleteFavorites(ids: favorites.map(\.id))
+        }
+    }
+
     func createFolder(parentId: UUID? = nil) {
         if let parentId {
             expandedFolderIds.insert(parentId)
