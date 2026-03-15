@@ -10,6 +10,21 @@ import SwiftUI
 /// Settings tab identifiers for programmatic navigation
 enum SettingsTab: String {
     case general, appearance, editor, dataGrid, keyboard, history, ai, plugins, sync, license
+
+    var preferredSize: CGSize {
+        switch self {
+        case .general:    CGSize(width: 450, height: 380)
+        case .appearance: CGSize(width: 720, height: 500)
+        case .editor:     CGSize(width: 450, height: 300)
+        case .dataGrid:   CGSize(width: 450, height: 380)
+        case .keyboard:   CGSize(width: 500, height: 500)
+        case .history:    CGSize(width: 450, height: 320)
+        case .ai:         CGSize(width: 500, height: 520)
+        case .plugins:    CGSize(width: 650, height: 500)
+        case .sync:       CGSize(width: 450, height: 420)
+        case .license:    CGSize(width: 450, height: 280)
+        }
+    }
 }
 
 /// Main settings view with tab-based navigation (macOS Settings style)
@@ -17,6 +32,10 @@ struct SettingsView: View {
     @Bindable private var settingsManager = AppSettingsManager.shared
     @Environment(UpdaterBridge.self) var updaterBridge
     @AppStorage("selectedSettingsTab") private var selectedTab: String = SettingsTab.general.rawValue
+
+    private var currentTab: SettingsTab {
+        SettingsTab(rawValue: selectedTab) ?? .general
+    }
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -81,7 +100,8 @@ struct SettingsView: View {
                 }
                 .tag(SettingsTab.license.rawValue)
         }
-        .frame(width: 720, height: 500)
+        .frame(width: currentTab.preferredSize.width, height: currentTab.preferredSize.height)
+        .background(SettingsWindowResizer(size: currentTab.preferredSize))
     }
 }
 
