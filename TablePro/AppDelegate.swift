@@ -52,6 +52,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSWindow.allowsAutomaticWindowTabbing = true
+        KeychainHelper.shared.migrateFromLegacyKeychainIfNeeded()
         PluginManager.shared.loadPlugins()
 
         Task { @MainActor in

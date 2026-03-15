@@ -10,12 +10,15 @@ import Testing
 
 @Suite("Keychain Access Control")
 struct KeychainAccessControlTests {
-    @Test("kSecAttrAccessibleWhenUnlockedThisDeviceOnly constant is available")
+    @Test("AfterFirstUnlock constant is available for background access")
     func correctConstantAvailable() {
-        let expected = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+        let expected = kSecAttrAccessibleAfterFirstUnlock
         #expect(expected != nil)
+    }
 
-        let lessSecure = kSecAttrAccessibleAfterFirstUnlock
-        #expect(expected as String != lessSecure as String)
+    @Test("Data Protection keychain flag is a valid boolean")
+    func dataProtectionKeychainFlag() {
+        let flag = kSecUseDataProtectionKeychain
+        #expect(flag != nil)
     }
 }
