@@ -384,8 +384,6 @@ final class SQLFavoriteStorage {
                 if folderIdString != nil {
                     whereClauses.append("folder_id = ?")
                     hasFolderFilter = true
-                } else if searchText == nil {
-                    whereClauses.append("folder_id IS NULL")
                 }
 
                 if !whereClauses.isEmpty {
