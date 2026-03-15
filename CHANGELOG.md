@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sync status indicator in welcome window showing real-time sync state
 - Conflict resolution dialog for handling simultaneous edits across devices
 
+### Fixed
+
+- Keychain authorization prompt no longer appears on every table open
+
 ## [0.18.1] - 2026-03-14
 
 ### Fixed

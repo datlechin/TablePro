@@ -7,7 +7,6 @@
 
 import Foundation
 import os
-import Security
 
 /// Service for persisting database connections
 final class ConnectionStorage {
@@ -162,223 +161,70 @@ final class ConnectionStorage {
     //   - ConnectionFormView — single-item lookup during form population (negligible latency)
     // No async wrapper is needed; adding one would add complexity without measurable benefit.
 
-    /// Upsert a value into the Keychain: tries SecItemAdd first, falls back to SecItemUpdate
-    /// on duplicate. Returns true on success.
-    @discardableResult
-    private func keychainUpsert(key: String, data: Data) -> Bool {
-        let baseQuery: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: "com.TablePro",
-            kSecAttrAccount as String: key,
-        ]
-
-        let addQuery = baseQuery.merging([
-            kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
-        ]) { _, new in new }
-
-        let addStatus = SecItemAdd(addQuery as CFDictionary, nil)
-
-        if addStatus == errSecDuplicateItem {
-            // Item already exists — update it
-            let updateAttrs: [String: Any] = [kSecValueData as String: data]
-            let updateStatus = SecItemUpdate(baseQuery as CFDictionary, updateAttrs as CFDictionary)
-            if updateStatus != errSecSuccess {
-                Self.logger.error("Failed to update Keychain item '\(key)': OSStatus \(updateStatus)")
-                return false
-            }
-            return true
-        } else if addStatus != errSecSuccess {
-            Self.logger.error("Failed to add Keychain item '\(key)': OSStatus \(addStatus)")
-            return false
-        }
-        return true
-    }
-
-    /// Save password to Keychain
     func savePassword(_ password: String, for connectionId: UUID) {
         let key = "com.TablePro.password.\(connectionId.uuidString)"
-        guard let data = password.data(using: .utf8) else { return }
-        keychainUpsert(key: key, data: data)
+        KeychainHelper.shared.saveString(password, forKey: key)
     }
 
-    /// Load password from Keychain
     func loadPassword(for connectionId: UUID) -> String? {
         let key = "com.TablePro.password.\(connectionId.uuidString)"
-
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: "com.TablePro",
-            kSecAttrAccount as String: key,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-        ]
-
-        var result: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
-
-        guard status == errSecSuccess,
-              let data = result as? Data,
-              let password = String(data: data, encoding: .utf8)
-        else {
-            return nil
-        }
-
-        return password
+        return KeychainHelper.shared.loadString(forKey: key)
     }
 
-    /// Delete password from Keychain
     func deletePassword(for connectionId: UUID) {
         let key = "com.TablePro.password.\(connectionId.uuidString)"
-
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: "com.TablePro",
-            kSecAttrAccount as String: key,
-        ]
-
-        SecItemDelete(query as CFDictionary)
+        KeychainHelper.shared.delete(key: key)
     }
 
     // MARK: - SSH Password Storage
 
-    /// Save SSH password to Keychain
     func saveSSHPassword(_ password: String, for connectionId: UUID) {
         let key = "com.TablePro.sshpassword.\(connectionId.uuidString)"
-        guard let data = password.data(using: .utf8) else { return }
-        keychainUpsert(key: key, data: data)
+        KeychainHelper.shared.saveString(password, forKey: key)
     }
 
-    /// Load SSH password from Keychain
     func loadSSHPassword(for connectionId: UUID) -> String? {
         let key = "com.TablePro.sshpassword.\(connectionId.uuidString)"
-
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: "com.TablePro",
-            kSecAttrAccount as String: key,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-        ]
-
-        var result: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
-
-        guard status == errSecSuccess,
-              let data = result as? Data,
-              let password = String(data: data, encoding: .utf8)
-        else {
-            return nil
-        }
-
-        return password
+        return KeychainHelper.shared.loadString(forKey: key)
     }
 
-    /// Delete SSH password from Keychain
     func deleteSSHPassword(for connectionId: UUID) {
         let key = "com.TablePro.sshpassword.\(connectionId.uuidString)"
-
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: "com.TablePro",
-            kSecAttrAccount as String: key,
-        ]
-
-        SecItemDelete(query as CFDictionary)
+        KeychainHelper.shared.delete(key: key)
     }
 
     // MARK: - Key Passphrase Storage
 
-    /// Save private key passphrase to Keychain
     func saveKeyPassphrase(_ passphrase: String, for connectionId: UUID) {
         let key = "com.TablePro.keypassphrase.\(connectionId.uuidString)"
-        guard let data = passphrase.data(using: .utf8) else { return }
-        keychainUpsert(key: key, data: data)
+        KeychainHelper.shared.saveString(passphrase, forKey: key)
     }
 
-    /// Load private key passphrase from Keychain
     func loadKeyPassphrase(for connectionId: UUID) -> String? {
         let key = "com.TablePro.keypassphrase.\(connectionId.uuidString)"
-
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: "com.TablePro",
-            kSecAttrAccount as String: key,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-        ]
-
-        var result: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
-
-        guard status == errSecSuccess,
-              let data = result as? Data,
-              let passphrase = String(data: data, encoding: .utf8)
-        else {
-            return nil
-        }
-
-        return passphrase
+        return KeychainHelper.shared.loadString(forKey: key)
     }
 
-    /// Delete private key passphrase from Keychain
     func deleteKeyPassphrase(for connectionId: UUID) {
         let key = "com.TablePro.keypassphrase.\(connectionId.uuidString)"
-
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: "com.TablePro",
-            kSecAttrAccount as String: key,
-        ]
-
-        SecItemDelete(query as CFDictionary)
+        KeychainHelper.shared.delete(key: key)
     }
 
     // MARK: - TOTP Secret Storage
 
-    /// Save TOTP secret to Keychain
     func saveTOTPSecret(_ secret: String, for connectionId: UUID) {
         let key = "com.TablePro.totpsecret.\(connectionId.uuidString)"
-        guard let data = secret.data(using: .utf8) else { return }
-        keychainUpsert(key: key, data: data)
+        KeychainHelper.shared.saveString(secret, forKey: key)
     }
 
-    /// Load TOTP secret from Keychain
     func loadTOTPSecret(for connectionId: UUID) -> String? {
         let key = "com.TablePro.totpsecret.\(connectionId.uuidString)"
-
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: "com.TablePro",
-            kSecAttrAccount as String: key,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-        ]
-
-        var result: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
-
-        guard status == errSecSuccess,
-              let data = result as? Data,
-              let secret = String(data: data, encoding: .utf8)
-        else {
-            return nil
-        }
-
-        return secret
+        return KeychainHelper.shared.loadString(forKey: key)
     }
 
-    /// Delete TOTP secret from Keychain
     func deleteTOTPSecret(for connectionId: UUID) {
         let key = "com.TablePro.totpsecret.\(connectionId.uuidString)"
-
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: "com.TablePro",
-            kSecAttrAccount as String: key,
-        ]
-
-        SecItemDelete(query as CFDictionary)
+        KeychainHelper.shared.delete(key: key)
     }
 }
 
