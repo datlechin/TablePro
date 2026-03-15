@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import UniformTypeIdentifiers
 
 /// Full-tab favorites view with folder hierarchy and bottom toolbar
 struct FavoritesTabView: View {
@@ -78,9 +77,6 @@ struct FavoritesTabView: View {
         .onDeleteCommand {
             deleteSelectedFavorites()
         }
-        .onDrop(of: [.plainText], isTargeted: nil) { providers in
-            handleDrop(providers: providers, targetFolderId: nil)
-        }
     }
 
     /// Renders tree items with DisclosureGroup for folders.
@@ -103,9 +99,6 @@ struct FavoritesTabView: View {
                                 viewModel: viewModel,
                                 coordinator: coordinator
                             )
-                        }
-                        .onDrag {
-                            NSItemProvider(object: favorite.id.uuidString as NSString)
                         }
                 case .folder(let folder, let children):
                     DisclosureGroup(isExpanded: Binding(
@@ -163,24 +156,7 @@ struct FavoritesTabView: View {
                         }
                     )
                 }
-                .onDrop(of: [.plainText], isTargeted: nil) { providers in
-                    handleDrop(providers: providers, targetFolderId: folder.id)
-                }
         }
-    }
-
-    private func handleDrop(providers: [NSItemProvider], targetFolderId: UUID?) -> Bool {
-        guard let provider = providers.first else { return false }
-        provider.loadObject(ofClass: NSString.self) { object, _ in
-            guard let idString = object as? String, let favoriteId = UUID(uuidString: idString) else { return }
-            Task { @MainActor in
-                viewModel.moveFavorite(id: favoriteId, toFolder: targetFolderId)
-                if let targetFolderId {
-                    viewModel.expandedFolderIds.insert(targetFolderId)
-                }
-            }
-        }
-        return true
     }
 
     private func deleteSelectedFavorites() {
@@ -282,6 +258,10 @@ private struct FavoriteItemContextMenu: View {
     let viewModel: FavoritesSidebarViewModel
     weak var coordinator: MainContentCoordinator?
 
+    private var folders: [SQLFavoriteFolder] {
+        collectFolders(from: viewModel.treeItems)
+    }
+
     var body: some View {
         Button(String(localized: "Edit...")) {
             viewModel.editFavorite(favorite)
@@ -306,6 +286,29 @@ private struct FavoriteItemContextMenu: View {
             Label(String(localized: "Run in New Tab"), systemImage: "play")
         }
 
+        if !folders.isEmpty {
+            Divider()
+
+            Menu(String(localized: "Move to")) {
+                if favorite.folderId != nil {
+                    Button(String(localized: "Root Level")) {
+                        viewModel.moveFavorite(id: favorite.id, toFolder: nil)
+                    }
+
+                    Divider()
+                }
+
+                ForEach(folders) { folder in
+                    if folder.id != favorite.folderId {
+                        Button(folder.name) {
+                            viewModel.moveFavorite(id: favorite.id, toFolder: folder.id)
+                            viewModel.expandedFolderIds.insert(folder.id)
+                        }
+                    }
+                }
+            }
+        }
+
         Divider()
 
         Button(role: .destructive) {
@@ -313,6 +316,17 @@ private struct FavoriteItemContextMenu: View {
         } label: {
             Label(String(localized: "Delete"), systemImage: "trash")
         }
+    }
+
+    private func collectFolders(from items: [FavoriteTreeItem]) -> [SQLFavoriteFolder] {
+        var result: [SQLFavoriteFolder] = []
+        for item in items {
+            if case .folder(let folder, let children) = item {
+                result.append(folder)
+                result.append(contentsOf: collectFolders(from: children))
+            }
+        }
+        return result
     }
 }
 
