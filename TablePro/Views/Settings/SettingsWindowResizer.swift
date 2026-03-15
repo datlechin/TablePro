@@ -21,10 +21,13 @@ struct SettingsWindowResizer: NSViewRepresentable {
         guard let window = nsView.window else { return }
         let newFrameSize = window.frameRect(forContentRect: NSRect(origin: .zero, size: size)).size
         guard window.frame.size != newFrameSize else { return }
-        var frame = window.frame
-        frame.origin.y += frame.size.height - newFrameSize.height
-        frame.size = newFrameSize
-        window.setFrame(frame, display: true, animate: window.isVisible)
+        // Defer to next run loop tick to avoid reentrant layout during SwiftUI rendering
+        DispatchQueue.main.async {
+            var frame = window.frame
+            frame.origin.y += frame.size.height - newFrameSize.height
+            frame.size = newFrameSize
+            window.setFrame(frame, display: true, animate: window.isVisible)
+        }
     }
 }
 
