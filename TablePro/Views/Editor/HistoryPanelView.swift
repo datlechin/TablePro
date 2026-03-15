@@ -11,6 +11,7 @@ import SwiftUI
 
 /// Query history panel with master-detail layout
 struct HistoryPanelView: View {
+    let connectionId: UUID
     // MARK: - State
 
     @State private var selectedEntryID: UUID?
@@ -52,7 +53,7 @@ struct HistoryPanelView: View {
         }
         .sheet(item: $favoriteDialogQuery) { item in
             FavoriteEditDialog(
-                connectionId: UUID(),
+                connectionId: connectionId,
                 favorite: nil,
                 initialQuery: item.query,
                 forceGlobal: true
@@ -446,7 +447,7 @@ private struct HistoryRowSwiftUI: View {
 #if DEBUG
 struct HistoryPanelView_Previews: PreviewProvider {
     static var previews: some View {
-        HistoryPanelView()
+        HistoryPanelView(connectionId: UUID())
             .frame(width: 600, height: 300)
     }
 }

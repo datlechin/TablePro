@@ -34,8 +34,7 @@ internal final class LibSSH2Tunnel: @unchecked Sendable {
     /// Keeps blocking work off the Swift cooperative thread pool.
     private static let relayQueue = DispatchQueue(
         label: "com.TablePro.ssh.relay",
-        qos: .utility,
-        attributes: .concurrent
+        qos: .utility
     )
 
     /// Callback invoked when the tunnel dies (keep-alive failure, etc.)
@@ -308,7 +307,10 @@ internal final class LibSSH2Tunnel: @unchecked Sendable {
             }
         }
 
-        relayTasks.withLock { $0.append(task) }
+        relayTasks.withLock { tasks in
+            tasks.removeAll { $0.isCancelled }
+            tasks.append(task)
+        }
     }
 
     /// Blocking relay loop — must only be called on `relayQueue`, never the cooperative pool.

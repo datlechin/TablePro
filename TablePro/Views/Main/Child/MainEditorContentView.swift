@@ -101,7 +101,7 @@ struct MainEditorContentView: View {
             // Global History Panel
             if isHistoryVisible {
                 Divider()
-                HistoryPanelView()
+                HistoryPanelView(connectionId: connectionId)
                     .frame(height: 300)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }

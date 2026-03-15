@@ -6,13 +6,13 @@
 import SwiftUI
 
 /// Wrapper for `.sheet(item:)` to ensure the query is passed reliably
-struct FavoriteDialogQuery: Identifiable {
+internal struct FavoriteDialogQuery: Identifiable {
     let id = UUID()
     let query: String
 }
 
 /// Dialog for creating or editing a SQL favorite
-struct FavoriteEditDialog: View {
+internal struct FavoriteEditDialog: View {
     @Environment(\.dismiss) private var dismiss
 
     let connectionId: UUID
@@ -28,12 +28,13 @@ struct FavoriteEditDialog: View {
     @State private var keywordError: String?
     @State private var isKeywordWarning = false
     @State private var isSaving = false
+    @State private var validationId = 0
 
     private var isEditing: Bool { favorite != nil }
     private var isValid: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty &&
             !query.trimmingCharacters(in: .whitespaces).isEmpty &&
-            keywordError == nil
+            (keywordError == nil || isKeywordWarning)
     }
 
     private static let maxQuerySize = 500_000
@@ -86,6 +87,9 @@ struct FavoriteEditDialog: View {
                 if !forceGlobal {
                     Toggle("Global:", isOn: $isGlobal)
                         .help(String(localized: "When enabled, this favorite is visible in all connections"))
+                        .onChange(of: isGlobal) {
+                            validateKeyword(keyword)
+                        }
                 }
             }
             .formStyle(.columns)
@@ -134,6 +138,8 @@ struct FavoriteEditDialog: View {
             keywordError = String(localized: "Keyword cannot contain spaces")
             return
         }
+        validationId += 1
+        let currentId = validationId
         Task { @MainActor in
             let scopeConnectionId = isGlobal ? nil : connectionId
             let available = await SQLFavoriteManager.shared.isKeywordAvailable(
@@ -141,6 +147,7 @@ struct FavoriteEditDialog: View {
                 connectionId: scopeConnectionId,
                 excludingFavoriteId: favorite?.id
             )
+            guard currentId == validationId else { return }
             if !available {
                 isKeywordWarning = false
                 keywordError = String(localized: "This keyword is already in use")
@@ -182,6 +189,7 @@ struct FavoriteEditDialog: View {
         let keywordValue = trimmedKeyword.isEmpty ? nil : trimmedKeyword
 
         Task { @MainActor in
+            let success: Bool
             if let existing = favorite {
                 var updated = existing
                 updated.name = trimmedName
@@ -189,7 +197,7 @@ struct FavoriteEditDialog: View {
                 updated.keyword = keywordValue
                 updated.connectionId = scopeConnectionId
                 updated.updatedAt = Date()
-                _ = await SQLFavoriteManager.shared.updateFavorite(updated)
+                success = await SQLFavoriteManager.shared.updateFavorite(updated)
             } else {
                 let newFavorite = SQLFavorite(
                     name: trimmedName,
@@ -198,9 +206,13 @@ struct FavoriteEditDialog: View {
                     folderId: folderId,
                     connectionId: scopeConnectionId
                 )
-                _ = await SQLFavoriteManager.shared.addFavorite(newFavorite)
+                success = await SQLFavoriteManager.shared.addFavorite(newFavorite)
             }
-            dismiss()
+            if success {
+                dismiss()
+            } else {
+                isSaving = false
+            }
         }
     }
 }

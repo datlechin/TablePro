@@ -6,7 +6,7 @@
 import Foundation
 
 /// A saved SQL query that can be quickly recalled and optionally expanded via keyword
-struct SQLFavorite: Identifiable, Codable, Hashable {
+internal struct SQLFavorite: Identifiable, Codable, Hashable {
     let id: UUID
     var name: String
     var query: String
@@ -25,9 +25,10 @@ struct SQLFavorite: Identifiable, Codable, Hashable {
         folderId: UUID? = nil,
         connectionId: UUID? = nil,
         sortOrder: Int = 0,
-        createdAt: Date = Date(),
-        updatedAt: Date = Date()
+        createdAt: Date? = nil,
+        updatedAt: Date? = nil
     ) {
+        let now = Date()
         self.id = id
         self.name = name
         self.query = query
@@ -35,7 +36,7 @@ struct SQLFavorite: Identifiable, Codable, Hashable {
         self.folderId = folderId
         self.connectionId = connectionId
         self.sortOrder = sortOrder
-        self.createdAt = createdAt
-        self.updatedAt = updatedAt
+        self.createdAt = createdAt ?? now
+        self.updatedAt = updatedAt ?? now
     }
 }

@@ -7,7 +7,7 @@ import Foundation
 import Observation
 
 /// Tree node for displaying favorites and folders in a hierarchy
-enum FavoriteTreeItem: Identifiable, Hashable {
+internal enum FavoriteTreeItem: Identifiable, Hashable {
     case folder(SQLFavoriteFolder, children: [FavoriteTreeItem])
     case favorite(SQLFavorite)
 
@@ -21,7 +21,7 @@ enum FavoriteTreeItem: Identifiable, Hashable {
 
 /// ViewModel for the favorites sidebar section
 @MainActor @Observable
-final class FavoritesSidebarViewModel {
+internal final class FavoritesSidebarViewModel {
     // MARK: - State
 
     var treeItems: [FavoriteTreeItem] = []
@@ -86,7 +86,7 @@ final class FavoritesSidebarViewModel {
 
         let levelFolders = folders
             .filter { $0.parentId == parentId }
-            .sorted { $0.sortOrder < $1.sortOrder }
+            .sorted { $0.sortOrder != $1.sortOrder ? $0.sortOrder < $1.sortOrder : $0.name.localizedStandardCompare($1.name) == .orderedAscending }
 
         for folder in levelFolders {
             let children = buildTree(folders: folders, favorites: favorites, parentId: folder.id)
@@ -95,7 +95,7 @@ final class FavoritesSidebarViewModel {
 
         let levelFavorites = favorites
             .filter { $0.folderId == parentId }
-            .sorted { $0.sortOrder < $1.sortOrder }
+            .sorted { $0.sortOrder != $1.sortOrder ? $0.sortOrder < $1.sortOrder : $0.name.localizedStandardCompare($1.name) == .orderedAscending }
 
         for fav in levelFavorites {
             items.append(.favorite(fav))

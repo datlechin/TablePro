@@ -8,7 +8,7 @@ import os
 import SQLite3
 
 /// Thread-safe SQLite storage for SQL favorites with FTS5 full-text search
-final class SQLFavoriteStorage {
+internal final class SQLFavoriteStorage {
     static let shared = SQLFavoriteStorage()
     private static let logger = Logger(subsystem: "com.TablePro", category: "SQLFavoriteStorage")
 
@@ -564,9 +564,17 @@ final class SQLFavoriteStorage {
                     sqlite3_bind_null(moveFavStatement, 1)
                 }
                 sqlite3_bind_text(moveFavStatement, 2, idString, -1, SQLITE_TRANSIENT)
-                sqlite3_step(moveFavStatement)
+                let moveFavResult = sqlite3_step(moveFavStatement)
+                sqlite3_finalize(moveFavStatement)
+                if moveFavResult != SQLITE_DONE {
+                    if inTransaction { sqlite3_exec(self.db, "ROLLBACK;", nil, nil, nil) }
+                    return false
+                }
+            } else {
+                sqlite3_finalize(moveFavStatement)
+                if inTransaction { sqlite3_exec(self.db, "ROLLBACK;", nil, nil, nil) }
+                return false
             }
-            sqlite3_finalize(moveFavStatement)
 
             // Move child subfolders to the parent folder
             let moveSubfoldersSQL = "UPDATE folders SET parent_id = ? WHERE parent_id = ?;"
@@ -578,9 +586,17 @@ final class SQLFavoriteStorage {
                     sqlite3_bind_null(moveSubStatement, 1)
                 }
                 sqlite3_bind_text(moveSubStatement, 2, idString, -1, SQLITE_TRANSIENT)
-                sqlite3_step(moveSubStatement)
+                let moveSubResult = sqlite3_step(moveSubStatement)
+                sqlite3_finalize(moveSubStatement)
+                if moveSubResult != SQLITE_DONE {
+                    if inTransaction { sqlite3_exec(self.db, "ROLLBACK;", nil, nil, nil) }
+                    return false
+                }
+            } else {
+                sqlite3_finalize(moveSubStatement)
+                if inTransaction { sqlite3_exec(self.db, "ROLLBACK;", nil, nil, nil) }
+                return false
             }
-            sqlite3_finalize(moveSubStatement)
 
             // Delete the folder
             let deleteSQL = "DELETE FROM folders WHERE id = ?;"

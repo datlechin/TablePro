@@ -355,14 +355,6 @@ struct ContentView: View {
         )
     }
 
-    private func sidebarTabBinding(for connectionId: UUID) -> Binding<SidebarTab> {
-        let state = SharedSidebarState.forConnection(connectionId)
-        return Binding(
-            get: { state.selectedSidebarTab },
-            set: { state.selectedSidebarTab = $0 }
-        )
-    }
-
     private func sidebarSearchPrompt(for connectionId: UUID) -> String {
         let state = SharedSidebarState.forConnection(connectionId)
         switch state.selectedSidebarTab {

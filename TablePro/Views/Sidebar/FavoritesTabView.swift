@@ -8,16 +8,18 @@
 import SwiftUI
 
 /// Full-tab favorites view with folder hierarchy and bottom toolbar
-struct FavoritesTabView: View {
+internal struct FavoritesTabView: View {
     @State private var viewModel: FavoritesSidebarViewModel
     @State private var selectedFavoriteIds: Set<String> = []
     @State private var folderToDelete: SQLFavoriteFolder?
     @State private var showDeleteFolderAlert = false
     @FocusState private var isRenameFocused: Bool
+    let connectionId: UUID
     let searchText: String
     private weak var coordinator: MainContentCoordinator?
 
     init(connectionId: UUID, searchText: String, coordinator: MainContentCoordinator?) {
+        self.connectionId = connectionId
         _viewModel = State(wrappedValue: FavoritesSidebarViewModel(connectionId: connectionId))
         self.searchText = searchText
         self.coordinator = coordinator
@@ -46,7 +48,7 @@ struct FavoritesTabView: View {
         }
         .sheet(isPresented: $viewModel.showEditDialog) {
             FavoriteEditDialog(
-                connectionId: coordinator?.connectionId ?? UUID(),
+                connectionId: connectionId,
                 favorite: viewModel.editingFavorite,
                 initialQuery: viewModel.editingQuery,
                 folderId: viewModel.editingFolderId
@@ -133,6 +135,7 @@ struct FavoritesTabView: View {
                     )
                 )
                 .textFieldStyle(.roundedBorder)
+                .accessibilityLabel(String(localized: "Folder name"))
                 .focused($isRenameFocused)
                 .onSubmit {
                     viewModel.commitRenameFolder(folder)
@@ -245,6 +248,7 @@ struct FavoritesTabView: View {
             }
             .buttonStyle(.borderless)
             .foregroundStyle(Color(nsColor: .secondaryLabelColor))
+            .accessibilityLabel(String(localized: "New Folder"))
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)

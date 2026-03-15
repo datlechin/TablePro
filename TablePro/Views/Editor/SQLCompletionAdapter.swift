@@ -16,6 +16,7 @@ final class SQLCompletionAdapter: CodeSuggestionDelegate {
     // MARK: - Properties
 
     private var completionEngine: CompletionEngine?
+    private var favoriteKeywords: [String: (name: String, query: String)] = [:]
     private var suppressNextCompletion = false
     private var currentCompletionContext: CompletionContext?
     private var debounceGeneration: UInt64 = 0
@@ -42,10 +43,12 @@ final class SQLCompletionAdapter: CodeSuggestionDelegate {
             schemaProvider: provider, databaseType: databaseType,
             dialect: dialect, statementCompletions: completions
         )
+        completionEngine?.updateFavoriteKeywords(favoriteKeywords)
     }
 
     /// Update favorite keywords for autocomplete expansion
     func updateFavoriteKeywords(_ keywords: [String: (name: String, query: String)]) {
+        favoriteKeywords = keywords
         completionEngine?.updateFavoriteKeywords(keywords)
     }
 

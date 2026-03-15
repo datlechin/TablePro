@@ -9,7 +9,7 @@
 import Foundation
 
 /// Which sidebar tab is active
-enum SidebarTab: String, CaseIterable {
+internal enum SidebarTab: String, CaseIterable {
     case tables
     case favorites
 }

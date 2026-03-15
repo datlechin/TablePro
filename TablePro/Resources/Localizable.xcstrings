@@ -6035,6 +6035,9 @@
     "Delete Folder" : {
 
     },
+    "Delete Folder?" : {
+
+    },
     "Delete Foreign Key" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8388,6 +8391,9 @@
     "Focus Border" : {
 
     },
+    "Folder name" : {
+
+    },
     "Font" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -10017,6 +10023,9 @@
     "Keyword:" : {
 
     },
+    "keyword: %@" : {
+
+    },
     "Language:" : {
       "localizations" : {
         "vi" : {
@@ -10808,6 +10817,9 @@
           }
         }
       }
+    },
+    "Move to" : {
+
     },
     "Move Up" : {
       "extractionState" : "stale",
@@ -14929,6 +14941,9 @@
         }
       }
     },
+    "Root Level" : {
+
+    },
     "Row %lld" : {
       "localizations" : {
         "vi" : {
@@ -16066,6 +16081,9 @@
 
     },
     "Settings:" : {
+
+    },
+    "Shadows the SQL keyword '%@'" : {
 
     },
     "Share anonymous usage data" : {
@@ -17735,6 +17753,9 @@
           }
         }
       }
+    },
+    "The folder \"%@\" will be deleted. Items inside will be moved to the parent level." : {
+
     },
     "The following %lld queries may permanently modify or delete data. This action cannot be undone.\n\n%@" : {
       "localizations" : {
@@ -19469,9 +19490,6 @@
         }
       }
     },
-    "Warning: this shadows the SQL keyword '%@'" : {
-
-    },
     "Website" : {
       "localizations" : {
         "vi" : {
@@ -19553,6 +19571,9 @@
           }
         }
       }
+    },
+    "When enabled, this favorite is visible in all connections" : {
+
     },
     "When TablePro starts:" : {
       "localizations" : {

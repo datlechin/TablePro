@@ -7,7 +7,7 @@ import Foundation
 import os
 
 /// Manages SQL favorites with notifications and sync tracking
-final class SQLFavoriteManager {
+internal final class SQLFavoriteManager {
     static let shared = SQLFavoriteManager()
     private static let logger = Logger(subsystem: "com.TablePro", category: "SQLFavoriteManager")
 

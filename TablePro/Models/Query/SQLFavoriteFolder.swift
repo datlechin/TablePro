@@ -6,7 +6,7 @@
 import Foundation
 
 /// A folder for organizing SQL favorites into a hierarchy
-struct SQLFavoriteFolder: Identifiable, Codable, Hashable {
+internal struct SQLFavoriteFolder: Identifiable, Codable, Hashable {
     let id: UUID
     var name: String
     var parentId: UUID?
@@ -21,15 +21,16 @@ struct SQLFavoriteFolder: Identifiable, Codable, Hashable {
         parentId: UUID? = nil,
         connectionId: UUID? = nil,
         sortOrder: Int = 0,
-        createdAt: Date = Date(),
-        updatedAt: Date = Date()
+        createdAt: Date? = nil,
+        updatedAt: Date? = nil
     ) {
+        let now = Date()
         self.id = id
         self.name = name
         self.parentId = parentId
         self.connectionId = connectionId
         self.sortOrder = sortOrder
-        self.createdAt = createdAt
-        self.updatedAt = updatedAt
+        self.createdAt = createdAt ?? now
+        self.updatedAt = updatedAt ?? now
     }
 }

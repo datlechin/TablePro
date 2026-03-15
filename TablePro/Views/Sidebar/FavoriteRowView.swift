@@ -6,7 +6,7 @@
 import SwiftUI
 
 /// Row view for a single SQL favorite in the sidebar
-struct FavoriteRowView: View {
+internal struct FavoriteRowView: View {
     let favorite: SQLFavorite
 
     var body: some View {

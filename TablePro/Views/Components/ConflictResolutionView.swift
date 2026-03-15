@@ -140,7 +140,7 @@ struct ConflictResolutionView: View {
             }
         case .favorite, .favoriteFolder:
             if let name = record["name"] as? String {
-                fieldRow(label: "Name", value: name)
+                fieldRow(label: String(localized: "Name"), value: name)
             }
         }
     }
