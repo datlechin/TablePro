@@ -237,7 +237,7 @@ struct ContentView: View {
                 .searchable(
                     text: sidebarSearchTextBinding(for: currentSession.connection.id),
                     placement: .sidebar,
-                    prompt: "Filter"
+                    prompt: sidebarSearchPrompt(for: currentSession.connection.id)
                 )
                 .navigationSplitViewColumnWidth(min: 200, ideal: 250, max: 600)
             } detail: {
@@ -353,6 +353,24 @@ struct ContentView: View {
             get: { state.searchText },
             set: { state.searchText = $0 }
         )
+    }
+
+    private func sidebarTabBinding(for connectionId: UUID) -> Binding<SidebarTab> {
+        let state = SharedSidebarState.forConnection(connectionId)
+        return Binding(
+            get: { state.selectedSidebarTab },
+            set: { state.selectedSidebarTab = $0 }
+        )
+    }
+
+    private func sidebarSearchPrompt(for connectionId: UUID) -> String {
+        let state = SharedSidebarState.forConnection(connectionId)
+        switch state.selectedSidebarTab {
+        case .tables:
+            return String(localized: "Filter")
+        case .favorites:
+            return String(localized: "Filter favorites")
+        }
     }
 
     private var sessionTableOperationOptionsBinding: Binding<[String: TableOperationOptions]> {

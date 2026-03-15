@@ -1,0 +1,276 @@
+//
+//  FavoritesTabView.swift
+//  TablePro
+//
+//  Full-tab view for SQL favorites in the sidebar.
+//
+
+import SwiftUI
+
+/// Full-tab favorites view with folder hierarchy and bottom toolbar
+struct FavoritesTabView: View {
+    @State private var viewModel: FavoritesSidebarViewModel
+    let searchText: String
+    private weak var coordinator: MainContentCoordinator?
+
+    init(connectionId: UUID, searchText: String, coordinator: MainContentCoordinator?) {
+        _viewModel = State(wrappedValue: FavoritesSidebarViewModel(connectionId: connectionId))
+        self.searchText = searchText
+        self.coordinator = coordinator
+    }
+
+    var body: some View {
+        Group {
+            let items = viewModel.filteredItems(searchText: searchText)
+
+            if viewModel.treeItems.isEmpty && searchText.isEmpty && !viewModel.isLoading {
+                emptyState
+            } else if items.isEmpty {
+                noMatchState
+            } else {
+                favoritesList(items)
+            }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            VStack(spacing: 0) {
+                Divider()
+                bottomToolbar
+            }
+        }
+        .onAppear {
+            Task { await viewModel.loadFavorites() }
+        }
+        .sheet(isPresented: $viewModel.showEditDialog) {
+            FavoriteEditDialog(
+                connectionId: coordinator?.connectionId ?? UUID(),
+                favorite: viewModel.editingFavorite,
+                initialQuery: viewModel.editingQuery,
+                folderId: viewModel.editingFolderId
+            )
+        }
+    }
+
+    // MARK: - List
+
+    private func favoritesList(_ items: [FavoriteTreeItem]) -> some View {
+        List {
+            ForEach(items) { item in
+                FavoriteTreeItemRow(
+                    item: item,
+                    viewModel: viewModel,
+                    coordinator: coordinator
+                )
+            }
+        }
+        .listStyle(.sidebar)
+        .scrollContentBackground(.hidden)
+    }
+
+    // MARK: - Empty States
+
+    private var emptyState: some View {
+        VStack(spacing: 6) {
+            Image(systemName: "star")
+                .font(.system(size: 28, weight: .thin))
+                .foregroundStyle(Color(nsColor: .tertiaryLabelColor))
+
+            Text("No Favorites")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(Color(nsColor: .secondaryLabelColor))
+
+            Text("Save frequently used queries\nfor quick access.")
+                .font(.system(size: 11))
+                .foregroundStyle(Color(nsColor: .tertiaryLabelColor))
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var noMatchState: some View {
+        VStack(spacing: 6) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 28, weight: .thin))
+                .foregroundStyle(Color(nsColor: .tertiaryLabelColor))
+
+            Text("No Matching Favorites")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(Color(nsColor: .secondaryLabelColor))
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    // MARK: - Bottom Toolbar
+
+    private var bottomToolbar: some View {
+        HStack(spacing: 8) {
+            Button {
+                viewModel.createFavorite()
+            } label: {
+                Label(String(localized: "New Favorite"), systemImage: "plus")
+                    .font(.system(size: 11))
+            }
+            .buttonStyle(.borderless)
+            .foregroundStyle(Color(nsColor: .secondaryLabelColor))
+
+            Spacer()
+
+            Button {
+                viewModel.createFolder()
+            } label: {
+                Image(systemName: "folder.badge.plus")
+                    .font(.system(size: 11))
+            }
+            .buttonStyle(.borderless)
+            .foregroundStyle(Color(nsColor: .secondaryLabelColor))
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+    }
+}
+
+// MARK: - Recursive Tree Item View
+
+struct FavoriteTreeItemRow: View {
+    let item: FavoriteTreeItem
+    let viewModel: FavoritesSidebarViewModel
+    weak var coordinator: MainContentCoordinator?
+    @FocusState private var isRenameFocused: Bool
+
+    var body: some View {
+        switch item {
+        case .favorite(let favorite):
+            FavoriteRowView(favorite: favorite)
+                .overlay {
+                    DoubleClickDetector {
+                        coordinator?.insertFavorite(favorite)
+                    }
+                }
+                .contextMenu {
+                    FavoriteItemContextMenu(
+                        favorite: favorite,
+                        viewModel: viewModel,
+                        coordinator: coordinator
+                    )
+                }
+        case .folder(let folder, let children):
+            DisclosureGroup(isExpanded: Binding(
+                get: { viewModel.expandedFolderIds.contains(folder.id) },
+                set: { isExpanded in
+                    if isExpanded {
+                        viewModel.expandedFolderIds.insert(folder.id)
+                    } else {
+                        viewModel.expandedFolderIds.remove(folder.id)
+                    }
+                }
+            )) {
+                ForEach(children) { child in
+                    FavoriteTreeItemRow(
+                        item: child,
+                        viewModel: viewModel,
+                        coordinator: coordinator
+                    )
+                }
+            } label: {
+                if viewModel.renamingFolderId == folder.id {
+                    HStack(spacing: 4) {
+                        Image(systemName: "folder")
+                        TextField(
+                            "",
+                            text: Binding(
+                                get: { viewModel.renamingFolderName },
+                                set: { viewModel.renamingFolderName = $0 }
+                            )
+                        )
+                        .textFieldStyle(.roundedBorder)
+                        .focused($isRenameFocused)
+                        .onSubmit {
+                            viewModel.commitRenameFolder(folder)
+                        }
+                        .onExitCommand {
+                            viewModel.renamingFolderId = nil
+                        }
+                        .onAppear {
+                            isRenameFocused = true
+                        }
+                    }
+                } else {
+                    Label(folder.name, systemImage: "folder")
+                        .contextMenu {
+                            FolderContextMenu(
+                                folder: folder,
+                                viewModel: viewModel
+                            )
+                        }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Context Menus
+
+private struct FavoriteItemContextMenu: View {
+    let favorite: SQLFavorite
+    let viewModel: FavoritesSidebarViewModel
+    weak var coordinator: MainContentCoordinator?
+
+    var body: some View {
+        Button("Edit...") {
+            viewModel.editFavorite(favorite)
+        }
+
+        Button {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(favorite.query, forType: .string)
+        } label: {
+            Label(String(localized: "Copy Query"), systemImage: "doc.on.doc")
+        }
+
+        Button {
+            coordinator?.insertFavorite(favorite)
+        } label: {
+            Label(String(localized: "Insert in Editor"), systemImage: "text.insert")
+        }
+
+        Button {
+            coordinator?.runFavoriteInNewTab(favorite)
+        } label: {
+            Label(String(localized: "Run in New Tab"), systemImage: "play")
+        }
+
+        Divider()
+
+        Button(role: .destructive) {
+            viewModel.deleteFavorite(favorite)
+        } label: {
+            Label(String(localized: "Delete"), systemImage: "trash")
+        }
+    }
+}
+
+private struct FolderContextMenu: View {
+    let folder: SQLFavoriteFolder
+    let viewModel: FavoritesSidebarViewModel
+
+    var body: some View {
+        Button("Rename") {
+            viewModel.startRenameFolder(folder)
+        }
+
+        Button("New Favorite...") {
+            viewModel.createFavorite(folderId: folder.id)
+        }
+
+        Button("New Subfolder") {
+            viewModel.createFolder(parentId: folder.id)
+        }
+
+        Divider()
+
+        Button(role: .destructive) {
+            viewModel.deleteFolder(folder)
+        } label: {
+            Label(String(localized: "Delete Folder"), systemImage: "trash")
+        }
+    }
+}

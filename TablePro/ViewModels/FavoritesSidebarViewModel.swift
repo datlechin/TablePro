@@ -30,16 +30,9 @@ final class FavoritesSidebarViewModel {
     var editingFavorite: SQLFavorite?
     var editingQuery: String?
     var editingFolderId: UUID?
-
-    var isFavoritesExpanded: Bool = {
-        let key = "sidebar.isFavoritesExpanded"
-        if UserDefaults.standard.object(forKey: key) != nil {
-            return UserDefaults.standard.bool(forKey: key)
-        }
-        return true
-    }() {
-        didSet { UserDefaults.standard.set(isFavoritesExpanded, forKey: "sidebar.isFavoritesExpanded") }
-    }
+    var renamingFolderId: UUID?
+    var renamingFolderName: String = ""
+    var expandedFolderIds: Set<UUID> = []
 
     // MARK: - Dependencies
 
@@ -114,6 +107,9 @@ final class FavoritesSidebarViewModel {
     // MARK: - Actions
 
     func createFavorite(query: String? = nil, folderId: UUID? = nil) {
+        if let folderId {
+            expandedFolderIds.insert(folderId)
+        }
         editingFavorite = nil
         editingQuery = query
         editingFolderId = folderId
@@ -133,13 +129,21 @@ final class FavoritesSidebarViewModel {
     }
 
     func createFolder(parentId: UUID? = nil) {
+        if let parentId {
+            expandedFolderIds.insert(parentId)
+        }
         Task {
             let folder = SQLFavoriteFolder(
                 name: String(localized: "New Folder"),
                 parentId: parentId,
                 connectionId: connectionId
             )
-            _ = await manager.addFolder(folder)
+            let success = await manager.addFolder(folder)
+            if success {
+                expandedFolderIds.insert(folder.id)
+                await loadFavorites()
+                startRenameFolder(folder)
+            }
         }
     }
 
@@ -149,7 +153,15 @@ final class FavoritesSidebarViewModel {
         }
     }
 
-    func renameFolder(_ folder: SQLFavoriteFolder, to newName: String) {
+    func startRenameFolder(_ folder: SQLFavoriteFolder) {
+        renamingFolderId = folder.id
+        renamingFolderName = folder.name
+    }
+
+    func commitRenameFolder(_ folder: SQLFavoriteFolder) {
+        let newName = renamingFolderName.trimmingCharacters(in: .whitespaces)
+        renamingFolderId = nil
+        guard !newName.isEmpty, newName != folder.name else { return }
         Task {
             var updated = folder
             updated.name = newName

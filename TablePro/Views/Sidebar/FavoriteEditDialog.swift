@@ -29,7 +29,6 @@ struct FavoriteEditDialog: View {
             keywordError == nil
     }
 
-    /// Maximum query size (500KB, matching PersistedTab pattern)
     private static let maxQuerySize = 500_000
 
     init(
@@ -47,68 +46,58 @@ struct FavoriteEditDialog: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            HStack {
-                Text(isEditing ? "Edit Favorite" : "Save as Favorite")
-                    .font(.headline)
-                Spacer()
-            }
-            .padding()
-
-            Divider()
-
-            // Form
+        VStack(spacing: 16) {
             Form {
-                TextField(String(localized: "Name"), text: $name)
-
-                TextField(String(localized: "Keyword (optional)"), text: $keyword)
-                    .textFieldStyle(.roundedBorder)
+                TextField("Name:", text: $name)
+                TextField("Keyword:", text: $keyword)
                     .onChange(of: keyword) { _, newValue in
                         validateKeyword(newValue)
                     }
 
                 if let error = keywordError {
-                    Text(error)
-                        .font(.caption)
-                        .foregroundStyle(.red)
+                    LabeledContent {} label: {
+                        Text(error)
+                            .foregroundStyle(error.hasPrefix("Warning") ? .orange : .red)
+                            .font(.callout)
+                    }
                 }
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Query")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                LabeledContent("Query:") {
                     TextEditor(text: $query)
                         .font(.system(.body, design: .monospaced))
-                        .frame(minHeight: 120)
-                        .border(Color(nsColor: .separatorColor))
+                        .frame(height: 160)
+                        .scrollContentBackground(.hidden)
+                        .padding(4)
+                        .background(Color(nsColor: .textBackgroundColor))
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 4)
+                                .stroke(Color(nsColor: .separatorColor), lineWidth: 0.5)
+                        )
                 }
 
                 if !forceGlobal {
-                    Toggle(String(localized: "Global (visible in all connections)"), isOn: $isGlobal)
+                    Toggle("Global:", isOn: $isGlobal)
                 }
             }
-            .padding()
+            .formStyle(.columns)
 
-            Divider()
-
-            // Buttons
             HStack {
                 Spacer()
-                Button(String(localized: "Cancel")) {
+                Button("Cancel") {
                     dismiss()
                 }
                 .keyboardShortcut(.cancelAction)
 
-                Button(isEditing ? String(localized: "Save") : String(localized: "Add")) {
+                Button(isEditing ? "Save" : "Add") {
                     save()
                 }
                 .keyboardShortcut(.defaultAction)
                 .disabled(!isValid || isSaving)
             }
-            .padding()
         }
-        .frame(width: 480, height: 420)
+        .padding(20)
+        .frame(width: 480)
         .onAppear {
             if let fav = favorite {
                 name = fav.name
