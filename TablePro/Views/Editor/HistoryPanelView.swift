@@ -21,6 +21,8 @@ struct HistoryPanelView: View {
     @State private var searchTask: Task<Void, Never>?
     @State private var copyButtonTitle = "Copy Query"
     @State private var copyResetTask: Task<Void, Never>?
+    @State private var showFavoriteDialog = false
+    @State private var favoriteQuery: String?
     @FocusedValue(\.commandActions) private var actions
 
     private let dataProvider = HistoryDataProvider()
@@ -48,6 +50,14 @@ struct HistoryPanelView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .queryHistoryDidUpdate)) { _ in
             loadData()
+        }
+        .sheet(isPresented: $showFavoriteDialog) {
+            FavoriteEditDialog(
+                connectionId: UUID(),
+                favorite: nil,
+                initialQuery: favoriteQuery,
+                forceGlobal: true
+            )
         }
     }
 }
@@ -184,6 +194,13 @@ private extension HistoryPanelView {
             runInNewTab(entry)
         } label: {
             Label(String(localized: "Run in New Tab"), systemImage: "play")
+        }
+
+        Button {
+            favoriteQuery = entry.query
+            showFavoriteDialog = true
+        } label: {
+            Label(String(localized: "Save as Favorite"), systemImage: "star")
         }
 
         Divider()

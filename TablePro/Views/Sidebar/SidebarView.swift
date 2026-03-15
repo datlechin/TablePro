@@ -179,6 +179,12 @@ struct SidebarView: View {
         let showAllLabel = String(localized: "Show All \(entityLabel)")
         return List(selection: selectedTablesBinding) {
             if filteredTables.isEmpty {
+                FavoritesSidebarSection(
+                    connectionId: connectionId,
+                    searchText: viewModel.debouncedSearchText,
+                    coordinator: coordinator
+                )
+
                 ContentUnavailableView(
                     noMatchLabel,
                     systemImage: "magnifyingglass"
@@ -186,6 +192,12 @@ struct SidebarView: View {
                 .listRowSeparator(.hidden)
                 .listRowBackground(Color.clear)
             } else {
+                FavoritesSidebarSection(
+                    connectionId: connectionId,
+                    searchText: viewModel.debouncedSearchText,
+                    coordinator: coordinator
+                )
+
                 Section(isExpanded: $viewModel.isTablesExpanded) {
                     ForEach(filteredTables) { table in
                         TableRow(

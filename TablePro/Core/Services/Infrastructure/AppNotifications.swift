@@ -18,4 +18,8 @@ extension Notification.Name {
 
     static let connectionUpdated = Notification.Name("connectionUpdated")
     static let databaseDidConnect = Notification.Name("databaseDidConnect")
+
+    // MARK: - SQL Favorites
+
+    static let sqlFavoritesDidUpdate = Notification.Name("sqlFavoritesDidUpdate")
 }

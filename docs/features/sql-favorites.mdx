@@ -1,0 +1,52 @@
+---
+title: SQL Favorites
+description: Save and organize frequently used queries with optional keyword bindings for quick recall
+---
+
+# SQL Favorites
+
+Save SQL queries you use often as favorites. Organize them in folders, assign keyword shortcuts, and recall them from the sidebar or via autocomplete.
+
+## Saving a Favorite
+
+There are several ways to save a query as a favorite:
+
+- **Right-click in the editor** and select **Save as Favorite...**
+- **Right-click a history entry** in the Query History panel and select **Save as Favorite**
+- Click the **+** button in the **Favorites** sidebar section header
+
+The save dialog lets you set:
+
+| Field | Description |
+|-------|-------------|
+| Name | A descriptive name for the query |
+| Keyword | Optional short alias for autocomplete expansion |
+| Query | The SQL query text |
+| Global | When enabled, the favorite is visible in all connections |
+
+## Sidebar
+
+Favorites appear in a collapsible **Favorites** section at the top of the sidebar, above the tables list. The section supports:
+
+- **Folders** for organizing favorites into groups (with nesting)
+- **Search** filtering alongside tables when you type in the sidebar search field
+- **Double-click** a favorite to insert its query into the current editor
+- **Context menu** with options to edit, copy, insert, run in a new tab, or delete
+
+### Folders
+
+Create folders from the sidebar section header context menu or from a folder's own context menu. Deleting a folder moves its children to the parent folder (or root level) rather than deleting them.
+
+## Keyword Expansion
+
+Assign a keyword to a favorite, and it becomes available as an autocomplete suggestion. Type the keyword in the editor and the autocomplete popup shows the favorite with a star icon. Selecting it replaces the keyword with the full query text.
+
+Keywords must be unique within their scope (global or per-connection). The save dialog warns if a keyword shadows a SQL keyword like `SELECT` or `WHERE`.
+
+### Scope
+
+Favorites can be **global** (visible in all connections) or **connection-scoped** (visible only when connected to a specific database). Connection-scoped favorites and their keywords take precedence within that connection.
+
+## Storage
+
+Favorites are stored in a local SQLite database (`sql_favorites.db`) in `~/Library/Application Support/TablePro/`, separate from query history. Full-text search is powered by FTS5.

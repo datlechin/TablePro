@@ -17,6 +17,7 @@ final class SQLCompletionProvider {
     private var databaseType: DatabaseType?
     private var cachedDialect: SQLDialectDescriptor?
     private var cachedStatementCompletions: [CompletionEntry] = []
+    private var favoriteKeywords: [String: (name: String, query: String)] = [:]
 
     /// Minimum prefix length to trigger suggestions
     private let minPrefixLength = 1
@@ -39,6 +40,11 @@ final class SQLCompletionProvider {
         self.databaseType = type
         self.cachedDialect = dialect
         self.cachedStatementCompletions = statementCompletions
+    }
+
+    /// Update cached favorite keywords for autocomplete expansion
+    func updateFavoriteKeywords(_ keywords: [String: (name: String, query: String)]) {
+        self.favoriteKeywords = keywords
     }
 
     // MARK: - Public API
@@ -80,6 +86,14 @@ final class SQLCompletionProvider {
         for context: SQLContext
     ) async -> [SQLCompletionItem] {
         var items: [SQLCompletionItem] = []
+
+        // Check for favorite keyword matches first (highest priority)
+        if !favoriteKeywords.isEmpty && !context.prefix.isEmpty {
+            let lowerPrefix = context.prefix.lowercased()
+            for (keyword, value) in favoriteKeywords where keyword.lowercased().hasPrefix(lowerPrefix) {
+                items.append(.favorite(keyword: keyword, name: value.name, query: value.query))
+            }
+        }
 
         // If we have a dot prefix, we're looking for columns of a specific table
         if let dotPrefix = context.dotPrefix {

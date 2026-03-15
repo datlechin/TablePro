@@ -16,6 +16,8 @@ enum SyncRecordType: String, CaseIterable {
     case tag = "ConnectionTag"
     case settings = "AppSettings"
     case queryHistory = "QueryHistory"
+    case favorite = "SQLFavorite"
+    case favoriteFolder = "SQLFavoriteFolder"
 }
 
 /// Pure-function mapper between local models and CKRecord
@@ -40,6 +42,8 @@ struct SyncRecordMapper {
         case .tag: recordName = "Tag_\(id)"
         case .settings: recordName = "Settings_\(id)"
         case .queryHistory: recordName = "History_\(id)"
+        case .favorite: recordName = "Favorite_\(id)"
+        case .favoriteFolder: recordName = "FavoriteFolder_\(id)"
         }
         return CKRecord.ID(recordName: recordName, zoneID: zone)
     }

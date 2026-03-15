@@ -14,6 +14,7 @@ final class AIEditorContextMenu: NSMenu, NSMenuDelegate {
     var selectedText: (() -> String?)?
     var onExplainWithAI: ((String) -> Void)?
     var onOptimizeWithAI: ((String) -> Void)?
+    var onSaveAsFavorite: ((String) -> Void)?
 
     override init(title: String) {
         super.init(title: title)
@@ -44,6 +45,17 @@ final class AIEditorContextMenu: NSMenu, NSMenuDelegate {
 
         let selectAllItem = NSMenuItem(title: String(localized: "Select All"), action: #selector(NSText.selectAll(_:)), keyEquivalent: "")
         menu.addItem(selectAllItem)
+
+        menu.addItem(.separator())
+
+        let saveAsFavItem = NSMenuItem(
+            title: String(localized: "Save as Favorite..."),
+            action: #selector(handleSaveAsFavorite),
+            keyEquivalent: ""
+        )
+        saveAsFavItem.target = self
+        saveAsFavItem.image = NSImage(systemSymbolName: "star", accessibilityDescription: nil)
+        menu.addItem(saveAsFavItem)
 
         // AI items — only when text is selected
         guard hasSelection?() == true else { return }
@@ -79,5 +91,13 @@ final class AIEditorContextMenu: NSMenu, NSMenuDelegate {
     @objc private func handleOptimizeWithAI() {
         guard let text = selectedText?() else { return }
         onOptimizeWithAI?(text)
+    }
+
+    @objc private func handleSaveAsFavorite() {
+        if let text = selectedText?(), !text.isEmpty {
+            onSaveAsFavorite?(text)
+        } else {
+            onSaveAsFavorite?("")
+        }
     }
 }

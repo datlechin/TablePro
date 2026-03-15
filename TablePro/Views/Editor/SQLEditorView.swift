@@ -19,17 +19,20 @@ struct SQLEditorView: View {
     @Binding var cursorPositions: [CursorPosition]
     var schemaProvider: SQLSchemaProvider?
     var databaseType: DatabaseType?
+    var connectionId: UUID?
     @Binding var vimMode: VimMode
     var onCloseTab: (() -> Void)?
     var onExecuteQuery: (() -> Void)?
     var onAIExplain: ((String) -> Void)?
     var onAIOptimize: ((String) -> Void)?
+    var onSaveAsFavorite: ((String) -> Void)?
 
     @State private var editorState = SourceEditorState()
     @State private var completionAdapter: SQLCompletionAdapter?
     @State private var coordinator = SQLEditorCoordinator()
     @State private var editorReady = false
     @State private var editorConfiguration = makeConfiguration()
+    @State private var favoritesObserver: NSObjectProtocol?
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
@@ -94,6 +97,8 @@ struct SQLEditorView: View {
                 coordinator.onExecuteQuery = onExecuteQuery
                 coordinator.onAIExplain = onAIExplain
                 coordinator.onAIOptimize = onAIOptimize
+                coordinator.onSaveAsFavorite = onSaveAsFavorite
+                setupFavoritesObserver()
             }
         } else {
             Color(nsColor: .textBackgroundColor)
@@ -106,15 +111,52 @@ struct SQLEditorView: View {
                     coordinator.onExecuteQuery = onExecuteQuery
                     coordinator.onAIExplain = onAIExplain
                     coordinator.onAIOptimize = onAIOptimize
+                    coordinator.onSaveAsFavorite = onSaveAsFavorite
+                    setupFavoritesObserver()
                     editorReady = true
                 }
             }
         }
         .onDisappear {
+            teardownFavoritesObserver()
             coordinator.destroy()
         }
         .onChange(of: coordinator.vimMode) { _, newMode in
             vimMode = newMode
+        }
+    }
+
+    // MARK: - Favorites
+
+    private func setupFavoritesObserver() {
+        teardownFavoritesObserver()
+        refreshFavoriteKeywords()
+        let adapter = completionAdapter
+        let connId = connectionId
+        favoritesObserver = NotificationCenter.default.addObserver(
+            forName: .sqlFavoritesDidUpdate,
+            object: nil,
+            queue: .main
+        ) { _ in
+            Task { @MainActor in
+                let keywords = await SQLFavoriteManager.shared.fetchKeywordMap(connectionId: connId)
+                adapter?.updateFavoriteKeywords(keywords)
+            }
+        }
+    }
+
+    private func refreshFavoriteKeywords() {
+        let connId = connectionId
+        Task { @MainActor in
+            let keywords = await SQLFavoriteManager.shared.fetchKeywordMap(connectionId: connId)
+            completionAdapter?.updateFavoriteKeywords(keywords)
+        }
+    }
+
+    private func teardownFavoritesObserver() {
+        if let observer = favoritesObserver {
+            NotificationCenter.default.removeObserver(observer)
+            favoritesObserver = nil
         }
     }
 

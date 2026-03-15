@@ -1,0 +1,52 @@
+---
+title: SQL Favorites
+description: Luu va to chuc cac truy van thuong dung voi phim tat keyword de truy xuat nhanh
+---
+
+# SQL Favorites
+
+Luu cac truy van SQL ban thuong su dung thanh favorite. To chuc chung trong thu muc, gan phim tat keyword, va truy xuat tu sidebar hoac qua autocomplete.
+
+## Luu Favorite
+
+Co nhieu cach de luu mot truy van thanh favorite:
+
+- **Click chuot phai trong editor** va chon **Save as Favorite...**
+- **Click chuot phai mot muc lich su** trong panel Query History va chon **Save as Favorite**
+- Nhan nut **+** o header section **Favorites** trong sidebar
+
+Hop thoai luu cho phep ban thiet lap:
+
+| Truong | Mo ta |
+|--------|-------|
+| Name | Ten mo ta cho truy van |
+| Keyword | Phim tat tuy chon de mo rong qua autocomplete |
+| Query | Noi dung truy van SQL |
+| Global | Khi bat, favorite hien thi trong tat ca cac ket noi |
+
+## Sidebar
+
+Favorites hien thi trong section **Favorites** co the thu gon o dau sidebar, phia tren danh sach bang. Section ho tro:
+
+- **Thu muc** de to chuc favorites thanh nhom (ho tro long nhau)
+- **Tim kiem** loc cung voi bang khi ban go trong o tim kiem sidebar
+- **Double-click** mot favorite de chen truy van vao editor hien tai
+- **Menu ngu canh** voi cac tuy chon chinh sua, sao chep, chen, chay trong tab moi, hoac xoa
+
+### Thu muc
+
+Tao thu muc tu menu ngu canh header section sidebar hoac tu menu ngu canh cua thu muc. Xoa thu muc se chuyen cac muc con sang thu muc cha (hoac goc) thay vi xoa chung.
+
+## Mo rong Keyword
+
+Gan keyword cho favorite, va no se xuat hien nhu goi y autocomplete. Go keyword trong editor va popup autocomplete se hien thi favorite voi bieu tuong ngoi sao. Chon no se thay the keyword bang toan bo noi dung truy van.
+
+Keywords phai duy nhat trong pham vi cua chung (global hoac theo ket noi). Hop thoai luu se canh bao neu keyword trung voi tu khoa SQL nhu `SELECT` hoac `WHERE`.
+
+### Pham vi
+
+Favorites co the la **global** (hien thi trong tat ca cac ket noi) hoac **theo ket noi** (chi hien thi khi ket noi voi co so du lieu cu the). Favorites theo ket noi va keywords cua chung co uu tien trong ket noi do.
+
+## Luu tru
+
+Favorites duoc luu trong co so du lieu SQLite cuc bo (`sql_favorites.db`) tai `~/Library/Application Support/TablePro/`, tach biet voi lich su truy van. Tim kiem toan van duoc ho tro boi FTS5.

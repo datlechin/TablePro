@@ -44,6 +44,11 @@ final class SQLCompletionAdapter: CodeSuggestionDelegate {
         )
     }
 
+    /// Update favorite keywords for autocomplete expansion
+    func updateFavoriteKeywords(_ keywords: [String: (name: String, query: String)]) {
+        completionEngine?.updateFavoriteKeywords(keywords)
+    }
+
     // MARK: - CodeSuggestionDelegate
 
     func completionTriggerCharacters() -> Set<String> {

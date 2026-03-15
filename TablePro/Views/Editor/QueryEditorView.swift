@@ -21,12 +21,14 @@ struct QueryEditorView: View {
     var onExecute: () -> Void
     var schemaProvider: SQLSchemaProvider?
     var databaseType: DatabaseType?
+    var connectionId: UUID?
     var onCloseTab: (() -> Void)?
     var onExecuteQuery: (() -> Void)?
     var onExplain: ((ClickHouseExplainVariant?) -> Void)?
     var onExplainVariant: ((ExplainVariant) -> Void)?
     var onAIExplain: ((String) -> Void)?
     var onAIOptimize: ((String) -> Void)?
+    var onSaveAsFavorite: ((String) -> Void)?
 
     @State private var vimMode: VimMode = .normal
 
@@ -46,11 +48,13 @@ struct QueryEditorView: View {
                 cursorPositions: $cursorPositions,
                 schemaProvider: schemaProvider,
                 databaseType: databaseType,
+                connectionId: connectionId,
                 vimMode: $vimMode,
                 onCloseTab: onCloseTab,
                 onExecuteQuery: onExecuteQuery,
                 onAIExplain: onAIExplain,
-                onAIOptimize: onAIOptimize
+                onAIOptimize: onAIOptimize,
+                onSaveAsFavorite: onSaveAsFavorite
             )
             .frame(minHeight: 100)
             .clipped()

@@ -46,6 +46,11 @@ final class CompletionEngine {
 
     // MARK: - Public API
 
+    /// Update favorite keywords for autocomplete expansion
+    func updateFavoriteKeywords(_ keywords: [String: (name: String, query: String)]) {
+        provider.updateFavoriteKeywords(keywords)
+    }
+
     /// Get completions for the given text and cursor position
     /// This is a pure function - no side effects
     func getCompletions(
