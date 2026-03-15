@@ -329,9 +329,13 @@ final class DataGridCellFactory {
         } else {
             var displayValue = value ?? ""
 
-            if let columnType = columnType, columnType.isDateType, !displayValue.isEmpty {
-                if let formattedDate = DateFormattingService.shared.format(dateString: displayValue) {
-                    displayValue = formattedDate
+            if let columnType = columnType, !displayValue.isEmpty {
+                if columnType.isDateType {
+                    if let formattedDate = DateFormattingService.shared.format(dateString: displayValue) {
+                        displayValue = formattedDate
+                    }
+                } else if BlobFormattingService.shared.requiresFormatting(columnType: columnType) {
+                    displayValue = BlobFormattingService.shared.formatIfNeeded(displayValue, columnType: columnType, for: .grid)
                 }
             }
 

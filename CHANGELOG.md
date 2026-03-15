@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Display BLOB data as multi-line hex dump in detail view sidebar
 - SQL Favorites: save and organize frequently used queries with optional keyword bindings for autocomplete expansion
 - Copy selected rows as JSON from context menu and Edit menu
 - iCloud Sync (Pro): sync connections, groups, tags, settings, and query history across Macs via CloudKit

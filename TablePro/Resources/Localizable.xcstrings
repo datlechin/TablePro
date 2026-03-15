@@ -656,6 +656,9 @@
         }
       }
     },
+    "%lld bytes" : {
+
+    },
     "%lld in · %lld out" : {
       "localizations" : {
         "en" : {
@@ -4665,6 +4668,9 @@
           }
         }
       }
+    },
+    "Copy as Hex" : {
+
     },
     "Copy as JSON" : {
 
@@ -8760,6 +8766,9 @@
           }
         }
       }
+    },
+    "Hex bytes" : {
+
     },
     "Hide All" : {
       "localizations" : {

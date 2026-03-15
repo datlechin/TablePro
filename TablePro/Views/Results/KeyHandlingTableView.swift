@@ -127,8 +127,11 @@ final class KeyHandlingTableView: NSTableView {
 
     /// Copy selected rows to clipboard
     @objc func copy(_ sender: Any?) {
+        let indices = Set(selectedRowIndexes)
         if let callback = coordinator?.onCopyRows {
-            callback(Set(selectedRowIndexes))
+            callback(indices)
+        } else {
+            coordinator?.copyRows(at: indices)
         }
     }
 

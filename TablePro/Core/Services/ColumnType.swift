@@ -123,6 +123,13 @@ enum ColumnType: Equatable {
         }
     }
 
+    var isBlobType: Bool {
+        switch self {
+        case .blob: return true
+        default: return false
+        }
+    }
+
     /// Compact lowercase badge label for sidebar
     var badgeLabel: String {
         switch self {

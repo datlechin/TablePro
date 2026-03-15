@@ -33,11 +33,12 @@ extension TableViewCoordinator {
 
     func copyRows(at indices: Set<Int>) {
         let sortedIndices = indices.sorted()
+        let columnTypes = (rowProvider as? InMemoryRowProvider)?.columnTypes
         var lines: [String] = []
 
         for index in sortedIndices {
             guard let values = rowProvider.rowValues(at: index) else { continue }
-            let line = values.map { $0 ?? "NULL" }.joined(separator: "\t")
+            let line = formatRowForCopy(values: values, columnTypes: columnTypes)
             lines.append(line)
         }
 
@@ -47,6 +48,7 @@ extension TableViewCoordinator {
 
     func copyRowsWithHeaders(at indices: Set<Int>) {
         let sortedIndices = indices.sorted()
+        let columnTypes = (rowProvider as? InMemoryRowProvider)?.columnTypes
         var lines: [String] = []
 
         // Add header row
@@ -54,7 +56,7 @@ extension TableViewCoordinator {
 
         for index in sortedIndices {
             guard let values = rowProvider.rowValues(at: index) else { continue }
-            let line = values.map { $0 ?? "NULL" }.joined(separator: "\t")
+            let line = formatRowForCopy(values: values, columnTypes: columnTypes)
             lines.append(line)
         }
 
@@ -100,7 +102,10 @@ extension TableViewCoordinator {
         guard columnIndex >= 0 && columnIndex < rowProvider.columns.count else { return }
 
         let value = rowProvider.value(atRow: rowIndex, column: columnIndex) ?? "NULL"
-        ClipboardService.shared.writeText(value)
+        let columnTypes = (rowProvider as? InMemoryRowProvider)?.columnTypes
+        let columnType = columnTypes.flatMap { $0.indices.contains(columnIndex) ? $0[columnIndex] : nil }
+        let copyValue = BlobFormattingService.shared.formatIfNeeded(value, columnType: columnType, for: .copy)
+        ClipboardService.shared.writeText(copyValue)
     }
 
     func copyRowsAsInsert(at indices: Set<Int>) {
@@ -142,6 +147,14 @@ extension TableViewCoordinator {
             ?? Array(repeating: ColumnType.text(rawType: nil), count: rowProvider.columns.count)
         let converter = JsonRowConverter(columns: rowProvider.columns, columnTypes: columnTypes)
         ClipboardService.shared.writeText(converter.generateJson(rows: rows))
+    }
+
+    private func formatRowForCopy(values: [String?], columnTypes: [ColumnType]?) -> String {
+        values.enumerated().map { index, value in
+            guard let value else { return "NULL" }
+            let columnType = columnTypes.flatMap { $0.indices.contains(index) ? $0[index] : nil }
+            return BlobFormattingService.shared.formatIfNeeded(value, columnType: columnType, for: .copy)
+        }.joined(separator: "\t")
     }
 
     private func resolveDriver() -> (any DatabaseDriver)? {

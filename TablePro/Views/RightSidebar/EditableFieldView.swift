@@ -92,10 +92,41 @@ struct EditableFieldView: View {
             setPicker(values: values)
         } else if columnTypeEnum.isBooleanType {
             booleanPicker
+        } else if BlobFormattingService.shared.requiresFormatting(columnType: columnTypeEnum) {
+            blobHexEditor
         } else if isLongText || columnTypeEnum.isJsonType {
             multiLineEditor
         } else {
             singleLineEditor
+        }
+    }
+
+    private var blobHexEditor: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            TextField(
+                "Hex bytes",
+                text: Binding(
+                    get: {
+                        BlobFormattingService.shared.format(value, for: .edit) ?? ""
+                    },
+                    set: { newHex in
+                        if let raw = BlobFormattingService.shared.parseHex(newHex) {
+                            value = raw
+                        }
+                    }
+                ),
+                axis: .vertical
+            )
+            .textFieldStyle(.roundedBorder)
+            .font(.system(size: ThemeEngine.shared.activeTheme.typography.tiny, design: .monospaced))
+            .lineLimit(3...8)
+            .focused($isFocused)
+
+            if let byteCount = value.data(using: .isoLatin1)?.count, byteCount > 0 {
+                Text("\(byteCount) bytes")
+                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.tiny))
+                    .foregroundStyle(.tertiary)
+            }
         }
     }
 
@@ -213,6 +244,14 @@ struct EditableFieldView: View {
                 }
             }
 
+            if BlobFormattingService.shared.requiresFormatting(columnType: columnTypeEnum) {
+                Button("Copy as Hex") {
+                    if let hex = BlobFormattingService.shared.format(value, for: .detail) {
+                        ClipboardService.shared.writeText(hex)
+                    }
+                }
+            }
+
             Button("Copy Value") {
                 ClipboardService.shared.writeText(value)
             }
@@ -284,7 +323,15 @@ struct ReadOnlyFieldView: View {
 
             // Line 2: value in disabled native text field
             if let value {
-                if isLongText {
+                if BlobFormattingService.shared.requiresFormatting(columnType: columnTypeEnum) {
+                    ScrollView {
+                        Text(BlobFormattingService.shared.formatIfNeeded(value, columnType: columnTypeEnum, for: .detail))
+                            .font(.system(size: ThemeEngine.shared.activeTheme.typography.tiny, design: .monospaced))
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .topLeading)
+                    }
+                    .frame(maxHeight: 120)
+                } else if isLongText {
                     Text(value)
                         .font(.system(size: ThemeEngine.shared.activeTheme.typography.small, design: .monospaced))
                         .textSelection(.enabled)
@@ -306,6 +353,14 @@ struct ReadOnlyFieldView: View {
             if let value {
                 Button("Copy Value") {
                     ClipboardService.shared.writeText(value)
+                }
+
+                if BlobFormattingService.shared.requiresFormatting(columnType: columnTypeEnum) {
+                    Button("Copy as Hex") {
+                        if let hex = BlobFormattingService.shared.format(value, for: .detail) {
+                            ClipboardService.shared.writeText(hex)
+                        }
+                    }
                 }
             }
         }

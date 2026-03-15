@@ -173,8 +173,17 @@ private actor SQLiteConnectionActor {
             var row: [String?] = []
 
             for i in 0..<columnCount {
-                if sqlite3_column_type(statement, i) == SQLITE_NULL {
+                let colType = sqlite3_column_type(statement, i)
+                if colType == SQLITE_NULL {
                     row.append(nil)
+                } else if colType == SQLITE_BLOB {
+                    let byteCount = Int(sqlite3_column_bytes(statement, i))
+                    if byteCount > 0, let blobPtr = sqlite3_column_blob(statement, i) {
+                        let data = Data(bytes: blobPtr, count: byteCount)
+                        row.append(String(data: data, encoding: .isoLatin1) ?? "")
+                    } else {
+                        row.append("")
+                    }
                 } else if let text = sqlite3_column_text(statement, i) {
                     row.append(String(cString: text))
                 } else {
@@ -273,8 +282,17 @@ private actor SQLiteConnectionActor {
             var row: [String?] = []
 
             for i in 0..<columnCount {
-                if sqlite3_column_type(statement, i) == SQLITE_NULL {
+                let colType = sqlite3_column_type(statement, i)
+                if colType == SQLITE_NULL {
                     row.append(nil)
+                } else if colType == SQLITE_BLOB {
+                    let byteCount = Int(sqlite3_column_bytes(statement, i))
+                    if byteCount > 0, let blobPtr = sqlite3_column_blob(statement, i) {
+                        let data = Data(bytes: blobPtr, count: byteCount)
+                        row.append(String(data: data, encoding: .isoLatin1) ?? "")
+                    } else {
+                        row.append("")
+                    }
                 } else if let text = sqlite3_column_text(statement, i) {
                     row.append(String(cString: text))
                 } else {
