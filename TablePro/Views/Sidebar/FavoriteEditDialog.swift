@@ -20,6 +20,7 @@ struct FavoriteEditDialog: View {
     @State private var keyword: String = ""
     @State private var isGlobal: Bool = true
     @State private var keywordError: String?
+    @State private var isKeywordWarning = false
     @State private var isSaving = false
 
     private var isEditing: Bool { favorite != nil }
@@ -57,7 +58,7 @@ struct FavoriteEditDialog: View {
                 if let error = keywordError {
                     LabeledContent {} label: {
                         Text(error)
-                            .foregroundStyle(error.hasPrefix("Warning") ? .orange : .red)
+                            .foregroundStyle(isKeywordWarning ? .orange : .red)
                             .font(.callout)
                     }
                 }
@@ -78,6 +79,7 @@ struct FavoriteEditDialog: View {
 
                 if !forceGlobal {
                     Toggle("Global:", isOn: $isGlobal)
+                        .help(String(localized: "When enabled, this favorite is visible in all connections"))
                 }
             }
             .formStyle(.columns)
@@ -105,7 +107,7 @@ struct FavoriteEditDialog: View {
                 keyword = fav.keyword ?? ""
                 isGlobal = forceGlobal || fav.connectionId == nil
             } else {
-                isGlobal = forceGlobal || true
+                isGlobal = true
                 if let q = initialQuery {
                     query = q
                 }
@@ -122,6 +124,7 @@ struct FavoriteEditDialog: View {
             return
         }
         if trimmed.contains(" ") {
+            isKeywordWarning = false
             keywordError = String(localized: "Keyword cannot contain spaces")
             return
         }
@@ -133,6 +136,7 @@ struct FavoriteEditDialog: View {
                 excludingFavoriteId: favorite?.id
             )
             if !available {
+                isKeywordWarning = false
                 keywordError = String(localized: "This keyword is already in use")
             } else {
                 let sqlKeywords: Set<String> = [
@@ -143,10 +147,12 @@ struct FavoriteEditDialog: View {
                     "true", "false", "case", "when", "then", "else", "end"
                 ]
                 if sqlKeywords.contains(trimmed.lowercased()) {
+                    isKeywordWarning = true
                     keywordError = String(
-                        localized: "Warning: this shadows the SQL keyword '\(trimmed.uppercased())'"
+                        localized: "Shadows the SQL keyword '\(trimmed.uppercased())'"
                     )
                 } else {
+                    isKeywordWarning = false
                     keywordError = nil
                 }
             }

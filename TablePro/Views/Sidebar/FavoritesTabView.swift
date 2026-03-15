@@ -10,6 +10,8 @@ import SwiftUI
 /// Full-tab favorites view with folder hierarchy and bottom toolbar
 struct FavoritesTabView: View {
     @State private var viewModel: FavoritesSidebarViewModel
+    @State private var folderToDelete: SQLFavoriteFolder?
+    @State private var showDeleteFolderAlert = false
     let searchText: String
     private weak var coordinator: MainContentCoordinator?
 
@@ -48,6 +50,18 @@ struct FavoritesTabView: View {
                 folderId: viewModel.editingFolderId
             )
         }
+        .alert(
+            String(localized: "Delete Folder?"),
+            isPresented: $showDeleteFolderAlert,
+            presenting: folderToDelete
+        ) { folder in
+            Button(String(localized: "Cancel"), role: .cancel) {}
+            Button(String(localized: "Delete"), role: .destructive) {
+                viewModel.deleteFolder(folder)
+            }
+        } message: { folder in
+            Text("The folder \"\(folder.name)\" will be deleted. Items inside will be moved to the parent level.")
+        }
     }
 
     // MARK: - List
@@ -58,7 +72,11 @@ struct FavoritesTabView: View {
                 FavoriteTreeItemRow(
                     item: item,
                     viewModel: viewModel,
-                    coordinator: coordinator
+                    coordinator: coordinator,
+                    onDeleteFolder: { folder in
+                        folderToDelete = folder
+                        showDeleteFolderAlert = true
+                    }
                 )
             }
         }
@@ -82,6 +100,15 @@ struct FavoritesTabView: View {
                 .font(.system(size: 11))
                 .foregroundStyle(Color(nsColor: .tertiaryLabelColor))
                 .multilineTextAlignment(.center)
+
+            Button {
+                viewModel.createFavorite()
+            } label: {
+                Label(String(localized: "New Favorite"), systemImage: "plus")
+                    .font(.system(size: 12))
+            }
+            .buttonStyle(.borderless)
+            .padding(.top, 4)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -134,6 +161,7 @@ struct FavoriteTreeItemRow: View {
     let item: FavoriteTreeItem
     let viewModel: FavoritesSidebarViewModel
     weak var coordinator: MainContentCoordinator?
+    var onDeleteFolder: ((SQLFavoriteFolder) -> Void)?
     @FocusState private var isRenameFocused: Bool
 
     var body: some View {
@@ -167,7 +195,8 @@ struct FavoriteTreeItemRow: View {
                     FavoriteTreeItemRow(
                         item: child,
                         viewModel: viewModel,
-                        coordinator: coordinator
+                        coordinator: coordinator,
+                        onDeleteFolder: onDeleteFolder
                     )
                 }
             } label: {
@@ -198,7 +227,8 @@ struct FavoriteTreeItemRow: View {
                         .contextMenu {
                             FolderContextMenu(
                                 folder: folder,
-                                viewModel: viewModel
+                                viewModel: viewModel,
+                                onDelete: onDeleteFolder ?? { _ in }
                             )
                         }
                 }
@@ -215,7 +245,7 @@ private struct FavoriteItemContextMenu: View {
     weak var coordinator: MainContentCoordinator?
 
     var body: some View {
-        Button("Edit...") {
+        Button(String(localized: "Edit...")) {
             viewModel.editFavorite(favorite)
         }
 
@@ -251,24 +281,25 @@ private struct FavoriteItemContextMenu: View {
 private struct FolderContextMenu: View {
     let folder: SQLFavoriteFolder
     let viewModel: FavoritesSidebarViewModel
+    var onDelete: (SQLFavoriteFolder) -> Void
 
     var body: some View {
-        Button("Rename") {
+        Button(String(localized: "Rename")) {
             viewModel.startRenameFolder(folder)
         }
 
-        Button("New Favorite...") {
+        Button(String(localized: "New Favorite...")) {
             viewModel.createFavorite(folderId: folder.id)
         }
 
-        Button("New Subfolder") {
+        Button(String(localized: "New Subfolder")) {
             viewModel.createFolder(parentId: folder.id)
         }
 
         Divider()
 
         Button(role: .destructive) {
-            viewModel.deleteFolder(folder)
+            onDelete(folder)
         } label: {
             Label(String(localized: "Delete Folder"), systemImage: "trash")
         }

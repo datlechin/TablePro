@@ -14,6 +14,7 @@ struct FavoriteRowView: View {
             Image(systemName: "star.fill")
                 .font(.system(size: 10))
                 .foregroundStyle(.yellow)
+                .accessibilityHidden(true)
 
             Text(favorite.name)
                 .lineLimit(1)
@@ -30,7 +31,17 @@ struct FavoriteRowView: View {
                         Capsule()
                             .fill(Color(nsColor: .quaternaryLabelColor))
                     )
+                    .accessibilityHidden(true)
             }
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityDescription)
+    }
+
+    private var accessibilityDescription: String {
+        if let keyword = favorite.keyword, !keyword.isEmpty {
+            return "\(favorite.name), \(String(localized: "keyword: \(keyword)"))"
+        }
+        return favorite.name
     }
 }
