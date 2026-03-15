@@ -28,6 +28,7 @@ struct EditableFieldView: View {
     @FocusState private var isFocused: Bool
     @State private var isHovered = false
     @State private var isSetPopoverPresented = false
+    @State private var hexEditText = ""
 
     private var placeholderText: String {
         if hasMultipleValues {
@@ -103,30 +104,46 @@ struct EditableFieldView: View {
 
     private var blobHexEditor: some View {
         VStack(alignment: .leading, spacing: 2) {
-            TextField(
-                "Hex bytes",
-                text: Binding(
-                    get: {
-                        BlobFormattingService.shared.format(value, for: .edit) ?? ""
-                    },
-                    set: { newHex in
-                        if let raw = BlobFormattingService.shared.parseHex(newHex) {
-                            value = raw
-                        }
+            TextField("Hex bytes", text: $hexEditText, axis: .vertical)
+                .textFieldStyle(.roundedBorder)
+                .font(.system(size: ThemeEngine.shared.activeTheme.typography.tiny, design: .monospaced))
+                .lineLimit(3...8)
+                .focused($isFocused)
+                .onAppear {
+                    hexEditText = BlobFormattingService.shared.format(value, for: .edit) ?? ""
+                }
+                .onChange(of: value) {
+                    if !isFocused {
+                        hexEditText = BlobFormattingService.shared.format(value, for: .edit) ?? ""
                     }
-                ),
-                axis: .vertical
-            )
-            .textFieldStyle(.roundedBorder)
-            .font(.system(size: ThemeEngine.shared.activeTheme.typography.tiny, design: .monospaced))
-            .lineLimit(3...8)
-            .focused($isFocused)
+                }
+                .onChange(of: isFocused) {
+                    if !isFocused {
+                        commitHexEdit()
+                    }
+                }
 
-            if let byteCount = value.data(using: .isoLatin1)?.count, byteCount > 0 {
-                Text("\(byteCount) bytes")
-                    .font(.system(size: ThemeEngine.shared.activeTheme.typography.tiny))
-                    .foregroundStyle(.tertiary)
+            HStack(spacing: 4) {
+                if let byteCount = value.data(using: .isoLatin1)?.count, byteCount > 0 {
+                    Text("\(byteCount) bytes")
+                        .font(.system(size: ThemeEngine.shared.activeTheme.typography.tiny))
+                        .foregroundStyle(.tertiary)
+                }
+
+                if BlobFormattingService.shared.parseHex(hexEditText) == nil, !hexEditText.isEmpty {
+                    Text("Invalid hex")
+                        .font(.system(size: ThemeEngine.shared.activeTheme.typography.tiny))
+                        .foregroundStyle(.red)
+                }
             }
+        }
+    }
+
+    private func commitHexEdit() {
+        if let raw = BlobFormattingService.shared.parseHex(hexEditText) {
+            value = raw
+        } else {
+            hexEditText = BlobFormattingService.shared.format(value, for: .edit) ?? ""
         }
     }
 
