@@ -27,7 +27,11 @@ struct FavoritesSidebarSection: View {
                     .listRowSeparator(.hidden)
             } else {
                 ForEach(items) { item in
-                    favoriteTreeItemView(item)
+                    FavoriteTreeItemRow(
+                        item: item,
+                        viewModel: viewModel,
+                        coordinator: coordinator
+                    )
                 }
             }
         } header: {
@@ -64,10 +68,18 @@ struct FavoritesSidebarSection: View {
         }
     }
 
-    // MARK: - Tree Item Views
+}
 
-    @ViewBuilder
-    private func favoriteTreeItemView(_ item: FavoriteTreeItem) -> some View {
+// MARK: - Recursive Tree Item View
+
+/// Separate struct to break the self-referential opaque return type
+/// that occurs with recursive `@ViewBuilder` functions.
+private struct FavoriteTreeItemRow: View {
+    let item: FavoriteTreeItem
+    let viewModel: FavoritesSidebarViewModel
+    weak var coordinator: MainContentCoordinator?
+
+    var body: some View {
         switch item {
         case .favorite(let favorite):
             FavoriteRowView(favorite: favorite)
@@ -86,7 +98,11 @@ struct FavoritesSidebarSection: View {
         case .folder(let folder, let children):
             DisclosureGroup {
                 ForEach(children) { child in
-                    favoriteTreeItemView(child)
+                    FavoriteTreeItemRow(
+                        item: child,
+                        viewModel: viewModel,
+                        coordinator: coordinator
+                    )
                 }
             } label: {
                 Label(folder.name, systemImage: "folder")
