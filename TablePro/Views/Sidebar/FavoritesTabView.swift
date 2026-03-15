@@ -13,6 +13,7 @@ struct FavoritesTabView: View {
     @State private var selectedFavoriteIds: Set<String> = []
     @State private var folderToDelete: SQLFavoriteFolder?
     @State private var showDeleteFolderAlert = false
+    @FocusState private var isRenameFocused: Bool
     let searchText: String
     private weak var coordinator: MainContentCoordinator?
 
@@ -69,32 +70,92 @@ struct FavoritesTabView: View {
 
     private func favoritesList(_ items: [FavoriteTreeItem]) -> some View {
         List(selection: $selectedFavoriteIds) {
-            ForEach(items) { item in
-                FavoriteTreeItemRow(
-                    item: item,
-                    viewModel: viewModel,
-                    coordinator: coordinator,
-                    onDeleteFolder: { folder in
-                        folderToDelete = folder
-                        showDeleteFolderAlert = true
-                    }
-                )
-                .tag(item.id)
-            }
+            flattenedRows(items)
         }
         .listStyle(.sidebar)
         .scrollContentBackground(.hidden)
         .onDeleteCommand {
             deleteSelectedFavorites()
         }
-        .contextMenu {
-            if !selectedFavoriteIds.isEmpty {
-                Button(role: .destructive) {
-                    deleteSelectedFavorites()
-                } label: {
-                    Label(String(localized: "Delete Selected"), systemImage: "trash")
+    }
+
+    /// Renders tree items with DisclosureGroup for folders.
+    /// Each favorite row gets `.tag()` so List selection works across all nesting levels.
+    private func flattenedRows(_ items: [FavoriteTreeItem]) -> AnyView {
+        AnyView(
+            ForEach(items) { item in
+                switch item {
+                case .favorite(let favorite):
+                    FavoriteRowView(favorite: favorite)
+                        .tag("fav-\(favorite.id)")
+                        .overlay {
+                            DoubleClickDetector {
+                                coordinator?.insertFavorite(favorite)
+                            }
+                        }
+                        .contextMenu {
+                            FavoriteItemContextMenu(
+                                favorite: favorite,
+                                viewModel: viewModel,
+                                coordinator: coordinator
+                            )
+                        }
+                case .folder(let folder, let children):
+                    DisclosureGroup(isExpanded: Binding(
+                        get: { viewModel.expandedFolderIds.contains(folder.id) },
+                        set: { expanded in
+                            if expanded {
+                                viewModel.expandedFolderIds.insert(folder.id)
+                            } else {
+                                viewModel.expandedFolderIds.remove(folder.id)
+                            }
+                        }
+                    )) {
+                        flattenedRows(children)
+                    } label: {
+                        folderLabel(folder)
+                    }
                 }
             }
+        )
+    }
+
+    @ViewBuilder
+    private func folderLabel(_ folder: SQLFavoriteFolder) -> some View {
+        if viewModel.renamingFolderId == folder.id {
+            HStack(spacing: 4) {
+                Image(systemName: "folder")
+                TextField(
+                    "",
+                    text: Binding(
+                        get: { viewModel.renamingFolderName },
+                        set: { viewModel.renamingFolderName = $0 }
+                    )
+                )
+                .textFieldStyle(.roundedBorder)
+                .focused($isRenameFocused)
+                .onSubmit {
+                    viewModel.commitRenameFolder(folder)
+                }
+                .onExitCommand {
+                    viewModel.renamingFolderId = nil
+                }
+                .onAppear {
+                    isRenameFocused = true
+                }
+            }
+        } else {
+            Label(folder.name, systemImage: "folder")
+                .contextMenu {
+                    FolderContextMenu(
+                        folder: folder,
+                        viewModel: viewModel,
+                        onDelete: { f in
+                            folderToDelete = f
+                            showDeleteFolderAlert = true
+                        }
+                    )
+                }
         }
     }
 
@@ -187,89 +248,6 @@ struct FavoritesTabView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
-    }
-}
-
-// MARK: - Recursive Tree Item View
-
-struct FavoriteTreeItemRow: View {
-    let item: FavoriteTreeItem
-    let viewModel: FavoritesSidebarViewModel
-    weak var coordinator: MainContentCoordinator?
-    var onDeleteFolder: ((SQLFavoriteFolder) -> Void)?
-    @FocusState private var isRenameFocused: Bool
-
-    var body: some View {
-        switch item {
-        case .favorite(let favorite):
-            FavoriteRowView(favorite: favorite)
-                .overlay {
-                    DoubleClickDetector {
-                        coordinator?.insertFavorite(favorite)
-                    }
-                }
-                .contextMenu {
-                    FavoriteItemContextMenu(
-                        favorite: favorite,
-                        viewModel: viewModel,
-                        coordinator: coordinator
-                    )
-                }
-        case .folder(let folder, let children):
-            DisclosureGroup(isExpanded: Binding(
-                get: { viewModel.expandedFolderIds.contains(folder.id) },
-                set: { isExpanded in
-                    if isExpanded {
-                        viewModel.expandedFolderIds.insert(folder.id)
-                    } else {
-                        viewModel.expandedFolderIds.remove(folder.id)
-                    }
-                }
-            )) {
-                ForEach(children) { child in
-                    FavoriteTreeItemRow(
-                        item: child,
-                        viewModel: viewModel,
-                        coordinator: coordinator,
-                        onDeleteFolder: onDeleteFolder
-                    )
-                    .tag(child.id)
-                }
-            } label: {
-                if viewModel.renamingFolderId == folder.id {
-                    HStack(spacing: 4) {
-                        Image(systemName: "folder")
-                        TextField(
-                            "",
-                            text: Binding(
-                                get: { viewModel.renamingFolderName },
-                                set: { viewModel.renamingFolderName = $0 }
-                            )
-                        )
-                        .textFieldStyle(.roundedBorder)
-                        .focused($isRenameFocused)
-                        .onSubmit {
-                            viewModel.commitRenameFolder(folder)
-                        }
-                        .onExitCommand {
-                            viewModel.renamingFolderId = nil
-                        }
-                        .onAppear {
-                            isRenameFocused = true
-                        }
-                    }
-                } else {
-                    Label(folder.name, systemImage: "folder")
-                        .contextMenu {
-                            FolderContextMenu(
-                                folder: folder,
-                                viewModel: viewModel,
-                                onDelete: onDeleteFolder ?? { _ in }
-                            )
-                        }
-                }
-            }
-        }
     }
 }
 
