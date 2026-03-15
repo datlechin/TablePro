@@ -11,7 +11,7 @@ import SwiftUI
 enum SettingsTab: String {
     case general, appearance, editor, dataGrid, keyboard, history, ai, plugins, sync, license
 
-    static let fixedWidth: CGFloat = 650
+    static let fixedWidth: CGFloat = 720
 
     var preferredHeight: CGFloat {
         switch self {
