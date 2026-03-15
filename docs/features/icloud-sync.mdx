@@ -7,7 +7,7 @@ description: Sync connections, settings, and query history across Macs via iClou
 
 TablePro syncs your connections, groups, settings, and query history across all your Macs via CloudKit. iCloud Sync is a Pro feature that requires an active license.
 
-## What Syncs (and What Doesn't)
+## What syncs (and what doesn't)
 
 | Data | Synced | Notes |
 |------|--------|-------|
@@ -44,7 +44,7 @@ Sync is off by default. You must opt in explicitly.
   />
 </Frame>
 
-## Sync Categories
+## Sync categories
 
 Each data type has its own toggle. Sync connections but not history, or settings but not connections.
 
@@ -55,7 +55,7 @@ Each data type has its own toggle. Sync connections but not history, or settings
 | **App Settings** | Preferences from all 8 settings categories |
 | **Query History** | Past queries up to the configured limit |
 
-### History Limit
+### History limit
 
 Control how many history entries sync across devices:
 
@@ -70,7 +70,7 @@ Control how many history entries sync across devices:
 Start with 500. Unlimited history sync can slow down initial sync on large histories.
 </Tip>
 
-## Automatic Sync
+## Automatic sync
 
 TablePro auto-syncs in three situations:
 
@@ -78,9 +78,9 @@ TablePro auto-syncs in three situations:
 - **App foreground** -- syncs when you switch back to TablePro
 - **Local edits** -- pushes changes 2 seconds after you modify synced data (debounced to avoid excess writes)
 
-Use the **Sync Now** button in Settings > Sync to trigger a manual sync at any time.
+Use the **Sync Now** button in **Settings** > **Sync** to trigger a manual sync at any time.
 
-## Conflict Resolution
+## Conflict resolution
 
 When the same record is modified on two Macs before syncing, TablePro prompts you to choose:
 
@@ -105,7 +105,7 @@ Conflicts are resolved per-record, not per-category. Editing a connection on Mac
   />
 </Frame>
 
-## Sync Status Indicator
+## Sync status indicator
 
 The welcome window footer shows the current sync status:
 
@@ -130,7 +130,7 @@ The welcome window footer shows the current sync status:
   />
 </Frame>
 
-## Pro License Requirement
+## Pro license requirement
 
 iCloud Sync requires an active Pro license. Without one, the Sync settings tab shows a "Pro required" overlay.
 
@@ -146,7 +146,7 @@ When a license expires:
 
 1. Confirm iCloud is signed in: **System Settings** > **Apple Account** > **iCloud**
 2. Check that iCloud Drive is enabled
-3. Verify the specific category toggle is on in Settings > Sync
+3. Verify the specific category toggle is on in **Settings** > **Sync**
 4. Click **Sync Now** to force a sync attempt
 
 ### Stale data on one Mac
@@ -161,7 +161,7 @@ TablePro requires an active iCloud account. Sign in via **System Settings** > **
 
 This is expected. Sync requires an active Pro license. Renew or re-activate your license to resume syncing.
 
-## Related Pages
+## Related pages
 
 <CardGroup cols={2}>
   <Card title="Settings" icon="gear" href="/customization/settings">
