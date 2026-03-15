@@ -12,7 +12,7 @@ internal struct PublicKeyAuthenticator: SSHAuthenticator {
     let passphrase: String?
 
     func authenticate(session: OpaquePointer, username: String) throws {
-        let expandedPath = expandPath(privateKeyPath)
+        let expandedPath = SSHPathUtilities.expandTilde(privateKeyPath)
 
         guard FileManager.default.fileExists(atPath: expandedPath) else {
             throw SSHTunnelError.tunnelCreationFailed(
@@ -54,16 +54,4 @@ internal struct PublicKeyAuthenticator: SSHAuthenticator {
         }
     }
 
-    private func expandPath(_ path: String) -> String {
-        if path.hasPrefix("~/") {
-            return FileManager.default.homeDirectoryForCurrentUser
-                .appendingPathComponent(String(path.dropFirst(2)))
-                .path(percentEncoded: false)
-        }
-        if path == "~" {
-            return FileManager.default.homeDirectoryForCurrentUser
-                .path(percentEncoded: false)
-        }
-        return path
-    }
 }

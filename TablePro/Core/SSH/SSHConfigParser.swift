@@ -86,8 +86,8 @@ final class SSHConfigParser {
                                 hostname: currentHostname,
                                 port: currentPort,
                                 user: currentUser,
-                                identityFile: expandPath(currentIdentityFile),
-                                identityAgent: expandPath(currentIdentityAgent),
+                                identityFile: currentIdentityFile.map(SSHPathUtilities.expandTilde),
+                                identityAgent: currentIdentityAgent.map(SSHPathUtilities.expandTilde),
                                 proxyJump: currentProxyJump
                             ))
                     }
@@ -133,8 +133,8 @@ final class SSHConfigParser {
                     hostname: currentHostname,
                     port: currentPort,
                     user: currentUser,
-                    identityFile: expandPath(currentIdentityFile),
-                    identityAgent: expandPath(currentIdentityAgent),
+                    identityFile: currentIdentityFile.map(SSHPathUtilities.expandTilde),
+                    identityAgent: currentIdentityAgent.map(SSHPathUtilities.expandTilde),
                     proxyJump: currentProxyJump
                 ))
         }
@@ -192,14 +192,4 @@ final class SSHConfigParser {
         return jumpHosts
     }
 
-    /// Expand ~ to home directory in path
-    private static func expandPath(_ path: String?) -> String? {
-        guard let path = path else { return nil }
-
-        if path.hasPrefix("~") {
-            return FileManager.default.homeDirectoryForCurrentUser
-                .appendingPathComponent(String(path.dropFirst(2))).path(percentEncoded: false)
-        }
-        return path
-    }
 }

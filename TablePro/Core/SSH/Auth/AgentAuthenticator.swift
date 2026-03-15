@@ -21,7 +21,7 @@ internal struct AgentAuthenticator: SSHAuthenticator {
         let originalSocketPath = ProcessInfo.processInfo.environment["SSH_AUTH_SOCK"]
         let needsSocketOverride = socketPath != nil
 
-        if let overridePath = socketPath, needsSocketOverride {
+        if let overridePath = socketPath.map(SSHPathUtilities.expandTilde), needsSocketOverride {
             Self.agentSocketLock.lock()
             Self.logger.debug("Using custom SSH agent socket: \(overridePath, privacy: .private)")
             setenv("SSH_AUTH_SOCK", overridePath, 1)

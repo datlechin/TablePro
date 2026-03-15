@@ -150,6 +150,34 @@ struct SSHConfigurationTests {
         #expect(config.isValid == false)
     }
 
+    // MARK: - SSHPathUtilities
+
+    @Test("Tilde expansion resolves ~/path to home directory")
+    func testTildeExpansionWithSubpath() {
+        let home = FileManager.default.homeDirectoryForCurrentUser.path(percentEncoded: false)
+        let result = SSHPathUtilities.expandTilde("~/Library/agent.sock")
+        #expect(result == "\(home)/Library/agent.sock")
+    }
+
+    @Test("Tilde expansion resolves bare ~ to home directory")
+    func testTildeExpansionBare() {
+        let home = FileManager.default.homeDirectoryForCurrentUser.path(percentEncoded: false)
+        let result = SSHPathUtilities.expandTilde("~")
+        #expect(result == home)
+    }
+
+    @Test("Tilde expansion leaves absolute paths unchanged")
+    func testTildeExpansionAbsolutePath() {
+        let result = SSHPathUtilities.expandTilde("/absolute/path")
+        #expect(result == "/absolute/path")
+    }
+
+    @Test("Tilde expansion leaves empty string unchanged")
+    func testTildeExpansionEmptyString() {
+        let result = SSHPathUtilities.expandTilde("")
+        #expect(result == "")
+    }
+
     @Test("Backward-compatible decoding without jumpHosts key")
     func testBackwardCompatibleDecoding() throws {
         let jsonString = """
