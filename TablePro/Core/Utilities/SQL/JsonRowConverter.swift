@@ -5,9 +5,9 @@
 
 import Foundation
 
-struct JsonRowConverter {
-    let columns: [String]
-    let columnTypes: [ColumnType]
+internal struct JsonRowConverter {
+    internal let columns: [String]
+    internal let columnTypes: [ColumnType]
 
     private static let maxRows = 50_000
 
@@ -96,10 +96,65 @@ struct JsonRowConverter {
     }
 
     private func formatDecimal(_ value: String) -> String {
+        // Emit verbatim if already a valid JSON number — preserves full database precision
+        if isValidJsonNumber(value) {
+            return value
+        }
+        // Fallback for non-standard formats (e.g., "1.0E5" with leading +)
         if let doubleVal = Double(value), !doubleVal.isInfinite, !doubleVal.isNaN {
-            return String(format: "%g", doubleVal)
+            return String(doubleVal)
         }
         return quotedEscaped(value)
+    }
+
+    /// Checks whether a string conforms to JSON number grammar (RFC 8259 §6)
+    private func isValidJsonNumber(_ value: String) -> Bool {
+        let scalars = value.unicodeScalars
+        var iter = scalars.makeIterator()
+        guard var ch = iter.next() else { return false }
+
+        // Optional leading minus
+        if ch == "-" { guard let next = iter.next() else { return false }; ch = next }
+
+        // Integer part: "0" or [1-9][0-9]*
+        guard ch >= "0" && ch <= "9" else { return false }
+        if ch == "0" {
+            // "0" must not be followed by another digit
+            if let next = iter.next() { ch = next } else { return true }
+        } else {
+            while true {
+                guard let next = iter.next() else { return true }
+                ch = next
+                guard ch >= "0" && ch <= "9" else { break }
+            }
+        }
+
+        // Optional fractional part
+        if ch == "." {
+            guard let next = iter.next(), next >= "0" && next <= "9" else { return false }
+            while true {
+                guard let next = iter.next() else { return true }
+                ch = next
+                guard ch >= "0" && ch <= "9" else { break }
+            }
+        }
+
+        // Optional exponent
+        if ch == "e" || ch == "E" {
+            guard var next = iter.next() else { return false }
+            if next == "+" || next == "-" {
+                guard let signed = iter.next() else { return false }
+                next = signed
+            }
+            guard next >= "0" && next <= "9" else { return false }
+            for remaining in IteratorSequence(iter) {
+                guard remaining >= "0" && remaining <= "9" else { return false }
+            }
+        } else {
+            return false // Unexpected trailing character
+        }
+
+        return true
     }
 
     private func formatBoolean(_ value: String) -> String {
@@ -114,12 +169,13 @@ struct JsonRowConverter {
     }
 
     private func formatJson(_ value: String) -> String {
-        guard let data = value.data(using: .utf8) else {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let data = trimmed.data(using: .utf8) else {
             return quotedEscaped(value)
         }
         do {
             _ = try JSONSerialization.jsonObject(with: data, options: .fragmentsAllowed)
-            return value
+            return trimmed
         } catch {
             return quotedEscaped(value)
         }

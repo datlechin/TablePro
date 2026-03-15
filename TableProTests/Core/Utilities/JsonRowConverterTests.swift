@@ -56,6 +56,13 @@ struct JsonRowConverterTests {
         #expect(!result.contains("\"3.14\""))
     }
 
+    @Test("Decimal preserves full precision for high-precision values")
+    func decimalPrecision() {
+        let converter = makeConverter(columns: ["amount"], columnTypes: [.decimal(rawType: nil)])
+        let result = converter.generateJson(rows: [["123456.789"]])
+        #expect(result.contains(": 123456.789"))
+    }
+
     @Test("Decimal infinity and NaN produce quoted strings")
     func decimalInfinityNaN() {
         let converter = makeConverter(columns: ["a", "b"], columnTypes: [.decimal(rawType: nil), .decimal(rawType: nil)])
@@ -110,6 +117,14 @@ struct JsonRowConverterTests {
         let converter = makeConverter(columns: ["data"], columnTypes: [.json(rawType: nil)])
         let result = converter.generateJson(rows: [["{broken"]])
         #expect(result.contains("\"{broken\""))
+    }
+
+    @Test("JSON column with trailing whitespace is trimmed before embedding")
+    func jsonColumnTrimmed() {
+        let converter = makeConverter(columns: ["data"], columnTypes: [.json(rawType: nil)])
+        let result = converter.generateJson(rows: [["{\"k\":1}\n"]])
+        #expect(result.contains(": {\"k\":1}"))
+        #expect(!result.contains(": {\"k\":1}\n\n"))
     }
 
     // MARK: - String escaping
