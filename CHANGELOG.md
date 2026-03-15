@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- SSH agent connections failing when socket path contains `~` (e.g., 1Password agent)
 - Keychain authorization prompt no longer appears on every table open
 
 ## [0.18.1] - 2026-03-14

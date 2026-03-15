@@ -53,5 +53,4 @@ internal struct PublicKeyAuthenticator: SSHAuthenticator {
             throw SSHTunnelError.authenticationFailed
         }
     }
-
 }
