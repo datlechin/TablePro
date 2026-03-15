@@ -1,3 +1,8 @@
+//
+//  KeychainHelper.swift
+//  TablePro
+//
+
 import Foundation
 import os
 import Security
@@ -27,11 +32,11 @@ final class KeychainHelper {
         var status = SecItemAdd(addQuery as CFDictionary, nil)
 
         if status == errSecDuplicateItem {
-            // SecItemUpdate search query must not include kSecUseDataProtectionKeychain (TN3137)
             let searchQuery: [String: Any] = [
                 kSecClass as String: kSecClassGenericPassword,
                 kSecAttrService as String: service,
-                kSecAttrAccount as String: key
+                kSecAttrAccount as String: key,
+                kSecUseDataProtectionKeychain as String: true
             ]
             let updateAttributes: [String: Any] = [
                 kSecValueData as String: data

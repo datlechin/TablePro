@@ -33,7 +33,7 @@ final class LicenseStorage {
 
     /// Load license key from Keychain
     func loadLicenseKey() -> String? {
-        KeychainHelper.shared.loadString(forKey: Keys.keychainLicenseKey)
+        return KeychainHelper.shared.loadString(forKey: Keys.keychainLicenseKey)
     }
 
     /// Delete license key from Keychain
