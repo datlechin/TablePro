@@ -16,7 +16,13 @@ extension MainContentCoordinator {
 
         if let tabIndex = tabManager.selectedTabIndex,
            tabManager.tabs[tabIndex].tabType == .query {
-            tabManager.tabs[tabIndex].query = favorite.query
+            let existing = tabManager.tabs[tabIndex].query
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if existing.isEmpty {
+                tabManager.tabs[tabIndex].query = favorite.query
+            } else {
+                tabManager.tabs[tabIndex].query += "\n\n" + favorite.query
+            }
         } else {
             runFavoriteInNewTab(favorite)
         }
